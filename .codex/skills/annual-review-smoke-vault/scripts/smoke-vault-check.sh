@@ -79,6 +79,14 @@ wc -c "$REPORT_FILE"
 
 printf "\n==> Issue checks\n"
 
+echo "-- Local Codex availability from this runtime"
+command -v codex || true
+if [[ -x "/Users/hong/.npm-global/bin/codex" ]]; then
+  /Users/hong/.npm-global/bin/codex --version || true
+else
+  echo "/Users/hong/.npm-global/bin/codex is not executable"
+fi
+
 check_grep() {
   local label="$1"
   local pattern="$2"
@@ -91,10 +99,22 @@ check_grep() {
   fi
 }
 
+fail_if_grep() {
+  local label="$1"
+  local pattern="$2"
+  echo "-- $label"
+  if grep -nE "$pattern" "$REPORT_FILE" | head -20; then
+    echo "ERROR: $label found in report" >&2
+    exit 1
+  fi
+}
+
 check_grep "Month names used as quoted topics" '「([0-9]{1,2}月|20[0-9]{2}-[0-9]{2})」'
 check_grep "Deprecated 更新笔记 column/text" '更新笔记'
 check_grep "Wiki alias links inside Markdown table rows" '' table-alias
 check_grep "SVG embeds without explicit width" '!\[\[.*\.svg\|[^]|]+\]\]'
+fail_if_grep "AI summary unavailable" 'AI summary unavailable'
+fail_if_grep "Codex command not found" 'codex: command not found|bash: codex: command not found'
 
 echo "-- 建立 MOC repetition count"
 { grep -o '建立 MOC' "$REPORT_FILE" || true; } | wc -l | tr -d ' '

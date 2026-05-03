@@ -293,6 +293,19 @@ class AnnualReviewSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
       });
+
+    new Setting(containerEl)
+      .setName("Local Codex command")
+      .setDesc("One-shot Codex fallback command used when ChatGPT has no API key. Use an absolute Codex path if Obsidian's macOS GUI PATH cannot find codex; long-session app-server support is intentionally out of scope for this fallback.")
+      .addText((text) => {
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.localCodexCommand)
+          .setValue(this.plugin.settings.localCodexCommand)
+          .onChange(async (value) => {
+            this.plugin.settings.localCodexCommand = value.trim() || DEFAULT_SETTINGS.localCodexCommand;
+            await this.plugin.saveSettings();
+          });
+      });
   }
 
   private addLanguageDropdown(name: string, description: string, key: "reportLanguage" | "generatorLanguage"): void {
