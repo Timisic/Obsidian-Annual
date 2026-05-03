@@ -19,28 +19,23 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 
 | 功能 | 状态 | 说明 |
 | --- | --- | --- |
-| 生成年度回顾 | 已实现基础版 | 命令面板运行 `Annual Review: Generate report`，生成指定年份的 Markdown 报告。 |
-| 仪表盘 | 已实现基础版 | 命令面板运行 `Annual Review: Open dashboard`，预览年度指标、热门列表并触发生成。 |
-| 重建索引 | 已实现基础版 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
-| 本地统计 | 已实现基础版 | 读取 vault 内 Markdown、frontmatter、标签、Obsidian 解析后的链接、标题、任务和文件时间。 |
-| 中英混合计数 | 已实现基础版 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
-| 证据链接 | 已实现基础版 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
-| 每日字数热力图 | 已实现基础版 | 报告使用 Obsidian 可渲染的内嵌 SVG 热力图，仪表盘使用网格热力图展示每日创作字数分布。 |
-| 字数增长趋势 | 已实现基础版 | 报告使用 Obsidian 可渲染的内嵌 SVG 柱状图展示月度新增字数，并保留累计字数表。 |
-| ChatGPT provider | 可选基础版 | 生成报告时可选择 ChatGPT；默认关闭，需配置 OpenAI API key，不硬编码密钥。 |
-| 隐私边界 | 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
+| 生成年度回顾 | ✅ 已实现 | 命令面板运行 `Annual Review: Generate report`，生成指定年份的 Markdown 报告。 |
+| 仪表盘 | ✅ 已实现 | 命令面板运行 `Annual Review: Open dashboard`，预览年度指标、热门列表并触发生成。 |
+| 重建索引 | ✅ 已实现 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
+| 本地统计 | ✅ 已实现 | 读取 vault 内 Markdown、frontmatter、标签、Obsidian 解析后的链接、标题、任务和文件时间。 |
+| 中英混合计数 | ✅ 已实现 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
+| 证据链接 | ✅ 已实现 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
+| 每日字数热力图 | ✅ 已实现 | 生成独立 SVG 资产，并在报告中用 Obsidian 图片链接引用。 |
+| 字数增长趋势 | ✅ 已实现 | 生成独立 SVG 曲线图资产，展示月度新增字数和清晰坐标轴。 |
+| ChatGPT provider | 🧪 可选 | 生成报告时可选择 ChatGPT；有 OpenAI API key 时直连 Responses API，否则尝试本地 Codex CLI/auth。 |
+| 隐私边界 | ⚠️ 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
 
 ## 最近变更
 
-DEC-19 修正了链接统计口径：
-
-- **Obsidian 解析链接统计**：插件在 Obsidian 内运行时会使用 `metadataCache.resolvedLinks` / `unresolvedLinks` 的结果统计热门链接，因此 `[[Research|别名]]`、`[[Projects/Research#Plan]]`、嵌入链接和 Markdown 链接都会按 Obsidian 实际解析到的目标文件计数；无法解析的链接会按 Obsidian 记录的未解析目标文本保留。离开 Obsidian 运行的核心测试仍保留 wiki link 文本解析作为 fallback。
-
-DEC-17 加入了两类面向年度报告质量的能力：
-
-- **AI 个性化报告段落**：生成报告时可以在弹窗里把 AI provider 从 `None` 切换到 `ChatGPT`。插件会把年度聚合数据、热门标签/文件夹/链接、代表笔记、链接关系和裁剪后的笔记摘录发送给 OpenAI Responses API，并把返回内容追加为 `AI Personalization` 段落。没有配置 API key 时不会发起网络请求，而是在报告中写入可读的 provider 状态和后续 TODO。
-- **更丰富的统计图表**：报告现在使用内嵌 SVG 绘制每日字数热力图和月度字数增长图，不再用字符模拟图表；图表下方保留数据表用于核对具体数值。仪表盘继续使用 DOM 网格/条形图预览同一批统计数据。
-- **AI 上下文占位脚本**：`npm run ai:context-placeholder` 会打印未来 Obsidian skill/CLI 上下文适配器的契约说明；当前脚本不会读取 vault，也不会发起网络请求。
+- **Obsidian 解析链接统计**：在 Obsidian 内使用 `metadataCache.resolvedLinks` / `unresolvedLinks` 统计热门链接，别名、标题锚点、嵌入链接和 Markdown 链接会按实际目标合并。
+- **AI 个性化报告段落**：生成时可选择 `ChatGPT`。有 OpenAI API key 时直连 Responses API；没有 key 时尝试调用本地 Codex CLI/auth 生成内容。
+- **独立 SVG 图表资产**：每日字数热力图和月度字数增长曲线会写入 `Annual Reviews/YYYY Annual Review Assets/`，年度报告用 Obsidian 图片链接引用，并保留数据表核对具体数值。
+- **AI 上下文占位脚本**：`npm run ai:context-placeholder` 保留未来 Obsidian skill/CLI 上下文适配器契约；当前脚本不读取 vault，也不发起网络请求。
 
 ## ChatGPT provider 与隐私
 
@@ -48,10 +43,10 @@ DEC-17 加入了两类面向年度报告质量的能力：
 
 1. 打开 Annual Review 插件设置。
 2. 将 `AI provider` 设置为 `ChatGPT`。
-3. 填入 `OpenAI API key`，并按需修改 `ChatGPT model`。
+3. 可选：填入 `OpenAI API key`，并按需修改 `ChatGPT model`。留空时会尝试使用本地 Codex CLI/auth。
 4. 运行 `Annual Review: Generate report`，在生成弹窗中确认本次运行的 provider。
 
-隐私边界需要明确：ChatGPT 模式会把本次年度报告所需的统计、链接关系和部分笔记摘录发送给 OpenAI。当前实现是显式选择、无硬编码密钥、无 key 不联网；更细粒度的数据预览、字段脱敏和 Obsidian skill/CLI 上下文增强仍保留在脚本 TODO 中。
+隐私边界需要明确：ChatGPT 模式会把本次年度报告所需的统计、链接关系和部分笔记摘录交给所选生成路径。有 API key 时发送到 OpenAI Responses API；无 key 时走本机 Codex CLI/auth 环境。当前实现是显式选择、无硬编码密钥；更细粒度的数据预览、字段脱敏和 Obsidian skill/CLI 上下文增强仍保留在脚本 TODO 中。
 
 ## 快速开始
 
@@ -94,7 +89,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 2. 运行 `Annual Review: Generate report`。
 3. 选择要复盘的年份和生成选项。
 4. 打开 `Annual Reviews/YYYY Annual Review.md`。
-5. 检查年度总览、内嵌 SVG 每日字数热力图、内嵌 SVG 字数增长趋势、热门标签/文件夹/链接、代表性笔记和数据口径。
+5. 检查年度总览、SVG 每日字数热力图、SVG 字数增长曲线、热门标签/文件夹/链接、代表性笔记和数据口径。
 6. 按自己的写作风格编辑生成的 Markdown；vault 更新后可以重新运行生成命令。
 7. 需要先看指标时，运行 `Annual Review: Open dashboard` 打开仪表盘。
 
@@ -151,7 +146,7 @@ npm run build
 
 1. 把插件安装到测试 vault。
 2. 运行重建索引、生成报告、打开仪表盘。
-3. 确认报告文件在 `Annual Reviews/` 下生成。
+3. 确认报告文件在 `Annual Reviews/` 下生成，图表 SVG 在 `Annual Reviews/YYYY Annual Review Assets/` 下生成。
 4. 确认报告中的 Obsidian 链接能打开源笔记。
 5. 准备一个同时包含 `[[标题|别名]]`、`[[路径#标题]]`、嵌入链接和 Markdown 链接的目标笔记，确认热门链接按同一个 Obsidian 解析目标合并统计。
 6. 重新生成报告，确认不会重复堆叠旧内容。

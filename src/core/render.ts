@@ -2,9 +2,50 @@ import type { DayBucket, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualRe
 
 interface RenderOptions {
   language?: ResolvedAnnualReviewLanguage;
+  chartPaths?: Partial<Record<AnnualReviewChartKind, string>>;
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
+export type AnnualReviewChartKind = "daily-word-heatmap" | "word-growth-trend";
+
+export interface AnnualReviewChartAsset {
+  kind: AnnualReviewChartKind;
+  path: string;
+  content: string;
+}
+
+export function buildAnnualReviewChartPaths(reportFolder: string, year: number): Record<AnnualReviewChartKind, string> {
+  const folder = normalizeReportFolder(reportFolder || "Annual Reviews");
+  const assetFolder = `${folder}/${year} Annual Review Assets`;
+  return {
+    "daily-word-heatmap": `${assetFolder}/daily-word-heatmap.svg`,
+    "word-growth-trend": `${assetFolder}/word-growth-trend.svg`,
+  };
+}
+
+export function buildAnnualReviewChartAssets(aggregate: YearAggregate, options: RenderOptions = {}): AnnualReviewChartAsset[] {
+  const language = options.language ?? "en";
+  const paths = options.chartPaths ?? buildAnnualReviewChartPaths("Annual Reviews", aggregate.year);
+  const assets: AnnualReviewChartAsset[] = [];
+
+  if (aggregate.dayBuckets.length > 0 && paths["daily-word-heatmap"]) {
+    assets.push({
+      kind: "daily-word-heatmap",
+      path: paths["daily-word-heatmap"],
+      content: renderDailyHeatmapSvg(aggregate.dayBuckets, language),
+    });
+  }
+
+  if (aggregate.wordGrowthBuckets.length > 0 && paths["word-growth-trend"]) {
+    assets.push({
+      kind: "word-growth-trend",
+      path: paths["word-growth-trend"],
+      content: renderWordGrowthSvg(aggregate.wordGrowthBuckets, language),
+    });
+  }
+
+  return assets;
+}
 
 const REPORT_TEXT = {
   en: {
@@ -139,11 +180,11 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     "",
     `## ${text.dailyWordHeatmap}`,
     "",
-    renderDailyHeatmap(aggregate.dayBuckets, language),
+    renderDailyHeatmap(aggregate.dayBuckets, language, options.chartPaths?.["daily-word-heatmap"]),
     "",
     `## ${text.wordGrowthTrend}`,
     "",
-    renderWordGrowthTrend(aggregate.wordGrowthBuckets, language),
+    renderWordGrowthTrend(aggregate.wordGrowthBuckets, language, options.chartPaths?.["word-growth-trend"]),
     "",
     `## ${text.topTags}`,
     "",
@@ -205,7 +246,7 @@ function renderMonthTable(months: MonthBucket[], language: ResolvedAnnualReviewL
   ].join("\n");
 }
 
-function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
+function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLanguage, chartPath?: string): string {
   const text = REPORT_TEXT[language];
   if (days.length === 0) {
     return text.dailyWordHeatmapEmpty;
@@ -221,7 +262,7 @@ function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLan
   return [
     text.dailyWordHeatmapLegend,
     "",
-    renderDailyHeatmapSvg(days, language),
+    chartPath ? renderChartReference(chartPath, text.dailyWordHeatmap) : renderDailyHeatmapSvg(days, language),
     "",
     `| ${text.month} | ${text.words} | ${text.activeDays} | ${text.peakDay} |`,
     "| --- | ---: | ---: | --- |",
@@ -235,7 +276,7 @@ function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLan
   ].join("\n");
 }
 
-function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnnualReviewLanguage): string {
+function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnnualReviewLanguage, chartPath?: string): string {
   const text = REPORT_TEXT[language];
   if (growth.length === 0) {
     return text.wordGrowthTrendEmpty;
@@ -244,7 +285,7 @@ function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnn
   return [
     text.wordGrowthYAxis,
     "",
-    renderWordGrowthSvg(growth, language),
+    chartPath ? renderChartReference(chartPath, text.wordGrowthTrend) : renderWordGrowthSvg(growth, language),
     "",
     `| ${text.month} | ${text.wordGrowth} | ${text.cumulativeWords} |`,
     "| --- | ---: | ---: |",
@@ -281,15 +322,13 @@ function renderDailyHeatmapSvg(days: DayBucket[], language: ResolvedAnnualReview
     .join("\n");
 
   return [
-    `<div class="annual-review-chart annual-review-heatmap" role="img" aria-label="${escapeHtml(text.dailyWordHeatmap)}">`,
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto">`,
+    `<svg class="annual-review-chart annual-review-heatmap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.dailyWordHeatmap)}">`,
     `<title>${escapeHtml(text.dailyWordHeatmap)}</title>`,
     `<desc>${escapeHtml(text.dailyWordHeatmapLegend)}</desc>`,
     monthLabels,
     weekdays,
     cells,
     "</svg>",
-    "</div>",
   ].join("\n");
 }
 
@@ -304,9 +343,12 @@ function renderWordGrowthSvg(growth: WordGrowthBucket[], language: ResolvedAnnua
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const maxGrowth = niceMax(Math.max(1, ...growth.map((bucket) => bucket.wordsGained)));
-  const barGap = 12;
-  const barWidth = Math.max(18, (plotWidth - barGap * (growth.length - 1)) / Math.max(1, growth.length));
   const ticks = [0, maxGrowth / 2, maxGrowth];
+  const xScale = (index: number) => left + (plotWidth * index) / Math.max(1, growth.length - 1);
+  const yScale = (words: number) => top + plotHeight - (words / maxGrowth) * plotHeight;
+  const linePath = growth
+    .map((bucket, index) => `${index === 0 ? "M" : "L"} ${formatNumber(xScale(index))} ${formatNumber(yScale(bucket.wordsGained))}`)
+    .join(" ");
 
   const grid = ticks
     .map((tick) => {
@@ -318,37 +360,47 @@ function renderWordGrowthSvg(growth: WordGrowthBucket[], language: ResolvedAnnua
     })
     .join("\n");
 
-  const bars = growth
+  const xTicks = growth
     .map((bucket, index) => {
-      const x = left + index * (barWidth + barGap);
-      const barHeight = (bucket.wordsGained / maxGrowth) * plotHeight;
-      const y = top + plotHeight - barHeight;
-      const labelX = x + barWidth / 2;
+      const labelX = xScale(index);
       const label = bucket.month.slice(5);
       const title = `${bucket.month}: ${bucket.wordsGained} ${text.wordGrowth}, ${bucket.cumulativeWords} ${text.cumulativeWords}`;
       return [
-        `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(barWidth)}" height="${formatNumber(barHeight)}" rx="4" fill="#3b82f6"><title>${escapeHtml(title)}</title></rect>`,
+        `<line x1="${formatNumber(labelX)}" y1="${top + plotHeight}" x2="${formatNumber(labelX)}" y2="${top + plotHeight + 5}" stroke="#57606a" stroke-width="1" />`,
         `<text x="${formatNumber(labelX)}" y="${height - 24}" font-size="10" text-anchor="middle" fill="currentColor">${escapeHtml(label)}</text>`,
         bucket.wordsGained > 0
-          ? `<text x="${formatNumber(labelX)}" y="${formatNumber(Math.max(top + 10, y - 5))}" font-size="10" text-anchor="middle" fill="currentColor">${bucket.wordsGained}</text>`
+          ? `<circle cx="${formatNumber(labelX)}" cy="${formatNumber(yScale(bucket.wordsGained))}" r="4" fill="#b95e43"><title>${escapeHtml(title)}</title></circle>`
           : "",
       ].filter(Boolean).join("\n");
     })
     .join("\n");
 
+  const last = growth[growth.length - 1];
+  const endpointDot = last
+    ? `<circle class="endpoint-dot" cx="${formatNumber(xScale(growth.length - 1))}" cy="${formatNumber(yScale(last.wordsGained))}" r="5" fill="#b95e43"><title>${escapeHtml(`${last.month}: ${last.wordsGained} ${text.wordGrowth}`)}</title></circle>`
+    : "";
+
   return [
-    `<div class="annual-review-chart annual-review-growth" role="img" aria-label="${escapeHtml(text.wordGrowthTrend)}">`,
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto">`,
+    `<svg class="annual-review-chart annual-review-growth" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.wordGrowthTrend)}">`,
     `<title>${escapeHtml(text.wordGrowthTrend)}</title>`,
     `<desc>${escapeHtml(text.wordGrowthYAxis)}</desc>`,
     grid,
     `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
     `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
     `<text x="16" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 16 ${top + plotHeight / 2})">${escapeHtml(text.wordGrowth)}</text>`,
-    bars,
+    `<path class="chart-line" d="${linePath}" fill="none" stroke="#b95e43" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />`,
+    xTicks,
+    endpointDot,
     "</svg>",
-    "</div>",
   ].join("\n");
+}
+
+function renderChartReference(path: string, alt: string): string {
+  return `![[${path}|${alt}]]`;
+}
+
+function normalizeReportFolder(folder: string): string {
+  return folder.trim().replace(/^\/+|\/+$/gu, "").replace(/\/{2,}/gu, "/") || "Annual Reviews";
 }
 
 function heatColor(words: number, maxWords: number): string {

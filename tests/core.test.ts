@@ -3,10 +3,11 @@ import { buildAiPrompt, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { extractNoteStats, parseFrontmatter } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
-import { renderAnnualReview } from "../src/core/render";
+import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
 import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
+import { writeAnnualReviewOutput } from "../src/obsidian/reportWriter";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
@@ -202,7 +203,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Monthly Timeline");
     expect(markdown).toContain("## Daily Word Heatmap");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
-    expect(markdown).toContain("<svg xmlns=\"http://www.w3.org/2000/svg\"");
+    expect(markdown).toContain("xmlns=\"http://www.w3.org/2000/svg\"");
     expect(markdown).toContain("<rect");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("Legend: . = 0 words");
@@ -210,6 +211,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Word Growth Trend");
     expect(markdown).toContain("Y-axis: monthly created-note word growth");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(markdown).toContain("class=\"chart-line\"");
     const monthlySection = sectionBetween(markdown, "## Monthly Timeline", "## Daily Word Heatmap");
     expect(monthlySection).toContain("| Month | Created | Modified | Words | Characters |");
     expect(monthlySection).toContain("| 2026-01 |");
@@ -259,11 +261,35 @@ describe("aggregation and rendering", () => {
     expect(monthlySection).not.toContain("| 字符 |");
     expect(monthlySection).not.toContain("| 2026-05 |");
   });
+
+  it("can reference generated chart SVG assets instead of embedding chart SVG in the note", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const chartPaths = buildAnnualReviewChartPaths(DEFAULT_SETTINGS.reportFolder, 2026);
+    const markdown = renderAnnualReview(aggregate, { chartPaths });
+    const chartAssets = buildAnnualReviewChartAssets(aggregate, { chartPaths });
+
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Word Growth Trend]]");
+    expect(markdown).not.toContain("<svg");
+    expect(markdown).toContain("| Month | Words | Active days | Peak day |");
+    expect(markdown).toContain("| Month | Word growth | Cumulative words |");
+
+    expect(chartAssets).toHaveLength(2);
+    expect(chartAssets.map((asset) => asset.path)).toEqual([
+      "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
+      "Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg",
+    ]);
+    expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
+    expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(chartAssets[1]?.content).toContain("class=\"chart-line\"");
+    expect(chartAssets[1]?.content).toContain("class=\"endpoint-dot\"");
+  });
 });
 
 describe("AI provider", () => {
-  it("skips network calls when ChatGPT is selected without an API key", async () => {
+  it("uses local Codex auth when ChatGPT is selected without an API key", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const prompts: string[] = [];
     const section = await renderAiReportSection({
       aggregate,
       files: await fixtureVault(),
@@ -274,9 +300,34 @@ describe("AI provider", () => {
       fetcher: async () => {
         throw new Error("fetch should not be called without an API key");
       },
+      codexExecutor: async (prompt) => {
+        prompts.push(prompt);
+        return { ok: true, content: "### Local draft\n\nUse [[Daily/2026-01-01]] as evidence." };
+      },
     });
 
-    expect(section).toContain("ChatGPT provider was selected, but no OpenAI API key is configured");
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toContain("\"topLinks\"");
+    expect(section).toContain("Provider: ChatGPT via local Codex auth.");
+    expect(section).toContain("Local draft");
+    expect(section).toContain("[[Daily/2026-01-01]]");
+    expect(section).toContain("AI Integration TODO");
+  });
+
+  it("reports a readable provider status when local Codex generation is unavailable", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const section = await renderAiReportSection({
+      aggregate,
+      files: await fixtureVault(),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+      },
+      codexExecutor: async () => ({ ok: false, content: "codex auth missing" }),
+    });
+
+    expect(section).toContain("local Codex generation was unavailable");
+    expect(section).toContain("codex auth missing");
     expect(section).toContain("AI Integration TODO");
   });
 
@@ -391,6 +442,52 @@ describe("Obsidian vault adapter", () => {
         content: "[[Research|alias]]",
       },
     ]);
+  });
+
+  it("writes chart SVG artifacts before writing the annual report note", async () => {
+    const writes: string[] = [];
+    const files = new Map<string, { path: string; content: string }>();
+    const folders = new Set<string>();
+    const app = {
+      vault: {
+        getFolderByPath: (path: string) => folders.has(path) ? { path } : null,
+        createFolder: async (path: string) => {
+          folders.add(path);
+        },
+        getFileByPath: (path: string) => files.get(path) ?? null,
+        create: async (path: string, content: string) => {
+          writes.push(path);
+          const file = { path, content };
+          files.set(path, file);
+          return file;
+        },
+        modify: async (file: { path: string; content: string }, content: string) => {
+          writes.push(file.path);
+          file.content = content;
+        },
+      },
+    };
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      "# 2026 Annual Review",
+      [
+        {
+          kind: "daily-word-heatmap",
+          path: "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
+          content: "<svg />",
+        },
+      ],
+    );
+
+    expect(writes).toEqual([
+      "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
+      "Annual Reviews/2026 Annual Review.md",
+    ]);
+    expect(files.get("Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg")?.content).toBe("<svg />");
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe("# 2026 Annual Review");
   });
 });
 

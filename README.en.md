@@ -25,22 +25,17 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Local analysis | Baseline implemented | Reads Markdown, frontmatter, tags, Obsidian-resolved links, headings, tasks, and file timestamps through Obsidian APIs. |
 | Mixed-language counting | Baseline implemented | Keeps Latin word counts and CJK character counts useful for Chinese, English, and mixed vaults. |
 | Evidence links | Baseline implemented | Uses Obsidian links for representative notes and ranked note references. |
-| Daily word heatmap | Baseline implemented | Uses an Obsidian-renderable embedded SVG heatmap in reports and a grid heatmap in the dashboard. |
-| Word growth trend | Baseline implemented | Uses an Obsidian-renderable embedded SVG bar chart for monthly word growth and keeps cumulative words in the data table. |
-| ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; it is off by default, requires an OpenAI API key, and does not hardcode secrets. |
+| Daily word heatmap | Baseline implemented | Writes a standalone SVG asset and references it from the report with an Obsidian image link. |
+| Word growth trend | Baseline implemented | Writes a standalone SVG curve chart for monthly word growth with clear axes and data-table values. |
+| ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; with an API key it uses the Responses API, otherwise it tries local Codex CLI/auth. |
 | Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
 ## Recent Changes
 
-DEC-19 corrected the link-statistics semantics:
-
-- **Obsidian-resolved link metrics**: when the plugin runs inside Obsidian, top links are counted from `metadataCache.resolvedLinks` / `unresolvedLinks`, so `[[Research|alias]]`, `[[Projects/Research#Plan]]`, embeds, and Markdown links are counted against the destination Obsidian resolves; unresolved links are kept under Obsidian's unresolved target text. Core tests outside Obsidian still keep wiki-link text parsing as the fallback.
-
-DEC-17 added two report-quality improvements:
-
-- **AI-personalized report section**: the generate modal can switch the AI provider from `None` to `ChatGPT`. The plugin sends annual aggregates, top tags/folders/links, representative notes, link relationships, and clipped note excerpts to the OpenAI Responses API, then appends the returned content as an `AI Personalization` section. Without an API key, it makes no network request and writes a readable provider status plus TODOs into the report.
-- **Richer charts**: reports now render the daily word heatmap and monthly word-growth chart as embedded SVG instead of character-based chart text. Data tables remain below the charts for exact values, while the dashboard previews the same data with DOM heatmap/grid controls.
-- **AI context placeholder script**: `npm run ai:context-placeholder` prints the future Obsidian skill/CLI context-adapter contract. The current script does not read a vault or make network requests.
+- **Obsidian-resolved link metrics**: top links use `metadataCache.resolvedLinks` / `unresolvedLinks` inside Obsidian, so aliases, heading anchors, embeds, and Markdown links merge under the destination Obsidian resolves.
+- **AI-personalized report section**: the generate modal can switch the AI provider from `None` to `ChatGPT`. With an OpenAI API key it calls the Responses API; without a key it tries local Codex CLI/auth.
+- **Standalone SVG chart assets**: the daily word heatmap and monthly word-growth curve are written to `Annual Reviews/YYYY Annual Review Assets/`, then referenced from the annual report with Obsidian image links. Data tables remain below the chart references for exact values.
+- **AI context placeholder script**: `npm run ai:context-placeholder` keeps the future Obsidian skill/CLI context-adapter contract. The current script does not read a vault or make network requests.
 
 ## ChatGPT Provider And Privacy
 
@@ -48,10 +43,10 @@ The default remains local-first: `AI provider` is `None`, and report generation 
 
 1. Open the Annual Review plugin settings.
 2. Set `AI provider` to `ChatGPT`.
-3. Enter an `OpenAI API key` and adjust `ChatGPT model` if needed.
+3. Optionally enter an `OpenAI API key` and adjust `ChatGPT model`; if the key is empty, Annual Review tries local Codex CLI/auth.
 4. Run `Annual Review: Generate report` and confirm the provider for that run in the generate modal.
 
-The privacy boundary is explicit: ChatGPT mode sends the report context, link relationships, and selected note excerpts to OpenAI. The current implementation requires an opt-in provider, stores no hardcoded secret, and skips the request when the key is missing; finer-grained data preview, redaction controls, and Obsidian skill/CLI context enrichment remain captured in the script TODO.
+The privacy boundary is explicit: ChatGPT mode sends the report context, link relationships, and selected note excerpts to the selected generation path. With an API key, that path is the OpenAI Responses API; without a key, it is the local Codex CLI/auth environment. The current implementation requires an opt-in provider and stores no hardcoded secret; finer-grained data preview, redaction controls, and Obsidian skill/CLI context enrichment remain captured in the script TODO.
 
 ## Quick Start
 
@@ -94,7 +89,7 @@ In Obsidian:
 2. Run `Annual Review: Generate report`.
 3. Select the year and generation options.
 4. Open `Annual Reviews/YYYY Annual Review.md`.
-5. Review the yearly totals, daily word heatmap, word growth trend, top tags/folders/links, representative notes, and methodology.
+5. Review the yearly totals, SVG daily word heatmap, SVG word-growth curve, top tags/folders/links, representative notes, and methodology.
 6. Edit the Markdown report in your own voice; rerun generation after the vault changes.
 7. Run `Annual Review: Open dashboard` when you want a metric preview first.
 
@@ -151,7 +146,7 @@ Manual validation:
 
 1. Install the plugin into a test vault.
 2. Rebuild the index, generate a report, and open the dashboard.
-3. Confirm the report is created under `Annual Reviews/`.
+3. Confirm the report is created under `Annual Reviews/` and chart SVGs are created under `Annual Reviews/YYYY Annual Review Assets/`.
 4. Confirm Obsidian links in the report open source notes.
 5. Add a target note referenced through `[[title|alias]]`, `[[path#heading]]`, embeds, and Markdown links, then confirm top links merge those references under the same Obsidian-resolved destination.
 6. Regenerate the report and confirm old content is not duplicated.

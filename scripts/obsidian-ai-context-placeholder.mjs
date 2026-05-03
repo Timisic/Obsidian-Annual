@@ -16,7 +16,8 @@ const contract = {
   },
   todos: [
     "Define whether this should call an Obsidian skill, an Obsidian CLI command, or a local adapter.",
-    "Add a data preview and explicit confirmation step before sending context to ChatGPT.",
+    "Keep ChatGPT compatible with the local Codex CLI/auth path when no OpenAI API key is configured.",
+    "Add a data preview and explicit confirmation step before sending context to ChatGPT or local Codex.",
     "Support folder, tag, link, and note-body redaction before any external provider receives data.",
   ],
 };

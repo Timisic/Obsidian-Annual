@@ -1,15 +1,28 @@
+import { spawn } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
 import type { AnnualReviewSettings, SourceFile, YearAggregate } from "./types";
 
 const MAX_AI_CONTEXT_NOTES = 80;
 const MAX_AI_CONTEXT_EXCERPT_CHARS = 700;
+const DEFAULT_CODEX_COMMAND = 'codex exec --color never --sandbox read-only --skip-git-repo-check --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;
   files: SourceFile[];
   settings: AnnualReviewSettings;
   fetcher?: typeof fetch;
+  codexExecutor?: CodexExecutor;
+}
+
+export type CodexExecutor = (prompt: string) => Promise<CodexExecutorResult>;
+
+interface CodexExecutorResult {
+  ok: boolean;
+  content: string;
 }
 
 interface OpenAiResponse {
@@ -33,7 +46,7 @@ export async function renderAiReportSection(options: ChatGptReportOptions): Prom
 
   const apiKey = options.settings.chatGptApiKey.trim();
   if (!apiKey) {
-    return aiUnavailableSection("ChatGPT provider was selected, but no OpenAI API key is configured. No network request was made.");
+    return renderCodexReportSection(options);
   }
 
   const fetcher = options.fetcher ?? fetch;
@@ -75,6 +88,31 @@ export async function renderAiReportSection(options: ChatGptReportOptions): Prom
     "> Privacy note: this section was generated only because the ChatGPT provider was selected. The provider received the annual aggregate, selected note excerpts, tags, folders, and links for this run.",
     "",
     content,
+    "",
+    "### AI Integration TODO",
+    "",
+    "- Add an Obsidian-native data preview/confirmation step before sending vault context.",
+    "- Decide whether future Obsidian skill or CLI adapters should enrich the context before the provider call.",
+    "- Add redaction controls for note bodies, folders, tags, and links before enabling broader AI workflows.",
+    "",
+  ].join("\n");
+}
+
+async function renderCodexReportSection(options: ChatGptReportOptions): Promise<string> {
+  const executor = options.codexExecutor ?? runLocalCodex;
+  const result = await executor(buildCodexPrompt(options.aggregate, options.files, options.settings));
+  if (!result.ok || !result.content.trim()) {
+    return aiUnavailableSection(`ChatGPT provider was selected without an OpenAI API key, and local Codex generation was unavailable: ${result.content || "No response."}`);
+  }
+
+  return [
+    "## AI Personalization",
+    "",
+    "Provider: ChatGPT via local Codex auth.",
+    "",
+    "> Privacy note: this section was generated only because the ChatGPT provider was selected. The provider received the annual aggregate, selected note excerpts, tags, folders, and links for this run through the local Codex CLI/auth environment.",
+    "",
+    result.content.trim(),
     "",
     "### AI Integration TODO",
     "",
@@ -147,6 +185,73 @@ export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], set
     null,
     2,
   );
+}
+
+export function buildCodexPrompt(aggregate: YearAggregate, files: SourceFile[], settings: AnnualReviewSettings): string {
+  return [
+    "You are generating one concise Markdown section for an Obsidian annual review.",
+    "Use only the supplied JSON context. Preserve source note paths when making claims.",
+    "Do not run tools, inspect files, or infer private facts that are absent from the context.",
+    "Return only the Markdown section body; do not include a top-level heading.",
+    "",
+    buildAiPrompt(aggregate, files, settings),
+  ].join("\n");
+}
+
+async function runLocalCodex(prompt: string): Promise<CodexExecutorResult> {
+  const outputDir = await mkdtemp(join(tmpdir(), "annual-review-codex-"));
+  const outputPath = join(outputDir, "last-message.md");
+  return new Promise((resolve) => {
+    const child = spawn("bash", ["-lc", DEFAULT_CODEX_COMMAND], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        CODEX_ANNUAL_REVIEW_OUTPUT: outputPath,
+      },
+    });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    let settled = false;
+    const finish = (result: CodexExecutorResult) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      void rm(outputDir, { recursive: true, force: true });
+      resolve(result);
+    };
+    const timeout = setTimeout(() => {
+      child.kill("SIGTERM");
+      finish({ ok: false, content: "Local Codex generation timed out." });
+    }, 120_000);
+
+    child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      finish({ ok: false, content: error.message });
+    });
+    child.on("close", async (code) => {
+      clearTimeout(timeout);
+      const output = Buffer.concat(stdout).toString("utf8").trim();
+      const errorOutput = Buffer.concat(stderr).toString("utf8").trim();
+      const lastMessage = await readCodexLastMessage(outputPath);
+      if (code === 0 && (lastMessage || output)) {
+        finish({ ok: true, content: lastMessage || output });
+        return;
+      }
+      finish({ ok: false, content: errorOutput || output || `Codex exited with status ${code}.` });
+    });
+    child.stdin.end(prompt);
+  });
+}
+
+async function readCodexLastMessage(path: string): Promise<string> {
+  try {
+    return (await readFile(path, "utf8")).trim();
+  } catch {
+    return "";
+  }
 }
 
 function excerpt(content: string): string {
