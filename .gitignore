@@ -1,1 +1,7 @@
 .omx/
+node_modules/
+main.js
+styles.css
+data.json
+coverage/
+dist/
