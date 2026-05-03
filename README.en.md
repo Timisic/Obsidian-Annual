@@ -25,8 +25,8 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Local analysis | Baseline implemented | Reads Markdown, frontmatter, tags, Obsidian-resolved links, headings, tasks, and file timestamps through Obsidian APIs. |
 | Mixed-language counting | Baseline implemented | Keeps Latin word counts and CJK character counts useful for Chinese, English, and mixed vaults. |
 | Evidence links | Baseline implemented | Uses Obsidian links for representative notes and ranked note references. |
-| Daily word heatmap | Baseline implemented | Shows daily created-note word volume in the report and dashboard, similar to a contribution heatmap. |
-| Word growth trend | Baseline implemented | Shows monthly word growth and cumulative words so fast and flat periods are easy to spot. |
+| Daily word heatmap | Baseline implemented | Uses an Obsidian-renderable embedded SVG heatmap in reports and a grid heatmap in the dashboard. |
+| Word growth trend | Baseline implemented | Uses an Obsidian-renderable embedded SVG bar chart for monthly word growth and keeps cumulative words in the data table. |
 | ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; it is off by default, requires an OpenAI API key, and does not hardcode secrets. |
 | Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
@@ -39,7 +39,7 @@ DEC-19 corrected the link-statistics semantics:
 DEC-17 added two report-quality improvements:
 
 - **AI-personalized report section**: the generate modal can switch the AI provider from `None` to `ChatGPT`. The plugin sends annual aggregates, top tags/folders/links, representative notes, link relationships, and clipped note excerpts to the OpenAI Responses API, then appends the returned content as an `AI Personalization` section. Without an API key, it makes no network request and writes a readable provider status plus TODOs into the report.
-- **Richer charts**: reports and the dashboard now include a daily word heatmap plus a monthly growth trend with gained and cumulative words. The heatmap makes high-volume writing days visible; the growth trend makes fast and flat months easier to compare.
+- **Richer charts**: reports now render the daily word heatmap and monthly word-growth chart as embedded SVG instead of character-based chart text. Data tables remain below the charts for exact values, while the dashboard previews the same data with DOM heatmap/grid controls.
 - **AI context placeholder script**: `npm run ai:context-placeholder` prints the future Obsidian skill/CLI context-adapter contract. The current script does not read a vault or make network requests.
 
 ## ChatGPT Provider And Privacy
