@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildAiPrompt, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
-import { extractNoteStats, parseFrontmatter } from "../src/core/extract";
+import { extractNoteStats, parseFrontmatter, parseObsidianWikilinks } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
+import { buildHighValueNoteInsights } from "../src/core/highValueNotes";
 import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
@@ -30,6 +31,39 @@ describe("filters", () => {
 });
 
 describe("extraction", () => {
+  it("parses common Obsidian wiki-link forms", () => {
+    expect(parseObsidianWikilinks("[[笔记]] [[笔记|别名]] [[笔记#标题]] ![[图片#区域|预览]]")).toEqual([
+      {
+        raw: "[[笔记]]",
+        target: "笔记",
+        heading: undefined,
+        alias: undefined,
+        embedded: false,
+      },
+      {
+        raw: "[[笔记|别名]]",
+        target: "笔记",
+        heading: undefined,
+        alias: "别名",
+        embedded: false,
+      },
+      {
+        raw: "[[笔记#标题]]",
+        target: "笔记",
+        heading: "标题",
+        alias: undefined,
+        embedded: false,
+      },
+      {
+        raw: "![[图片#区域|预览]]",
+        target: "图片",
+        heading: "区域",
+        alias: "预览",
+        embedded: true,
+      },
+    ]);
+  });
+
   it("extracts frontmatter, tags, links, headings, and tasks", async () => {
     const source = await fixtureFile("Daily/2026-01-01.md", "2026-01-01T08:00:00.000Z");
     const note = extractNoteStats(source, DEFAULT_SETTINGS);
@@ -139,6 +173,7 @@ describe("aggregation and rendering", () => {
     expect(aggregate.topTags[0]).toEqual({ name: "journal", count: 2 });
     expect(aggregate.topFolders).toContainEqual({ name: "Daily", count: 2 });
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research", count: 2 });
+    expect(aggregate.highValueNotes.some((note) => note.path === "Projects/Research.md")).toBe(true);
     expect(aggregate.representativeNotes.map((note) => note.path)).toEqual([
       "Daily/2026-01-01.md",
       "Projects/Legacy.md",
@@ -186,6 +221,7 @@ describe("aggregation and rendering", () => {
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research.md", count: 4 });
     expect(aggregate.topLinks).not.toContainEqual({ name: "Research", count: 1 });
     expect(aggregate.topLinks).not.toContainEqual({ name: "Projects/Research", count: 1 });
+    expect(aggregate.highValueNotes[0]?.inboundLinks).toBe(4);
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("- [[Projects/Research.md]]: 4");
@@ -223,6 +259,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Top Tags");
     expect(markdown).toContain("## Top Links");
     expect(markdown).toContain("## Top Folders");
+    expect(markdown).toContain("## High Value Notes");
+    expect(markdown).toContain("| Note | Type | Value reason | Suggested action |");
+    expect(markdown).not.toContain("score");
     expect(markdown).toContain("## Representative Notes");
     expect(markdown).toContain("Representative notes are selected deterministically");
     expect(markdown).toContain("This stable evidence set can be reused by later AI summaries.");
@@ -252,6 +291,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("## 字词增长趋势");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(markdown).toContain("## 高价值笔记");
     expect(markdown).toContain("代表笔记采用确定性规则选择");
     const monthlySection = sectionBetween(markdown, "## 月度时间线", "## 每日字词热力图");
     expect(monthlySection).toContain("| 月份 | 修改 |");
@@ -283,6 +323,86 @@ describe("aggregation and rendering", () => {
     expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(chartAssets[1]?.content).toContain("class=\"chart-line\"");
     expect(chartAssets[1]?.content).toContain("class=\"endpoint-dot\"");
+  });
+
+  it("identifies high-value, maintenance, output-ready, and isolated potential notes", () => {
+    const notes = [
+      noteFrom({
+        path: "AI工作流.md",
+        ctime: "2026-01-01T08:00:00.000Z",
+        mtime: "2026-04-20T08:00:00.000Z",
+        content: "# AI工作流\n#ai #writing\n[[读书方法]]\n" + repeatedWords(360),
+      }),
+      noteFrom({
+        path: "Obsidian数据报告.md",
+        ctime: "2026-02-01T08:00:00.000Z",
+        mtime: "2026-04-25T08:00:00.000Z",
+        content: "# Obsidian数据报告\n#obsidian\n[[AI工作流]]\n[[写作系统]]\n[[读书方法]]\n" + repeatedWords(330),
+      }),
+      noteFrom({
+        path: "写作系统.md",
+        ctime: "2026-03-01T08:00:00.000Z",
+        mtime: "2026-04-22T08:00:00.000Z",
+        content: "# 写作系统\n#writing\n[[AI工作流]]\n[[读书方法]]\n" + repeatedWords(340),
+      }),
+      noteFrom({
+        path: "读书方法.md",
+        ctime: "2025-08-01T08:00:00.000Z",
+        mtime: "2026-01-01T08:00:00.000Z",
+        content: "# 读书方法\n#writing\n" + repeatedWords(380),
+      }),
+      noteFrom({
+        path: "孤立潜力.md",
+        ctime: "2026-04-01T08:00:00.000Z",
+        mtime: "2026-04-01T08:00:00.000Z",
+        content: "# 孤立潜力\n#ideas\n" + repeatedWords(360),
+      }),
+      noteFrom({
+        path: "输出文章.md",
+        ctime: "2026-02-05T08:00:00.000Z",
+        mtime: "2026-04-28T08:00:00.000Z",
+        content: "# 输出文章\n#writing\n[[AI工作流]]\n" + repeatedWords(500),
+      }),
+    ];
+
+    const insights = buildHighValueNoteInsights(notes, 2026, "2026-05-03T00:00:00.000Z");
+
+    expect(insights.highValueNotes).toHaveLength(6);
+    expect(insights.highValueNotes.every((note) => note.reason.length > 0)).toBe(true);
+    expect(insights.highValueNotes.every((note) => typeof note.suggestedAction === "string")).toBe(true);
+    expect(insights.highValueNotes.find((note) => note.path === "AI工作流.md")?.inboundLinks).toBe(3);
+    expect(insights.highValueNotes.find((note) => note.path === "AI工作流.md")?.outboundLinks).toBe(1);
+    expect(insights.maintenanceNotes).toContainEqual(
+      expect.objectContaining({
+        path: "读书方法.md",
+        suggestedAction: "更新旧内容",
+      }),
+    );
+    expect(insights.outputReadyNotes.map((note) => note.path)).toContain("输出文章.md");
+    expect(insights.isolatedPotentialNotes).toContainEqual(
+      expect.objectContaining({
+        path: "孤立潜力.md",
+        suggestedAction: "补充链接",
+      }),
+    );
+    expect(new Set(insights.highValueNotes.map((note) => note.suggestedAction)).size).toBeGreaterThan(1);
+    expect(insights.highValueFeedback.staleCoreCount).toBe(1);
+  });
+
+  it("limits high-value notes to a Top 10 result set", () => {
+    const notes = Array.from({ length: 12 }, (_, index) =>
+      noteFrom({
+        path: `Ideas/Note ${String(index + 1).padStart(2, "0")}.md`,
+        ctime: "2026-04-01T08:00:00.000Z",
+        mtime: "2026-04-20T08:00:00.000Z",
+        content: `# Note ${index + 1}\n#ideas\n${repeatedWords(320 + index)}`,
+      }),
+    );
+
+    const insights = buildHighValueNoteInsights(notes, 2026, "2026-05-03T00:00:00.000Z");
+
+    expect(insights.highValueNotes).toHaveLength(10);
+    expect(insights.highValueNotes[0]?.path).toBe("Ideas/Note 12.md");
   });
 });
 
@@ -510,4 +630,20 @@ function sectionBetween(markdown: string, start: string, end: string): string {
   const startIndex = markdown.indexOf(start);
   const endIndex = markdown.indexOf(end, startIndex);
   return markdown.slice(startIndex, endIndex);
+}
+
+function noteFrom(input: { path: string; ctime: string; mtime: string; content: string }) {
+  return extractNoteStats(
+    {
+      path: input.path,
+      ctime: Date.parse(input.ctime),
+      mtime: Date.parse(input.mtime),
+      content: input.content,
+    },
+    DEFAULT_SETTINGS,
+  );
+}
+
+function repeatedWords(count: number): string {
+  return Array.from({ length: count }, (_, index) => `word${index}`).join(" ");
 }
