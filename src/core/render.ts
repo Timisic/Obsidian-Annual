@@ -34,13 +34,13 @@ const REPORT_TEXT = {
     noMonthlyActivity: "No monthly activity found.",
     dailyWordHeatmap: "Daily Word Heatmap",
     dailyWordHeatmapEmpty: "No daily word data found.",
-    dailyWordHeatmapLegend: "Legend: . = 0 words, then light to dark blocks show higher daily created-note word volume.",
+    dailyWordHeatmapLegend: "Embedded SVG chart: darker cells show higher daily created-note word volume.",
     dailyWordHeatmapColumn: "Daily word heatmap",
     peakDay: "Peak day",
     notAvailable: "n/a",
     wordGrowthTrend: "Word Growth Trend",
     wordGrowthTrendEmpty: "No word growth data found.",
-    wordGrowthYAxis: "Y-axis: monthly created-note word growth. Cumulative words show the running total by month end.",
+    wordGrowthYAxis: "Y-axis: monthly created-note word growth. Cumulative words are listed in the data table.",
     wordGrowth: "Word growth",
     trend: "Trend",
     cumulativeWords: "Cumulative words",
@@ -83,13 +83,13 @@ const REPORT_TEXT = {
     noMonthlyActivity: "未找到月度活动。",
     dailyWordHeatmap: "每日字词热力图",
     dailyWordHeatmapEmpty: "未找到每日字词数据。",
-    dailyWordHeatmapLegend: "图例：. 表示 0 字词，浅到深的块表示更高的每日新建笔记字词量。",
+    dailyWordHeatmapLegend: "内嵌 SVG 图表：颜色越深表示每日新建笔记字词量越高。",
     dailyWordHeatmapColumn: "每日字词热力图",
     peakDay: "峰值日",
     notAvailable: "无",
     wordGrowthTrend: "字词增长趋势",
     wordGrowthTrendEmpty: "未找到字词增长数据。",
-    wordGrowthYAxis: "纵轴：每月新建笔记字词增长量。累计字词展示每月底的运行总量。",
+    wordGrowthYAxis: "纵轴：每月新建笔记字词增长量。累计字词列在数据表中。",
     wordGrowth: "字词增长",
     trend: "趋势",
     cumulativeWords: "累计字词",
@@ -211,7 +211,6 @@ function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLan
     return text.dailyWordHeatmapEmpty;
   }
 
-  const maxWords = Math.max(1, ...days.map((day) => day.words));
   const monthRows = new Map<string, DayBucket[]>();
   for (const day of days) {
     const month = monthRows.get(day.month) ?? [];
@@ -222,14 +221,16 @@ function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLan
   return [
     text.dailyWordHeatmapLegend,
     "",
-    `| ${text.month} | ${text.dailyWordHeatmapColumn} | ${text.words} | ${text.activeDays} | ${text.peakDay} |`,
-    "| --- | --- | ---: | ---: | --- |",
+    renderDailyHeatmapSvg(days, language),
+    "",
+    `| ${text.month} | ${text.words} | ${text.activeDays} | ${text.peakDay} |`,
+    "| --- | ---: | ---: | --- |",
     ...[...monthRows.entries()].map(([month, monthDays]) => {
       const totalWords = monthDays.reduce((sum, day) => sum + day.words, 0);
       const activeDays = monthDays.filter((day) => day.words > 0).length;
       const peak = [...monthDays].sort((a, b) => b.words - a.words || a.date.localeCompare(b.date))[0];
       const peakLabel = peak && peak.words > 0 ? `${peak.date} (${peak.words})` : text.notAvailable;
-      return `| ${month} | \`${monthDays.map((day) => heatBlock(day.words, maxWords)).join("")}\` | ${totalWords} | ${activeDays} | ${peakLabel} |`;
+      return `| ${month} | ${totalWords} | ${activeDays} | ${peakLabel} |`;
     }),
   ].join("\n");
 }
@@ -240,31 +241,142 @@ function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnn
     return text.wordGrowthTrendEmpty;
   }
 
-  const maxGrowth = Math.max(1, ...growth.map((bucket) => bucket.wordsGained));
   return [
     text.wordGrowthYAxis,
     "",
-    `| ${text.month} | ${text.wordGrowth} | ${text.trend} | ${text.cumulativeWords} |`,
-    "| --- | ---: | --- | ---: |",
-    ...growth.map((bucket) => `| ${bucket.month} | ${bucket.wordsGained} | \`${bar(bucket.wordsGained, maxGrowth, 18)}\` | ${bucket.cumulativeWords} |`),
+    renderWordGrowthSvg(growth, language),
+    "",
+    `| ${text.month} | ${text.wordGrowth} | ${text.cumulativeWords} |`,
+    "| --- | ---: | ---: |",
+    ...growth.map((bucket) => `| ${bucket.month} | ${bucket.wordsGained} | ${bucket.cumulativeWords} |`),
   ].join("\n");
 }
 
-function heatBlock(words: number, maxWords: number): string {
-  if (words <= 0) {
-    return ".";
-  }
-  const blocks = ["░", "▒", "▓", "█"];
-  const index = Math.min(blocks.length - 1, Math.ceil((words / maxWords) * blocks.length) - 1);
-  return blocks[index] ?? ".";
+function renderDailyHeatmapSvg(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  const cell = 10;
+  const gap = 3;
+  const left = 34;
+  const top = 26;
+  const maxWeek = Math.max(0, ...days.map((day) => day.week));
+  const width = left + (maxWeek + 1) * (cell + gap) + 24;
+  const height = top + 7 * (cell + gap) + 30;
+  const maxWords = Math.max(1, ...days.map((day) => day.words));
+  const firstMonthDays = days.filter((day) => day.dayOfMonth === 1);
+  const weekdayLabels = language === "zh" ? ["日", "一", "二", "三", "四", "五", "六"] : ["S", "M", "T", "W", "T", "F", "S"];
+
+  const monthLabels = firstMonthDays
+    .map((day) => `<text x="${left + day.week * (cell + gap)}" y="14" font-size="10" fill="currentColor">${escapeHtml(day.month.slice(5))}</text>`)
+    .join("\n");
+  const weekdays = weekdayLabels
+    .map((label, index) => `<text x="8" y="${top + index * (cell + gap) + 9}" font-size="9" fill="currentColor">${escapeHtml(label)}</text>`)
+    .join("\n");
+  const cells = days
+    .map((day) => {
+      const x = left + day.week * (cell + gap);
+      const y = top + day.weekday * (cell + gap);
+      const title = `${day.date}: ${day.words} ${text.words}, ${day.created} ${text.created}, ${day.modified} ${text.modified}`;
+      return `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="2" fill="${heatColor(day.words, maxWords)}"><title>${escapeHtml(title)}</title></rect>`;
+    })
+    .join("\n");
+
+  return [
+    `<div class="annual-review-chart annual-review-heatmap" role="img" aria-label="${escapeHtml(text.dailyWordHeatmap)}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto">`,
+    `<title>${escapeHtml(text.dailyWordHeatmap)}</title>`,
+    `<desc>${escapeHtml(text.dailyWordHeatmapLegend)}</desc>`,
+    monthLabels,
+    weekdays,
+    cells,
+    "</svg>",
+    "</div>",
+  ].join("\n");
 }
 
-function bar(value: number, maxValue: number, width: number): string {
-  if (value <= 0) {
-    return ".".repeat(width);
+function renderWordGrowthSvg(growth: WordGrowthBucket[], language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  const width = 760;
+  const height = 280;
+  const left = 58;
+  const right = 22;
+  const top = 20;
+  const bottom = 44;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const maxGrowth = niceMax(Math.max(1, ...growth.map((bucket) => bucket.wordsGained)));
+  const barGap = 12;
+  const barWidth = Math.max(18, (plotWidth - barGap * (growth.length - 1)) / Math.max(1, growth.length));
+  const ticks = [0, maxGrowth / 2, maxGrowth];
+
+  const grid = ticks
+    .map((tick) => {
+      const y = top + plotHeight - (tick / maxGrowth) * plotHeight;
+      return [
+        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
+        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  const bars = growth
+    .map((bucket, index) => {
+      const x = left + index * (barWidth + barGap);
+      const barHeight = (bucket.wordsGained / maxGrowth) * plotHeight;
+      const y = top + plotHeight - barHeight;
+      const labelX = x + barWidth / 2;
+      const label = bucket.month.slice(5);
+      const title = `${bucket.month}: ${bucket.wordsGained} ${text.wordGrowth}, ${bucket.cumulativeWords} ${text.cumulativeWords}`;
+      return [
+        `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(barWidth)}" height="${formatNumber(barHeight)}" rx="4" fill="#3b82f6"><title>${escapeHtml(title)}</title></rect>`,
+        `<text x="${formatNumber(labelX)}" y="${height - 24}" font-size="10" text-anchor="middle" fill="currentColor">${escapeHtml(label)}</text>`,
+        bucket.wordsGained > 0
+          ? `<text x="${formatNumber(labelX)}" y="${formatNumber(Math.max(top + 10, y - 5))}" font-size="10" text-anchor="middle" fill="currentColor">${bucket.wordsGained}</text>`
+          : "",
+      ].filter(Boolean).join("\n");
+    })
+    .join("\n");
+
+  return [
+    `<div class="annual-review-chart annual-review-growth" role="img" aria-label="${escapeHtml(text.wordGrowthTrend)}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto">`,
+    `<title>${escapeHtml(text.wordGrowthTrend)}</title>`,
+    `<desc>${escapeHtml(text.wordGrowthYAxis)}</desc>`,
+    grid,
+    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<text x="16" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 16 ${top + plotHeight / 2})">${escapeHtml(text.wordGrowth)}</text>`,
+    bars,
+    "</svg>",
+    "</div>",
+  ].join("\n");
+}
+
+function heatColor(words: number, maxWords: number): string {
+  if (words <= 0) {
+    return "#ebedf0";
   }
-  const filled = Math.max(1, Math.round((value / maxValue) * width));
-  return `${"█".repeat(filled)}${".".repeat(Math.max(0, width - filled))}`;
+  const colors = ["#9be9a8", "#40c463", "#30a14e", "#216e39"];
+  const index = Math.min(colors.length - 1, Math.ceil((words / maxWords) * colors.length) - 1);
+  return colors[index] ?? colors[0];
+}
+
+function niceMax(value: number): number {
+  const power = 10 ** Math.floor(Math.log10(value));
+  const scaled = value / power;
+  const niceScaled = scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+  return niceScaled * power;
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function renderMetricList(items: RankedMetric[], prefix = "", language: ResolvedAnnualReviewLanguage = "en"): string {

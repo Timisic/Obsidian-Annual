@@ -3,3 +3,9 @@ export const COMMAND_IDS = {
   openDashboard: "open-annual-review-dashboard",
   rebuildIndex: "rebuild-annual-review-index",
 } as const;
+
+export const COMMAND_NAMES = {
+  generate: "Generate report",
+  openDashboard: "Open dashboard",
+  rebuildIndex: "Rebuild index",
+} as const;

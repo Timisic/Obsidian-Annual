@@ -6,7 +6,7 @@ import { shouldIncludePath } from "../src/core/filters";
 import { renderAnnualReview } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
-import { COMMAND_IDS } from "../src/core/commands";
+import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
 describe("tokenizer", () => {
@@ -99,9 +99,15 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Year Totals");
     expect(markdown).toContain("## Monthly Timeline");
     expect(markdown).toContain("## Daily Word Heatmap");
-    expect(markdown).toContain("Legend: . = 0 words");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
+    expect(markdown).toContain("<svg xmlns=\"http://www.w3.org/2000/svg\"");
+    expect(markdown).toContain("<rect");
+    expect(markdown).toContain("| Month | Words | Active days | Peak day |");
+    expect(markdown).not.toContain("Legend: . = 0 words");
+    expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).toContain("## Word Growth Trend");
     expect(markdown).toContain("Y-axis: monthly created-note word growth");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     const monthlySection = sectionBetween(markdown, "## Monthly Timeline", "## Daily Word Heatmap");
     expect(monthlySection).toContain("| Month | Created | Modified | Words | Characters |");
     expect(monthlySection).toContain("| 2026-01 |");
@@ -139,7 +145,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown).toContain("## 年度统计");
     expect(markdown).toContain("## 每日字词热力图");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("## 字词增长趋势");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(markdown).toContain("代表笔记采用确定性规则选择");
     const monthlySection = sectionBetween(markdown, "## 月度时间线", "## 每日字词热力图");
     expect(monthlySection).toContain("| 月份 | 修改 |");
@@ -213,11 +221,16 @@ describe("AI provider", () => {
 });
 
 describe("plugin command ids", () => {
-  it("exposes generate, open dashboard, and rebuild commands", () => {
+  it("exposes stable command ids and English command palette labels", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
+    });
+    expect(COMMAND_NAMES).toEqual({
+      generate: "Generate report",
+      openDashboard: "Open dashboard",
+      rebuildIndex: "Rebuild index",
     });
   });
 });
