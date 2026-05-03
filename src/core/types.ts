@@ -11,6 +11,9 @@ export interface AnnualReviewSettings {
   includeFrontmatter: boolean;
   includeHeadings: boolean;
   privacyMode: "standard" | "private";
+  aiProvider: "none" | "chatgpt";
+  chatGptApiKey: string;
+  chatGptModel: string;
   reportLanguage: AnnualReviewLanguage;
   generatorLanguage: AnnualReviewLanguage;
 }
@@ -52,6 +55,24 @@ export interface MonthBucket {
   completedTasks: number;
 }
 
+export interface DayBucket {
+  date: string;
+  month: string;
+  dayOfMonth: number;
+  weekday: number;
+  week: number;
+  created: number;
+  modified: number;
+  words: number;
+  characters: number;
+}
+
+export interface WordGrowthBucket {
+  month: string;
+  wordsGained: number;
+  cumulativeWords: number;
+}
+
 export interface RankedMetric {
   name: string;
   count: number;
@@ -77,6 +98,8 @@ export interface YearAggregate {
   taskCount: number;
   completedTaskCount: number;
   monthBuckets: MonthBucket[];
+  dayBuckets: DayBucket[];
+  wordGrowthBuckets: WordGrowthBucket[];
   topTags: RankedMetric[];
   topFolders: RankedMetric[];
   topLinks: RankedMetric[];

@@ -90,6 +90,19 @@ export class YearModal extends Modal {
     this.addMetricToggle(text.includeHeadingMetrics, "includeHeadings");
 
     new Setting(contentEl)
+      .setName("AI provider")
+      .setDesc("None keeps this run local. ChatGPT sends selected annual context to OpenAI only when an API key is configured in settings.")
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("none", "None")
+          .addOption("chatgpt", "ChatGPT")
+          .setValue(this.runSettings.aiProvider)
+          .onChange((value) => {
+            this.runSettings.aiProvider = value as AnnualReviewSettings["aiProvider"];
+          });
+      });
+
+    new Setting(contentEl)
       .addButton((button) => {
         button
           .setButtonText(text.generate)

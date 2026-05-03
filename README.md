@@ -25,7 +25,29 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 本地统计 | 已实现基础版 | 读取 vault 内 Markdown、frontmatter、标签、链接、标题、任务和文件时间。 |
 | 中英混合计数 | 已实现基础版 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
 | 证据链接 | 已实现基础版 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
-| 隐私边界 | 部分实现 | 默认本地处理；导出、AI 或更细的脱敏策略仍属于后续阶段。 |
+| 每日字数热力图 | 已实现基础版 | 报告和仪表盘展示类似 GitHub contribution heatmap 的每日创作字数分布。 |
+| 字数增长趋势 | 已实现基础版 | 报告和仪表盘展示月度新增字数和累计字数，便于识别增长快和平缓的阶段。 |
+| ChatGPT provider | 可选基础版 | 生成报告时可选择 ChatGPT；默认关闭，需配置 OpenAI API key，不硬编码密钥。 |
+| 隐私边界 | 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
+
+## 最近变更
+
+DEC-17 加入了两类面向年度报告质量的能力：
+
+- **AI 个性化报告段落**：生成报告时可以在弹窗里把 AI provider 从 `None` 切换到 `ChatGPT`。插件会把年度聚合数据、热门标签/文件夹/链接、代表笔记、链接关系和裁剪后的笔记摘录发送给 OpenAI Responses API，并把返回内容追加为 `AI Personalization` 段落。没有配置 API key 时不会发起网络请求，而是在报告中写入可读的 provider 状态和后续 TODO。
+- **更丰富的统计图表**：报告和仪表盘现在包含每日字数热力图，以及按月展示新增字数和累计字数的增长趋势图。热力图用于查看全年哪几天写得最多，增长趋势用于识别哪些月份增长快、哪些月份较平缓。
+- **AI 上下文占位脚本**：`npm run ai:context-placeholder` 会打印未来 Obsidian skill/CLI 上下文适配器的契约说明；当前脚本不会读取 vault，也不会发起网络请求。
+
+## ChatGPT provider 与隐私
+
+默认设置保持本地优先：`AI provider` 为 `None`，生成报告不访问网络。要启用 ChatGPT：
+
+1. 打开 Annual Review 插件设置。
+2. 将 `AI provider` 设置为 `ChatGPT`。
+3. 填入 `OpenAI API key`，并按需修改 `ChatGPT model`。
+4. 运行 `Annual Review: Generate report`，在生成弹窗中确认本次运行的 provider。
+
+隐私边界需要明确：ChatGPT 模式会把本次年度报告所需的统计、链接关系和部分笔记摘录发送给 OpenAI。当前实现是显式选择、无硬编码密钥、无 key 不联网；更细粒度的数据预览、字段脱敏和 Obsidian skill/CLI 上下文增强仍保留在脚本 TODO 中。
 
 ## 快速开始
 
@@ -60,7 +82,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 
 1. 关闭安全模式或启用社区插件。
 2. 在 Community plugins 中启用 **Annual Review**。
-3. 打开插件设置，确认报告目录、包含/排除目录、指标开关和隐私模式。
+3. 打开插件设置，确认报告目录、包含/排除目录、报告语言、生成器语言、指标开关、隐私模式和 AI provider。
 
 ### 4. 生成第一份年度回顾
 
@@ -68,7 +90,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 2. 运行 `Annual Review: Generate report`。
 3. 选择要复盘的年份和生成选项。
 4. 打开 `Annual Reviews/YYYY Annual Review.md`。
-5. 检查年度总览、月度节奏、热门标签/文件夹/链接、代表性笔记和数据口径。
+5. 检查年度总览、每日字数热力图、字数增长趋势、热门标签/文件夹/链接、代表性笔记和数据口径。
 6. 按自己的写作风格编辑生成的 Markdown；vault 更新后可以重新运行生成命令。
 7. 需要先看指标时，运行 `Annual Review: Open dashboard` 打开仪表盘。
 
@@ -109,6 +131,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 | `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
 | `npm run build` | 生成可安装到 Obsidian 的 `main.js`。 |
 | `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
+| `npm run ai:context-placeholder` | 输出未来 Obsidian skill/CLI AI 上下文适配器的占位契约。 |
 
 ## 验证建议
 

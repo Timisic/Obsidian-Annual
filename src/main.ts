@@ -1,4 +1,5 @@
 import { getLanguage, Notice, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
+import { renderAiReportSection } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
@@ -119,7 +120,9 @@ export default class AnnualReviewPlugin extends Plugin {
       new Notice(text.generating(year));
       const files = await this.getIndexedFiles(settings);
       const aggregate = buildYearAggregate(files, year, settings);
-      const markdown = renderAnnualReview(aggregate, { language: resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage()) });
+      const aiSection = await renderAiReportSection({ aggregate, files, settings });
+      const reportLanguage = resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage());
+      const markdown = [renderAnnualReview(aggregate, { language: reportLanguage }), aiSection].filter(Boolean).join("\n");
       const report = await writeReport(this.app, settings.reportFolder, year, markdown);
       this.lastAggregate = aggregate;
       this.lastReportPath = report.path;
@@ -236,6 +239,47 @@ class AnnualReviewSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.privacyMode)
           .onChange(async (value) => {
             this.plugin.settings.privacyMode = value as AnnualReviewSettings["privacyMode"];
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("AI provider")
+      .setDesc("Default report generation provider. None keeps generation local; ChatGPT sends selected annual context to OpenAI when an API key is configured.")
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("none", "None")
+          .addOption("chatgpt", "ChatGPT")
+          .setValue(this.plugin.settings.aiProvider)
+          .onChange(async (value) => {
+            this.plugin.settings.aiProvider = value as AnnualReviewSettings["aiProvider"];
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("ChatGPT model")
+      .setDesc("OpenAI Responses API model used when ChatGPT is selected.")
+      .addText((text) => {
+        text
+          .setPlaceholder(DEFAULT_SETTINGS.chatGptModel)
+          .setValue(this.plugin.settings.chatGptModel)
+          .onChange(async (value) => {
+            this.plugin.settings.chatGptModel = value.trim() || DEFAULT_SETTINGS.chatGptModel;
+            await this.plugin.saveSettings();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("OpenAI API key")
+      .setDesc("Stored in Obsidian plugin data for local use; leave empty to skip the network request even when ChatGPT is selected.")
+      .addText((text) => {
+        text.inputEl.type = "password";
+        text
+          .setPlaceholder("sk-...")
+          .setValue(this.plugin.settings.chatGptApiKey)
+          .onChange(async (value) => {
+            this.plugin.settings.chatGptApiKey = value.trim();
             await this.plugin.saveSettings();
           });
       });

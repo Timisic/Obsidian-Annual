@@ -1,4 +1,4 @@
-import type { MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, YearAggregate } from "./types";
+import type { DayBucket, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, WordGrowthBucket, YearAggregate } from "./types";
 
 interface RenderOptions {
   language?: ResolvedAnnualReviewLanguage;
@@ -32,6 +32,18 @@ const REPORT_TEXT = {
     words: "Words",
     characters: "Characters",
     noMonthlyActivity: "No monthly activity found.",
+    dailyWordHeatmap: "Daily Word Heatmap",
+    dailyWordHeatmapEmpty: "No daily word data found.",
+    dailyWordHeatmapLegend: "Legend: . = 0 words, then light to dark blocks show higher daily created-note word volume.",
+    dailyWordHeatmapColumn: "Daily word heatmap",
+    peakDay: "Peak day",
+    notAvailable: "n/a",
+    wordGrowthTrend: "Word Growth Trend",
+    wordGrowthTrendEmpty: "No word growth data found.",
+    wordGrowthYAxis: "Y-axis: monthly created-note word growth. Cumulative words show the running total by month end.",
+    wordGrowth: "Word growth",
+    trend: "Trend",
+    cumulativeWords: "Cumulative words",
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
@@ -69,6 +81,18 @@ const REPORT_TEXT = {
     words: "字词",
     characters: "字符",
     noMonthlyActivity: "未找到月度活动。",
+    dailyWordHeatmap: "每日字词热力图",
+    dailyWordHeatmapEmpty: "未找到每日字词数据。",
+    dailyWordHeatmapLegend: "图例：. 表示 0 字词，浅到深的块表示更高的每日新建笔记字词量。",
+    dailyWordHeatmapColumn: "每日字词热力图",
+    peakDay: "峰值日",
+    notAvailable: "无",
+    wordGrowthTrend: "字词增长趋势",
+    wordGrowthTrendEmpty: "未找到字词增长数据。",
+    wordGrowthYAxis: "纵轴：每月新建笔记字词增长量。累计字词展示每月底的运行总量。",
+    wordGrowth: "字词增长",
+    trend: "趋势",
+    cumulativeWords: "累计字词",
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
@@ -112,6 +136,14 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     `## ${text.monthlyTimeline}`,
     "",
     renderMonthTable(aggregate.monthBuckets, language),
+    "",
+    `## ${text.dailyWordHeatmap}`,
+    "",
+    renderDailyHeatmap(aggregate.dayBuckets, language),
+    "",
+    `## ${text.wordGrowthTrend}`,
+    "",
+    renderWordGrowthTrend(aggregate.wordGrowthBuckets, language),
     "",
     `## ${text.topTags}`,
     "",
@@ -171,6 +203,68 @@ function renderMonthTable(months: MonthBucket[], language: ResolvedAnnualReviewL
     `| ${alignment.join(" | ")} |`,
     ...activeMonths.map((month) => `| ${[month.month, ...metrics.map((metric) => String(month[metric]))].join(" | ")} |`),
   ].join("\n");
+}
+
+function renderDailyHeatmap(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  if (days.length === 0) {
+    return text.dailyWordHeatmapEmpty;
+  }
+
+  const maxWords = Math.max(1, ...days.map((day) => day.words));
+  const monthRows = new Map<string, DayBucket[]>();
+  for (const day of days) {
+    const month = monthRows.get(day.month) ?? [];
+    month.push(day);
+    monthRows.set(day.month, month);
+  }
+
+  return [
+    text.dailyWordHeatmapLegend,
+    "",
+    `| ${text.month} | ${text.dailyWordHeatmapColumn} | ${text.words} | ${text.activeDays} | ${text.peakDay} |`,
+    "| --- | --- | ---: | ---: | --- |",
+    ...[...monthRows.entries()].map(([month, monthDays]) => {
+      const totalWords = monthDays.reduce((sum, day) => sum + day.words, 0);
+      const activeDays = monthDays.filter((day) => day.words > 0).length;
+      const peak = [...monthDays].sort((a, b) => b.words - a.words || a.date.localeCompare(b.date))[0];
+      const peakLabel = peak && peak.words > 0 ? `${peak.date} (${peak.words})` : text.notAvailable;
+      return `| ${month} | \`${monthDays.map((day) => heatBlock(day.words, maxWords)).join("")}\` | ${totalWords} | ${activeDays} | ${peakLabel} |`;
+    }),
+  ].join("\n");
+}
+
+function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  if (growth.length === 0) {
+    return text.wordGrowthTrendEmpty;
+  }
+
+  const maxGrowth = Math.max(1, ...growth.map((bucket) => bucket.wordsGained));
+  return [
+    text.wordGrowthYAxis,
+    "",
+    `| ${text.month} | ${text.wordGrowth} | ${text.trend} | ${text.cumulativeWords} |`,
+    "| --- | ---: | --- | ---: |",
+    ...growth.map((bucket) => `| ${bucket.month} | ${bucket.wordsGained} | \`${bar(bucket.wordsGained, maxGrowth, 18)}\` | ${bucket.cumulativeWords} |`),
+  ].join("\n");
+}
+
+function heatBlock(words: number, maxWords: number): string {
+  if (words <= 0) {
+    return ".";
+  }
+  const blocks = ["░", "▒", "▓", "█"];
+  const index = Math.min(blocks.length - 1, Math.ceil((words / maxWords) * blocks.length) - 1);
+  return blocks[index] ?? ".";
+}
+
+function bar(value: number, maxValue: number, width: number): string {
+  if (value <= 0) {
+    return ".".repeat(width);
+  }
+  const filled = Math.max(1, Math.round((value / maxValue) * width));
+  return `${"█".repeat(filled)}${".".repeat(Math.max(0, width - filled))}`;
 }
 
 function renderMetricList(items: RankedMetric[], prefix = "", language: ResolvedAnnualReviewLanguage = "en"): string {

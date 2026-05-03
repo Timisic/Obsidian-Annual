@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildAiPrompt, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { extractNoteStats, parseFrontmatter } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
@@ -76,6 +77,13 @@ describe("aggregation and rendering", () => {
       "Projects/Legacy.md",
       "Projects/Research.md",
     ]);
+    expect(aggregate.dayBuckets).toHaveLength(365);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-01-01")?.words).toBeGreaterThan(0);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.words).toBe(0);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.modified).toBe(1);
+    expect(aggregate.wordGrowthBuckets).toHaveLength(12);
+    expect(aggregate.wordGrowthBuckets[0]?.wordsGained).toBeGreaterThan(0);
+    expect(aggregate.wordGrowthBuckets[aggregate.wordGrowthBuckets.length - 1]?.cumulativeWords).toBe(aggregate.totalWords);
     expect(aggregate.monthBuckets[3]?.modified).toBe(1);
     expect(aggregate.monthBuckets[3]?.words).toBe(0);
   });
@@ -90,11 +98,16 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown).toContain("## Year Totals");
     expect(markdown).toContain("## Monthly Timeline");
-    expect(markdown).toContain("| Month | Created | Modified | Words | Characters |");
-    expect(markdown).toContain("| 2026-01 |");
-    expect(markdown).toContain("| 2026-04 |");
-    expect(markdown).not.toContain("| 2026-05 |");
-    expect(markdown).not.toContain("| Tasks |");
+    expect(markdown).toContain("## Daily Word Heatmap");
+    expect(markdown).toContain("Legend: . = 0 words");
+    expect(markdown).toContain("## Word Growth Trend");
+    expect(markdown).toContain("Y-axis: monthly created-note word growth");
+    const monthlySection = sectionBetween(markdown, "## Monthly Timeline", "## Daily Word Heatmap");
+    expect(monthlySection).toContain("| Month | Created | Modified | Words | Characters |");
+    expect(monthlySection).toContain("| 2026-01 |");
+    expect(monthlySection).toContain("| 2026-04 |");
+    expect(monthlySection).not.toContain("| 2026-05 |");
+    expect(monthlySection).not.toContain("| Tasks |");
     expect(markdown).not.toContain("Tasks completed");
     expect(markdown).not.toContain("## Tasks And Project Notes");
     expect(markdown).toContain("## Top Tags");
@@ -125,13 +138,77 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("report_language: \"zh\"");
     expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown).toContain("## 年度统计");
+    expect(markdown).toContain("## 每日字词热力图");
+    expect(markdown).toContain("## 字词增长趋势");
     expect(markdown).toContain("代表笔记采用确定性规则选择");
-    expect(markdown).toContain("| 月份 | 修改 |");
-    expect(markdown).toContain("| 2026-04 | 1 |");
-    expect(markdown).not.toContain("| 新建 |");
-    expect(markdown).not.toContain("| 字词 |");
-    expect(markdown).not.toContain("| 字符 |");
-    expect(markdown).not.toContain("| 2026-05 |");
+    const monthlySection = sectionBetween(markdown, "## 月度时间线", "## 每日字词热力图");
+    expect(monthlySection).toContain("| 月份 | 修改 |");
+    expect(monthlySection).toContain("| 2026-04 | 1 |");
+    expect(monthlySection).not.toContain("| 新建 |");
+    expect(monthlySection).not.toContain("| 字词 |");
+    expect(monthlySection).not.toContain("| 字符 |");
+    expect(monthlySection).not.toContain("| 2026-05 |");
+  });
+});
+
+describe("AI provider", () => {
+  it("skips network calls when ChatGPT is selected without an API key", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const section = await renderAiReportSection({
+      aggregate,
+      files: await fixtureVault(),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+      },
+      fetcher: async () => {
+        throw new Error("fetch should not be called without an API key");
+      },
+    });
+
+    expect(section).toContain("ChatGPT provider was selected, but no OpenAI API key is configured");
+    expect(section).toContain("AI Integration TODO");
+  });
+
+  it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const section = await renderAiReportSection({
+      aggregate,
+      files: await fixtureVault(),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+        chatGptApiKey: "test-key",
+        chatGptModel: "gpt-test",
+      },
+      fetcher: async (url, init) => {
+        calls.push({ url: String(url), init: init ?? {} });
+        return new Response(JSON.stringify({ output_text: "### Personalized draft\n\nUse [[Daily/2026-01-01]] as evidence." }), { status: 200 });
+      },
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe("https://api.openai.com/v1/responses");
+    expect(calls[0]?.init.method).toBe("POST");
+    expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe("Bearer test-key");
+    expect(String(calls[0]?.init.body)).toContain("\"model\":\"gpt-test\"");
+    expect(section).toContain("Provider: ChatGPT (gpt-test)");
+    expect(section).toContain("Personalized draft");
+    expect(section).toContain("[[Daily/2026-01-01]]");
+  });
+
+  it("builds provider context from annual stats, links, and note evidence", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
+
+    expect(prompt).toContain("\"topLinks\"");
+    expect(prompt).toContain("Projects/Research");
+    expect(prompt).toContain("\"linkGraph\"");
+    expect(prompt).toContain("\"contextNotes\"");
+    expect(prompt).toContain("Daily/2026-01-01.md");
+    expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
 });
 
@@ -144,3 +221,9 @@ describe("plugin command ids", () => {
     });
   });
 });
+
+function sectionBetween(markdown: string, start: string, end: string): string {
+  const startIndex = markdown.indexOf(start);
+  const endIndex = markdown.indexOf(end, startIndex);
+  return markdown.slice(startIndex, endIndex);
+}
