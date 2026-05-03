@@ -52,7 +52,7 @@ function parseYamlSubset(yaml: string): Record<string, unknown> {
       continue;
     }
 
-    const match = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/u);
+    const match = line.match(/^([\p{L}\p{N}_-]+):\s*(.*)$/u);
     if (!match) {
       currentListKey = null;
       continue;

@@ -79,6 +79,35 @@ export interface WordGrowthBucket {
   cumulativeWords: number;
 }
 
+export type TopicSource = "frontmatter" | "tag" | "folder" | "ai-cluster";
+
+export interface NoteTopicAssignment {
+  path: string;
+  topics: string[];
+  sources: Record<string, TopicSource>;
+}
+
+export interface TopicMonthlyBucket {
+  month: string;
+  topics: Record<string, number>;
+}
+
+export interface TopTopic {
+  name: string;
+  addedWords: number;
+  newNotes: number;
+  updatedNotes: number;
+  representativeNotes: string[];
+}
+
+export interface TopicEvolutionData {
+  topTopics: TopTopic[];
+  emergingTopics: string[];
+  decliningTopics: string[];
+  monthlyBuckets: TopicMonthlyBucket[];
+  noteAssignments: NoteTopicAssignment[];
+}
+
 export interface RankedMetric {
   name: string;
   count: number;
@@ -134,6 +163,7 @@ export interface YearAggregate {
   topLinks: RankedMetric[];
   topNotes: RankedNote[];
   representativeNotes: RankedNote[];
+  topicEvolution: TopicEvolutionData;
   highValueNotes: HighValueNote[];
   outputReadyNotes: HighValueNote[];
   maintenanceNotes: HighValueNote[];

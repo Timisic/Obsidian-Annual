@@ -11,6 +11,7 @@ import { buildHighValueNoteInsights } from "../src/core/highValueNotes";
 import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
+import { toTopicEvolutionJson } from "../src/core/topics";
 import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
 import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
 import { writeAnnualReviewOutput } from "../src/obsidian/reportWriter";
@@ -266,9 +267,10 @@ describe("extraction", () => {
   });
 
   it("parses a small YAML frontmatter subset", () => {
-    expect(parseFrontmatter("---\ntags: [a, b]\ncategory:\n  - work\n  - personal\ndraft: true\n---\nBody").frontmatter).toEqual({
+    expect(parseFrontmatter("---\ntags: [a, b]\ncategory:\n  - work\n  - personal\n主题: [AI工作流]\ndraft: true\n---\nBody").frontmatter).toEqual({
       tags: ["a", "b"],
       category: ["work", "personal"],
+      主题: ["AI工作流"],
       draft: true,
     });
   });
@@ -314,6 +316,83 @@ describe("aggregation and rendering", () => {
     expect(aggregate.wordGrowthBuckets[aggregate.wordGrowthBuckets.length - 1]?.cumulativeWords).toBe(aggregate.totalWords);
     expect(aggregate.monthBuckets[3]?.modified).toBe(1);
     expect(aggregate.monthBuckets[3]?.words).toBe(0);
+    expect(aggregate.topicEvolution.topTopics.length).toBeGreaterThan(0);
+    expect(aggregate.topicEvolution.topTopics.length).toBeLessThanOrEqual(8);
+  });
+
+  it("builds topic evolution from frontmatter, tags, folders, and report-only fallback clusters", () => {
+    const aggregate = buildYearAggregate(
+      [
+        {
+          path: "Writing/AI Workflow.md",
+          ctime: Date.parse("2026-01-10T08:00:00.000Z"),
+          mtime: Date.parse("2026-01-12T08:00:00.000Z"),
+          frontmatter: {
+            topics: ["AI Workflow", "Writing System", "Obsidian Automation", "Overflow Topic"],
+          },
+          content: "# AI Workflow\n\nCreated words for a durable artificial intelligence workflow note.",
+        },
+        {
+          path: "Projects/Obsidian Report.md",
+          ctime: Date.parse("2026-11-05T08:00:00.000Z"),
+          mtime: Date.parse("2026-11-06T08:00:00.000Z"),
+          content: "# Report\n\n#topic/Obsidian-Data-Report fast growing topic content.",
+        },
+        {
+          path: "Reading Methods.md",
+          ctime: Date.parse("2026-02-01T08:00:00.000Z"),
+          mtime: Date.parse("2026-02-01T08:00:00.000Z"),
+          content: "# Reading Methods\n\nUnlabeled note that relies on report-only fallback clustering.",
+        },
+        {
+          path: "Maintenance/March.md",
+          ctime: Date.parse("2026-03-01T08:00:00.000Z"),
+          mtime: Date.parse("2026-03-01T08:00:00.000Z"),
+          frontmatter: { topic: "Maintenance" },
+          content: "Small maintenance note.",
+        },
+        {
+          path: "Maintenance/April.md",
+          ctime: Date.parse("2026-04-01T08:00:00.000Z"),
+          mtime: Date.parse("2026-04-01T08:00:00.000Z"),
+          frontmatter: { topic: "Maintenance" },
+          content: "Small maintenance note.",
+        },
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+
+    const assignments = aggregate.topicEvolution.noteAssignments;
+    const frontmatterAssignment = assignments.find((assignment) => assignment.path === "Writing/AI Workflow.md");
+    expect(frontmatterAssignment?.topics).toEqual(["AI Workflow", "Writing System", "Obsidian Automation"]);
+    expect(frontmatterAssignment?.sources).toEqual({
+      "AI Workflow": "frontmatter",
+      "Writing System": "frontmatter",
+      "Obsidian Automation": "frontmatter",
+    });
+    expect(frontmatterAssignment?.topics).toHaveLength(3);
+
+    const tagAssignment = assignments.find((assignment) => assignment.path === "Projects/Obsidian Report.md");
+    expect(tagAssignment?.topics).toContain("Obsidian Data Report");
+    expect(tagAssignment?.topics).toContain("Projects");
+    expect(tagAssignment?.sources["Obsidian Data Report"]).toBe("tag");
+    expect(tagAssignment?.sources.Projects).toBe("folder");
+
+    const fallbackAssignment = assignments.find((assignment) => assignment.path === "Reading Methods.md");
+    expect(fallbackAssignment?.topics).toEqual(["Reading Methods"]);
+    expect(fallbackAssignment?.sources["Reading Methods"]).toBe("ai-cluster");
+
+    expect(aggregate.topicEvolution.emergingTopics).toContain("Obsidian Data Report");
+    expect(aggregate.topicEvolution.decliningTopics).toContain("Reading Methods");
+    expect(aggregate.topicEvolution.monthlyBuckets.find((bucket) => bucket.month === "2026-11")?.topics["Obsidian Data Report"]).toBeGreaterThan(0);
+
+    const json = toTopicEvolutionJson(aggregate.topicEvolution);
+    expect(json).toMatchObject({
+      top_topics: expect.any(Array),
+      emerging_topics: expect.arrayContaining(["Obsidian Data Report"]),
+      declining_topics: expect.arrayContaining(["Reading Methods"]),
+    });
   });
 
   it("uses Obsidian-resolved link counts when available", () => {
@@ -374,6 +453,10 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Y-axis: monthly created-note word growth");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(markdown).toContain("class=\"chart-line\"");
+    expect(markdown).toContain("## Topic Evolution");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
+    expect(markdown).toContain("| Topic | Added words | New notes | Updated notes | Representative Notes |");
+    expect(markdown).toContain("### Feedback Signals");
     const monthlySection = sectionBetween(markdown, "## Monthly Timeline", "## Daily Word Heatmap");
     expect(monthlySection).toContain("| Month | Created | Modified | Words | Characters |");
     expect(monthlySection).toContain("| 2026-01 |");
@@ -417,6 +500,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("## 字词增长趋势");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(markdown).toContain("## 主题演化");
+    expect(markdown).toContain("### 反馈信号");
     expect(markdown).toContain("## 高价值笔记");
     expect(markdown).toContain("代表笔记采用确定性规则选择");
     const monthlySection = sectionBetween(markdown, "## 月度时间线", "## 每日字词热力图");
@@ -436,19 +521,26 @@ describe("aggregation and rendering", () => {
 
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Word Growth Trend]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution]]");
     expect(markdown).not.toContain("<svg");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).toContain("| Month | Word growth | Cumulative words |");
 
-    expect(chartAssets).toHaveLength(2);
+    expect(chartAssets).toHaveLength(4);
     expect(chartAssets.map((asset) => asset.path)).toEqual([
       "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
       "Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg",
+      "Annual Reviews/2026 Annual Review Assets/topic-evolution.svg",
+      "Annual Reviews/2026 Annual Review Assets/topic-evolution.json",
     ]);
     expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(chartAssets[1]?.content).toContain("class=\"chart-line\"");
     expect(chartAssets[1]?.content).toContain("class=\"endpoint-dot\"");
+    expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
+    expect(chartAssets[3]?.content).toContain("\"top_topics\"");
+    expect(chartAssets[3]?.content).toContain("\"emerging_topics\"");
+    expect(chartAssets[3]?.content).toContain("\"declining_topics\"");
   });
 
   it("identifies high-value, maintenance, output-ready, and isolated potential notes", () => {
