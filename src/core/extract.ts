@@ -112,13 +112,46 @@ function collectLinkCounts(file: SourceFile, body: string): LinkCounts {
   }
 
   const links: LinkCounts = {};
-  for (const match of body.matchAll(/!?\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/gu)) {
-    const link = match[1]?.trim();
-    if (link) {
-      incrementLink(links, link);
-    }
+  for (const link of parseObsidianWikilinks(body)) {
+    incrementLink(links, link.target);
   }
   return normalizeLinkCounts(links);
+}
+
+export interface ObsidianWikilink {
+  raw: string;
+  target: string;
+  heading?: string;
+  alias?: string;
+  embedded: boolean;
+}
+
+export function parseObsidianWikilinks(markdown: string): ObsidianWikilink[] {
+  const links: ObsidianWikilink[] = [];
+  for (const match of markdown.matchAll(/(!)?\[\[([^\]]+)\]\]/gu)) {
+    const raw = match[0] ?? "";
+    const embedded = Boolean(match[1]);
+    const inner = (match[2] ?? "").trim();
+    if (!inner) {
+      continue;
+    }
+
+    const [targetAndHeading = "", alias] = inner.split("|", 2);
+    const [target = "", heading] = targetAndHeading.split("#", 2);
+    const normalizedTarget = target.trim();
+    if (!normalizedTarget) {
+      continue;
+    }
+
+    links.push({
+      raw,
+      target: normalizedTarget,
+      heading: heading?.trim() || undefined,
+      alias: alias?.trim() || undefined,
+      embedded,
+    });
+  }
+  return links;
 }
 
 function mergeLinkCounts(...sources: Array<LinkCounts | undefined>): LinkCounts {

@@ -1,5 +1,6 @@
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
+import { buildHighValueNoteInsights } from "./highValueNotes";
 import type {
   AnnualReviewSettings,
   DayBucket,
@@ -73,10 +74,12 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
     excludeFolders: settings.excludeFolders,
     privacyMode: settings.privacyMode,
   };
+  const generatedAt = new Date().toISOString();
+  const highValueInsights = buildHighValueNoteInsights(notes, year, generatedAt);
 
   return {
     year,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     scope,
     activeDays: activeDates.size,
     longestStreak: longestDateStreak([...activeDates]),
@@ -94,6 +97,7 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
     topLinks: rankedMetrics(linkCounts),
     topNotes: notes.map(toRankedNote).sort(sortRankedNotes).slice(0, 10),
     representativeNotes: [...representativeByMonth.values()].sort((a, b) => a.path.localeCompare(b.path)),
+    ...highValueInsights,
   };
 }
 
