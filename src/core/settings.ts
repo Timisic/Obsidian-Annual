@@ -1,5 +1,7 @@
 import type { AnnualReviewSettings } from "./types";
 
+export const DEFAULT_LOCAL_CODEX_COMMAND = 'codex exec --color never --sandbox read-only --skip-git-repo-check -c \'features.codex_hooks=false\' --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
+
 export const DEFAULT_SETTINGS: AnnualReviewSettings = {
   reportFolder: "Annual Reviews",
   includeFolders: [],
@@ -13,6 +15,7 @@ export const DEFAULT_SETTINGS: AnnualReviewSettings = {
   aiProvider: "none",
   chatGptApiKey: "",
   chatGptModel: "gpt-4.1",
+  localCodexCommand: DEFAULT_LOCAL_CODEX_COMMAND,
   reportLanguage: "system",
   generatorLanguage: "system",
 };

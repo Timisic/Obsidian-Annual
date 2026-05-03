@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAiPrompt, renderAiReportSection } from "../src/core/ai";
+import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { extractNoteStats, parseFrontmatter, parseObsidianWikilinks } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
@@ -729,6 +729,28 @@ describe("AI provider", () => {
     expect(section).not.toContain("AI Integration TODO");
   });
 
+  it("passes the configured local Codex command to the fallback executor", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const commands: string[] = [];
+    const absoluteCommand = '/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
+    const section = await renderAiReportSection({
+      aggregate,
+      files: await fixtureVault(),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+        localCodexCommand: absoluteCommand,
+      },
+      codexExecutor: async (_prompt, command) => {
+        commands.push(command);
+        return { ok: true, content: "Local Codex used the configured command." };
+      },
+    });
+
+    expect(commands).toEqual([absoluteCommand]);
+    expect(section).toBe("Local Codex used the configured command.");
+  });
+
   it("reports a readable provider status when local Codex generation is unavailable", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const section = await renderAiReportSection({
@@ -745,6 +767,48 @@ describe("AI provider", () => {
     expect(section).toContain("local Codex generation was unavailable");
     expect(section).toContain("codex auth missing");
     expect(section).not.toContain("AI Integration TODO");
+  });
+
+  it("builds a local Codex environment with common macOS CLI install paths", () => {
+    const env = buildLocalCodexEnv({ PATH: "/usr/bin:/bin" }, "/tmp/annual-review-output.md");
+
+    expect(env.CODEX_ANNUAL_REVIEW_OUTPUT).toBe("/tmp/annual-review-output.md");
+    expect(env.PATH?.split(":").slice(0, 4)).toEqual([
+      "/Users/hong/.npm-global/bin",
+      "/opt/homebrew/bin",
+      "/usr/local/bin",
+      "/usr/bin",
+    ]);
+  });
+
+  it("formats Codex command-not-found errors with actionable guidance", () => {
+    const message = formatLocalCodexFailure(
+      DEFAULT_SETTINGS.localCodexCommand,
+      "bash: codex: command not found\nPRIVATE_VAULT_CONTENT",
+      "SECRET_PROMPT_TEXT",
+      127,
+      "/Users/hong/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+    );
+
+    expect(message).toContain("Local Codex was not found from Obsidian's runtime PATH");
+    expect(message).toContain("running localCodexCommand");
+    expect(message).toContain(DEFAULT_SETTINGS.localCodexCommand);
+    expect(message).toContain("/Users/hong/.npm-global/bin/codex exec");
+    expect(message).toContain("bash: codex: command not found");
+    expect(message).not.toContain("PRIVATE_VAULT_CONTENT");
+    expect(message).not.toContain("SECRET_PROMPT_TEXT");
+  });
+
+  it("uses compact aggregate context for the local Codex prompt", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const prompt = buildCodexPrompt(aggregate, files, DEFAULT_SETTINGS);
+
+    expect(prompt).toContain("Compact aggregate-only context");
+    expect(prompt).toContain("\"highValueNotes\"");
+    expect(prompt).toContain("\"topLinks\"");
+    expect(prompt).not.toContain("\"contextNotes\"");
+    expect(prompt.length).toBeLessThan(8_000);
   });
 
   it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {

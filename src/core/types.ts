@@ -14,6 +14,7 @@ export interface AnnualReviewSettings {
   aiProvider: "none" | "chatgpt";
   chatGptApiKey: string;
   chatGptModel: string;
+  localCodexCommand: string;
   reportLanguage: AnnualReviewLanguage;
   generatorLanguage: AnnualReviewLanguage;
 }
