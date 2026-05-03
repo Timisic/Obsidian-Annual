@@ -1,0 +1,135 @@
+.annual-review-dashboard-view {
+  color: var(--text-normal);
+  background: var(--background-primary);
+  padding: 24px;
+}
+
+.annual-review-dashboard-title {
+  margin: 0 0 18px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+}
+
+.annual-review-dashboard-toolbar,
+.annual-review-dashboard-report-actions {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.annual-review-dashboard-toolbar .setting-item,
+.annual-review-dashboard-report-actions .setting-item {
+  border-top: 0;
+  padding: 0;
+}
+
+.annual-review-dashboard-toolbar .setting-item-control {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.annual-review-dashboard-toolbar input[type="text"] {
+  max-width: 104px;
+  text-align: center;
+}
+
+.annual-review-dashboard-info-grid,
+.annual-review-dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.annual-review-dashboard-info-card,
+.annual-review-dashboard-metric {
+  min-height: 76px;
+  padding: 12px 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.annual-review-dashboard-info-card span,
+.annual-review-dashboard-metric div {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.annual-review-dashboard-info-card strong,
+.annual-review-dashboard-metric strong {
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-semibold);
+  overflow-wrap: anywhere;
+}
+
+.annual-review-dashboard-metric strong {
+  font-size: var(--font-ui-large);
+}
+
+.annual-review-dashboard-section-title {
+  margin: 22px 0 10px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-semibold);
+}
+
+.annual-review-dashboard-bars,
+.annual-review-dashboard-growth {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.annual-review-dashboard-bar-row {
+  display: grid;
+  grid-template-columns: 44px minmax(80px, 1fr) minmax(88px, auto);
+  gap: 10px;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.annual-review-dashboard-bar {
+  min-width: 4px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--interactive-accent);
+}
+
+.annual-review-dashboard-heatmap {
+  width: max-content;
+  max-width: 100%;
+  margin-bottom: 18px;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  overflow-x: auto;
+}
+
+.annual-review-dashboard-heatmap-cell {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--background-primary) 45%, transparent);
+}
+
+.annual-review-dashboard-view ul {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--text-normal);
+}
+
+.annual-review-dashboard-view li::marker {
+  color: var(--interactive-accent);
+}
+
+.annual-review-dashboard-empty {
+  color: var(--text-muted);
+}

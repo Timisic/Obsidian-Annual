@@ -110,7 +110,7 @@ function assignTopics(note: NoteStats): NoteTopicAssignment {
   const sources: Record<string, TopicSource> = {};
   const add = (topic: string, source: TopicSource) => {
     const normalized = normalizeTopic(topic);
-    if (!normalized || topics.includes(normalized) || topics.length >= MAX_TOPICS_PER_NOTE) {
+    if (!normalized || isTimeContainerTopic(normalized) || topics.includes(normalized) || topics.length >= MAX_TOPICS_PER_NOTE) {
       return;
     }
     topics.push(normalized);
@@ -128,10 +128,12 @@ function assignTopics(note: NoteStats): NoteTopicAssignment {
     add(topicFromTag(tag), "tag");
   }
 
-  add(topicFromFolder(note.folder), "folder");
-
   if (topics.length === 0) {
     add(inferClusterTopic(note), "ai-cluster");
+  }
+
+  if (topics.length === 0) {
+    add(topicFromFolder(note.folder), "folder");
   }
 
   return {
@@ -183,7 +185,44 @@ function normalizeTopic(topic: string): string {
     .replace(/^#/, "")
     .replace(/\.md$/u, "")
     .replace(/[_-]+/gu, " ")
+    .replace(/^(?:19|20)\d{2}\s+(?:0?[1-9]|1[0-2])\s+(?:0?[1-9]|[12]\d|3[01])\s+/u, "")
+    .replace(/^(?:19|20)\d{2}年\s*(?:0?[1-9]|1[0-2])月\s*(?:0?[1-9]|[12]\d|3[01])日?\s*/u, "")
     .replace(/\s+/gu, " ");
+}
+
+function isTimeContainerTopic(topic: string): boolean {
+  const value = topic.trim();
+  const compact = value.replace(/\s+/gu, "");
+  const lower = compact.toLowerCase();
+  if (!lower) {
+    return true;
+  }
+
+  if (/^(?:19|20)\d{2}$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])月?$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])[-_/日.](?:0?[1-9]|[12]\d|3[01])日?$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:0?[1-9]|1[0-2])月$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:[一二三四五六七八九]|十|十一|十二)月$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:0?[1-9]|1[0-2])$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:q[1-4]|第[一二三四1234]季度)$/u.test(lower)) {
+    return true;
+  }
+  if (/^(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)$/u.test(lower)) {
+    return true;
+  }
+  return false;
 }
 
 function getAccumulator(accumulators: Map<string, TopicAccumulator>, topic: string): TopicAccumulator {

@@ -61,8 +61,8 @@ echo "==> Enable/reload plugin and rebuild index"
 "$OBSIDIAN_CLI" vault="$VAULT_NAME" command id=annual-review:rebuild-annual-review-index >/dev/null || true
 
 if [[ "$GENERATE" == 1 ]]; then
-  echo "==> Run generate command (currently may be interactive)"
-  "$OBSIDIAN_CLI" vault="$VAULT_NAME" command id=annual-review:generate-annual-review || true
+  echo "==> Run headless 2026 generate command"
+  "$OBSIDIAN_CLI" vault="$VAULT_NAME" command id=annual-review:generate-annual-review-2026
 fi
 
 echo "==> Available annual-review commands"
@@ -97,7 +97,7 @@ check_grep "Wiki alias links inside Markdown table rows" '' table-alias
 check_grep "SVG embeds without explicit width" '!\[\[.*\.svg\|[^]|]+\]\]'
 
 echo "-- 建立 MOC repetition count"
-grep -o '建立 MOC' "$REPORT_FILE" | wc -l | tr -d ' '
+{ grep -o '建立 MOC' "$REPORT_FILE" || true; } | wc -l | tr -d ' '
 printf "\n"
 
 printf "\n==> Obsidian link diagnostics\n"

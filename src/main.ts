@@ -31,6 +31,14 @@ export default class AnnualReviewPlugin extends Plugin {
     });
 
     this.addCommand({
+      id: COMMAND_IDS.generate2026Smoke,
+      name: COMMAND_NAMES.generate2026Smoke,
+      callback: () => {
+        void this.generateReport({ year: 2026, settings: this.settings });
+      },
+    });
+
+    this.addCommand({
       id: COMMAND_IDS.openDashboard,
       name: COMMAND_NAMES.openDashboard,
       callback: () => {
