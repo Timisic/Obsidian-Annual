@@ -22,7 +22,7 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 生成年度回顾 | 已实现基础版 | 命令面板运行 `Annual Review: Generate report`，生成指定年份的 Markdown 报告。 |
 | 仪表盘 | 已实现基础版 | 命令面板运行 `Annual Review: Open dashboard`，预览年度指标、热门列表并触发生成。 |
 | 重建索引 | 已实现基础版 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
-| 本地统计 | 已实现基础版 | 读取 vault 内 Markdown、frontmatter、标签、链接、标题、任务和文件时间。 |
+| 本地统计 | 已实现基础版 | 读取 vault 内 Markdown、frontmatter、标签、Obsidian 解析后的链接、标题、任务和文件时间。 |
 | 中英混合计数 | 已实现基础版 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
 | 证据链接 | 已实现基础版 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
 | 每日字数热力图 | 已实现基础版 | 报告使用 Obsidian 可渲染的内嵌 SVG 热力图，仪表盘使用网格热力图展示每日创作字数分布。 |
@@ -31,6 +31,10 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 隐私边界 | 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
 
 ## 最近变更
+
+DEC-19 修正了链接统计口径：
+
+- **Obsidian 解析链接统计**：插件在 Obsidian 内运行时会使用 `metadataCache.resolvedLinks` / `unresolvedLinks` 的结果统计热门链接，因此 `[[Research|别名]]`、`[[Projects/Research#Plan]]`、嵌入链接和 Markdown 链接都会按 Obsidian 实际解析到的目标文件计数；无法解析的链接会按 Obsidian 记录的未解析目标文本保留。离开 Obsidian 运行的核心测试仍保留 wiki link 文本解析作为 fallback。
 
 DEC-17 加入了两类面向年度报告质量的能力：
 
@@ -149,8 +153,9 @@ npm run build
 2. 运行重建索引、生成报告、打开仪表盘。
 3. 确认报告文件在 `Annual Reviews/` 下生成。
 4. 确认报告中的 Obsidian 链接能打开源笔记。
-5. 重新生成报告，确认不会重复堆叠旧内容。
-6. 在没有第三方插件的干净 vault 中重复核心流程。
+5. 准备一个同时包含 `[[标题|别名]]`、`[[路径#标题]]`、嵌入链接和 Markdown 链接的目标笔记，确认热门链接按同一个 Obsidian 解析目标合并统计。
+6. 重新生成报告，确认不会重复堆叠旧内容。
+7. 在没有第三方插件的干净 vault 中重复核心流程。
 
 ## 更多文档
 

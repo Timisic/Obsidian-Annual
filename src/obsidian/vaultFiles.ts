@@ -14,6 +14,8 @@ async function readSourceFile(app: App, file: TFile): Promise<SourceFile> {
     ctime: file.stat.ctime,
     mtime: file.stat.mtime,
     frontmatter: cache?.frontmatter,
+    resolvedLinks: app.metadataCache.resolvedLinks[file.path],
+    unresolvedLinks: app.metadataCache.unresolvedLinks[file.path],
     content: await app.vault.cachedRead(file),
   };
 }

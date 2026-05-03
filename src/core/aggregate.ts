@@ -62,7 +62,9 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
     }
     increment(folderCounts, note.folder);
     note.tags.forEach((tag) => increment(tagCounts, tag));
-    note.links.forEach((link) => increment(linkCounts, link));
+    for (const [link, count] of Object.entries(note.linkCounts)) {
+      increment(linkCounts, link, count);
+    }
   }
 
   const scope: ReportScope = {
@@ -198,8 +200,8 @@ function sortRankedNotes(a: RankedNote, b: RankedNote): number {
   return b.words - a.words || b.characters - a.characters || a.path.localeCompare(b.path);
 }
 
-function increment(counts: Map<string, number>, key: string): void {
-  counts.set(key, (counts.get(key) ?? 0) + 1);
+function increment(counts: Map<string, number>, key: string, amount = 1): void {
+  counts.set(key, (counts.get(key) ?? 0) + amount);
 }
 
 function getYear(timestamp: number): number {

@@ -39,6 +39,12 @@ export interface NoteStats {
   frontmatter: Record<string, unknown>;
   tags: string[];
   links: string[];
+  /**
+   * Ranked link metric inputs. In Obsidian runtime, keys are resolved vault paths
+   * plus unresolved target text from metadataCache. Outside Obsidian, keys are
+   * raw wiki-link targets parsed from Markdown.
+   */
+  linkCounts: LinkCounts;
   headings: string[];
   tasks: TaskStats;
   wordCount: number;
@@ -113,7 +119,23 @@ export interface SourceFile {
   mtime: number;
   content: string;
   frontmatter?: Record<string, unknown>;
+  /**
+   * Obsidian metadataCache.resolvedLinks[file.path]: destination vault paths
+   * mapped to the number of links from this source file.
+   */
+  resolvedLinks?: LinkCounts;
+  /**
+   * Obsidian metadataCache.unresolvedLinks[file.path]: unresolved target text
+   * mapped to the number of links from this source file.
+   */
+  unresolvedLinks?: LinkCounts;
 }
+
+/**
+ * Link metric counts keyed by link identity. See NoteStats.linkCounts for the
+ * runtime-specific key contract.
+ */
+export type LinkCounts = Record<string, number>;
 
 export interface GenerateReportOptions {
   year: number;

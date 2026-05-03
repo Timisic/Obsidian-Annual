@@ -1,6 +1,6 @@
 import { folderFromPath } from "./filters";
 import { countText } from "./tokenizer";
-import type { AnnualReviewSettings, NoteStats, SourceFile, TaskStats } from "./types";
+import type { AnnualReviewSettings, LinkCounts, NoteStats, SourceFile, TaskStats } from "./types";
 
 export function extractNoteStats(file: SourceFile, settings: AnnualReviewSettings): NoteStats {
   const parsed = parseFrontmatter(file.content);
@@ -8,6 +8,7 @@ export function extractNoteStats(file: SourceFile, settings: AnnualReviewSetting
   const effectiveFrontmatter = settings.includeFrontmatter ? frontmatter : {};
   const body = parsed.body;
   const counts = countText(body);
+  const linkCounts = settings.includeLinks ? collectLinkCounts(file, body) : {};
 
   return {
     path: file.path,
@@ -17,7 +18,8 @@ export function extractNoteStats(file: SourceFile, settings: AnnualReviewSetting
     month: monthKey(file.ctime),
     frontmatter: effectiveFrontmatter,
     tags: collectTags(body, effectiveFrontmatter),
-    links: settings.includeLinks ? collectWikiLinks(body) : [],
+    links: Object.keys(linkCounts).sort(),
+    linkCounts,
     headings: settings.includeHeadings ? collectHeadings(body) : [],
     tasks: settings.includeTasks ? collectTasks(body) : { total: 0, completed: 0 },
     wordCount: counts.words,
@@ -104,15 +106,41 @@ function collectTags(body: string, frontmatter: Record<string, unknown>): string
   return [...tags].filter(Boolean).sort();
 }
 
-function collectWikiLinks(body: string): string[] {
-  const links = new Set<string>();
+function collectLinkCounts(file: SourceFile, body: string): LinkCounts {
+  if (file.resolvedLinks || file.unresolvedLinks) {
+    return normalizeLinkCounts(mergeLinkCounts(file.resolvedLinks, file.unresolvedLinks));
+  }
+
+  const links: LinkCounts = {};
   for (const match of body.matchAll(/!?\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]/gu)) {
     const link = match[1]?.trim();
     if (link) {
-      links.add(link);
+      incrementLink(links, link);
     }
   }
-  return [...links].sort();
+  return normalizeLinkCounts(links);
+}
+
+function mergeLinkCounts(...sources: Array<LinkCounts | undefined>): LinkCounts {
+  const links: LinkCounts = {};
+  for (const source of sources) {
+    for (const [link, count] of Object.entries(source ?? {})) {
+      links[link] = (links[link] ?? 0) + count;
+    }
+  }
+  return links;
+}
+
+function normalizeLinkCounts(links: LinkCounts): LinkCounts {
+  return Object.fromEntries(
+    Object.entries(links)
+      .filter(([link, count]) => link.trim() && Number.isFinite(count) && count > 0)
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
+function incrementLink(links: LinkCounts, link: string): void {
+  links[link] = (links[link] ?? 0) + 1;
 }
 
 function collectHeadings(body: string): string[] {
