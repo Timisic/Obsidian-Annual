@@ -154,7 +154,7 @@ Obsidian 年度报告的故事模块可以设计为：
 
 建议先写规格，再实现：
 
-- `SPEC.md`：数据范围、隐私边界、统计口径、UI 入口、导出格式。
+- `docs/product-spec.md`：数据范围、隐私边界、统计口径、UI 入口、导出格式。
 - `fixtures/`：小型 vault 样本，覆盖中文、英文、混合语言、frontmatter、tags、links、daily notes、tasks。
 - `docs/validation.md`：手工验证流程，包含 Obsidian 桌面启动、生成报告、重算、导出、移动端只读检查。
 
@@ -188,7 +188,7 @@ Obsidian 年度报告的故事模块可以设计为：
 
 ### Phase 0：规格和样本
 
-- 写 `SPEC.md`、测试 vault fixtures、统计口径表。
+- 写 `docs/product-spec.md`、测试 vault fixtures、统计口径表。
 - 确认 MVP 不使用云端 AI，不新增重依赖。
 
 ### Phase 1：本地统计引擎
@@ -221,4 +221,3 @@ Obsidian 年度报告的故事模块可以设计为：
 - 用户能从命令面板生成/重算/打开报告。
 - 所有输出均留在 vault 内，且无需联网。
 - 对外分享需要用户显式选择导出内容。
-
