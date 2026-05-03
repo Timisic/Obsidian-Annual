@@ -101,6 +101,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Top Links");
     expect(markdown).toContain("## Top Folders");
     expect(markdown).toContain("## Representative Notes");
+    expect(markdown).toContain("Representative notes are selected deterministically");
+    expect(markdown).toContain("This stable evidence set can be reused by later AI summaries.");
     expect(markdown).not.toContain("## Data Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
     expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
@@ -123,6 +125,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("report_language: \"zh\"");
     expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown).toContain("## 年度统计");
+    expect(markdown).toContain("代表笔记采用确定性规则选择");
     expect(markdown).toContain("| 月份 | 修改 |");
     expect(markdown).toContain("| 2026-04 | 1 |");
     expect(markdown).not.toContain("| 新建 |");

@@ -36,6 +36,8 @@ const REPORT_TEXT = {
     topFolders: "Top Folders",
     topLinks: "Top Links",
     representativeNotes: "Representative Notes",
+    representativeNotesDescription:
+      "Representative notes are selected deterministically: each active month contributes the highest-volume note from that month's created notes, or from modified notes when the note was created in another year. Ranking uses counted words, then characters, then path as the tie-breaker. This stable evidence set can be reused by later AI summaries.",
     writingAndActivityRhythm: "Writing And Activity Rhythm",
     noDataFound: "No data found.",
     noRepresentativeNotes: "No representative notes found.",
@@ -71,6 +73,8 @@ const REPORT_TEXT = {
     topFolders: "高频文件夹",
     topLinks: "高频链接",
     representativeNotes: "代表笔记",
+    representativeNotesDescription:
+      "代表笔记采用确定性规则选择：每个活跃月份选出该月新建笔记中内容量最高的一篇；如果笔记不是当年新建但在该月被修改，也会参与该月选择。排序依次比较计数字词、字符数和路径。这个稳定证据集可供后续 AI 总结复用。",
     writingAndActivityRhythm: "写作与活动节奏",
     noDataFound: "未找到数据。",
     noRepresentativeNotes: "未找到代表笔记。",
@@ -122,6 +126,8 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     renderMetricList(aggregate.topLinks.map((item) => ({ ...item, name: linkName(item.name) })), "", language),
     "",
     `## ${text.representativeNotes}`,
+    "",
+    text.representativeNotesDescription,
     "",
     renderNoteList(aggregate.representativeNotes, language),
     "",
