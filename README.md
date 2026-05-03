@@ -1,127 +1,53 @@
 # Obsidian Annual Review
 
-Obsidian Annual Review is a local-first Obsidian plugin that turns vault
-activity into an editable yearly review note.
+[English](README.en.md) | [文档索引](docs/README.md) | [产品规格](docs/product-spec.md)
 
-The plugin scans Markdown notes, metadata, tags, links, tasks, and daily-note
-patterns inside an Obsidian vault, then generates an annual review that stays in
-the vault as Markdown. The durable output is designed to be editable, linkable,
-syncable, versionable, and auditable.
+Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一年里的笔记活动整理成一份可编辑、可追溯的年度回顾 Markdown 笔记。
 
-> Current repository status: this repository includes the plugin scaffold,
-> TypeScript source, tests, research notes, and product specification. It does
-> not yet publish packaged release artifacts.
+插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出年度统计、月度节奏、代表性笔记、热门标签/文件夹/链接，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果仍然留在 vault 里，可以继续编辑、链接、同步、版本管理和审阅。
 
-## Why this exists
+> 当前仓库状态：已经包含 Obsidian 插件脚手架、TypeScript 源码、测试、产品规格和调研文档；尚未发布打包好的社区插件版本。
 
-Most Obsidian users already have fragments of an annual review scattered across
-daily notes, project notes, reading notes, tags, links, and task lists. Existing
-tools can count words, query notes, or visualize relationships, but they do not
-combine those signals into a yearly narrative that remains native to Obsidian.
+## 适合谁
 
-This project focuses on four principles:
+- 用 Obsidian 写日记、项目记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
+- 想复盘全年写作量、活跃天数、主题变化和代表性内容的写作者/研究者。
+- 希望年度总结保留在本地 Markdown 中，而不是上传到云端报告页的 Obsidian 用户。
+- 想先获得可信统计和证据链接，再手动润色年度总结的人。
 
-- Local first: the default path reads only the active vault and makes no network
-  calls.
-- Markdown first: the annual review note is the primary artifact, not a hosted
-  wrapped page.
-- Evidence backed: named notes and surprising metrics should link back to source
-  material.
-- Obsidian native: commands, settings, views, and exports should fit the
-  Obsidian workflow instead of replacing it.
+## 核心功能
 
-## Repository contents
+| 功能 | 状态 | 说明 |
+| --- | --- | --- |
+| 生成年度回顾 | 已实现基础版 | 命令面板运行 `Annual Review: Generate report`，生成指定年份的 Markdown 报告。 |
+| 仪表盘 | 已实现基础版 | 命令面板运行 `Annual Review: Open dashboard`，预览年度指标、热门列表并触发生成。 |
+| 重建索引 | 已实现基础版 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
+| 本地统计 | 已实现基础版 | 读取 vault 内 Markdown、frontmatter、标签、链接、标题、任务和文件时间。 |
+| 中英混合计数 | 已实现基础版 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
+| 证据链接 | 已实现基础版 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
+| 隐私边界 | 部分实现 | 默认本地处理；导出、AI 或更细的脱敏策略仍属于后续阶段。 |
 
-| Path | Purpose |
-| --- | --- |
-| [`manifest.json`](manifest.json) | Obsidian plugin manifest for the `annual-review` plugin. |
-| [`package.json`](package.json) | Development scripts for build, watch, typecheck, and tests. |
-| [`src/`](src) | Plugin source code for commands, settings, vault scanning, aggregation, rendering, report writing, and dashboard UI. |
-| [`tests/`](tests) | Vitest fixtures and coverage for tokenizer, filters, extraction, aggregation, rendering, and command IDs. |
-| [`SPEC.md`](SPEC.md) | Product specification for the Obsidian plugin, including scope, architecture, data model, validation plan, and phased delivery. |
-| [`docs/research/dec-7-project-research.md`](docs/research/dec-7-project-research.md) | Market and product research covering Obsidian-native capabilities, related community plugins, annual-report patterns, and implementation recommendations. |
+## 快速开始
 
-## Features
-
-The current implementation covers the Markdown-first MVP path and leaves
-share/export and optional adapters for later phases.
-
-| Area | Status | Feature | Outcome |
-| --- | --- | --- | --- |
-| Report generation | Implemented | `Annual Review: Generate report` command | Creates `Annual Reviews/YYYY Annual Review.md` for the selected year and vault scope. |
-| Dashboard | Implemented | `Annual Review: Open dashboard` ItemView | Provides year preview, index status, totals, top lists, report generation, and open-report actions. |
-| Reindexing | Implemented | `Annual Review: Rebuild index` command | Re-scans Markdown files after vault or settings changes. |
-| Settings | Implemented | Report folder, include/exclude folders, metric toggles, and privacy mode | Lets users shape the scan without editing code. |
-| Local analysis | Implemented | Vault scanner using Obsidian Markdown file reads | Reads note paths, timestamps, frontmatter, tags, links, headings, and tasks without requiring third-party plugins. |
-| Metrics | Implemented | Year totals, active days, streaks, word/character counts, monthly buckets, top folders, tags, links, representative notes, and tasks | Gives users a concrete view of writing volume, cadence, and knowledge structure. |
-| CJK-aware counting | Implemented | Mixed Latin-word and CJK-character counting | Keeps Chinese, Japanese, Korean, English, and mixed-language vaults understandable. |
-| Evidence links | Implemented | Obsidian wiki links for representative and ranked notes | Makes the generated review inspectable instead of opaque. |
-| Privacy controls | Partial | Local-only generation plus include/exclude and privacy labeling | Keeps default processing local; richer export/AI controls remain future work. |
-| Sharing | Future | Local PNG/SVG/HTML share-card export | Supports optional public highlights without default cloud upload. |
-
-## Use cases
-
-- Personal annual review: summarize a year of daily notes, project logs, ideas,
-  tags, and links into a review note that can be edited before sharing.
-- Writing review: measure yearly word and character output, active days, longest
-  streaks, most edited notes, and representative writing periods.
-- Research review: identify top tags, linked notes, folders, and theme shifts
-  across reading notes, evergreen notes, and project notes.
-- Project retrospective: pull task, folder, and note activity into a yearly
-  summary for teams or solo projects that use Obsidian as a work journal.
-- Vault maintenance: surface stale areas, highly linked notes, orphaned themes,
-  and next-year cleanup actions from the generated methodology section.
-- Shareable recap: export selected, privacy-safe highlights after the user
-  explicitly chooses what data can leave the private review note.
-
-## Competitive and alternative tool comparison
-
-This project is closest to a yearly-review layer that composes existing Obsidian
-signals. It is not trying to replace lower-level tools such as word counters,
-query engines, or graph views.
-
-| Tool / approach | What it does well | Gap for annual reviews | Positioning for this project |
-| --- | --- | --- | --- |
-| Obsidian core Word count, Bases, Canvas, Graph, Workspaces ([core plugins](https://obsidian.md/help/Plugins/Core%2Bplugins)) | Native, local, widely available building blocks for counts, database-like views, layouts, and relationship exploration. | These are general-purpose surfaces; users still assemble the annual narrative manually. | Use core Obsidian concepts and generated Markdown as the default experience. |
-| Novel Word Count ([GitHub](https://github.com/isaaclyman/novel-word-count-obsidian)) | Shows file, folder, and vault-level writing statistics close to the file explorer. | Optimized for ongoing word-count visibility, not yearly storytelling, evidence selection, or review generation. | Borrow the value of local writing metrics, then add yearly aggregation and narrative structure. |
-| Daily Stats ([GitHub](https://github.com/dhruvik7/obsidian-daily-stats)) and similar writing trackers | Tracks daily word counts and historical writing logs. | Usually centered on daily cadence rather than tags, links, representative notes, methodology, and exportable annual artifacts. | Include activity rhythm as one module inside a broader vault review. |
-| Dataview ([GitHub](https://github.com/blacksmithgu/obsidian-dataview)) | Powerful Markdown query layer for frontmatter, inline fields, lists, and custom dashboards. | Requires user-authored queries and does not provide a built-in annual-review product flow. | Read Markdown-backed facts independently; optionally interoperate with Dataview-style fields later. |
-| Bases ([Obsidian docs](https://docs.obsidian.md/plugins/guides/bases-view)) | Core database views for sorting, filtering, grouping, and editing note properties. | Excellent for browsing structured notes, but not a guided annual report generator by itself. | Generate properties or `.base` suggestions later while keeping Markdown report generation primary. |
-| Tracker / Charts-style plugins | Good at visualizing time series and habits. | Visualization-focused; users still define data sources, interpretation, and review prose. | Use simple charts in the dashboard, with source-backed Markdown as the deliverable. |
-| Prompted or AI-assisted "Obsidian Wrapped" workflows | Can produce a polished one-off narrative from exported or selected vault data. | Often depends on external tools, manual prompting, and unclear data boundaries. | Keep the default offline and repeatable; make any AI provider explicit opt-in with preview and redaction. |
-
-## Quick start
-
-### Understand the project in five minutes
-
-1. Read [`SPEC.md`](SPEC.md) for the product scope, architecture, data model,
-   validation plan, and phased delivery.
-2. Read [`docs/research/dec-7-project-research.md`](docs/research/dec-7-project-research.md)
-   for the research behind the Markdown-first product direction.
-3. Use the "Features" and "Competitive and alternative tool comparison"
-   sections in this README as the product overview.
-
-### Build and test locally
+### 1. 安装依赖
 
 ```bash
 npm install
+```
+
+### 2. 确认项目可运行
+
+```bash
 npm run test
 npm run typecheck
 npm run build
 ```
 
-Useful scripts:
+这些命令分别验证核心统计逻辑、TypeScript 类型和 Obsidian 插件打包产物。`npm run build` 会生成 `main.js`，用于手动安装到 Obsidian vault。
 
-| Command | Purpose |
-| --- | --- |
-| `npm run test` | Run Vitest coverage for core parsing, aggregation, rendering, and command IDs. |
-| `npm run typecheck` | Run TypeScript without emitting build files. |
-| `npm run build` | Bundle the plugin to `main.js` for manual Obsidian installation. |
-| `npm run dev` | Start esbuild watch mode for local plugin development. |
+### 3. 安装到测试 vault
 
-### Install into an Obsidian vault for manual testing
-
-After `npm run build`, copy the plugin files into a vault:
+先准备一个 Obsidian 测试 vault，然后把构建产物复制到插件目录：
 
 ```bash
 VAULT="/path/to/YourVault"
@@ -130,46 +56,63 @@ mkdir -p "$PLUGIN_DIR"
 cp manifest.json main.js "$PLUGIN_DIR/"
 ```
 
-Then open Obsidian, enable community plugins, enable **Annual Review**, and run
-the commands from the command palette.
+打开 Obsidian 后进入设置：
 
-### Generate the first annual review
+1. 关闭安全模式或启用社区插件。
+2. 在 Community plugins 中启用 **Annual Review**。
+3. 打开插件设置，确认报告目录、包含/排除目录、指标开关和隐私模式。
 
-1. Open plugin settings and confirm report folder, included folders, excluded
-   folders, metric toggles, and privacy mode.
-2. Run `Annual Review: Rebuild index` when validating a fresh or changed vault.
-3. Run `Annual Review: Generate report` from the command palette.
-4. Select year and generation options.
-5. Open `Annual Reviews/YYYY Annual Review.md`.
-6. Inspect linked evidence notes, edit the generated narrative, and rerun the
-   command when the vault changes.
-7. Optionally run `Annual Review: Open dashboard` to preview metrics and reopen
-   the latest generated report.
+### 4. 生成第一份年度回顾
 
-## Product boundaries
+1. 在命令面板运行 `Annual Review: Rebuild index`，确保插件读取最新 vault 内容。
+2. 运行 `Annual Review: Generate report`。
+3. 选择要复盘的年份和生成选项。
+4. 打开 `Annual Reviews/YYYY Annual Review.md`。
+5. 检查年度总览、月度节奏、热门标签/文件夹/链接、代表性笔记和数据口径。
+6. 按自己的写作风格编辑生成的 Markdown；vault 更新后可以重新运行生成命令。
+7. 需要先看指标时，运行 `Annual Review: Open dashboard` 打开仪表盘。
 
-- No default cloud processing.
-- No default external AI calls.
-- No telemetry requirement.
-- No mandatory dependency on Dataview, Bases, Tasks, Kanban, Projects, or Novel
-  Word Count.
-- No reading files outside the active Obsidian vault during plugin operation.
-- No dashboard-only product path; generated Markdown remains the primary output.
+## 常见使用场景
 
-## Roadmap
+- **个人年终总结**：把 daily notes、项目日志、灵感和任务整理成一份可继续编辑的年度复盘。
+- **写作复盘**：查看全年词数/字符数、活跃天数、最长连续记录、最活跃月份和代表性长文。
+- **研究复盘**：识别高频标签、核心链接、主要文件夹和全年主题迁移。
+- **项目回顾**：从项目笔记、任务和文件夹活动中整理团队或个人项目的年度材料。
+- **vault 整理**：发现高频主题、反复修改的笔记、需要补充属性或后续整理的区域。
+- **分享前整理**：先在本地生成完整私密报告，再手动挑选可以公开的片段。
 
-| Phase | Focus | Deliverable |
-| --- | --- | --- |
-| Phase 0 | Spec and fixtures | Complete: product spec, sample vault fixtures, metric methodology snapshots. |
-| Phase 1 | Statistics engine | Complete baseline: scanner, tokenizer, metadata extraction, filters, aggregation, deterministic Markdown output. |
-| Phase 2 | Obsidian commands and settings | Complete baseline: command palette entries, settings tab, vault report writer, and in-memory index cache. |
-| Phase 3 | Dashboard | Complete baseline: Obsidian `ItemView` with controls, metric summary, top lists, representative notes, and regeneration actions. |
-| Phase 4 | Export and adapters | Privacy-aware share cards, optional Canvas/Bases output, adapters for Markdown-backed third-party plugin data. |
-| Phase 5 | Optional AI | Opt-in AI provider interface with redaction preview, source evidence, and local caching. |
+## 仓库结构
 
-## Validation
+| 路径 | 用途 |
+| --- | --- |
+| `manifest.json` | Obsidian 插件清单，插件 ID 为 `annual-review`。 |
+| `package.json` | 本地开发脚本：测试、类型检查、构建和 watch。 |
+| `src/` | 插件源码：命令、设置、vault 扫描、聚合、渲染、报告写入和仪表盘。 |
+| `tests/` | Vitest 测试和 fixture vault。 |
+| `docs/` | 产品规格、调研、文档索引和后续说明。 |
+| `docs/product-spec.md` | 中文产品规格，包含范围、架构、数据模型、验证计划和阶段路线。 |
+| `docs/research/dec-7-project-research.md` | 项目早期调研，保留在 docs 下作为背景资料。 |
 
-Current automated validation:
+## 设计边界
+
+- 默认不访问网络。
+- 默认不调用外部 AI。
+- 不要求安装 Dataview、Bases、Tasks、Kanban、Projects 或 Novel Word Count。
+- 插件运行时不读取当前 Obsidian vault 之外的文件。
+- Markdown 年度报告是主要产物，仪表盘只是预览和操作入口。
+
+## 开发命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `npm run test` | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。 |
+| `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
+| `npm run build` | 生成可安装到 Obsidian 的 `main.js`。 |
+| `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
+
+## 验证建议
+
+自动验证：
 
 ```bash
 npm run test
@@ -177,18 +120,18 @@ npm run typecheck
 npm run build
 ```
 
-The test suite currently covers:
+手动验证：
 
-- tokenizer behavior for English, CJK, and mixed-language content;
-- path filtering for generated reports, templates, archive folders, and
-  non-Markdown files;
-- frontmatter, tag, link, heading, and task extraction;
-- year aggregation, monthly buckets, streaks, top lists, and representative
-  notes;
-- Markdown renderer sections and source-note links;
-- registered plugin command IDs.
+1. 把插件安装到测试 vault。
+2. 运行重建索引、生成报告、打开仪表盘。
+3. 确认报告文件在 `Annual Reviews/` 下生成。
+4. 确认报告中的 Obsidian 链接能打开源笔记。
+5. 重新生成报告，确认不会重复堆叠旧内容。
+6. 在没有第三方插件的干净 vault 中重复核心流程。
 
-Manual validation should still be run in Obsidian before release: install the
-built plugin into a test vault, rebuild the index, generate a report, open the
-dashboard, rerun generation, and confirm the generated Markdown remains readable
-without third-party plugins or network access.
+## 更多文档
+
+- [英文 README](README.en.md)
+- [文档索引](docs/README.md)
+- [产品规格](docs/product-spec.md)
+- [项目调研](docs/research/dec-7-project-research.md)
