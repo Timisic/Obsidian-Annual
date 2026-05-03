@@ -6,7 +6,7 @@ Obsidian Annual Review is a local-first Obsidian plugin that turns vault activit
 
 The plugin scans Markdown notes, properties, tags, links, headings, tasks, and daily-note patterns inside the active Obsidian vault. It then generates `Annual Reviews/YYYY Annual Review.md` around writing growth, topic evolution, high-value notes, and next-period actions. The output stays in your vault as Markdown, so it remains editable, linkable, syncable, versionable, and auditable.
 
-> Repository status: this repo includes the plugin scaffold, TypeScript source, tests, product spec, and research notes. It does not yet publish packaged community-plugin release artifacts.
+> Repository status: this repo includes installable plugin source, tests, deploy scripts, a smoke-vault validation skill, product specs, and research notes. It does not yet publish packaged community-plugin release artifacts.
 
 ## Who it is for
 
@@ -27,15 +27,18 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Evidence links | Baseline implemented | Uses Obsidian links for topic evidence and high-value note references. |
 | Writing growth charts | Baseline implemented | Writes daily cumulative words, monthly growth, and heatmap SVG assets, then references them from the report with Obsidian image links. |
 | ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; with an API key it uses the Responses API, otherwise it tries local Codex CLI/auth. |
+| Local Codex fallback | Implemented | When the OpenAI API key is empty, users can configure `Local Codex command`; the child process also receives common macOS CLI paths for Obsidian GUI launches. |
+| Report readability fixes | Implemented | Chart embeds use a readable Obsidian width, table wikilinks avoid alias pipes that break columns, and month folders are no longer treated as topics. |
 | Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
 ## Recent Changes
 
-- **Obsidian-resolved link metrics**: top links use `metadataCache.resolvedLinks` / `unresolvedLinks` inside Obsidian, so aliases, heading anchors, embeds, and Markdown links merge under the destination Obsidian resolves.
-- **Reduced final report structure**: generated Markdown now keeps only the one-sentence judgment, writing growth, topic evolution, high-value notes, and next-period actions.
-- **AI one-sentence judgment**: the generate modal can switch the AI provider from `None` to `ChatGPT`. With an OpenAI API key it calls the Responses API; without a key it tries local Codex CLI/auth. The result fills the one-sentence judgment instead of appending a separate AI section.
+- **Obsidian-native report quality**: chart links use a consistent `|900` width; the topic table drops the low-value updated-notes column; table wikilinks avoid `[[path|alias]]` pipes that break Markdown columns.
+- **More readable topics and high-value notes**: month/date folders are filtered out as topics, and high-value reasons/actions are more specific instead of repeating generic “build a MOC” advice.
+- **Open Dashboard visual fit**: the dashboard now uses Obsidian-like cards, toolbar spacing, metric grids, and theme variables for light/dark compatibility.
+- **Configurable local Codex fallback**: the generate modal can switch the AI provider from `None` to `ChatGPT`. With an OpenAI API key it calls the Responses API; without a key it runs `Local Codex command` and adds common macOS CLI paths so GUI-launched Obsidian can find Codex.
+- **Reproducible smoke-vault workflow**: `npm run deploy:plugin`, `npm run deploy:smoke`, and `.codex/skills/annual-review-smoke-vault` let agents deploy the plugin, reload Obsidian, read the generated report, and check regressions.
 - **Standalone SVG chart assets**: the daily cumulative word chart, monthly word-growth curve, daily word heatmap, and topic-evolution chart are written to `Annual Reviews/YYYY Annual Review Assets/`, then referenced from the annual report with Obsidian image links. Data tables remain below the chart references for exact values.
-- **AI context placeholder script**: `npm run ai:context-placeholder` keeps the future Obsidian skill/CLI context-adapter contract. The current script does not read a vault or make network requests.
 
 ## ChatGPT Provider And Privacy
 
@@ -43,10 +46,11 @@ The default remains local-first: `AI provider` is `None`, and report generation 
 
 1. Open the Annual Review plugin settings.
 2. Set `AI provider` to `ChatGPT`.
-3. Optionally enter an `OpenAI API key` and adjust `ChatGPT model`; if the key is empty, Annual Review tries local Codex CLI/auth.
-4. Run `Annual Review: Generate report` and confirm the provider for that run in the generate modal.
+3. Optionally enter an `OpenAI API key` and adjust `ChatGPT model`.
+4. If the key is empty, confirm `Local Codex command`. If macOS GUI-launched Obsidian cannot find `codex`, use an absolute path such as: `/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -`.
+5. Run `Annual Review: Generate report` and confirm the provider for that run in the generate modal.
 
-The privacy boundary is explicit: ChatGPT mode sends the report context, link relationships, and selected note excerpts to the selected generation path. With an API key, that path is the OpenAI Responses API; without a key, it is the local Codex CLI/auth environment. The current implementation requires an opt-in provider and stores no hardcoded secret; finer-grained data preview, redaction controls, and Obsidian skill/CLI context enrichment remain captured in the script TODO.
+The privacy boundary is explicit: ChatGPT mode sends the report context, link relationships, and selected note excerpts to the selected generation path. With an API key, that path is the OpenAI Responses API; without a key, it is the local Codex CLI/auth environment. The current implementation requires an opt-in provider, stores no hardcoded secret, and lets users configure the local Codex command; finer-grained data preview, redaction controls, and Obsidian skill/CLI context enrichment remain captured in the script TODO.
 
 ## Quick Start
 
@@ -68,13 +72,31 @@ These commands validate the core logic, TypeScript types, and Obsidian plugin bu
 
 ### 3. Install into a test vault
 
-Prepare an Obsidian test vault, then copy the plugin files into that vault:
+For this repo's default smoke vault, run:
+
+```bash
+npm run deploy:smoke
+```
+
+It builds the plugin, creates a copyable artifact at `dist/annual-review/`, and deploys to:
+
+```text
+/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault/.obsidian/plugins/annual-review
+```
+
+For another vault, use the generic deploy script:
+
+```bash
+npm run deploy:plugin -- --target /path/to/YourVault/.obsidian
+```
+
+You can also copy build artifacts manually:
 
 ```bash
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js "$PLUGIN_DIR/"
+cp manifest.json main.js versions.json "$PLUGIN_DIR/"
 ```
 
 In Obsidian:
@@ -107,11 +129,13 @@ In Obsidian:
 | Path | Purpose |
 | --- | --- |
 | `manifest.json` | Obsidian plugin manifest for `annual-review`. |
-| `package.json` | Development scripts for tests, typecheck, build, and watch mode. |
+| `package.json` | Development scripts for tests, typecheck, build, watch mode, and smoke-vault deployment. |
 | `src/` | Plugin source for commands, settings, vault scanning, aggregation, rendering, report writing, and dashboard UI. |
 | `tests/` | Vitest coverage and fixture vault content. |
-| `docs/` | Product spec, research notes, docs index, and future docs. |
+| `docs/` | Product spec, AI+data report design, research notes, docs index, and future docs. |
 | `docs/product-spec.md` | Chinese product specification covering scope, architecture, validation, and roadmap. |
+| `.codex/skills/annual-review-smoke-vault/` | Repo-local Codex skill for deploying the smoke vault, exercising Obsidian CLI, reading reports, and checking regressions. |
+| `scripts/deploy-plugin.mjs` | Builds and generates/deploys Obsidian plugin artifacts while preserving target-vault `data.json` settings. |
 | `docs/research/dec-7-project-research.md` | Early project research kept under docs as background material. |
 
 ## Boundaries
@@ -130,6 +154,9 @@ In Obsidian:
 | `npm run typecheck` | Run TypeScript without emitting build files. |
 | `npm run build` | Bundle the plugin into `main.js`. |
 | `npm run dev` | Start esbuild watch mode for local plugin development. |
+| `npm run deploy:plugin` | Build the plugin, generate `dist/annual-review/`, and optionally deploy to any vault `.obsidian` folder. |
+| `npm run deploy:smoke` | Build and deploy to the default smoke vault. |
+| `npm run writing-growth` | Run the standalone writing-growth report script. |
 | `npm run ai:context-placeholder` | Print the placeholder contract for a future Obsidian skill/CLI AI context adapter. |
 
 ## Validation
@@ -142,6 +169,13 @@ npm run typecheck
 npm run build
 ```
 
+Smoke-vault validation:
+
+```bash
+npm run deploy:smoke
+.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --no-deploy
+```
+
 Manual validation:
 
 1. Install the plugin into a test vault.
@@ -151,10 +185,12 @@ Manual validation:
 5. Add a target note referenced through `[[title|alias]]`, `[[path#heading]]`, embeds, and Markdown links, then confirm top links merge those references under the same Obsidian-resolved destination.
 6. Regenerate the report and confirm old content is not duplicated.
 7. Repeat the core flow in a clean vault without third-party plugins.
+8. If ChatGPT is selected without an OpenAI API key, confirm `Local Codex command` works from Obsidian and the report does not contain `AI summary unavailable` or `codex: command not found`.
 
 ## More Documentation
 
 - [Chinese README](README.md)
 - [Docs index](docs/README.md)
 - [Product spec](docs/product-spec.md)
+- [AI+data report design](docs/ai-data-report-design.md)
 - [Research notes](docs/research/dec-7-project-research.md)

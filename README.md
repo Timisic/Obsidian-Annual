@@ -6,7 +6,7 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 
 插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出写作增长、主题演化、高价值笔记和下期行动，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果仍然留在 vault 里，可以继续编辑、链接、同步、版本管理和审阅。
 
-> 当前仓库状态：已经包含 Obsidian 插件脚手架、TypeScript 源码、测试、产品规格和调研文档；尚未发布打包好的社区插件版本。
+> 当前仓库状态：已经包含可本地安装的 Obsidian 插件源码、测试、部署脚本、smoke vault 验证 skill、产品规格和调研文档；尚未发布打包好的社区插件版本。
 
 ## 适合谁
 
@@ -27,15 +27,18 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 证据链接 | ✅ 已实现 | 报告里的主题和高价值笔记会链接回 Obsidian 源笔记。 |
 | 写作增长图表 | ✅ 已实现 | 生成日累计字数、月度增长和每日字数热力图 SVG 资产，并在报告中用 Obsidian 图片链接引用。 |
 | ChatGPT provider | 🧪 可选 | 生成报告时可选择 ChatGPT；有 OpenAI API key 时直连 Responses API，否则尝试本地 Codex CLI/auth。 |
+| 本地 Codex fallback | ✅ 已实现 | OpenAI API key 留空时可配置 `Local Codex command`；会补充常见 macOS CLI 路径，适配 Obsidian GUI PATH 不完整的情况。 |
+| 报告可读性修复 | ✅ 已实现 | 图表默认放大为 Obsidian 可读宽度，表格内双链避免 alias 管道符破坏列结构，月份目录不再作为主题。 |
 | 隐私边界 | ⚠️ 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
 
 ## 最近变更
 
-- **Obsidian 解析链接统计**：在 Obsidian 内使用 `metadataCache.resolvedLinks` / `unresolvedLinks` 统计热门链接，别名、标题锚点、嵌入链接和 Markdown 链接会按实际目标合并。
-- **精简最终报告结构**：最终 Markdown 只保留本期一句话判断、写作增长、主题演化、高价值笔记和下期行动五个部分。
-- **AI 一句话判断**：生成时可选择 `ChatGPT`。有 OpenAI API key 时直连 Responses API；没有 key 时尝试调用本地 Codex CLI/auth，输出会进入「本期一句话判断」，不会追加额外 AI 段落。
+- **Obsidian 原生报告质量优化**：图表引用统一带 `|900` 宽度；主题演化表移除低价值的“更新笔记”列；表格内使用不带 alias 的 wiki link，避免 `[[path|alias]]` 里的管道符拆坏 Markdown 表格。
+- **主题与高价值笔记更可读**：月份/日期类目录不再直接作为主题；高价值笔记的理由和建议动作改为更具体的表达，减少“建立 MOC”式重复建议。
+- **Open Dashboard 视觉适配**：Dashboard 改为更贴近 Obsidian 的卡片、工具栏、指标区和主题变量样式，兼容亮色/暗色主题。
+- **可配置本地 Codex fallback**：生成时可选择 `ChatGPT`。有 OpenAI API key 时直连 Responses API；没有 key 时调用 `Local Codex command`，并自动补充常见 macOS CLI 路径，解决 Obsidian GUI 环境找不到 `codex` 的问题。
+- **可复现 smoke vault 流程**：新增 `npm run deploy:plugin`、`npm run deploy:smoke` 和 repo 内 skill `.codex/skills/annual-review-smoke-vault`，方便 agent 部署到 smoke vault、重载插件、读取报告并检查回归。
 - **独立 SVG 图表资产**：日累计字数图、月度字数增长曲线、每日字数热力图和主题演化图会写入 `Annual Reviews/YYYY Annual Review Assets/`，年度报告用 Obsidian 图片链接引用，并保留数据表核对具体数值。
-- **AI 上下文占位脚本**：`npm run ai:context-placeholder` 保留未来 Obsidian skill/CLI 上下文适配器契约；当前脚本不读取 vault，也不发起网络请求。
 
 ## ChatGPT provider 与隐私
 
@@ -43,10 +46,11 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 
 1. 打开 Annual Review 插件设置。
 2. 将 `AI provider` 设置为 `ChatGPT`。
-3. 可选：填入 `OpenAI API key`，并按需修改 `ChatGPT model`。留空时会尝试使用本地 Codex CLI/auth。
-4. 运行 `Annual Review: Generate report`，在生成弹窗中确认本次运行的 provider。
+3. 可选：填入 `OpenAI API key`，并按需修改 `ChatGPT model`。
+4. 如果 API key 留空，确认 `Local Codex command`。macOS GUI 版 Obsidian 找不到 `codex` 时，建议使用绝对路径，例如：`/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -`。
+5. 运行 `Annual Review: Generate report`，在生成弹窗中确认本次运行的 provider。
 
-隐私边界需要明确：ChatGPT 模式会把本次年度报告所需的统计、链接关系和部分笔记摘录交给所选生成路径。有 API key 时发送到 OpenAI Responses API；无 key 时走本机 Codex CLI/auth 环境。当前实现是显式选择、无硬编码密钥；更细粒度的数据预览、字段脱敏和 Obsidian skill/CLI 上下文增强仍保留在脚本 TODO 中。
+隐私边界需要明确：ChatGPT 模式会把本次年度报告所需的统计、链接关系和部分笔记摘录交给所选生成路径。有 API key 时发送到 OpenAI Responses API；无 key 时走本机 Codex CLI/auth 环境。当前实现是显式选择、无硬编码密钥，并允许配置本地 Codex 命令；更细粒度的数据预览、字段脱敏和 Obsidian skill/CLI 上下文增强仍保留在脚本 TODO 中。
 
 ## 快速开始
 
@@ -68,13 +72,31 @@ npm run build
 
 ### 3. 安装到测试 vault
 
-先准备一个 Obsidian 测试 vault，然后把构建产物复制到插件目录：
+如果使用本仓库默认 smoke vault，可直接运行：
+
+```bash
+npm run deploy:smoke
+```
+
+它会执行构建，生成可复制产物 `dist/annual-review/`，并部署到：
+
+```text
+/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault/.obsidian/plugins/annual-review
+```
+
+安装到其他 vault 时，可以使用通用部署脚本：
+
+```bash
+npm run deploy:plugin -- --target /path/to/YourVault/.obsidian
+```
+
+也可以手动复制构建产物：
 
 ```bash
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js "$PLUGIN_DIR/"
+cp manifest.json main.js versions.json "$PLUGIN_DIR/"
 ```
 
 打开 Obsidian 后进入设置：
@@ -107,11 +129,13 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 | 路径 | 用途 |
 | --- | --- |
 | `manifest.json` | Obsidian 插件清单，插件 ID 为 `annual-review`。 |
-| `package.json` | 本地开发脚本：测试、类型检查、构建和 watch。 |
+| `package.json` | 本地开发脚本：测试、类型检查、构建、watch 和 smoke vault 部署。 |
 | `src/` | 插件源码：命令、设置、vault 扫描、聚合、渲染、报告写入和仪表盘。 |
 | `tests/` | Vitest 测试和 fixture vault。 |
-| `docs/` | 产品规格、调研、文档索引和后续说明。 |
+| `docs/` | 产品规格、AI+data 报告设计、调研、文档索引和后续说明。 |
 | `docs/product-spec.md` | 中文产品规格，包含范围、架构、数据模型、验证计划和阶段路线。 |
+| `.codex/skills/annual-review-smoke-vault/` | repo 内 Codex skill，用于让后续 agent 部署 smoke vault、调用 Obsidian CLI、读取报告并检查回归。 |
+| `scripts/deploy-plugin.mjs` | 构建并生成/部署 Obsidian 插件产物，保留目标 vault 中已有 `data.json` 设置。 |
 | `docs/research/dec-7-project-research.md` | 项目早期调研，保留在 docs 下作为背景资料。 |
 
 ## 设计边界
@@ -130,6 +154,9 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 | `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
 | `npm run build` | 生成可安装到 Obsidian 的 `main.js`。 |
 | `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
+| `npm run deploy:plugin` | 构建插件，生成 `dist/annual-review/`，并可部署到任意 vault 的 `.obsidian`。 |
+| `npm run deploy:smoke` | 构建并部署到默认 smoke vault。 |
+| `npm run writing-growth` | 运行独立写作增长报告脚本。 |
 | `npm run ai:context-placeholder` | 输出未来 Obsidian skill/CLI AI 上下文适配器的占位契约。 |
 
 ## 验证建议
@@ -142,6 +169,13 @@ npm run typecheck
 npm run build
 ```
 
+Smoke vault 验证：
+
+```bash
+npm run deploy:smoke
+.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --no-deploy
+```
+
 手动验证：
 
 1. 把插件安装到测试 vault。
@@ -151,10 +185,12 @@ npm run build
 5. 准备一个同时包含 `[[标题|别名]]`、`[[路径#标题]]`、嵌入链接和 Markdown 链接的目标笔记，确认热门链接按同一个 Obsidian 解析目标合并统计。
 6. 重新生成报告，确认不会重复堆叠旧内容。
 7. 在没有第三方插件的干净 vault 中重复核心流程。
+8. 如果启用 ChatGPT 但不填 OpenAI API key，确认 `Local Codex command` 可从 Obsidian 运行，报告中不出现 `AI summary unavailable` 或 `codex: command not found`。
 
 ## 更多文档
 
 - [英文 README](README.en.md)
 - [文档索引](docs/README.md)
 - [产品规格](docs/product-spec.md)
+- [AI+data 报告生成设计](docs/ai-data-report-design.md)
 - [项目调研](docs/research/dec-7-project-research.md)
