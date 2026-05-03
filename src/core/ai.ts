@@ -41,7 +41,7 @@ export async function renderAiReportSection(options: ChatGptReportOptions): Prom
   }
 
   if (options.settings.aiProvider !== "chatgpt") {
-    return aiUnavailableSection(`Unsupported AI provider: ${options.settings.aiProvider}`);
+    return aiUnavailableSummary(`Unsupported AI provider: ${options.settings.aiProvider}`);
   }
 
   const apiKey = options.settings.chatGptApiKey.trim();
@@ -59,9 +59,9 @@ export async function renderAiReportSection(options: ChatGptReportOptions): Prom
     body: JSON.stringify({
       model: options.settings.chatGptModel.trim() || "gpt-4.1",
       instructions: [
-        "You draft concise, evidence-backed annual review material for an Obsidian user.",
+        "You draft one concise, evidence-backed annual review judgment sentence for an Obsidian user.",
         "Use only the supplied vault statistics, note excerpts, tags, folders, and links.",
-        "Write in Markdown. Preserve source note paths when making claims.",
+        "Return one sentence only. Preserve source note paths when making claims.",
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
       input: buildAiPrompt(options.aggregate, options.files, options.settings),
@@ -71,56 +71,26 @@ export async function renderAiReportSection(options: ChatGptReportOptions): Prom
 
   if (!response.ok) {
     const message = await safeResponseText(response);
-    return aiUnavailableSection(`ChatGPT provider request failed (${response.status}): ${message}`);
+    return aiUnavailableSummary(`ChatGPT provider request failed (${response.status}): ${message}`);
   }
 
   const data = (await response.json()) as OpenAiResponse;
   const content = extractResponseText(data).trim();
   if (!content) {
-    return aiUnavailableSection("ChatGPT provider returned an empty response.");
+    return aiUnavailableSummary("ChatGPT provider returned an empty response.");
   }
 
-  return [
-    "## AI Personalization",
-    "",
-    `Provider: ChatGPT (${options.settings.chatGptModel.trim() || "gpt-4.1"}).`,
-    "",
-    "> Privacy note: this section was generated only because the ChatGPT provider was selected. The provider received the annual aggregate, selected note excerpts, tags, folders, and links for this run.",
-    "",
-    content,
-    "",
-    "### AI Integration TODO",
-    "",
-    "- Add an Obsidian-native data preview/confirmation step before sending vault context.",
-    "- Decide whether future Obsidian skill or CLI adapters should enrich the context before the provider call.",
-    "- Add redaction controls for note bodies, folders, tags, and links before enabling broader AI workflows.",
-    "",
-  ].join("\n");
+  return toOneSentenceSummary(content);
 }
 
 async function renderCodexReportSection(options: ChatGptReportOptions): Promise<string> {
   const executor = options.codexExecutor ?? runLocalCodex;
   const result = await executor(buildCodexPrompt(options.aggregate, options.files, options.settings));
   if (!result.ok || !result.content.trim()) {
-    return aiUnavailableSection(`ChatGPT provider was selected without an OpenAI API key, and local Codex generation was unavailable: ${result.content || "No response."}`);
+    return aiUnavailableSummary(`ChatGPT provider was selected without an OpenAI API key, and local Codex generation was unavailable: ${result.content || "No response."}`);
   }
 
-  return [
-    "## AI Personalization",
-    "",
-    "Provider: ChatGPT via local Codex auth.",
-    "",
-    "> Privacy note: this section was generated only because the ChatGPT provider was selected. The provider received the annual aggregate, selected note excerpts, tags, folders, and links for this run through the local Codex CLI/auth environment.",
-    "",
-    result.content.trim(),
-    "",
-    "### AI Integration TODO",
-    "",
-    "- Add an Obsidian-native data preview/confirmation step before sending vault context.",
-    "- Decide whether future Obsidian skill or CLI adapters should enrich the context before the provider call.",
-    "- Add redaction controls for note bodies, folders, tags, and links before enabling broader AI workflows.",
-    "",
-  ].join("\n");
+  return toOneSentenceSummary(result.content);
 }
 
 export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], settings: AnnualReviewSettings): string {
@@ -152,7 +122,7 @@ export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], set
 
   return JSON.stringify(
     {
-      task: "Generate a personalized but concise annual review draft section. Focus on themes, writing rhythm, and concrete evidence links.",
+      task: "Generate one personalized but concise annual review judgment sentence. Focus on themes, writing rhythm, and concrete evidence links.",
       contextPolicy: {
         noteCoverage: omittedNoteCount === 0 ? "All active notes are included with excerpts." : `${contextNotes.length} active notes include excerpts; ${omittedNoteCount} additional active notes are represented in the link graph only.`,
         excerptLimit: `${MAX_AI_CONTEXT_EXCERPT_CHARS} characters per included note`,
@@ -189,10 +159,10 @@ export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], set
 
 export function buildCodexPrompt(aggregate: YearAggregate, files: SourceFile[], settings: AnnualReviewSettings): string {
   return [
-    "You are generating one concise Markdown section for an Obsidian annual review.",
+    "You are generating one concise judgment sentence for an Obsidian annual review.",
     "Use only the supplied JSON context. Preserve source note paths when making claims.",
     "Do not run tools, inspect files, or infer private facts that are absent from the context.",
-    "Return only the Markdown section body; do not include a top-level heading.",
+    "Return one sentence only; do not include a heading, list, provider note, or TODO.",
     "",
     buildAiPrompt(aggregate, files, settings),
   ].join("\n");
@@ -262,19 +232,21 @@ function excerpt(content: string): string {
   return `${body.slice(0, MAX_AI_CONTEXT_EXCERPT_CHARS).trim()}...`;
 }
 
-function aiUnavailableSection(reason: string): string {
-  return [
-    "## AI Personalization",
-    "",
-    `Provider status: ${reason}`,
-    "",
-    "### AI Integration TODO",
-    "",
-    "- Keep ChatGPT opt-in and avoid hardcoded secrets.",
-    "- Add an Obsidian-native data preview/confirmation step before sending vault context.",
-    "- Decide whether future Obsidian skill or CLI adapters should enrich the context before the provider call.",
-    "",
-  ].join("\n");
+function aiUnavailableSummary(reason: string): string {
+  return toOneSentenceSummary(`AI summary unavailable: ${reason}`);
+}
+
+function toOneSentenceSummary(markdown: string): string {
+  const body = markdown
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
+    .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
+    .join(" ")
+    .replace(/\s+/gu, " ")
+    .trim();
+  const sentence = body.match(/^(.+?[.!?。！？])(?:\s|$)/u)?.[1] ?? body;
+  return sentence.slice(0, 240).trim();
 }
 
 function extractResponseText(data: OpenAiResponse): string {

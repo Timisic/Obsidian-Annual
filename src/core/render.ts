@@ -4,10 +4,11 @@ import type { DayBucket, HighValueNote, MonthBucket, RankedMetric, RankedNote, R
 interface RenderOptions {
   language?: ResolvedAnnualReviewLanguage;
   chartPaths?: Partial<Record<AnnualReviewChartKind, string>>;
+  periodJudgment?: string;
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
-export type AnnualReviewChartKind = "daily-word-heatmap" | "word-growth-trend" | "topic-evolution" | "topic-evolution-data";
+export type AnnualReviewChartKind = "daily-cumulative-words" | "daily-word-heatmap" | "word-growth-trend" | "topic-evolution" | "topic-evolution-data";
 
 export interface AnnualReviewChartAsset {
   kind: AnnualReviewChartKind;
@@ -19,6 +20,7 @@ export function buildAnnualReviewChartPaths(reportFolder: string, year: number):
   const folder = normalizeReportFolder(reportFolder || "Annual Reviews");
   const assetFolder = `${folder}/${year} Annual Review Assets`;
   return {
+    "daily-cumulative-words": `${assetFolder}/daily-cumulative-words.svg`,
     "daily-word-heatmap": `${assetFolder}/daily-word-heatmap.svg`,
     "word-growth-trend": `${assetFolder}/word-growth-trend.svg`,
     "topic-evolution": `${assetFolder}/topic-evolution.svg`,
@@ -30,6 +32,14 @@ export function buildAnnualReviewChartAssets(aggregate: YearAggregate, options: 
   const language = options.language ?? "en";
   const paths = options.chartPaths ?? buildAnnualReviewChartPaths("Annual Reviews", aggregate.year);
   const assets: AnnualReviewChartAsset[] = [];
+
+  if (aggregate.dayBuckets.length > 0 && paths["daily-cumulative-words"]) {
+    assets.push({
+      kind: "daily-cumulative-words",
+      path: paths["daily-cumulative-words"],
+      content: renderDailyCumulativeWordsSvg(aggregate.dayBuckets, language),
+    });
+  }
 
   if (aggregate.dayBuckets.length > 0 && paths["daily-word-heatmap"]) {
     assets.push({
@@ -71,11 +81,24 @@ const REPORT_TEXT = {
     title: (year: number) => `${year} Annual Review`,
     allMarkdownFiles: "All Markdown files",
     none: "None",
-    executiveSummary: "Executive Summary",
-    createdModifiedSummary: (created: number, modified: number, activeDays: number) =>
-      `Created ${created} notes and modified ${modified} notes across ${activeDays} active days.`,
-    contentSummary: (words: number, characters: number) => `Created-note content totals include ${words} counted words and ${characters} non-whitespace characters.`,
-    longestStreak: (days: number) => `Longest writing streak: ${days} day${days === 1 ? "" : "s"}.`,
+    periodJudgment: "One-Sentence Judgment",
+    defaultPeriodJudgment: (words: number, activeDays: number, topics: string[]) =>
+      `This period added ${formatInteger(words)} words across ${activeDays} writing days, with the strongest topic signal in ${formatQuotedList(topics)}.`,
+    writingGrowth: "Writing Growth",
+    totalNewWords: "Total new words",
+    writingDays: "Writing days",
+    longestWritingStreak: "Longest writing streak",
+    dailyCumulativeWordChart: "Daily Cumulative Word Chart",
+    dailyCumulativeWordChartLegend: "Embedded SVG chart: the line shows cumulative created-note words by day.",
+    monthlyGrowthChart: "Monthly Growth Chart",
+    heatmap: "Heatmap",
+    growthFeedback: "Writing Growth Feedback",
+    strength: "Advantage",
+    risk: "Risk",
+    suggestion: "Suggestion",
+    growthStrength: (activeDays: number, longestStreak: number) => `Writing appeared on ${activeDays} days, and the longest streak reached ${longestStreak} day${longestStreak === 1 ? "" : "s"}.`,
+    growthRisk: (activeMonths: number) => `Writing volume is concentrated in ${activeMonths} active month${activeMonths === 1 ? "" : "s"}, so gaps can still hide behind the annual total.`,
+    growthSuggestion: "Next period, protect a small weekly writing cadence before optimizing for peak-output days.",
     yearTotals: "Year Totals",
     metric: "Metric",
     value: "Value",
@@ -124,6 +147,11 @@ const REPORT_TEXT = {
     topFolders: "Top Folders",
     topLinks: "Top Links",
     highValueNotes: "High Value Notes",
+    topHighValueNotes: "Top 10 high-value notes",
+    outputReadyNotes: "Output-ready notes",
+    maintenanceNotes: "Notes needing maintenance",
+    noOutputReadyNotes: "No output-ready notes found.",
+    noMaintenanceNotes: "No maintenance-needed notes found.",
     highValueNotesSummary: (count: number, outputReady: number) => `${count} notes are worth revisiting first this period, including ${outputReady} output-ready notes.`,
     highValueNote: "Note",
     highValueType: "Type",
@@ -134,6 +162,12 @@ const REPORT_TEXT = {
     outputReadySignal: (count: number) => `${count} notes are ready to be shaped into an article or MOC.`,
     staleCoreSignal: (count: number) => `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
     noHighValueNotes: "No high-value note signals found.",
+    nextPeriodActions: "Next-Period Actions",
+    mocAction: (topic: string) => `Build or update an MOC for ${topic}.`,
+    isolatedNotesAction: (count: number) => `Connect or decide the fate of ${count} isolated potential note${count === 1 ? "" : "s"}.`,
+    noIsolatedNotesAction: "No isolated-potential notes need immediate handling.",
+    highValuePushAction: (notes: string) => `Move forward ${notes} as the next high-value note focus.`,
+    noHighValuePushAction: "No high-value note push is available from the current signals.",
     nextPeriodSuggestion: "Next Period Suggestion",
     highValueNextStep: "Prioritize these notes instead of adding undifferentiated new content.",
     representativeNotes: "Representative Notes",
@@ -150,10 +184,24 @@ const REPORT_TEXT = {
     title: (year: number) => `${year} 年度回顾`,
     allMarkdownFiles: "全部 Markdown 文件",
     none: "无",
-    executiveSummary: "执行摘要",
-    createdModifiedSummary: (created: number, modified: number, activeDays: number) => `创建 ${created} 篇笔记，修改 ${modified} 篇笔记，共 ${activeDays} 个活跃日。`,
-    contentSummary: (words: number, characters: number) => `新建笔记内容共 ${words} 个计数字词，${characters} 个非空白字符。`,
-    longestStreak: (days: number) => `最长写作连续天数：${days} 天。`,
+    periodJudgment: "本期一句话判断",
+    defaultPeriodJudgment: (words: number, activeDays: number, topics: string[]) =>
+      `本期新增 ${formatInteger(words)} 个字词，覆盖 ${activeDays} 个写作日，最明显的主题信号集中在${formatQuotedList(topics)}。`,
+    writingGrowth: "写作增长",
+    totalNewWords: "总新增字数",
+    writingDays: "写作天数",
+    longestWritingStreak: "最长连续写作",
+    dailyCumulativeWordChart: "日累计字数图",
+    dailyCumulativeWordChartLegend: "内嵌 SVG 图表：折线展示每日新建笔记字词的累计增长。",
+    monthlyGrowthChart: "月度增长图",
+    heatmap: "热力图",
+    growthFeedback: "写作增长反馈",
+    strength: "优点",
+    risk: "风险",
+    suggestion: "建议",
+    growthStrength: (activeDays: number, longestStreak: number) => `本期有 ${activeDays} 个写作日，最长连续写作达到 ${longestStreak} 天。`,
+    growthRisk: (activeMonths: number) => `写作量集中在 ${activeMonths} 个活跃月份，年度总量可能掩盖阶段性断档。`,
+    growthSuggestion: "下期优先保护每周稳定写作节奏，再追求单日高产。",
     yearTotals: "年度统计",
     metric: "指标",
     value: "数值",
@@ -202,6 +250,11 @@ const REPORT_TEXT = {
     topFolders: "高频文件夹",
     topLinks: "高频链接",
     highValueNotes: "高价值笔记",
+    topHighValueNotes: "Top 10 高价值笔记",
+    outputReadyNotes: "可输出笔记",
+    maintenanceNotes: "需维护笔记",
+    noOutputReadyNotes: "未找到可输出笔记。",
+    noMaintenanceNotes: "未找到需维护笔记。",
     highValueNotesSummary: (count: number, outputReady: number) => `本期最值得继续推进的笔记有 ${count} 篇，其中 ${outputReady} 篇具备输出潜力。`,
     highValueNote: "笔记",
     highValueType: "类型",
@@ -212,6 +265,12 @@ const REPORT_TEXT = {
     outputReadySignal: (count: number) => `有 ${count} 篇笔记已经具备整理成文章或 MOC 的条件。`,
     staleCoreSignal: (count: number) => `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
     noHighValueNotes: "未找到高价值笔记信号。",
+    nextPeriodActions: "下期行动",
+    mocAction: (topic: string) => `建立或更新「${topic}」相关 MOC。`,
+    isolatedNotesAction: (count: number) => `处理 ${count} 篇孤立潜力笔记，补链或判断是否归档。`,
+    noIsolatedNotesAction: "当前没有需要立即处理的孤立潜力笔记。",
+    highValuePushAction: (notes: string) => `推进 ${notes} 作为下期高价值笔记重点。`,
+    noHighValuePushAction: "当前高价值笔记信号不足，暂无明确推进对象。",
     nextPeriodSuggestion: "下期建议",
     highValueNextStep: "优先处理这些笔记，而不是继续无差别新增内容。",
     representativeNotes: "代表笔记",
@@ -237,66 +296,69 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     "",
     `# ${text.title(aggregate.year)}`,
     "",
-    `## ${text.executiveSummary}`,
+    `## ${text.periodJudgment}`,
     "",
-    `- ${text.createdModifiedSummary(aggregate.createdCount, aggregate.modifiedCount, aggregate.activeDays)}`,
-    `- ${text.contentSummary(aggregate.totalWords, aggregate.totalCharacters)}`,
-    `- ${text.longestStreak(aggregate.longestStreak)}`,
+    renderPeriodJudgment(aggregate, language, options.periodJudgment),
     "",
-    `## ${text.yearTotals}`,
+    `## ${text.writingGrowth}`,
     "",
-    `| ${text.metric} | ${text.value} |`,
-    "| --- | ---: |",
-    `| ${text.notesCreated} | ${aggregate.createdCount} |`,
-    `| ${text.notesModified} | ${aggregate.modifiedCount} |`,
-    `| ${text.activeDays} | ${aggregate.activeDays} |`,
-    `| ${text.longestStreakMetric} | ${aggregate.longestStreak} |`,
-    `| ${text.createdNoteWords} | ${aggregate.totalWords} |`,
-    `| ${text.createdNoteCharacters} | ${aggregate.totalCharacters} |`,
-    "",
-    `## ${text.monthlyTimeline}`,
-    "",
-    renderMonthTable(aggregate.monthBuckets, language),
-    "",
-    `## ${text.dailyWordHeatmap}`,
-    "",
-    renderDailyHeatmap(aggregate.dayBuckets, language, options.chartPaths?.["daily-word-heatmap"]),
-    "",
-    `## ${text.wordGrowthTrend}`,
-    "",
-    renderWordGrowthTrend(aggregate.wordGrowthBuckets, language, options.chartPaths?.["word-growth-trend"]),
+    renderWritingGrowth(aggregate, language, options.chartPaths),
     "",
     `## ${text.topicEvolution}`,
     "",
     renderTopicEvolution(aggregate.topicEvolution, language, options.chartPaths?.["topic-evolution"]),
     "",
-    `## ${text.topTags}`,
-    "",
-    renderMetricList(aggregate.topTags, "#", language),
-    "",
-    `## ${text.topFolders}`,
-    "",
-    renderMetricList(aggregate.topFolders, "", language),
-    "",
-    `## ${text.topLinks}`,
-    "",
-    renderMetricList(aggregate.topLinks.map((item) => ({ ...item, name: linkName(item.name) })), "", language),
-    "",
     `## ${text.highValueNotes}`,
     "",
     renderHighValueNotes(aggregate, language),
     "",
-    `## ${text.representativeNotes}`,
+    `## ${text.nextPeriodActions}`,
     "",
-    text.representativeNotesDescription,
-    "",
-    renderNoteList(aggregate.representativeNotes, language),
-    "",
-    `## ${text.writingAndActivityRhythm}`,
-    "",
-    renderRhythm(aggregate.monthBuckets, language),
+    renderNextPeriodActions(aggregate, language),
     "",
   ].join("\n");
+}
+
+function renderPeriodJudgment(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage, periodJudgment?: string): string {
+  const text = REPORT_TEXT[language];
+  return sanitizeInlineMarkdown(periodJudgment) || text.defaultPeriodJudgment(aggregate.totalWords, aggregate.activeDays, aggregate.topicEvolution.topTopics.slice(0, 3).map((topic) => topic.name));
+}
+
+function renderWritingGrowth(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage, chartPaths?: Partial<Record<AnnualReviewChartKind, string>>): string {
+  const text = REPORT_TEXT[language];
+  return [
+    `| ${text.metric} | ${text.value} |`,
+    "| --- | ---: |",
+    `| ${text.totalNewWords} | ${formatInteger(aggregate.totalWords)} |`,
+    `| ${text.writingDays} | ${aggregate.activeDays} |`,
+    `| ${text.longestWritingStreak} | ${aggregate.longestStreak} |`,
+    "",
+    `### ${text.dailyCumulativeWordChart}`,
+    "",
+    renderDailyCumulativeWords(aggregate.dayBuckets, language, chartPaths?.["daily-cumulative-words"]),
+    "",
+    `### ${text.monthlyGrowthChart}`,
+    "",
+    renderWordGrowthTrend(aggregate.wordGrowthBuckets, language, chartPaths?.["word-growth-trend"]),
+    "",
+    `### ${text.heatmap}`,
+    "",
+    renderDailyHeatmap(aggregate.dayBuckets, language, chartPaths?.["daily-word-heatmap"]),
+    "",
+    `### ${text.growthFeedback}`,
+    "",
+    ...renderGrowthFeedback(aggregate, language),
+  ].join("\n");
+}
+
+function renderGrowthFeedback(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string[] {
+  const text = REPORT_TEXT[language];
+  const activeMonths = aggregate.monthBuckets.filter((month) => month.words > 0).length;
+  return [
+    `- ${text.strength}: ${text.growthStrength(aggregate.activeDays, aggregate.longestStreak)}`,
+    `- ${text.risk}: ${text.growthRisk(activeMonths)}`,
+    `- ${text.suggestion}: ${text.growthSuggestion}`,
+  ];
 }
 
 function formatScope(items: string[], emptyLabel: string): string {
@@ -331,6 +393,19 @@ function renderMonthTable(months: MonthBucket[], language: ResolvedAnnualReviewL
     `| ${header.join(" | ")} |`,
     `| ${alignment.join(" | ")} |`,
     ...activeMonths.map((month) => `| ${[month.month, ...metrics.map((metric) => String(month[metric]))].join(" | ")} |`),
+  ].join("\n");
+}
+
+function renderDailyCumulativeWords(days: DayBucket[], language: ResolvedAnnualReviewLanguage, chartPath?: string): string {
+  const text = REPORT_TEXT[language];
+  if (days.length === 0) {
+    return text.dailyWordHeatmapEmpty;
+  }
+
+  return [
+    text.dailyCumulativeWordChartLegend,
+    "",
+    chartPath ? renderChartReference(chartPath, text.dailyCumulativeWordChart) : renderDailyCumulativeWordsSvg(days, language),
   ].join("\n");
 }
 
@@ -448,6 +523,75 @@ function renderDailyHeatmapSvg(days: DayBucket[], language: ResolvedAnnualReview
     monthLabels,
     weekdays,
     cells,
+    "</svg>",
+  ].join("\n");
+}
+
+function renderDailyCumulativeWordsSvg(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  const width = 820;
+  const height = 280;
+  const left = 58;
+  const right = 24;
+  const top = 20;
+  const bottom = 44;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  let cumulativeWords = 0;
+  const points = days.map((day) => {
+    cumulativeWords += day.words;
+    return {
+      ...day,
+      cumulativeWords,
+    };
+  });
+  const maxWords = niceMax(Math.max(1, cumulativeWords));
+  const ticks = [0, maxWords / 2, maxWords];
+  const xScale = (index: number) => left + (plotWidth * index) / Math.max(1, points.length - 1);
+  const yScale = (words: number) => top + plotHeight - (words / maxWords) * plotHeight;
+  const linePath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${formatNumber(xScale(index))} ${formatNumber(yScale(point.cumulativeWords))}`)
+    .join(" ");
+
+  const grid = ticks
+    .map((tick) => {
+      const y = top + plotHeight - (tick / maxWords) * plotHeight;
+      return [
+        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
+        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  const monthTicks = points
+    .filter((point) => point.dayOfMonth === 1)
+    .map((point, index) => {
+      const pointIndex = points.findIndex((candidate) => candidate.date === point.date);
+      const labelX = xScale(pointIndex);
+      const visibleLabel = index % 2 === 0 || points.length <= 120;
+      return [
+        `<line x1="${formatNumber(labelX)}" y1="${top + plotHeight}" x2="${formatNumber(labelX)}" y2="${top + plotHeight + 5}" stroke="#57606a" stroke-width="1" />`,
+        visibleLabel ? `<text x="${formatNumber(labelX)}" y="${height - 24}" font-size="10" text-anchor="middle" fill="currentColor">${escapeHtml(point.month.slice(5))}</text>` : "",
+      ].filter(Boolean).join("\n");
+    })
+    .join("\n");
+
+  const last = points[points.length - 1];
+  const endpointDot = last
+    ? `<circle class="endpoint-dot" cx="${formatNumber(xScale(points.length - 1))}" cy="${formatNumber(yScale(last.cumulativeWords))}" r="5" fill="#4f7cac"><title>${escapeHtml(`${last.date}: ${last.cumulativeWords} ${text.cumulativeWords}`)}</title></circle>`
+    : "";
+
+  return [
+    `<svg class="annual-review-chart annual-review-daily-cumulative" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.dailyCumulativeWordChart)}">`,
+    `<title>${escapeHtml(text.dailyCumulativeWordChart)}</title>`,
+    `<desc>${escapeHtml(text.dailyCumulativeWordChartLegend)}</desc>`,
+    grid,
+    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<text x="16" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 16 ${top + plotHeight / 2})">${escapeHtml(text.cumulativeWords)}</text>`,
+    `<path class="chart-line" d="${linePath}" fill="none" stroke="#4f7cac" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />`,
+    monthTicks,
+    endpointDot,
     "</svg>",
   ].join("\n");
 }
@@ -633,6 +777,22 @@ function formatQuotedList(items: string[]): string {
   return items.map((item) => `「${item}」`).join("、");
 }
 
+function sanitizeInlineMarkdown(markdown?: string): string {
+  if (!markdown) {
+    return "";
+  }
+  const body = markdown
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
+    .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
+    .join(" ")
+    .replace(/\s+/gu, " ")
+    .trim();
+  const sentence = body.match(/^(.+?[.!?。！？])(?:\s|$)/u)?.[1] ?? body;
+  return sentence.slice(0, 240).trim();
+}
+
 function chartTopicNames(data: TopicEvolutionData): string[] {
   const names = data.topTopics.map((topic) => topic.name);
   const hasOther = data.monthlyBuckets.some((bucket) => Object.prototype.hasOwnProperty.call(bucket.topics, OTHER_TOPIC));
@@ -664,24 +824,27 @@ function renderMetricList(items: RankedMetric[], prefix = "", language: Resolved
 
 function renderHighValueNotes(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string {
   const text = REPORT_TEXT[language];
-  if (aggregate.highValueNotes.length === 0) {
-    return `- ${text.noHighValueNotes}`;
-  }
-
+  const topNotes =
+    aggregate.highValueNotes.length > 0
+      ? [
+          `| ${text.highValueNote} | ${text.highValueType} | ${text.highValueReason} | ${text.suggestedAction} |`,
+          "| --- | --- | --- | --- |",
+          ...aggregate.highValueNotes.map((note) => renderHighValueNoteRow(note)),
+        ].join("\n")
+      : `- ${text.noHighValueNotes}`;
   return [
-    text.highValueNotesSummary(aggregate.highValueNotes.length, aggregate.highValueFeedback.outputReadyCount),
+    ...(aggregate.highValueNotes.length > 0 ? [text.highValueNotesSummary(aggregate.highValueNotes.length, aggregate.highValueFeedback.outputReadyCount), ""] : []),
+    `### ${text.topHighValueNotes}`,
     "",
-    `| ${text.highValueNote} | ${text.highValueType} | ${text.highValueReason} | ${text.suggestedAction} |`,
-    "| --- | --- | --- | --- |",
-    ...aggregate.highValueNotes.map((note) => renderHighValueNoteRow(note)),
+    topNotes,
     "",
-    `### ${text.highValueFeedback}`,
+    `### ${text.outputReadyNotes}`,
     "",
-    ...renderHighValueFeedback(aggregate, language),
+    renderHighValueActionList(aggregate.outputReadyNotes, text.noOutputReadyNotes),
     "",
-    `### ${text.nextPeriodSuggestion}`,
+    `### ${text.maintenanceNotes}`,
     "",
-    text.highValueNextStep,
+    renderHighValueActionList(aggregate.maintenanceNotes, text.noMaintenanceNotes),
   ].join("\n");
 }
 
@@ -699,6 +862,24 @@ function renderHighValueFeedback(aggregate: YearAggregate, language: ResolvedAnn
     `- ${text.outputReadySignal(aggregate.highValueFeedback.outputReadyCount)}`,
     `- ${text.staleCoreSignal(aggregate.highValueFeedback.staleCoreCount)}`,
   ];
+}
+
+function renderHighValueActionList(notes: HighValueNote[], emptyText: string): string {
+  if (notes.length === 0) {
+    return `- ${emptyText}`;
+  }
+  return notes.map((note) => `- ${wikiLink(note.path, note.title)}: ${note.suggestedAction}`).join("\n");
+}
+
+function renderNextPeriodActions(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  const topTopic = aggregate.topicEvolution.topTopics[0]?.name ?? (language === "zh" ? "增长最快主题" : "the fastest-growing topic");
+  const highValueFocus = aggregate.highValueNotes.slice(0, 2).map((note) => wikiLink(note.path, note.title));
+  return [
+    `1. ${text.mocAction(topTopic)}`,
+    `2. ${aggregate.isolatedPotentialNotes.length > 0 ? text.isolatedNotesAction(aggregate.isolatedPotentialNotes.length) : text.noIsolatedNotesAction}`,
+    `3. ${highValueFocus.length > 0 ? text.highValuePushAction(formatInlineList(highValueFocus, language)) : text.noHighValuePushAction}`,
+  ].join("\n");
 }
 
 function renderNoteList(notes: RankedNote[], language: ResolvedAnnualReviewLanguage): string {

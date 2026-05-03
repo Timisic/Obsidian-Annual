@@ -120,11 +120,11 @@ export default class AnnualReviewPlugin extends Plugin {
       new Notice(text.generating(year));
       const files = await this.getIndexedFiles(settings);
       const aggregate = buildYearAggregate(files, year, settings);
-      const aiSection = await renderAiReportSection({ aggregate, files, settings });
+      const aiSummary = await renderAiReportSection({ aggregate, files, settings });
       const reportLanguage = resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage());
       const chartPaths = buildAnnualReviewChartPaths(settings.reportFolder, year);
       const chartAssets = buildAnnualReviewChartAssets(aggregate, { language: reportLanguage, chartPaths });
-      const markdown = [renderAnnualReview(aggregate, { language: reportLanguage, chartPaths }), aiSection].filter(Boolean).join("\n");
+      const markdown = renderAnnualReview(aggregate, { language: reportLanguage, chartPaths, periodJudgment: aiSummary });
       const report = await writeAnnualReviewOutput(this.app, settings.reportFolder, year, markdown, chartAssets);
       this.lastAggregate = aggregate;
       this.lastReportPath = report.path;

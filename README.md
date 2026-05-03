@@ -4,7 +4,7 @@
 
 Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一年里的笔记活动整理成一份可编辑、可追溯的年度回顾 Markdown 笔记。
 
-插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出年度统计、月度节奏、代表性笔记、热门标签/文件夹/链接，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果仍然留在 vault 里，可以继续编辑、链接、同步、版本管理和审阅。
+插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出写作增长、主题演化、高价值笔记和下期行动，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果仍然留在 vault 里，可以继续编辑、链接、同步、版本管理和审阅。
 
 > 当前仓库状态：已经包含 Obsidian 插件脚手架、TypeScript 源码、测试、产品规格和调研文档；尚未发布打包好的社区插件版本。
 
@@ -24,17 +24,17 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 重建索引 | ✅ 已实现 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
 | 本地统计 | ✅ 已实现 | 读取 vault 内 Markdown、frontmatter、标签、Obsidian 解析后的链接、标题、任务和文件时间。 |
 | 中英混合计数 | ✅ 已实现 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
-| 证据链接 | ✅ 已实现 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
-| 每日字数热力图 | ✅ 已实现 | 生成独立 SVG 资产，并在报告中用 Obsidian 图片链接引用。 |
-| 字数增长趋势 | ✅ 已实现 | 生成独立 SVG 曲线图资产，展示月度新增字数和清晰坐标轴。 |
+| 证据链接 | ✅ 已实现 | 报告里的主题和高价值笔记会链接回 Obsidian 源笔记。 |
+| 写作增长图表 | ✅ 已实现 | 生成日累计字数、月度增长和每日字数热力图 SVG 资产，并在报告中用 Obsidian 图片链接引用。 |
 | ChatGPT provider | 🧪 可选 | 生成报告时可选择 ChatGPT；有 OpenAI API key 时直连 Responses API，否则尝试本地 Codex CLI/auth。 |
 | 隐私边界 | ⚠️ 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
 
 ## 最近变更
 
 - **Obsidian 解析链接统计**：在 Obsidian 内使用 `metadataCache.resolvedLinks` / `unresolvedLinks` 统计热门链接，别名、标题锚点、嵌入链接和 Markdown 链接会按实际目标合并。
-- **AI 个性化报告段落**：生成时可选择 `ChatGPT`。有 OpenAI API key 时直连 Responses API；没有 key 时尝试调用本地 Codex CLI/auth 生成内容。
-- **独立 SVG 图表资产**：每日字数热力图和月度字数增长曲线会写入 `Annual Reviews/YYYY Annual Review Assets/`，年度报告用 Obsidian 图片链接引用，并保留数据表核对具体数值。
+- **精简最终报告结构**：最终 Markdown 只保留本期一句话判断、写作增长、主题演化、高价值笔记和下期行动五个部分。
+- **AI 一句话判断**：生成时可选择 `ChatGPT`。有 OpenAI API key 时直连 Responses API；没有 key 时尝试调用本地 Codex CLI/auth，输出会进入「本期一句话判断」，不会追加额外 AI 段落。
+- **独立 SVG 图表资产**：日累计字数图、月度字数增长曲线、每日字数热力图和主题演化图会写入 `Annual Reviews/YYYY Annual Review Assets/`，年度报告用 Obsidian 图片链接引用，并保留数据表核对具体数值。
 - **AI 上下文占位脚本**：`npm run ai:context-placeholder` 保留未来 Obsidian skill/CLI 上下文适配器契约；当前脚本不读取 vault，也不发起网络请求。
 
 ## ChatGPT provider 与隐私
@@ -89,7 +89,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 2. 运行 `Annual Review: Generate report`。
 3. 选择要复盘的年份和生成选项。
 4. 打开 `Annual Reviews/YYYY Annual Review.md`。
-5. 检查年度总览、SVG 每日字数热力图、SVG 字数增长曲线、热门标签/文件夹/链接、代表性笔记和数据口径。
+5. 检查本期一句话判断、写作增长图表、主题演化、高价值笔记和下期行动。
 6. 按自己的写作风格编辑生成的 Markdown；vault 更新后可以重新运行生成命令。
 7. 需要先看指标时，运行 `Annual Review: Open dashboard` 打开仪表盘。
 
@@ -97,9 +97,9 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 
 - **个人年终总结**：把 daily notes、项目日志、灵感和任务整理成一份可继续编辑的年度复盘。
 - **写作复盘**：查看全年词数/字符数、活跃天数、最长连续记录、最活跃月份和代表性长文。
-- **研究复盘**：识别高频标签、核心链接、主要文件夹和全年主题迁移。
+- **研究复盘**：识别 Top 主题、主题演化、新兴/衰退方向和下期主题建议。
 - **项目回顾**：从项目笔记、任务和文件夹活动中整理团队或个人项目的年度材料。
-- **vault 整理**：发现高频主题、反复修改的笔记、需要补充属性或后续整理的区域。
+- **vault 整理**：发现高价值笔记、可输出笔记、需维护笔记和孤立潜力笔记。
 - **分享前整理**：先在本地生成完整私密报告，再手动挑选可以公开的片段。
 
 ## 仓库结构
