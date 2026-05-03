@@ -5,6 +5,7 @@
 ## 入口
 
 - [产品规格](product-spec.md)：中文主规格，说明目标、范围、架构、隐私边界、验证计划和阶段路线。
+- [AI+data 报告生成设计](ai-data-report-design.md)：说明年度/月度报告中 AI 如何通过 CLI 或 skill 读取双链上下文，并生成可追溯的 Markdown 草稿。
 - [项目调研](research/dec-7-project-research.md)：早期调研资料，记录 Obsidian 年度报告插件方向、竞品启发和技术建议。
 - [中文 README](../README.md)：仓库默认入口，面向首次使用和本地开发。
 - [English README](../README.en.md)：英文入口，内容与中文 README 对齐。
