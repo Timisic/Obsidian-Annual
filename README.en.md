@@ -25,7 +25,10 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Local analysis | Baseline implemented | Reads Markdown, frontmatter, tags, links, headings, tasks, and file timestamps through Obsidian APIs. |
 | Mixed-language counting | Baseline implemented | Keeps Latin word counts and CJK character counts useful for Chinese, English, and mixed vaults. |
 | Evidence links | Baseline implemented | Uses Obsidian links for representative notes and ranked note references. |
-| Privacy controls | Partial | Default processing is local; richer export, AI, and redaction controls are future work. |
+| Daily word heatmap | Baseline implemented | Shows daily created-note word volume in the report and dashboard, similar to a contribution heatmap. |
+| Word growth trend | Baseline implemented | Shows monthly word growth and cumulative words so fast and flat periods are easy to spot. |
+| ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; it is off by default, requires an OpenAI API key, and does not hardcode secrets. |
+| Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
 ## Quick Start
 
@@ -68,7 +71,7 @@ In Obsidian:
 2. Run `Annual Review: Generate report`.
 3. Select the year and generation options.
 4. Open `Annual Reviews/YYYY Annual Review.md`.
-5. Review the yearly totals, monthly rhythm, top tags/folders/links, representative notes, and methodology.
+5. Review the yearly totals, daily word heatmap, word growth trend, top tags/folders/links, representative notes, and methodology.
 6. Edit the Markdown report in your own voice; rerun generation after the vault changes.
 7. Run `Annual Review: Open dashboard` when you want a metric preview first.
 
@@ -109,6 +112,7 @@ In Obsidian:
 | `npm run typecheck` | Run TypeScript without emitting build files. |
 | `npm run build` | Bundle the plugin into `main.js`. |
 | `npm run dev` | Start esbuild watch mode for local plugin development. |
+| `npm run ai:context-placeholder` | Print the placeholder contract for a future Obsidian skill/CLI AI context adapter. |
 
 ## Validation
 

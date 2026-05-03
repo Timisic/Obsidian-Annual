@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildAiPrompt, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { extractNoteStats, parseFrontmatter } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
@@ -76,6 +77,13 @@ describe("aggregation and rendering", () => {
       "Projects/Legacy.md",
       "Projects/Research.md",
     ]);
+    expect(aggregate.dayBuckets).toHaveLength(365);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-01-01")?.words).toBeGreaterThan(0);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.words).toBe(0);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.modified).toBe(1);
+    expect(aggregate.wordGrowthBuckets).toHaveLength(12);
+    expect(aggregate.wordGrowthBuckets[0]?.wordsGained).toBeGreaterThan(0);
+    expect(aggregate.wordGrowthBuckets[aggregate.wordGrowthBuckets.length - 1]?.cumulativeWords).toBe(aggregate.totalWords);
     expect(aggregate.monthBuckets[3]?.modified).toBe(1);
     expect(aggregate.monthBuckets[3]?.words).toBe(0);
   });
@@ -88,6 +96,10 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Excluded scope: .obsidian, Templates, Archive, Attachments");
     expect(markdown).toContain("## Year Totals");
     expect(markdown).toContain("## Monthly Timeline");
+    expect(markdown).toContain("## Daily Word Heatmap");
+    expect(markdown).toContain("Legend: . = 0 words");
+    expect(markdown).toContain("## Word Growth Trend");
+    expect(markdown).toContain("Y-axis: monthly created-note word growth");
     expect(markdown).toContain("## Top Tags");
     expect(markdown).toContain("## Top Links");
     expect(markdown).toContain("## Top Folders");
@@ -95,6 +107,67 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Data Methodology");
     expect(markdown).toContain("legacy notes modified during the year contribute modification activity");
     expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
+  });
+});
+
+describe("AI provider", () => {
+  it("skips network calls when ChatGPT is selected without an API key", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const section = await renderAiReportSection({
+      aggregate,
+      files: await fixtureVault(),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+      },
+      fetcher: async () => {
+        throw new Error("fetch should not be called without an API key");
+      },
+    });
+
+    expect(section).toContain("ChatGPT provider was selected, but no OpenAI API key is configured");
+    expect(section).toContain("AI Integration TODO");
+  });
+
+  it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const section = await renderAiReportSection({
+      aggregate,
+      files: await fixtureVault(),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+        chatGptApiKey: "test-key",
+        chatGptModel: "gpt-test",
+      },
+      fetcher: async (url, init) => {
+        calls.push({ url: String(url), init: init ?? {} });
+        return new Response(JSON.stringify({ output_text: "### Personalized draft\n\nUse [[Daily/2026-01-01]] as evidence." }), { status: 200 });
+      },
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe("https://api.openai.com/v1/responses");
+    expect(calls[0]?.init.method).toBe("POST");
+    expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe("Bearer test-key");
+    expect(String(calls[0]?.init.body)).toContain("\"model\":\"gpt-test\"");
+    expect(section).toContain("Provider: ChatGPT (gpt-test)");
+    expect(section).toContain("Personalized draft");
+    expect(section).toContain("[[Daily/2026-01-01]]");
+  });
+
+  it("builds provider context from annual stats, links, and note evidence", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
+
+    expect(prompt).toContain("\"topLinks\"");
+    expect(prompt).toContain("Projects/Research");
+    expect(prompt).toContain("\"linkGraph\"");
+    expect(prompt).toContain("\"contextNotes\"");
+    expect(prompt).toContain("Daily/2026-01-01.md");
+    expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
 });
 

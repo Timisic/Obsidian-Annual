@@ -1,6 +1,17 @@
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
-import type { AnnualReviewSettings, MonthBucket, NoteStats, RankedMetric, RankedNote, ReportScope, SourceFile, YearAggregate } from "./types";
+import type {
+  AnnualReviewSettings,
+  DayBucket,
+  MonthBucket,
+  NoteStats,
+  RankedMetric,
+  RankedNote,
+  ReportScope,
+  SourceFile,
+  WordGrowthBucket,
+  YearAggregate,
+} from "./types";
 
 export function buildYearAggregate(files: SourceFile[], year: number, settings: AnnualReviewSettings): YearAggregate {
   const notes = files
@@ -9,6 +20,7 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
     .filter((note) => isActiveInYear(note, year));
 
   const months = createMonthBuckets(year);
+  const days = createDayBuckets(year);
   const activeDates = new Set<string>();
   const tagCounts = new Map<string, number>();
   const folderCounts = new Map<string, number>();
@@ -29,12 +41,14 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
       createdCount += 1;
       activeDates.add(dateKey(note.ctime));
       addToMonth(months, note.ctime, "created", note, true);
+      addToDay(days, note.ctime, "created", note, true);
       updateRepresentative(representativeByMonth, monthKey(note.ctime), note);
     }
     if (modifiedInYear) {
       modifiedCount += 1;
       activeDates.add(dateKey(note.mtime));
       addToMonth(months, note.mtime, "modified", note, false);
+      addToDay(days, note.mtime, "modified", note, false);
       if (!createdInYear) {
         updateRepresentative(representativeByMonth, monthKey(note.mtime), note);
       }
@@ -71,6 +85,8 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
     taskCount,
     completedTaskCount,
     monthBuckets: months,
+    dayBuckets: days,
+    wordGrowthBuckets: buildWordGrowthBuckets(months),
     topTags: rankedMetrics(tagCounts),
     topFolders: rankedMetrics(folderCounts),
     topLinks: rankedMetrics(linkCounts),
@@ -95,6 +111,30 @@ function createMonthBuckets(year: number): MonthBucket[] {
   }));
 }
 
+function createDayBuckets(year: number): DayBucket[] {
+  const start = new Date(year, 0, 1);
+  const end = new Date(year + 1, 0, 1);
+  const firstWeekday = start.getDay();
+  const days: DayBucket[] = [];
+
+  for (let current = new Date(start); current < end; current.setDate(current.getDate() + 1)) {
+    const index = days.length;
+    days.push({
+      date: dateKey(current.getTime()),
+      month: monthKey(current.getTime()),
+      dayOfMonth: current.getDate(),
+      weekday: current.getDay(),
+      week: Math.floor((index + firstWeekday) / 7),
+      created: 0,
+      modified: 0,
+      words: 0,
+      characters: 0,
+    });
+  }
+
+  return days;
+}
+
 function addToMonth(months: MonthBucket[], timestamp: number, field: "created" | "modified", note: NoteStats, includeContent: boolean): void {
   const bucket = months[new Date(timestamp).getMonth()];
   if (!bucket) return;
@@ -105,6 +145,29 @@ function addToMonth(months: MonthBucket[], timestamp: number, field: "created" |
     bucket.tasks += note.tasks.total;
     bucket.completedTasks += note.tasks.completed;
   }
+}
+
+function addToDay(days: DayBucket[], timestamp: number, field: "created" | "modified", note: NoteStats, includeContent: boolean): void {
+  const key = dateKey(timestamp);
+  const bucket = days.find((day) => day.date === key);
+  if (!bucket) return;
+  bucket[field] += 1;
+  if (includeContent) {
+    bucket.words += note.wordCount;
+    bucket.characters += note.charCount;
+  }
+}
+
+function buildWordGrowthBuckets(months: MonthBucket[]): WordGrowthBucket[] {
+  let cumulativeWords = 0;
+  return months.map((month) => {
+    cumulativeWords += month.words;
+    return {
+      month: month.month,
+      wordsGained: month.words,
+      cumulativeWords,
+    };
+  });
 }
 
 function updateRepresentative(months: Map<string, RankedNote>, month: string, note: NoteStats): void {

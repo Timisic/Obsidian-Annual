@@ -93,6 +93,7 @@ export class AnnualReviewDashboardView extends ItemView {
       `Include: ${settings.includeFolders.length > 0 ? joinFolderList(settings.includeFolders) : "All Markdown files"}`,
       `Exclude: ${settings.excludeFolders.length > 0 ? joinFolderList(settings.excludeFolders) : "None"}`,
       `Privacy: ${settings.privacyMode}`,
+      `AI provider: ${settings.aiProvider === "chatgpt" ? "ChatGPT" : "None"}`,
       `Index: ${index.builtAt ? `${index.fileCount} files, rebuilt ${index.builtAt}` : "Not built yet"}`,
     ]);
 
@@ -121,6 +122,12 @@ export class AnnualReviewDashboardView extends ItemView {
 
     container.createEl("h3", { text: "Monthly Trend" });
     renderTrend(container, aggregate);
+
+    container.createEl("h3", { text: "Daily Word Heatmap" });
+    renderHeatmap(container, aggregate);
+
+    container.createEl("h3", { text: "Word Growth" });
+    renderGrowth(container, aggregate);
 
     container.createEl("h3", { text: "Top Tags" });
     renderList(container, aggregate.topTags.map((item) => `${item.name}: ${item.count}`));
@@ -156,6 +163,49 @@ function renderTrend(parent: Element, aggregate: YearAggregate): void {
     bar.style.width = `${Math.max(4, Math.round((bucket.words / maxWords) * 100))}%`;
     row.createEl("span", { text: String(bucket.words) });
   }
+}
+
+function renderHeatmap(parent: Element, aggregate: YearAggregate): void {
+  const maxWords = Math.max(1, ...aggregate.dayBuckets.map((bucket) => bucket.words));
+  const grid = parent.createEl("div", { cls: "annual-review-dashboard-heatmap" });
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = `repeat(${Math.max(1, Math.max(...aggregate.dayBuckets.map((bucket) => bucket.week)) + 1)}, 10px)`;
+  grid.style.gridTemplateRows = "repeat(7, 10px)";
+  grid.style.gridAutoFlow = "column";
+  grid.style.gap = "3px";
+  grid.style.alignItems = "center";
+
+  for (const bucket of aggregate.dayBuckets) {
+    const cell = grid.createDiv({ cls: "annual-review-dashboard-heatmap-cell" });
+    cell.ariaLabel = `${bucket.date}: ${bucket.words} words`;
+    cell.title = `${bucket.date}: ${bucket.words} words, ${bucket.created} created, ${bucket.modified} modified`;
+    cell.style.width = "10px";
+    cell.style.height = "10px";
+    cell.style.borderRadius = "2px";
+    cell.style.gridColumn = String(bucket.week + 1);
+    cell.style.gridRow = String(bucket.weekday + 1);
+    cell.style.backgroundColor = heatColor(bucket.words, maxWords);
+  }
+}
+
+function renderGrowth(parent: Element, aggregate: YearAggregate): void {
+  const maxGrowth = Math.max(1, ...aggregate.wordGrowthBuckets.map((bucket) => bucket.wordsGained));
+  const chart = parent.createEl("div", { cls: "annual-review-dashboard-growth" });
+  for (const bucket of aggregate.wordGrowthBuckets) {
+    const row = chart.createDiv({ cls: "annual-review-dashboard-bar-row" });
+    row.createEl("span", { text: bucket.month.slice(5) });
+    const bar = row.createDiv({ cls: "annual-review-dashboard-bar" });
+    bar.style.width = `${Math.max(4, Math.round((bucket.wordsGained / maxGrowth) * 100))}%`;
+    bar.title = `${bucket.month}: +${bucket.wordsGained} words, ${bucket.cumulativeWords} cumulative`;
+    row.createEl("span", { text: `+${bucket.wordsGained} (${bucket.cumulativeWords})` });
+  }
+}
+
+function heatColor(words: number, maxWords: number): string {
+  if (words <= 0) return "var(--background-modifier-border)";
+  const colors = ["#c7e9c0", "#74c476", "#238b45", "#00441b"];
+  const index = Math.min(colors.length - 1, Math.ceil((words / maxWords) * colors.length) - 1);
+  return colors[index] ?? colors[0];
 }
 
 function renderList(parent: Element, items: string[]): void {

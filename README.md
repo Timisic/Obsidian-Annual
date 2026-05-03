@@ -25,7 +25,10 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 本地统计 | 已实现基础版 | 读取 vault 内 Markdown、frontmatter、标签、链接、标题、任务和文件时间。 |
 | 中英混合计数 | 已实现基础版 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
 | 证据链接 | 已实现基础版 | 报告里的代表性笔记和排名项会链接回 Obsidian 源笔记。 |
-| 隐私边界 | 部分实现 | 默认本地处理；导出、AI 或更细的脱敏策略仍属于后续阶段。 |
+| 每日字数热力图 | 已实现基础版 | 报告和仪表盘展示类似 GitHub contribution heatmap 的每日创作字数分布。 |
+| 字数增长趋势 | 已实现基础版 | 报告和仪表盘展示月度新增字数和累计字数，便于识别增长快和平缓的阶段。 |
+| ChatGPT provider | 可选基础版 | 生成报告时可选择 ChatGPT；默认关闭，需配置 OpenAI API key，不硬编码密钥。 |
+| 隐私边界 | 部分实现 | 默认本地处理；AI 需要用户明确选择，脱敏预览仍属于后续阶段。 |
 
 ## 快速开始
 
@@ -68,7 +71,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 2. 运行 `Annual Review: Generate report`。
 3. 选择要复盘的年份和生成选项。
 4. 打开 `Annual Reviews/YYYY Annual Review.md`。
-5. 检查年度总览、月度节奏、热门标签/文件夹/链接、代表性笔记和数据口径。
+5. 检查年度总览、每日字数热力图、字数增长趋势、热门标签/文件夹/链接、代表性笔记和数据口径。
 6. 按自己的写作风格编辑生成的 Markdown；vault 更新后可以重新运行生成命令。
 7. 需要先看指标时，运行 `Annual Review: Open dashboard` 打开仪表盘。
 
@@ -109,6 +112,7 @@ cp manifest.json main.js "$PLUGIN_DIR/"
 | `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
 | `npm run build` | 生成可安装到 Obsidian 的 `main.js`。 |
 | `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
+| `npm run ai:context-placeholder` | 输出未来 Obsidian skill/CLI AI 上下文适配器的占位契约。 |
 
 ## 验证建议
 

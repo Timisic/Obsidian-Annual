@@ -1,4 +1,4 @@
-import type { MonthBucket, RankedMetric, RankedNote, YearAggregate } from "./types";
+import type { DayBucket, MonthBucket, RankedMetric, RankedNote, WordGrowthBucket, YearAggregate } from "./types";
 
 export function renderAnnualReview(aggregate: YearAggregate): string {
   return [
@@ -31,6 +31,14 @@ export function renderAnnualReview(aggregate: YearAggregate): string {
     "## Monthly Timeline",
     "",
     renderMonthTable(aggregate.monthBuckets),
+    "",
+    "## Daily Word Heatmap",
+    "",
+    renderDailyHeatmap(aggregate.dayBuckets),
+    "",
+    "## Word Growth Trend",
+    "",
+    renderWordGrowthTrend(aggregate.wordGrowthBuckets),
     "",
     "## Top Tags",
     "",
@@ -85,6 +93,66 @@ function renderMonthTable(months: MonthBucket[]): string {
     "| --- | ---: | ---: | ---: | ---: | ---: |",
     ...months.map((month) => `| ${month.month} | ${month.created} | ${month.modified} | ${month.words} | ${month.characters} | ${month.completedTasks}/${month.tasks} |`),
   ].join("\n");
+}
+
+function renderDailyHeatmap(days: DayBucket[]): string {
+  if (days.length === 0) {
+    return "No daily word data found.";
+  }
+
+  const maxWords = Math.max(1, ...days.map((day) => day.words));
+  const monthRows = new Map<string, DayBucket[]>();
+  for (const day of days) {
+    const month = monthRows.get(day.month) ?? [];
+    month.push(day);
+    monthRows.set(day.month, month);
+  }
+
+  return [
+    "Legend: . = 0 words, then light to dark blocks show higher daily created-note word volume.",
+    "",
+    "| Month | Daily word heatmap | Words | Active days | Peak day |",
+    "| --- | --- | ---: | ---: | --- |",
+    ...[...monthRows.entries()].map(([month, monthDays]) => {
+      const totalWords = monthDays.reduce((sum, day) => sum + day.words, 0);
+      const activeDays = monthDays.filter((day) => day.words > 0).length;
+      const peak = [...monthDays].sort((a, b) => b.words - a.words || a.date.localeCompare(b.date))[0];
+      const peakLabel = peak && peak.words > 0 ? `${peak.date} (${peak.words})` : "n/a";
+      return `| ${month} | \`${monthDays.map((day) => heatBlock(day.words, maxWords)).join("")}\` | ${totalWords} | ${activeDays} | ${peakLabel} |`;
+    }),
+  ].join("\n");
+}
+
+function renderWordGrowthTrend(growth: WordGrowthBucket[]): string {
+  if (growth.length === 0) {
+    return "No word growth data found.";
+  }
+
+  const maxGrowth = Math.max(1, ...growth.map((bucket) => bucket.wordsGained));
+  return [
+    "Y-axis: monthly created-note word growth. Cumulative words show the running total by month end.",
+    "",
+    "| Month | Word growth | Trend | Cumulative words |",
+    "| --- | ---: | --- | ---: |",
+    ...growth.map((bucket) => `| ${bucket.month} | ${bucket.wordsGained} | \`${bar(bucket.wordsGained, maxGrowth, 18)}\` | ${bucket.cumulativeWords} |`),
+  ].join("\n");
+}
+
+function heatBlock(words: number, maxWords: number): string {
+  if (words <= 0) {
+    return ".";
+  }
+  const blocks = ["░", "▒", "▓", "█"];
+  const index = Math.min(blocks.length - 1, Math.ceil((words / maxWords) * blocks.length) - 1);
+  return blocks[index] ?? ".";
+}
+
+function bar(value: number, maxValue: number, width: number): string {
+  if (value <= 0) {
+    return ".".repeat(width);
+  }
+  const filled = Math.max(1, Math.round((value / maxValue) * width));
+  return `${"█".repeat(filled)}${".".repeat(Math.max(0, width - filled))}`;
 }
 
 function renderMetricList(items: RankedMetric[], prefix = ""): string {

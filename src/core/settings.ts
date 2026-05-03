@@ -10,6 +10,9 @@ export const DEFAULT_SETTINGS: AnnualReviewSettings = {
   includeFrontmatter: true,
   includeHeadings: true,
   privacyMode: "standard",
+  aiProvider: "none",
+  chatGptApiKey: "",
+  chatGptModel: "gpt-4.1",
 };
 
 export function normalizeFolder(folder: string): string {
