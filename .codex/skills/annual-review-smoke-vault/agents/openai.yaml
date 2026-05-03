@@ -1,0 +1,3 @@
+display_name: Annual Review Smoke Vault
+short_description: Validate reports in smoke vault
+default_prompt: Deploy the current Annual Review plugin to the smoke vault, exercise Obsidian CLI where possible, inspect the generated report, and return concrete quality findings or verification evidence.
