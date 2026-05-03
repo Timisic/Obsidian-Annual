@@ -410,6 +410,12 @@ describe("aggregation and rendering", () => {
           content: "# 财务压力\n\n" + repeatedWords(120),
         },
         {
+          path: "2026月复盘/4月/2026-04-24 夜半散步.md",
+          ctime: Date.parse("2026-04-24T08:00:00.000Z"),
+          mtime: Date.parse("2026-04-24T08:00:00.000Z"),
+          content: repeatedWords(120),
+        },
+        {
           path: "Projects/亲密关系.md",
           ctime: Date.parse("2026-03-10T08:00:00.000Z"),
           mtime: Date.parse("2026-03-10T08:00:00.000Z"),
@@ -424,8 +430,8 @@ describe("aggregation and rendering", () => {
     );
 
     const topicNames = aggregate.topicEvolution.topTopics.map((topic) => topic.name);
-    expect(topicNames).toEqual(expect.arrayContaining(["AI 焦虑", "财务压力", "亲密关系"]));
-    expect(topicNames).not.toEqual(expect.arrayContaining(["1月", "2026 02", "2026-02"]));
+    expect(topicNames).toEqual(expect.arrayContaining(["AI 焦虑", "财务压力", "亲密关系", "夜半散步"]));
+    expect(topicNames).not.toEqual(expect.arrayContaining(["1月", "4月", "2026 02", "2026 04 24 夜半散步", "2026-02"]));
 
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
     expect(markdown).toContain("AI 焦虑");
@@ -905,11 +911,13 @@ describe("plugin command ids", () => {
   it("exposes stable command ids and English command palette labels", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
+      generate2026Smoke: "generate-annual-review-2026",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
+      generate2026Smoke: "Generate 2026 report (smoke)",
       openDashboard: "Open dashboard",
       rebuildIndex: "Rebuild index",
     });

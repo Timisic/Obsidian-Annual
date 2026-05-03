@@ -185,6 +185,8 @@ function normalizeTopic(topic: string): string {
     .replace(/^#/, "")
     .replace(/\.md$/u, "")
     .replace(/[_-]+/gu, " ")
+    .replace(/^(?:19|20)\d{2}\s+(?:0?[1-9]|1[0-2])\s+(?:0?[1-9]|[12]\d|3[01])\s+/u, "")
+    .replace(/^(?:19|20)\d{2}年\s*(?:0?[1-9]|1[0-2])月\s*(?:0?[1-9]|[12]\d|3[01])日?\s*/u, "")
     .replace(/\s+/gu, " ");
 }
 
