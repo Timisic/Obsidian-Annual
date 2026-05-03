@@ -1,0 +1,178 @@
+import { extractNoteStats } from "./extract";
+import { shouldIncludePath } from "./filters";
+import type { AnnualReviewSettings, MonthBucket, NoteStats, RankedMetric, RankedNote, ReportScope, SourceFile, YearAggregate } from "./types";
+
+export function buildYearAggregate(files: SourceFile[], year: number, settings: AnnualReviewSettings): YearAggregate {
+  const notes = files
+    .filter((file) => shouldIncludePath(file.path, settings))
+    .map((file) => extractNoteStats(file, settings))
+    .filter((note) => isActiveInYear(note, year));
+
+  const months = createMonthBuckets(year);
+  const activeDates = new Set<string>();
+  const tagCounts = new Map<string, number>();
+  const folderCounts = new Map<string, number>();
+  const linkCounts = new Map<string, number>();
+  const representativeByMonth = new Map<string, RankedNote>();
+
+  let createdCount = 0;
+  let modifiedCount = 0;
+  let totalWords = 0;
+  let totalCharacters = 0;
+  let taskCount = 0;
+  let completedTaskCount = 0;
+
+  for (const note of notes) {
+    const createdInYear = getYear(note.ctime) === year;
+    const modifiedInYear = getYear(note.mtime) === year;
+    if (createdInYear) {
+      createdCount += 1;
+      activeDates.add(dateKey(note.ctime));
+      addToMonth(months, note.ctime, "created", note, true);
+      updateRepresentative(representativeByMonth, monthKey(note.ctime), note);
+    }
+    if (modifiedInYear) {
+      modifiedCount += 1;
+      activeDates.add(dateKey(note.mtime));
+      addToMonth(months, note.mtime, "modified", note, false);
+      if (!createdInYear) {
+        updateRepresentative(representativeByMonth, monthKey(note.mtime), note);
+      }
+    }
+
+    if (createdInYear) {
+      totalWords += note.wordCount;
+      totalCharacters += note.charCount;
+      taskCount += note.tasks.total;
+      completedTaskCount += note.tasks.completed;
+    }
+    increment(folderCounts, note.folder);
+    note.tags.forEach((tag) => increment(tagCounts, tag));
+    note.links.forEach((link) => increment(linkCounts, link));
+  }
+
+  const scope: ReportScope = {
+    year,
+    includeFolders: settings.includeFolders,
+    excludeFolders: settings.excludeFolders,
+    privacyMode: settings.privacyMode,
+  };
+
+  return {
+    year,
+    generatedAt: new Date().toISOString(),
+    scope,
+    activeDays: activeDates.size,
+    longestStreak: longestDateStreak([...activeDates]),
+    createdCount,
+    modifiedCount,
+    totalWords,
+    totalCharacters,
+    taskCount,
+    completedTaskCount,
+    monthBuckets: months,
+    topTags: rankedMetrics(tagCounts),
+    topFolders: rankedMetrics(folderCounts),
+    topLinks: rankedMetrics(linkCounts),
+    topNotes: notes.map(toRankedNote).sort(sortRankedNotes).slice(0, 10),
+    representativeNotes: [...representativeByMonth.values()].sort((a, b) => a.path.localeCompare(b.path)),
+  };
+}
+
+function isActiveInYear(note: NoteStats, year: number): boolean {
+  return getYear(note.ctime) === year || getYear(note.mtime) === year;
+}
+
+function createMonthBuckets(year: number): MonthBucket[] {
+  return Array.from({ length: 12 }, (_, index) => ({
+    month: `${year}-${String(index + 1).padStart(2, "0")}`,
+    created: 0,
+    modified: 0,
+    words: 0,
+    characters: 0,
+    tasks: 0,
+    completedTasks: 0,
+  }));
+}
+
+function addToMonth(months: MonthBucket[], timestamp: number, field: "created" | "modified", note: NoteStats, includeContent: boolean): void {
+  const bucket = months[new Date(timestamp).getMonth()];
+  if (!bucket) return;
+  bucket[field] += 1;
+  if (includeContent) {
+    bucket.words += note.wordCount;
+    bucket.characters += note.charCount;
+    bucket.tasks += note.tasks.total;
+    bucket.completedTasks += note.tasks.completed;
+  }
+}
+
+function updateRepresentative(months: Map<string, RankedNote>, month: string, note: NoteStats): void {
+  const ranked = toRankedNote(note);
+  const existing = months.get(month);
+  if (!existing || sortRankedNotes(ranked, existing) < 0) {
+    months.set(month, ranked);
+  }
+}
+
+function toRankedNote(note: NoteStats): RankedNote {
+  return {
+    path: note.path,
+    title: note.path.split("/").pop()?.replace(/\.md$/u, "") ?? note.path,
+    words: note.wordCount,
+    characters: note.charCount,
+  };
+}
+
+function rankedMetrics(counts: Map<string, number>): RankedMetric[] {
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 10);
+}
+
+function sortRankedNotes(a: RankedNote, b: RankedNote): number {
+  return b.words - a.words || b.characters - a.characters || a.path.localeCompare(b.path);
+}
+
+function increment(counts: Map<string, number>, key: string): void {
+  counts.set(key, (counts.get(key) ?? 0) + 1);
+}
+
+function getYear(timestamp: number): number {
+  return new Date(timestamp).getFullYear();
+}
+
+function dateKey(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function monthKey(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function longestDateStreak(dates: string[]): number {
+  const sortedTimes = dates.map(localDateTime).sort((a, b) => a - b);
+  let best = 0;
+  let current = 0;
+  let previous: number | undefined;
+
+  for (const time of sortedTimes) {
+    if (previous === undefined || time - previous === 86_400_000) {
+      current += 1;
+    } else if (time !== previous) {
+      current = 1;
+    }
+    best = Math.max(best, current);
+    previous = time;
+  }
+
+  return best;
+}
+
+function localDateTime(date: string): number {
+  const [year = "0", month = "1", day = "1"] = date.split("-");
+  return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
+}
