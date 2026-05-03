@@ -7,6 +7,7 @@ import { renderAnnualReview } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
 import { COMMAND_IDS } from "../src/core/commands";
+import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
 describe("tokenizer", () => {
@@ -36,6 +37,71 @@ describe("extraction", () => {
     expect(note.links).toContain("Projects/Research");
     expect(note.headings).toContain("Morning");
     expect(note.tasks).toEqual({ total: 2, completed: 1 });
+  });
+
+  it("uses Obsidian resolved and unresolved link metadata when provided", () => {
+    const note = extractNoteStats(
+      {
+        path: "Daily/2026-01-03.md",
+        ctime: Date.parse("2026-01-03T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-03T08:00:00.000Z"),
+        content: "[[Research|alias]]\n[[Missing Note]]",
+        resolvedLinks: {
+          "Projects/Research.md": 4,
+          "Shared/Collision.md": 1,
+        },
+        unresolvedLinks: {
+          "Missing Note": 2,
+          "Shared/Collision.md": 3,
+        },
+      },
+      DEFAULT_SETTINGS,
+    );
+
+    expect(note.linkCounts).toEqual({
+      "Missing Note": 2,
+      "Projects/Research.md": 4,
+      "Shared/Collision.md": 4,
+    });
+    expect(note.links).toEqual(["Missing Note", "Projects/Research.md", "Shared/Collision.md"]);
+  });
+
+  it("falls back to counting raw wiki-link targets outside Obsidian metadata", () => {
+    const note = extractNoteStats(
+      {
+        path: "Daily/2026-01-04.md",
+        ctime: Date.parse("2026-01-04T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-04T08:00:00.000Z"),
+        content: ["[[Research|alias]]", "[[Projects/Research#Plan]]", "![[Research]]"].join("\n"),
+      },
+      DEFAULT_SETTINGS,
+    );
+
+    expect(note.linkCounts).toEqual({
+      "Projects/Research": 1,
+      Research: 2,
+    });
+  });
+
+  it("omits link metrics when link collection is disabled", () => {
+    const note = extractNoteStats(
+      {
+        path: "Daily/2026-01-04.md",
+        ctime: Date.parse("2026-01-04T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-04T08:00:00.000Z"),
+        content: "[[Research]]",
+        resolvedLinks: {
+          "Projects/Research.md": 1,
+        },
+      },
+      {
+        ...DEFAULT_SETTINGS,
+        includeLinks: false,
+      },
+    );
+
+    expect(note.links).toEqual([]);
+    expect(note.linkCounts).toEqual({});
   });
 
   it("parses a small YAML frontmatter subset", () => {
@@ -86,6 +152,42 @@ describe("aggregation and rendering", () => {
     expect(aggregate.wordGrowthBuckets[aggregate.wordGrowthBuckets.length - 1]?.cumulativeWords).toBe(aggregate.totalWords);
     expect(aggregate.monthBuckets[3]?.modified).toBe(1);
     expect(aggregate.monthBuckets[3]?.words).toBe(0);
+  });
+
+  it("uses Obsidian-resolved link counts when available", () => {
+    const aggregate = buildYearAggregate(
+      [
+        {
+          path: "Projects/Research.md",
+          ctime: Date.parse("2026-02-10T08:00:00.000Z"),
+          mtime: Date.parse("2026-02-10T08:00:00.000Z"),
+          content: "# Research\n\nTarget note.",
+        },
+        {
+          path: "Daily/2026-01-03.md",
+          ctime: Date.parse("2026-01-03T08:00:00.000Z"),
+          mtime: Date.parse("2026-01-03T08:00:00.000Z"),
+          content: [
+            "[[Research|research alias]]",
+            "[[Projects/Research#Plan]]",
+            "![[Research]]",
+            "[Markdown link](Research.md)",
+          ].join("\n"),
+          resolvedLinks: {
+            "Projects/Research.md": 4,
+          },
+        },
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+
+    expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research.md", count: 4 });
+    expect(aggregate.topLinks).not.toContainEqual({ name: "Research", count: 1 });
+    expect(aggregate.topLinks).not.toContainEqual({ name: "Projects/Research", count: 1 });
+
+    const markdown = renderAnnualReview(aggregate);
+    expect(markdown).toContain("- [[Projects/Research.md]]: 4");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
@@ -209,6 +311,78 @@ describe("AI provider", () => {
     expect(prompt).toContain("\"contextNotes\"");
     expect(prompt).toContain("Daily/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");
+  });
+
+  it("builds provider context with Obsidian-resolved link destinations", () => {
+    const files = [
+      {
+        path: "Daily/2026-01-03.md",
+        ctime: Date.parse("2026-01-03T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-03T08:00:00.000Z"),
+        content: "[[Research|alias]]\n[Markdown link](Research.md)",
+        resolvedLinks: {
+          "Projects/Research.md": 2,
+        },
+      },
+    ];
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
+    const context = JSON.parse(prompt) as { linkGraph: Array<{ links: string[] }>; contextNotes: Array<{ links: string[] }> };
+
+    expect(prompt).toContain("\"topLinks\"");
+    expect(prompt).toContain("Projects/Research.md");
+    expect(context.linkGraph[0]?.links).toEqual(["Projects/Research.md"]);
+    expect(context.contextNotes[0]?.links).toEqual(["Projects/Research.md"]);
+  });
+});
+
+describe("Obsidian vault adapter", () => {
+  it("passes metadata cache link counts into source files", async () => {
+    const app = {
+      vault: {
+        getMarkdownFiles: () => [
+          {
+            path: "Daily/2026-01-03.md",
+            stat: {
+              ctime: Date.parse("2026-01-03T08:00:00.000Z"),
+              mtime: Date.parse("2026-01-03T09:00:00.000Z"),
+            },
+          },
+        ],
+        cachedRead: async () => "[[Research|alias]]",
+      },
+      metadataCache: {
+        getFileCache: () => ({ frontmatter: { tags: ["journal"] } }),
+        resolvedLinks: {
+          "Daily/2026-01-03.md": {
+            "Projects/Research.md": 2,
+          },
+        },
+        unresolvedLinks: {
+          "Daily/2026-01-03.md": {
+            "Missing Note": 1,
+          },
+        },
+      },
+    };
+
+    const files = await readVaultMarkdownFiles(app as unknown as Parameters<typeof readVaultMarkdownFiles>[0], DEFAULT_SETTINGS);
+
+    expect(files).toEqual([
+      {
+        path: "Daily/2026-01-03.md",
+        ctime: Date.parse("2026-01-03T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-03T09:00:00.000Z"),
+        frontmatter: { tags: ["journal"] },
+        resolvedLinks: {
+          "Projects/Research.md": 2,
+        },
+        unresolvedLinks: {
+          "Missing Note": 1,
+        },
+        content: "[[Research|alias]]",
+      },
+    ]);
   });
 });
 

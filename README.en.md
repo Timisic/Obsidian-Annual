@@ -22,7 +22,7 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Report generation | Baseline implemented | Run `Annual Review: Generate report` to create a Markdown report for a selected year. |
 | Dashboard | Baseline implemented | Run `Annual Review: Open dashboard` to preview metrics, top lists, and report actions. |
 | Reindexing | Baseline implemented | Run `Annual Review: Rebuild index` after vault or setting changes. |
-| Local analysis | Baseline implemented | Reads Markdown, frontmatter, tags, links, headings, tasks, and file timestamps through Obsidian APIs. |
+| Local analysis | Baseline implemented | Reads Markdown, frontmatter, tags, Obsidian-resolved links, headings, tasks, and file timestamps through Obsidian APIs. |
 | Mixed-language counting | Baseline implemented | Keeps Latin word counts and CJK character counts useful for Chinese, English, and mixed vaults. |
 | Evidence links | Baseline implemented | Uses Obsidian links for representative notes and ranked note references. |
 | Daily word heatmap | Baseline implemented | Shows daily created-note word volume in the report and dashboard, similar to a contribution heatmap. |
@@ -31,6 +31,10 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
 ## Recent Changes
+
+DEC-19 corrected the link-statistics semantics:
+
+- **Obsidian-resolved link metrics**: when the plugin runs inside Obsidian, top links are counted from `metadataCache.resolvedLinks` / `unresolvedLinks`, so `[[Research|alias]]`, `[[Projects/Research#Plan]]`, embeds, and Markdown links are counted against the destination Obsidian resolves; unresolved links are kept under Obsidian's unresolved target text. Core tests outside Obsidian still keep wiki-link text parsing as the fallback.
 
 DEC-17 added two report-quality improvements:
 
@@ -149,8 +153,9 @@ Manual validation:
 2. Rebuild the index, generate a report, and open the dashboard.
 3. Confirm the report is created under `Annual Reviews/`.
 4. Confirm Obsidian links in the report open source notes.
-5. Regenerate the report and confirm old content is not duplicated.
-6. Repeat the core flow in a clean vault without third-party plugins.
+5. Add a target note referenced through `[[title|alias]]`, `[[path#heading]]`, embeds, and Markdown links, then confirm top links merge those references under the same Obsidian-resolved destination.
+6. Regenerate the report and confirm old content is not duplicated.
+7. Repeat the core flow in a clean vault without third-party plugins.
 
 ## More Documentation
 
