@@ -10,6 +10,8 @@ export const DEFAULT_SETTINGS: AnnualReviewSettings = {
   includeFrontmatter: true,
   includeHeadings: true,
   privacyMode: "standard",
+  reportLanguage: "system",
+  generatorLanguage: "system",
 };
 
 export function normalizeFolder(folder: string): string {

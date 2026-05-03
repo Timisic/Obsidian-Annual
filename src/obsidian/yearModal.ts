@@ -1,6 +1,7 @@
 import { Modal, Setting, type App } from "obsidian";
+import { UI_TEXT } from "../core/language";
 import { joinFolderList, splitFolderList } from "../core/settings";
-import type { AnnualReviewSettings, GenerateReportOptions } from "../core/types";
+import type { AnnualReviewLanguage, AnnualReviewSettings, GenerateReportOptions, ResolvedAnnualReviewLanguage } from "../core/types";
 
 export class YearModal extends Modal {
   private selectedYear = new Date().getFullYear();
@@ -8,19 +9,20 @@ export class YearModal extends Modal {
 
   onChoose: (options: GenerateReportOptions) => void = () => undefined;
 
-  constructor(app: App, settings: AnnualReviewSettings) {
+  constructor(app: App, settings: AnnualReviewSettings, private language: ResolvedAnnualReviewLanguage) {
     super(app);
     this.runSettings = { ...settings, includeFolders: [...settings.includeFolders], excludeFolders: [...settings.excludeFolders] };
   }
 
   onOpen(): void {
     const { contentEl } = this;
+    const text = UI_TEXT[this.language];
     contentEl.empty();
-    contentEl.createEl("h2", { text: "Generate Annual Review" });
+    contentEl.createEl("h2", { text: text.generateTitle });
 
     new Setting(contentEl)
-      .setName("Year")
-      .setDesc("The calendar year to scan by note created/modified timestamps.")
+      .setName(text.year)
+      .setDesc(text.yearDesc)
       .addText((text) => {
         text
           .setPlaceholder(String(this.selectedYear))
@@ -34,8 +36,8 @@ export class YearModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName("Include folders")
-      .setDesc("Comma-separated folders for this run. Empty scans all Markdown files.")
+      .setName(text.includeFolders)
+      .setDesc(text.runIncludeFoldersDesc)
       .addText((text) => {
         text
           .setPlaceholder("Daily, Projects")
@@ -46,8 +48,8 @@ export class YearModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName("Exclude folders")
-      .setDesc("Comma-separated folders skipped for this run.")
+      .setName(text.excludeFolders)
+      .setDesc(text.runExcludeFoldersDesc)
       .addText((text) => {
         text
           .setValue(joinFolderList(this.runSettings.excludeFolders))
@@ -57,27 +59,40 @@ export class YearModal extends Modal {
       });
 
     new Setting(contentEl)
-      .setName("Privacy mode")
-      .setDesc("Reports stay local; private mode marks the generated note as privacy-sensitive.")
+      .setName(text.reportLanguage)
+      .setDesc(text.reportLanguageDesc)
       .addDropdown((dropdown) => {
         dropdown
-          .addOption("standard", "Standard")
-          .addOption("private", "Private")
+          .addOption("system", text.followObsidian)
+          .addOption("zh", text.chinese)
+          .addOption("en", text.english)
+          .setValue(this.runSettings.reportLanguage)
+          .onChange((value) => {
+            this.runSettings.reportLanguage = value as AnnualReviewLanguage;
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(text.privacyMode)
+      .setDesc(text.privacyModeDesc)
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("standard", text.standard)
+          .addOption("private", text.private)
           .setValue(this.runSettings.privacyMode)
           .onChange((value) => {
             this.runSettings.privacyMode = value as AnnualReviewSettings["privacyMode"];
           });
       });
 
-    this.addMetricToggle("Include task metrics", "includeTasks");
-    this.addMetricToggle("Include link metrics", "includeLinks");
-    this.addMetricToggle("Include frontmatter metrics", "includeFrontmatter");
-    this.addMetricToggle("Include heading metrics", "includeHeadings");
+    this.addMetricToggle(text.includeLinkMetrics, "includeLinks");
+    this.addMetricToggle(text.includeFrontmatterMetrics, "includeFrontmatter");
+    this.addMetricToggle(text.includeHeadingMetrics, "includeHeadings");
 
     new Setting(contentEl)
       .addButton((button) => {
         button
-          .setButtonText("Generate")
+          .setButtonText(text.generate)
           .setCta()
           .onClick(() => {
             this.close();
@@ -86,7 +101,7 @@ export class YearModal extends Modal {
       })
       .addButton((button) => {
         button
-          .setButtonText("Cancel")
+          .setButtonText(text.cancel)
           .onClick(() => this.close());
       });
   }
@@ -95,7 +110,7 @@ export class YearModal extends Modal {
     this.contentEl.empty();
   }
 
-  private addMetricToggle(name: string, key: "includeTasks" | "includeLinks" | "includeFrontmatter" | "includeHeadings"): void {
+  private addMetricToggle(name: string, key: "includeLinks" | "includeFrontmatter" | "includeHeadings"): void {
     new Setting(this.contentEl)
       .setName(name)
       .addToggle((toggle) => {

@@ -1,3 +1,6 @@
+export type AnnualReviewLanguage = "system" | "zh" | "en";
+export type ResolvedAnnualReviewLanguage = Exclude<AnnualReviewLanguage, "system">;
+
 export interface AnnualReviewSettings {
   reportFolder: string;
   includeFolders: string[];
@@ -8,6 +11,8 @@ export interface AnnualReviewSettings {
   includeFrontmatter: boolean;
   includeHeadings: boolean;
   privacyMode: "standard" | "private";
+  reportLanguage: AnnualReviewLanguage;
+  generatorLanguage: AnnualReviewLanguage;
 }
 
 export interface ReportScope {
