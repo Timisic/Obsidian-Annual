@@ -1,5 +1,5 @@
 import { toTopicEvolutionJson } from "./topics";
-import type { DayBucket, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, TopicEvolutionData, TopicMonthlyBucket, TopTopic, WordGrowthBucket, YearAggregate } from "./types";
+import type { DayBucket, HighValueNote, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, TopicEvolutionData, TopicMonthlyBucket, TopTopic, WordGrowthBucket, YearAggregate } from "./types";
 
 interface RenderOptions {
   language?: ResolvedAnnualReviewLanguage;
@@ -123,6 +123,19 @@ const REPORT_TEXT = {
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
+    highValueNotes: "High Value Notes",
+    highValueNotesSummary: (count: number, outputReady: number) => `${count} notes are worth revisiting first this period, including ${outputReady} output-ready notes.`,
+    highValueNote: "Note",
+    highValueType: "Type",
+    highValueReason: "Value reason",
+    suggestedAction: "Suggested action",
+    highValueFeedback: "High Value Note Feedback",
+    priorityNotes: (notes: string) => `This period's best notes to keep moving are ${notes}.`,
+    outputReadySignal: (count: number) => `${count} notes are ready to be shaped into an article or MOC.`,
+    staleCoreSignal: (count: number) => `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
+    noHighValueNotes: "No high-value note signals found.",
+    nextPeriodSuggestion: "Next Period Suggestion",
+    highValueNextStep: "Prioritize these notes instead of adding undifferentiated new content.",
     representativeNotes: "Representative Notes",
     representativeNotesDescription:
       "Representative notes are selected deterministically: each active month contributes the highest-volume note from that month's created notes, or from modified notes when the note was created in another year. Ranking uses counted words, then characters, then path as the tie-breaker. This stable evidence set can be reused by later AI summaries.",
@@ -188,6 +201,19 @@ const REPORT_TEXT = {
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
+    highValueNotes: "高价值笔记",
+    highValueNotesSummary: (count: number, outputReady: number) => `本期最值得继续推进的笔记有 ${count} 篇，其中 ${outputReady} 篇具备输出潜力。`,
+    highValueNote: "笔记",
+    highValueType: "类型",
+    highValueReason: "价值原因",
+    suggestedAction: "建议动作",
+    highValueFeedback: "高价值笔记反馈",
+    priorityNotes: (notes: string) => `本期最值得继续推进的是 ${notes}。`,
+    outputReadySignal: (count: number) => `有 ${count} 篇笔记已经具备整理成文章或 MOC 的条件。`,
+    staleCoreSignal: (count: number) => `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
+    noHighValueNotes: "未找到高价值笔记信号。",
+    nextPeriodSuggestion: "下期建议",
+    highValueNextStep: "优先处理这些笔记，而不是继续无差别新增内容。",
     representativeNotes: "代表笔记",
     representativeNotesDescription:
       "代表笔记采用确定性规则选择：每个活跃月份选出该月新建笔记中内容量最高的一篇；如果笔记不是当年新建但在该月被修改，也会参与该月选择。排序依次比较计数字词、字符数和路径。这个稳定证据集可供后续 AI 总结复用。",
@@ -255,6 +281,10 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     `## ${text.topLinks}`,
     "",
     renderMetricList(aggregate.topLinks.map((item) => ({ ...item, name: linkName(item.name) })), "", language),
+    "",
+    `## ${text.highValueNotes}`,
+    "",
+    renderHighValueNotes(aggregate, language),
     "",
     `## ${text.representativeNotes}`,
     "",
@@ -632,6 +662,45 @@ function renderMetricList(items: RankedMetric[], prefix = "", language: Resolved
   return items.map((item) => `- ${prefix}${item.name}: ${item.count}`).join("\n");
 }
 
+function renderHighValueNotes(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  if (aggregate.highValueNotes.length === 0) {
+    return `- ${text.noHighValueNotes}`;
+  }
+
+  return [
+    text.highValueNotesSummary(aggregate.highValueNotes.length, aggregate.highValueFeedback.outputReadyCount),
+    "",
+    `| ${text.highValueNote} | ${text.highValueType} | ${text.highValueReason} | ${text.suggestedAction} |`,
+    "| --- | --- | --- | --- |",
+    ...aggregate.highValueNotes.map((note) => renderHighValueNoteRow(note)),
+    "",
+    `### ${text.highValueFeedback}`,
+    "",
+    ...renderHighValueFeedback(aggregate, language),
+    "",
+    `### ${text.nextPeriodSuggestion}`,
+    "",
+    text.highValueNextStep,
+  ].join("\n");
+}
+
+function renderHighValueNoteRow(note: HighValueNote): string {
+  return `| ${wikiLink(note.path, note.title)} | ${note.kind} | ${note.reason} | ${note.suggestedAction} |`;
+}
+
+function renderHighValueFeedback(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string[] {
+  const text = REPORT_TEXT[language];
+  const priorityLinks = aggregate.highValueNotes
+    .slice(0, 3)
+    .map((note) => wikiLink(note.path, note.title));
+  return [
+    `- ${text.priorityNotes(formatInlineList(priorityLinks, language))}`,
+    `- ${text.outputReadySignal(aggregate.highValueFeedback.outputReadyCount)}`,
+    `- ${text.staleCoreSignal(aggregate.highValueFeedback.staleCoreCount)}`,
+  ];
+}
+
 function renderNoteList(notes: RankedNote[], language: ResolvedAnnualReviewLanguage): string {
   if (notes.length === 0) {
     return `- ${REPORT_TEXT[language].noRepresentativeNotes}`;
@@ -659,4 +728,19 @@ function wikiLink(path: string, title: string): string {
 
 function linkName(name: string): string {
   return `[[${name}]]`;
+}
+
+function formatInlineList(items: string[], language: ResolvedAnnualReviewLanguage): string {
+  if (items.length === 0) {
+    return REPORT_TEXT[language].none;
+  }
+  if (items.length === 1) {
+    return items[0] ?? "";
+  }
+  if (items.length === 2) {
+    return language === "zh" ? items.join(" 和 ") : items.join(" and ");
+  }
+  const last = items[items.length - 1] ?? "";
+  const first = items.slice(0, -1).join(language === "zh" ? "、" : ", ");
+  return language === "zh" ? `${first} 和 ${last}` : `${first}, and ${last}`;
 }

@@ -120,6 +120,29 @@ export interface RankedNote {
   characters: number;
 }
 
+export type SuggestedNoteAction = "继续扩展" | "整理成文章" | "建立 MOC" | "补充链接" | "更新旧内容" | "判断是否归档";
+
+export type HighValueNoteKind = "核心笔记" | "活跃笔记" | "桥接笔记" | "输出候选" | "需维护" | "孤立潜力";
+
+export interface HighValueNote {
+  path: string;
+  title: string;
+  kind: HighValueNoteKind;
+  reason: string;
+  suggestedAction: SuggestedNoteAction;
+  inboundLinks: number;
+  outboundLinks: number;
+  topics: string[];
+  lastUpdated: string;
+  periodWordCount: number;
+}
+
+export interface HighValueNoteFeedback {
+  priorityNoteTitles: string[];
+  outputReadyCount: number;
+  staleCoreCount: number;
+}
+
 export interface YearAggregate {
   year: number;
   generatedAt: string;
@@ -141,6 +164,11 @@ export interface YearAggregate {
   topNotes: RankedNote[];
   representativeNotes: RankedNote[];
   topicEvolution: TopicEvolutionData;
+  highValueNotes: HighValueNote[];
+  outputReadyNotes: HighValueNote[];
+  maintenanceNotes: HighValueNote[];
+  isolatedPotentialNotes: HighValueNote[];
+  highValueFeedback: HighValueNoteFeedback;
 }
 
 export interface SourceFile {
