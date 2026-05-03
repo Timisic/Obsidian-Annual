@@ -43,7 +43,8 @@ export class AnnualReviewDashboardView extends ItemView {
     const text = this.text();
     const language = this.controller.getGeneratorLanguage();
     container.empty();
-    container.createEl("h2", { text: text.annualReview });
+    container.addClass("annual-review-dashboard-view");
+    renderHeader(container, text.annualReview);
 
     const aggregate = this.controller.getLastAggregate();
     const settings = this.controller.getSettings();
@@ -51,7 +52,8 @@ export class AnnualReviewDashboardView extends ItemView {
     this.selectedYear = aggregate?.year ?? this.selectedYear;
     let year = this.selectedYear;
 
-    new Setting(container)
+    const controls = container.createDiv({ cls: "annual-review-dashboard-toolbar" });
+    new Setting(controls)
       .setName(text.year)
       .addText((text) => {
         text
@@ -77,6 +79,7 @@ export class AnnualReviewDashboardView extends ItemView {
       .addButton((button) => {
         button
           .setButtonText(text.generateReport)
+          .setCta()
           .onClick(() => {
             this.controller.openGenerateModal();
           });
@@ -92,17 +95,16 @@ export class AnnualReviewDashboardView extends ItemView {
           });
       });
 
-    container.createEl("h3", { text: text.scope });
-    renderList(container, [
-      `${text.include}: ${settings.includeFolders.length > 0 ? joinFolderList(settings.includeFolders) : text.allMarkdownFiles}`,
-      `${text.exclude}: ${settings.excludeFolders.length > 0 ? joinFolderList(settings.excludeFolders) : text.none}`,
-      `${text.privacy}: ${settings.privacyMode}`,
-      `${text.aiProvider}: ${settings.aiProvider === "chatgpt" ? text.chatGpt : text.none}`,
-      `${text.index}: ${index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet}`,
-    ], language);
+    const scopeGrid = container.createDiv({ cls: "annual-review-dashboard-info-grid" });
+    renderInfoCard(scopeGrid, text.include, settings.includeFolders.length > 0 ? joinFolderList(settings.includeFolders) : text.allMarkdownFiles);
+    renderInfoCard(scopeGrid, text.exclude, settings.excludeFolders.length > 0 ? joinFolderList(settings.excludeFolders) : text.none);
+    renderInfoCard(scopeGrid, text.privacy, settings.privacyMode);
+    renderInfoCard(scopeGrid, text.aiProvider, settings.aiProvider === "chatgpt" ? text.chatGpt : text.none);
+    renderInfoCard(scopeGrid, text.index, index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet);
 
     const reportPath = this.controller.getLastReportPath();
-    new Setting(container)
+    const reportActions = container.createDiv({ cls: "annual-review-dashboard-report-actions" });
+    new Setting(reportActions)
       .setName(reportPath ? text.report(reportPath) : text.noReportGenerated)
       .addButton((button) => {
         button
@@ -114,7 +116,7 @@ export class AnnualReviewDashboardView extends ItemView {
       });
 
     if (!aggregate) {
-      container.createEl("p", { text: text.noPreviewData });
+      container.createEl("p", { cls: "annual-review-dashboard-empty", text: text.noPreviewData });
       return;
     }
 
@@ -124,35 +126,50 @@ export class AnnualReviewDashboardView extends ItemView {
     renderMetric(summary, text.activeDays, String(aggregate.activeDays));
     renderMetric(summary, text.words, String(aggregate.totalWords));
 
-    container.createEl("h3", { text: text.monthlyTrend });
+    renderSectionTitle(container, text.monthlyTrend);
     renderTrend(container, aggregate);
 
-    container.createEl("h3", { text: text.dailyWordHeatmap });
+    renderSectionTitle(container, text.dailyWordHeatmap);
     renderHeatmap(container, aggregate, language);
 
-    container.createEl("h3", { text: text.wordGrowth });
+    renderSectionTitle(container, text.wordGrowth);
     renderGrowth(container, aggregate, language);
 
-    container.createEl("h3", { text: text.topTags });
+    renderSectionTitle(container, text.topTags);
     renderList(container, aggregate.topTags.map((item) => `${item.name}: ${item.count}`), language);
-    container.createEl("h3", { text: text.topFolders });
+    renderSectionTitle(container, text.topFolders);
     renderList(container, aggregate.topFolders.map((item) => `${item.name}: ${item.count}`), language);
-    container.createEl("h3", { text: text.topLinks });
+    renderSectionTitle(container, text.topLinks);
     renderList(container, aggregate.topLinks.map((item) => `${item.name}: ${item.count}`), language);
-    container.createEl("h3", { text: text.representativeNotes });
+    renderSectionTitle(container, text.representativeNotes);
     renderList(container, aggregate.representativeNotes.map((note) => `${note.path} (${text.noteWords(note.words)})`), language);
   }
 
   private renderLoading(message: string): void {
     const container = this.containerEl.children[1] as HTMLElement;
     container.empty();
-    container.createEl("h2", { text: this.text().annualReview });
-    container.createEl("p", { text: message });
+    container.addClass("annual-review-dashboard-view");
+    renderHeader(container, this.text().annualReview);
+    container.createEl("p", { cls: "annual-review-dashboard-empty", text: message });
   }
 
   private text(): (typeof UI_TEXT)[ResolvedAnnualReviewLanguage] {
     return UI_TEXT[this.controller.getGeneratorLanguage()];
   }
+}
+
+function renderHeader(parent: HTMLElement, title: string): void {
+  parent.createEl("h2", { cls: "annual-review-dashboard-title", text: title });
+}
+
+function renderSectionTitle(parent: Element, title: string): void {
+  parent.createEl("h3", { cls: "annual-review-dashboard-section-title", text: title });
+}
+
+function renderInfoCard(parent: Element, label: string, value: string): void {
+  const item = parent.createDiv({ cls: "annual-review-dashboard-info-card" });
+  item.createEl("span", { text: label });
+  item.createEl("strong", { text: value });
 }
 
 function renderMetric(parent: HTMLElement, label: string, value: string): void {

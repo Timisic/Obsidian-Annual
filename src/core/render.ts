@@ -83,7 +83,7 @@ const REPORT_TEXT = {
     none: "None",
     periodJudgment: "One-Sentence Judgment",
     defaultPeriodJudgment: (words: number, activeDays: number, topics: string[]) =>
-      `This period added ${formatInteger(words)} words across ${activeDays} writing days, with the strongest topic signal in ${formatQuotedList(topics)}.`,
+      `This period added ${formatInteger(words)} words across ${activeDays} writing days; the clearest content themes are ${formatQuotedList(topics)}.`,
     writingGrowth: "Writing Growth",
     totalNewWords: "Total new words",
     writingDays: "Writing days",
@@ -128,21 +128,20 @@ const REPORT_TEXT = {
     trend: "Trend",
     cumulativeWords: "Cumulative words",
     topicEvolution: "Topic Evolution",
-    topicEvolutionSummary: (topics: string[]) => `This period's main growth centers on ${formatQuotedList(topics)}.`,
+    topicEvolutionSummary: (topics: string[]) => `The clearest content growth this period is in ${formatQuotedList(topics)}.`,
     topicEvolutionEmpty: "No topic data found.",
     topicEvolutionLegend: "Stacked SVG chart: monthly created-note words by top topic, with smaller topics grouped as Other.",
     topicEvolutionChart: "Topic evolution",
     topic: "Topic",
     addedWords: "Added words",
     newNotes: "New notes",
-    updatedNotes: "Updated notes",
     topicFeedback: "Feedback Signals",
-    mainThreads: (topics: string[]) => `Main thread: the fastest-growing topics are ${formatQuotedList(topics)}.`,
-    emergingDirection: (topics: string[]) => `Emerging direction: ${formatQuotedList(topics)} started growing recently and is worth continuing.`,
+    mainThreads: (topics: string[]) => `Main thread: these themes now have enough weight to guide review: ${formatQuotedList(topics)}.`,
+    emergingDirection: (topics: string[]) => `Emerging direction: ${formatQuotedList(topics)} started growing recently and deserves a concrete next question.`,
     noEmergingDirection: "Emerging direction: no clear new topic signal yet.",
     needsAttention: (topics: string[]) => `Needs attention: ${formatQuotedList(topics)} has had no new content in recent active months; decide whether to archive or restart it.`,
     noDecliningDirection: "Needs attention: no clearly dormant topic signal yet.",
-    nextTopicAction: "Next-period suggestion: consolidate the fastest-growing topic into an MOC or project page.",
+    nextTopicAction: "Next-period suggestion: turn the leading theme into a small index page with evidence notes and open questions.",
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
@@ -152,18 +151,18 @@ const REPORT_TEXT = {
     maintenanceNotes: "Notes needing maintenance",
     noOutputReadyNotes: "No output-ready notes found.",
     noMaintenanceNotes: "No maintenance-needed notes found.",
-    highValueNotesSummary: (count: number, outputReady: number) => `${count} notes are worth revisiting first this period, including ${outputReady} output-ready notes.`,
+    highValueNotesSummary: (count: number, outputReady: number) => `The Top ${count} list below is the first review queue; ${outputReady} notes across the vault currently look output-ready.`,
     highValueNote: "Note",
     highValueType: "Type",
     highValueReason: "Value reason",
     suggestedAction: "Suggested action",
     highValueFeedback: "High Value Note Feedback",
     priorityNotes: (notes: string) => `This period's best notes to keep moving are ${notes}.`,
-    outputReadySignal: (count: number) => `${count} notes are ready to be shaped into an article or MOC.`,
+    outputReadySignal: (count: number) => `${count} notes have enough structure to be shaped into an article, index, or review memo.`,
     staleCoreSignal: (count: number) => `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
     noHighValueNotes: "No high-value note signals found.",
     nextPeriodActions: "Next-Period Actions",
-    mocAction: (topic: string) => `Build or update an MOC for ${topic}.`,
+    mocAction: (topic: string) => `Create a compact index for ${topic}: evidence notes, current conclusion, and one next question.`,
     isolatedNotesAction: (count: number) => `Connect or decide the fate of ${count} isolated potential note${count === 1 ? "" : "s"}.`,
     noIsolatedNotesAction: "No isolated-potential notes need immediate handling.",
     highValuePushAction: (notes: string) => `Move forward ${notes} as the next high-value note focus.`,
@@ -186,7 +185,7 @@ const REPORT_TEXT = {
     none: "无",
     periodJudgment: "本期一句话判断",
     defaultPeriodJudgment: (words: number, activeDays: number, topics: string[]) =>
-      `本期新增 ${formatInteger(words)} 个字词，覆盖 ${activeDays} 个写作日，最明显的主题信号集中在${formatQuotedList(topics)}。`,
+      `本期新增 ${formatInteger(words)} 个字词，覆盖 ${activeDays} 个写作日；最清晰的内容主题是${formatQuotedList(topics)}。`,
     writingGrowth: "写作增长",
     totalNewWords: "总新增字数",
     writingDays: "写作天数",
@@ -231,21 +230,20 @@ const REPORT_TEXT = {
     trend: "趋势",
     cumulativeWords: "累计字词",
     topicEvolution: "主题演化",
-    topicEvolutionSummary: (topics: string[]) => `本期主要增长集中在${formatQuotedList(topics)}。`,
+    topicEvolutionSummary: (topics: string[]) => `本期真正有内容增长的主题主要是${formatQuotedList(topics)}。`,
     topicEvolutionEmpty: "未找到主题数据。",
     topicEvolutionLegend: "堆叠 SVG 图表：按 Top 主题展示每月新建笔记字词量，小主题合并为「其他」。",
     topicEvolutionChart: "主题演化",
     topic: "主题",
     addedWords: "新增字数",
     newNotes: "新增笔记",
-    updatedNotes: "更新笔记",
     topicFeedback: "反馈信号",
-    mainThreads: (topics: string[]) => `主要主线：本期增长最多的是${formatQuotedList(topics)}。`,
-    emergingDirection: (topics: string[]) => `新兴方向：${formatQuotedList(topics)}最近开始增长，值得继续推进。`,
+    mainThreads: (topics: string[]) => `主要主线：这些主题已经有足够材料支撑年度复盘：${formatQuotedList(topics)}。`,
+    emergingDirection: (topics: string[]) => `新兴方向：${formatQuotedList(topics)}最近开始增长，适合追问下一步问题。`,
     noEmergingDirection: "新兴方向：暂未出现明确的新主题信号。",
     needsAttention: (topics: string[]) => `需要关注：${formatQuotedList(topics)}最近多个活跃月份没有新增内容，可以判断是否归档或重启。`,
     noDecliningDirection: "需要关注：暂未出现明显沉寂的主题。",
-    nextTopicAction: "下期建议：将增长最快的主题整理为 MOC 或项目页。",
+    nextTopicAction: "下期建议：把领先主题整理成一页小索引，列出证据笔记、当前判断和下一步问题。",
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
@@ -255,18 +253,18 @@ const REPORT_TEXT = {
     maintenanceNotes: "需维护笔记",
     noOutputReadyNotes: "未找到可输出笔记。",
     noMaintenanceNotes: "未找到需维护笔记。",
-    highValueNotesSummary: (count: number, outputReady: number) => `本期最值得继续推进的笔记有 ${count} 篇，其中 ${outputReady} 篇具备输出潜力。`,
+    highValueNotesSummary: (count: number, outputReady: number) => `下表 Top ${count} 是优先回看队列；全库当前有 ${outputReady} 篇笔记具备输出潜力。`,
     highValueNote: "笔记",
     highValueType: "类型",
     highValueReason: "价值原因",
     suggestedAction: "建议动作",
     highValueFeedback: "高价值笔记反馈",
     priorityNotes: (notes: string) => `本期最值得继续推进的是 ${notes}。`,
-    outputReadySignal: (count: number) => `有 ${count} 篇笔记已经具备整理成文章或 MOC 的条件。`,
+    outputReadySignal: (count: number) => `有 ${count} 篇笔记已经具备整理成文章、索引页或复盘备忘的条件。`,
     staleCoreSignal: (count: number) => `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
     noHighValueNotes: "未找到高价值笔记信号。",
     nextPeriodActions: "下期行动",
-    mocAction: (topic: string) => `建立或更新「${topic}」相关 MOC。`,
+    mocAction: (topic: string) => `围绕「${topic}」整理一页小索引：证据笔记、当前判断和一个下一步问题。`,
     isolatedNotesAction: (count: number) => `处理 ${count} 篇孤立潜力笔记，补链或判断是否归档。`,
     noIsolatedNotesAction: "当前没有需要立即处理的孤立潜力笔记。",
     highValuePushAction: (notes: string) => `推进 ${notes} 作为下期高价值笔记重点。`,
@@ -470,8 +468,8 @@ function renderTopicEvolution(data: TopicEvolutionData, language: ResolvedAnnual
     "",
     chartPath ? renderChartReference(chartPath, text.topicEvolutionChart) : renderTopicEvolutionSvg(data, language),
     "",
-    `| ${text.topic} | ${text.addedWords} | ${text.newNotes} | ${text.updatedNotes} | ${text.representativeNotes} |`,
-    "| --- | ---: | ---: | ---: | --- |",
+    `| ${text.topic} | ${text.addedWords} | ${text.newNotes} | ${text.representativeNotes} |`,
+    "| --- | ---: | ---: | --- |",
     ...data.topTopics.map(renderTopicTableRow),
     "",
     `### ${text.topicFeedback}`,
@@ -484,8 +482,8 @@ function renderTopicEvolution(data: TopicEvolutionData, language: ResolvedAnnual
 }
 
 function renderTopicTableRow(topic: TopTopic): string {
-  const representativeNotes = topic.representativeNotes.map((path) => wikiLink(path, noteTitle(path))).join(", ") || "n/a";
-  return `| ${topic.name} | ${formatInteger(topic.addedWords)} | ${topic.newNotes} | ${topic.updatedNotes} | ${representativeNotes} |`;
+  const representativeNotes = topic.representativeNotes.map(wikiLinkPlain).join(", ") || "n/a";
+  return tableRow([topic.name, formatInteger(topic.addedWords), String(topic.newNotes), representativeNotes]);
 }
 
 function renderDailyHeatmapSvg(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
@@ -739,7 +737,7 @@ function renderTopicEvolutionSvg(data: TopicEvolutionData, language: ResolvedAnn
 }
 
 function renderChartReference(path: string, alt: string): string {
-  return `![[${path}|${alt}]]`;
+  return `![[${path}|${alt}|900]]`;
 }
 
 function normalizeReportFolder(folder: string): string {
@@ -849,7 +847,7 @@ function renderHighValueNotes(aggregate: YearAggregate, language: ResolvedAnnual
 }
 
 function renderHighValueNoteRow(note: HighValueNote): string {
-  return `| ${wikiLink(note.path, note.title)} | ${note.kind} | ${note.reason} | ${note.suggestedAction} |`;
+  return tableRow([wikiLinkPlain(note.path), note.kind, note.reason, note.suggestedAction]);
 }
 
 function renderHighValueFeedback(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string[] {
@@ -907,8 +905,20 @@ function wikiLink(path: string, title: string): string {
   return `[[${path.replace(/\.md$/u, "")}|${title}]]`;
 }
 
+function wikiLinkPlain(path: string): string {
+  return `[[${path.replace(/\.md$/u, "")}]]`;
+}
+
 function linkName(name: string): string {
   return `[[${name}]]`;
+}
+
+function tableRow(cells: string[]): string {
+  return `| ${cells.map(markdownTableCell).join(" | ")} |`;
+}
+
+function markdownTableCell(value: string): string {
+  return value.replace(/\r?\n/gu, " ").replace(/\|/gu, "\\|").trim();
 }
 
 function formatInlineList(items: string[], language: ResolvedAnnualReviewLanguage): string {

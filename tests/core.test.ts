@@ -375,9 +375,8 @@ describe("aggregation and rendering", () => {
 
     const tagAssignment = assignments.find((assignment) => assignment.path === "Projects/Obsidian Report.md");
     expect(tagAssignment?.topics).toContain("Obsidian Data Report");
-    expect(tagAssignment?.topics).toContain("Projects");
     expect(tagAssignment?.sources["Obsidian Data Report"]).toBe("tag");
-    expect(tagAssignment?.sources.Projects).toBe("folder");
+    expect(tagAssignment?.topics).not.toContain("Projects");
 
     const fallbackAssignment = assignments.find((assignment) => assignment.path === "Reading Methods.md");
     expect(fallbackAssignment?.topics).toEqual(["Reading Methods"]);
@@ -393,6 +392,46 @@ describe("aggregation and rendering", () => {
       emerging_topics: expect.arrayContaining(["Obsidian Data Report"]),
       declining_topics: expect.arrayContaining(["Reading Methods"]),
     });
+  });
+
+  it("filters month folders from topics and prefers content-derived fallback names", () => {
+    const aggregate = buildYearAggregate(
+      [
+        {
+          path: "1月/AI 焦虑.md",
+          ctime: Date.parse("2026-01-10T08:00:00.000Z"),
+          mtime: Date.parse("2026-01-10T08:00:00.000Z"),
+          content: "# AI 焦虑\n\n" + repeatedWords(120),
+        },
+        {
+          path: "2026-02/财务压力.md",
+          ctime: Date.parse("2026-02-10T08:00:00.000Z"),
+          mtime: Date.parse("2026-02-10T08:00:00.000Z"),
+          content: "# 财务压力\n\n" + repeatedWords(120),
+        },
+        {
+          path: "Projects/亲密关系.md",
+          ctime: Date.parse("2026-03-10T08:00:00.000Z"),
+          mtime: Date.parse("2026-03-10T08:00:00.000Z"),
+          frontmatter: {
+            topics: ["亲密关系"],
+          },
+          content: "# 关系复盘\n\n" + repeatedWords(120),
+        },
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+
+    const topicNames = aggregate.topicEvolution.topTopics.map((topic) => topic.name);
+    expect(topicNames).toEqual(expect.arrayContaining(["AI 焦虑", "财务压力", "亲密关系"]));
+    expect(topicNames).not.toEqual(expect.arrayContaining(["1月", "2026 02", "2026-02"]));
+
+    const markdown = renderAnnualReview(aggregate, { language: "zh" });
+    expect(markdown).toContain("AI 焦虑");
+    expect(markdown).toContain("财务压力");
+    expect(markdown).not.toContain("本期增长最多的是「1月」");
+    expect(markdown).not.toContain("建立或更新「1月」相关 MOC");
   });
 
   it("uses Obsidian-resolved link counts when available", () => {
@@ -467,7 +506,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("class=\"chart-line\"");
     expect(markdown).toContain("## Topic Evolution");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(markdown).toContain("| Topic | Added words | New notes | Updated notes | Representative Notes |");
+    expect(markdown).toContain("| Topic | Added words | New notes | Representative Notes |");
+    expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
     expect(markdown).toContain("### Feedback Signals");
     expect(markdown).toContain("### Writing Growth Feedback");
     expect(markdown).toContain("- Advantage:");
@@ -485,13 +525,16 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("### Output-ready notes");
     expect(markdown).toContain("### Notes needing maintenance");
     expect(markdown).toContain("| Note | Type | Value reason | Suggested action |");
+    for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
+      expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
+    }
     expect(markdown).not.toContain("score");
     expect(markdown).not.toContain("## Representative Notes");
     expect(markdown).not.toContain("Representative notes are selected deterministically");
     expect(markdown).not.toContain("## Data Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
     expect(markdown).toContain("## Next-Period Actions");
-    expect(markdown).toContain("1. Build or update an MOC");
+    expect(markdown).toContain("1. Create a compact index");
     expect(markdown).toContain("2. ");
     expect(markdown).toContain("3. Move forward");
     expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
@@ -543,10 +586,10 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { chartPaths });
     const chartAssets = buildAnnualReviewChartAssets(aggregate, { chartPaths });
 
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Daily Cumulative Word Chart]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Word Growth Trend]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Daily Cumulative Word Chart|900]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap|900]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Word Growth Trend|900]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]");
     expect(markdown).not.toContain("<svg");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).toContain("| Month | Word growth | Cumulative words |");
@@ -620,17 +663,18 @@ describe("aggregation and rendering", () => {
     expect(insights.maintenanceNotes).toContainEqual(
       expect.objectContaining({
         path: "读书方法.md",
-        suggestedAction: "更新旧内容",
+        suggestedAction: "更新关键结论并补一段现状评估",
       }),
     );
     expect(insights.outputReadyNotes.map((note) => note.path)).toContain("输出文章.md");
     expect(insights.isolatedPotentialNotes).toContainEqual(
       expect.objectContaining({
         path: "孤立潜力.md",
-        suggestedAction: "补充链接",
+        suggestedAction: "补 2-3 个上下文链接后整理成输出草稿",
       }),
     );
     expect(new Set(insights.highValueNotes.map((note) => note.suggestedAction)).size).toBeGreaterThan(1);
+    expect(insights.highValueNotes.map((note) => note.suggestedAction)).not.toContain("建立 MOC");
     expect(insights.highValueFeedback.staleCoreCount).toBe(1);
   });
 

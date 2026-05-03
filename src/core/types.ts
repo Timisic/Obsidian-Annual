@@ -120,7 +120,7 @@ export interface RankedNote {
   characters: number;
 }
 
-export type SuggestedNoteAction = "继续扩展" | "整理成文章" | "建立 MOC" | "补充链接" | "更新旧内容" | "判断是否归档";
+export type SuggestedNoteAction = string;
 
 export type HighValueNoteKind = "核心笔记" | "活跃笔记" | "桥接笔记" | "输出候选" | "需维护" | "孤立潜力";
 

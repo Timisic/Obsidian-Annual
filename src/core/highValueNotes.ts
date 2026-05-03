@@ -185,37 +185,44 @@ function noteKind(profile: NoteProfile): HighValueNoteKind {
 }
 
 function suggestedAction(profile: NoteProfile): SuggestedNoteAction {
-  if (profile.isStaleCore) return "更新旧内容";
-  if (profile.isIsolatedPotential) return "补充链接";
-  if (profile.isBridge || profile.isCore) return "建立 MOC";
-  if (profile.isOutputReady || profile.isGrowthLong) return "整理成文章";
-  if (profile.isRecent) return "继续扩展";
+  if (profile.isStaleCore && profile.isOutputReady) return "更新关键结论并补一段现状评估";
+  if (profile.isStaleCore) return "复核过期段落并标注是否继续维护";
+  if (profile.isIsolatedPotential && profile.isOutputReady) return "补 2-3 个上下文链接后整理成输出草稿";
+  if (profile.isIsolatedPotential) return "补充入口链接并决定归档或孵化";
+  if (profile.isBridge) return "补一张主题关系图或索引段落";
+  if (profile.isCore && profile.isOutputReady) return "提炼成主题索引并列出后续问题";
+  if (profile.isCore) return "补充反向入口和下一步问题";
+  if (profile.isOutputReady || profile.isGrowthLong) return "整理成文章草稿并补充结论";
+  if (profile.isRecent) return "延续最新问题，追加一个可执行小结";
   return "判断是否归档";
 }
 
 function noteReason(profile: NoteProfile): string {
-  const reasons: string[] = [];
-  if (profile.isCore) {
-    reasons.push(`入链 ${profile.inboundLinks} 次`);
-  }
   if (profile.isStaleCore) {
-    reasons.push(`超过 ${STALE_CORE_DAYS} 天未更新`);
-  }
-  if (profile.isRecent) {
-    reasons.push(`近 ${RECENT_UPDATE_DAYS} 天持续更新`);
-  }
-  if (profile.isBridge) {
-    reasons.push(`连接 ${profile.connectedTopicCount} 个主题`);
-  }
-  if (profile.isGrowthLong) {
-    reasons.push("属于本期增长主题且内容较长");
-  } else if (profile.isOutputReady) {
-    reasons.push("内容较完整，具备输出潜力");
+    return `核心笔记已有 ${profile.inboundLinks} 个入口，但 ${profile.daysSinceUpdate} 天未回看`;
   }
   if (profile.isIsolatedPotential) {
-    reasons.push("内容较多但缺少链接");
+    return `内容已到 ${profile.note.wordCount} 字词，但还没有进入链接网络`;
   }
-  return reasons.length > 0 ? reasons.join("，") : "本期有明确活动记录";
+  if (profile.isBridge) {
+    return `连接 ${profile.connectedTopicCount} 个主题，适合沉淀关系和入口`;
+  }
+  if (profile.isCore && profile.isOutputReady) {
+    return `入链 ${profile.inboundLinks} 次且内容完整，已经具备主题入口价值`;
+  }
+  if (profile.isCore) {
+    return `被多处引用，说明它正在承担知识库入口角色`;
+  }
+  if (profile.isGrowthLong) {
+    return `本期新增内容充足，能代表一个正在展开的方向`;
+  }
+  if (profile.isOutputReady) {
+    return `篇幅和链接证据足够，适合进入输出整理阶段`;
+  }
+  if (profile.isRecent) {
+    return `最近仍在更新，适合趁上下文未冷却继续推进`;
+  }
+  return "本期有明确活动记录";
 }
 
 function inboundLinkCount(path: string, notes: NoteStats[], pathAliases: Map<string, string>): number {
@@ -267,7 +274,31 @@ function buildGrowthTopics(notes: NoteStats[], year: number): Set<string> {
 }
 
 function topicsFor(note: NoteStats): string[] {
-  return [...new Set([note.folder, ...note.tags].map((topic) => topic.trim()).filter(Boolean))].sort();
+  return [...new Set([note.folder, ...note.tags].map(normalizeTopic).filter((topic) => topic && !isTimeContainerTopic(topic)))].sort();
+}
+
+function normalizeTopic(topic: string): string {
+  return topic
+    .trim()
+    .replace(/^#/, "")
+    .replace(/\.md$/iu, "")
+    .replace(/[_-]+/gu, " ")
+    .replace(/\s+/gu, " ");
+}
+
+function isTimeContainerTopic(topic: string): boolean {
+  const value = topic.trim();
+  const compact = value.replace(/\s+/gu, "");
+  const lower = compact.toLowerCase();
+  return (
+    /^(?:19|20)\d{2}$/u.test(lower) ||
+    /^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])月?$/u.test(lower) ||
+    /^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])[-_/日.](?:0?[1-9]|[12]\d|3[01])日?$/u.test(lower) ||
+    /^(?:0?[1-9]|1[0-2])月$/u.test(lower) ||
+    /^(?:[一二三四五六七八九]|十|十一|十二)月$/u.test(lower) ||
+    /^(?:0?[1-9]|1[0-2])$/u.test(lower) ||
+    /^(?:q[1-4]|第[一二三四1234]季度)$/u.test(lower)
+  );
 }
 
 function buildPathAliasMap(notes: NoteStats[]): Map<string, string> {
