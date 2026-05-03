@@ -1,7 +1,7 @@
 import { getLanguage, Notice, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
 import { renderAiReportSection } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
-import { COMMAND_IDS } from "./core/commands";
+import { COMMAND_IDS, COMMAND_NAMES } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
 import { renderAnnualReview } from "./core/render";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
@@ -26,13 +26,13 @@ export default class AnnualReviewPlugin extends Plugin {
 
     this.addCommand({
       id: COMMAND_IDS.generate,
-      name: this.text().generateCommand,
+      name: COMMAND_NAMES.generate,
       callback: () => this.openGenerateModal(),
     });
 
     this.addCommand({
       id: COMMAND_IDS.openDashboard,
-      name: this.text().openDashboardCommand,
+      name: COMMAND_NAMES.openDashboard,
       callback: () => {
         void this.openDashboard();
       },
@@ -40,7 +40,7 @@ export default class AnnualReviewPlugin extends Plugin {
 
     this.addCommand({
       id: COMMAND_IDS.rebuildIndex,
-      name: this.text().rebuildIndexCommand,
+      name: COMMAND_NAMES.rebuildIndex,
       callback: async () => {
         await this.rebuildIndex();
       },
