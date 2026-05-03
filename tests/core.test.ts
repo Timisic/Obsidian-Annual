@@ -1,3 +1,7 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildAiPrompt, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
@@ -7,6 +11,7 @@ import { buildHighValueNoteInsights } from "../src/core/highValueNotes";
 import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
+import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
 import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
 import { writeAnnualReviewOutput } from "../src/obsidian/reportWriter";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
@@ -17,6 +22,127 @@ describe("tokenizer", () => {
     expect(countText("hello annual review").words).toBe(3);
     expect(countText("年度回顾").words).toBe(4);
     expect(countText("hello 年度 review").words).toBe(4);
+  });
+});
+
+describe("writing growth", () => {
+  it("counts writing words after removing frontmatter, code blocks, and Markdown syntax", () => {
+    const markdown = [
+      "---",
+      "tags: [draft]",
+      "---",
+      "# 标题",
+      "",
+      "hello [[Project Note|项目笔记]] and [visible link](https://example.com)",
+      "",
+      "```ts",
+      "const hiddenWords = 'not counted';",
+      "```",
+      "",
+      "- [ ] 继续写作",
+    ].join("\n");
+
+    expect(countWritingWords(markdown)).toBe(16);
+  });
+
+  it("builds daily/monthly growth, streaks, top days, feedback, charts, and Markdown", () => {
+    const report = buildWritingGrowthReport(
+      [
+        {
+          date: "2026-01-01",
+          files: {
+            "Daily/A.md": { words: 100 },
+            "Projects/B.md": { words: 20 },
+          },
+        },
+        {
+          date: "2026-01-02",
+          files: {
+            "Daily/A.md": { words: 180 },
+            "Projects/B.md": { words: 20 },
+          },
+        },
+        {
+          date: "2026-01-03",
+          files: {
+            "Daily/A.md": { words: 200 },
+            "Projects/B.md": { words: 120 },
+          },
+        },
+        {
+          date: "2026-02-01",
+          files: {
+            "Daily/A.md": { words: 210 },
+            "Projects/B.md": { words: 150 },
+            "Projects/C.md": { words: 70 },
+          },
+        },
+      ],
+      {
+        period: "year",
+        year: 2026,
+        writingDayThreshold: 50,
+      },
+    );
+
+    expect(report.summary).toMatchObject({
+      total_added_words: 310,
+      writing_days: 3,
+      longest_streak: 2,
+      current_streak: 0,
+      peak_month: "2026-01",
+      baseline_only: false,
+    });
+    expect(report.summary.top_days[0]).toEqual({
+      date: "2026-01-03",
+      added_words: 120,
+      main_files: ["Projects/B.md", "Daily/A.md"],
+    });
+    expect(report.daily.find((day) => day.date === "2026-01-02")?.cumulativeWords).toBe(80);
+    expect(report.monthly.find((month) => month.month === "2026-02")?.addedWords).toBe(110);
+    expect(report.chartAssets.map((asset) => asset.kind)).toEqual(["word-growth", "monthly-word-growth", "writing-heatmap"]);
+    expect(report.markdown).toContain("## 写作增长");
+    expect(report.markdown).toContain("![[2026-word-growth.svg]]");
+    expect(report.markdown).toContain("### 反馈信号");
+  });
+
+  it("marks first run reports as a baseline-only recording", () => {
+    const report = buildWritingGrowthReport(
+      [
+        {
+          date: "2026-05-03",
+          files: {
+            "Inbox.md": { words: 42 },
+          },
+        },
+      ],
+      {
+        period: "month",
+        month: "2026-05",
+      },
+    );
+
+    expect(report.summary.baseline_only).toBe(true);
+    expect(report.summary.baseline_message).toBe("从本次开始记录，下一次运行后将开始计算准确增长。");
+    expect(report.markdown).toContain("从本次开始记录");
+  });
+
+  it("runs the standalone writing growth CLI with snapshot persistence", () => {
+    const outDir = mkdtempSync(join(tmpdir(), "writing-growth-"));
+    try {
+      const output = execFileSync(
+        "node",
+        ["scripts/writing-growth-report.mjs", "--vault", "tests/fixtures/vault", "--year", "2026", "--history", "none", "--out", outDir],
+        { encoding: "utf8" },
+      );
+      const [jsonPath, markdownPath] = output.trim().split(/\r?\n/u);
+      expect(jsonPath).toContain("2026-writing-growth.json");
+      expect(markdownPath).toContain("2026-writing-growth.md");
+      expect(JSON.parse(readFileSync(jsonPath ?? "", "utf8")).baseline_only).toBe(true);
+      expect(readFileSync(markdownPath ?? "", "utf8")).toContain("从本次开始记录");
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
   });
 });
 

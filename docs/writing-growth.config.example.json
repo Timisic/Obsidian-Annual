@@ -1,0 +1,16 @@
+{
+  "vault": "/path/to/your/Obsidian Vault",
+  "year": 2026,
+  "out": "/path/to/your/Obsidian Vault/Annual Reviews/Writing Growth",
+  "history": "auto",
+  "snapshotFile": "/path/to/your/Obsidian Vault/Annual Reviews/Writing Growth/writing-growth-snapshots.json",
+  "writingDayThreshold": 50,
+  "exclude": [
+    ".obsidian",
+    "assets",
+    "templates",
+    "archive",
+    "Attachments",
+    "Annual Reviews"
+  ]
+}
