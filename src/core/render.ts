@@ -1,4 +1,5 @@
-import type { DayBucket, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, WordGrowthBucket, YearAggregate } from "./types";
+import { toTopicEvolutionJson } from "./topics";
+import type { DayBucket, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, TopicEvolutionData, TopicMonthlyBucket, TopTopic, WordGrowthBucket, YearAggregate } from "./types";
 
 interface RenderOptions {
   language?: ResolvedAnnualReviewLanguage;
@@ -6,7 +7,7 @@ interface RenderOptions {
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
-export type AnnualReviewChartKind = "daily-word-heatmap" | "word-growth-trend";
+export type AnnualReviewChartKind = "daily-word-heatmap" | "word-growth-trend" | "topic-evolution" | "topic-evolution-data";
 
 export interface AnnualReviewChartAsset {
   kind: AnnualReviewChartKind;
@@ -20,6 +21,8 @@ export function buildAnnualReviewChartPaths(reportFolder: string, year: number):
   return {
     "daily-word-heatmap": `${assetFolder}/daily-word-heatmap.svg`,
     "word-growth-trend": `${assetFolder}/word-growth-trend.svg`,
+    "topic-evolution": `${assetFolder}/topic-evolution.svg`,
+    "topic-evolution-data": `${assetFolder}/topic-evolution.json`,
   };
 }
 
@@ -41,6 +44,22 @@ export function buildAnnualReviewChartAssets(aggregate: YearAggregate, options: 
       kind: "word-growth-trend",
       path: paths["word-growth-trend"],
       content: renderWordGrowthSvg(aggregate.wordGrowthBuckets, language),
+    });
+  }
+
+  if (aggregate.topicEvolution.topTopics.length > 0 && paths["topic-evolution"]) {
+    assets.push({
+      kind: "topic-evolution",
+      path: paths["topic-evolution"],
+      content: renderTopicEvolutionSvg(aggregate.topicEvolution, language),
+    });
+  }
+
+  if (aggregate.topicEvolution.topTopics.length > 0 && paths["topic-evolution-data"]) {
+    assets.push({
+      kind: "topic-evolution-data",
+      path: paths["topic-evolution-data"],
+      content: `${JSON.stringify(toTopicEvolutionJson(aggregate.topicEvolution), null, 2)}\n`,
     });
   }
 
@@ -85,6 +104,22 @@ const REPORT_TEXT = {
     wordGrowth: "Word growth",
     trend: "Trend",
     cumulativeWords: "Cumulative words",
+    topicEvolution: "Topic Evolution",
+    topicEvolutionSummary: (topics: string[]) => `This period's main growth centers on ${formatQuotedList(topics)}.`,
+    topicEvolutionEmpty: "No topic data found.",
+    topicEvolutionLegend: "Stacked SVG chart: monthly created-note words by top topic, with smaller topics grouped as Other.",
+    topicEvolutionChart: "Topic evolution",
+    topic: "Topic",
+    addedWords: "Added words",
+    newNotes: "New notes",
+    updatedNotes: "Updated notes",
+    topicFeedback: "Feedback Signals",
+    mainThreads: (topics: string[]) => `Main thread: the fastest-growing topics are ${formatQuotedList(topics)}.`,
+    emergingDirection: (topics: string[]) => `Emerging direction: ${formatQuotedList(topics)} started growing recently and is worth continuing.`,
+    noEmergingDirection: "Emerging direction: no clear new topic signal yet.",
+    needsAttention: (topics: string[]) => `Needs attention: ${formatQuotedList(topics)} has had no new content in recent active months; decide whether to archive or restart it.`,
+    noDecliningDirection: "Needs attention: no clearly dormant topic signal yet.",
+    nextTopicAction: "Next-period suggestion: consolidate the fastest-growing topic into an MOC or project page.",
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
@@ -134,6 +169,22 @@ const REPORT_TEXT = {
     wordGrowth: "字词增长",
     trend: "趋势",
     cumulativeWords: "累计字词",
+    topicEvolution: "主题演化",
+    topicEvolutionSummary: (topics: string[]) => `本期主要增长集中在${formatQuotedList(topics)}。`,
+    topicEvolutionEmpty: "未找到主题数据。",
+    topicEvolutionLegend: "堆叠 SVG 图表：按 Top 主题展示每月新建笔记字词量，小主题合并为「其他」。",
+    topicEvolutionChart: "主题演化",
+    topic: "主题",
+    addedWords: "新增字数",
+    newNotes: "新增笔记",
+    updatedNotes: "更新笔记",
+    topicFeedback: "反馈信号",
+    mainThreads: (topics: string[]) => `主要主线：本期增长最多的是${formatQuotedList(topics)}。`,
+    emergingDirection: (topics: string[]) => `新兴方向：${formatQuotedList(topics)}最近开始增长，值得继续推进。`,
+    noEmergingDirection: "新兴方向：暂未出现明确的新主题信号。",
+    needsAttention: (topics: string[]) => `需要关注：${formatQuotedList(topics)}最近多个活跃月份没有新增内容，可以判断是否归档或重启。`,
+    noDecliningDirection: "需要关注：暂未出现明显沉寂的主题。",
+    nextTopicAction: "下期建议：将增长最快的主题整理为 MOC 或项目页。",
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
@@ -148,6 +199,9 @@ const REPORT_TEXT = {
     strongestMonth: (month: string, words: number) => `新建笔记写作量最高的月份是 ${month}，共 ${words} 个计数字词。`,
   },
 } as const;
+
+const TOPIC_COLORS = ["#4f7cac", "#d98c46", "#4f9d69", "#8a6fbd", "#c75f7a", "#6f8f2f", "#b07d3c", "#6f7782", "#9aa0a6"];
+const OTHER_TOPIC = "其他";
 
 export function renderAnnualReview(aggregate: YearAggregate, options: RenderOptions = {}): string {
   const language = options.language ?? "en";
@@ -185,6 +239,10 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     `## ${text.wordGrowthTrend}`,
     "",
     renderWordGrowthTrend(aggregate.wordGrowthBuckets, language, options.chartPaths?.["word-growth-trend"]),
+    "",
+    `## ${text.topicEvolution}`,
+    "",
+    renderTopicEvolution(aggregate.topicEvolution, language, options.chartPaths?.["topic-evolution"]),
     "",
     `## ${text.topTags}`,
     "",
@@ -293,6 +351,38 @@ function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnn
   ].join("\n");
 }
 
+function renderTopicEvolution(data: TopicEvolutionData, language: ResolvedAnnualReviewLanguage, chartPath?: string): string {
+  const text = REPORT_TEXT[language];
+  if (data.topTopics.length === 0) {
+    return `- ${text.topicEvolutionEmpty}`;
+  }
+
+  const mainTopics = data.topTopics.slice(0, 3).map((topic) => topic.name);
+  return [
+    text.topicEvolutionSummary(mainTopics),
+    "",
+    text.topicEvolutionLegend,
+    "",
+    chartPath ? renderChartReference(chartPath, text.topicEvolutionChart) : renderTopicEvolutionSvg(data, language),
+    "",
+    `| ${text.topic} | ${text.addedWords} | ${text.newNotes} | ${text.updatedNotes} | ${text.representativeNotes} |`,
+    "| --- | ---: | ---: | ---: | --- |",
+    ...data.topTopics.map(renderTopicTableRow),
+    "",
+    `### ${text.topicFeedback}`,
+    "",
+    `- ${text.mainThreads(mainTopics)}`,
+    `- ${data.emergingTopics.length > 0 ? text.emergingDirection(data.emergingTopics) : text.noEmergingDirection}`,
+    `- ${data.decliningTopics.length > 0 ? text.needsAttention(data.decliningTopics) : text.noDecliningDirection}`,
+    `- ${text.nextTopicAction}`,
+  ].join("\n");
+}
+
+function renderTopicTableRow(topic: TopTopic): string {
+  const representativeNotes = topic.representativeNotes.map((path) => wikiLink(path, noteTitle(path))).join(", ") || "n/a";
+  return `| ${topic.name} | ${formatInteger(topic.addedWords)} | ${topic.newNotes} | ${topic.updatedNotes} | ${representativeNotes} |`;
+}
+
 function renderDailyHeatmapSvg(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
   const text = REPORT_TEXT[language];
   const cell = 10;
@@ -395,6 +485,85 @@ function renderWordGrowthSvg(growth: WordGrowthBucket[], language: ResolvedAnnua
   ].join("\n");
 }
 
+function renderTopicEvolutionSvg(data: TopicEvolutionData, language: ResolvedAnnualReviewLanguage): string {
+  const text = REPORT_TEXT[language];
+  const width = 820;
+  const height = 340;
+  const left = 62;
+  const right = 156;
+  const top = 28;
+  const bottom = 54;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const activeBuckets = data.monthlyBuckets.filter((bucket) => Object.values(bucket.topics).some((words) => words > 0));
+  const buckets = activeBuckets.length > 0 ? activeBuckets : data.monthlyBuckets;
+  const topicNames = chartTopicNames(data);
+  const maxWords = niceMax(Math.max(1, ...buckets.map((bucket) => sumTopicWords(bucket))));
+  const barGap = 8;
+  const barWidth = Math.max(12, (plotWidth - barGap * Math.max(0, buckets.length - 1)) / Math.max(1, buckets.length));
+  const yScale = (words: number) => (words / maxWords) * plotHeight;
+  const colors = topicNames.map((name, index) => [name, TOPIC_COLORS[index % TOPIC_COLORS.length] ?? TOPIC_COLORS[0]] as const);
+  const colorByTopic = new Map(colors);
+
+  const grid = [0, maxWords / 2, maxWords]
+    .map((tick) => {
+      const y = top + plotHeight - yScale(tick);
+      return [
+        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
+        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  const bars = buckets
+    .map((bucket, index) => {
+      const x = left + index * (barWidth + barGap);
+      let y = top + plotHeight;
+      const segments = topicNames
+        .map((topic) => {
+          const words = bucket.topics[topic] ?? 0;
+          if (words <= 0) {
+            return "";
+          }
+          const segmentHeight = Math.max(1, yScale(words));
+          y -= segmentHeight;
+          const title = `${bucket.month}: ${topic} ${words} ${text.words}`;
+          return `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(barWidth)}" height="${formatNumber(segmentHeight)}" fill="${colorByTopic.get(topic)}"><title>${escapeHtml(title)}</title></rect>`;
+        })
+        .filter(Boolean)
+        .join("\n");
+      return [
+        segments,
+        `<text x="${formatNumber(x + barWidth / 2)}" y="${height - 28}" font-size="10" text-anchor="middle" fill="currentColor">${escapeHtml(bucket.month.slice(5))}</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  const legend = topicNames
+    .map((topic, index) => {
+      const x = width - right + 24;
+      const y = top + 18 + index * 18;
+      return [
+        `<rect x="${x}" y="${y - 10}" width="10" height="10" fill="${colorByTopic.get(topic)}" />`,
+        `<text x="${x + 16}" y="${y}" font-size="11" fill="currentColor">${escapeHtml(topic)}</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  return [
+    `<svg class="annual-review-chart annual-review-topic-evolution" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.topicEvolutionChart)}">`,
+    `<title>${escapeHtml(text.topicEvolutionChart)}</title>`,
+    `<desc>${escapeHtml(text.topicEvolutionLegend)}</desc>`,
+    grid,
+    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<text x="18" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 ${top + plotHeight / 2})">${escapeHtml(text.addedWords)}</text>`,
+    bars,
+    legend,
+    "</svg>",
+  ].join("\n");
+}
+
 function renderChartReference(path: string, alt: string): string {
   return `![[${path}|${alt}]]`;
 }
@@ -421,6 +590,31 @@ function niceMax(value: number): number {
 
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function formatInteger(value: number): string {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function formatQuotedList(items: string[]): string {
+  if (items.length === 0) {
+    return "None";
+  }
+  return items.map((item) => `「${item}」`).join("、");
+}
+
+function chartTopicNames(data: TopicEvolutionData): string[] {
+  const names = data.topTopics.map((topic) => topic.name);
+  const hasOther = data.monthlyBuckets.some((bucket) => Object.prototype.hasOwnProperty.call(bucket.topics, OTHER_TOPIC));
+  return hasOther ? [...names, OTHER_TOPIC] : names;
+}
+
+function sumTopicWords(bucket: TopicMonthlyBucket): number {
+  return Object.values(bucket.topics).reduce((sum, words) => sum + words, 0);
+}
+
+function noteTitle(path: string): string {
+  return path.split("/").pop()?.replace(/\.md$/u, "") ?? path;
 }
 
 function escapeHtml(value: string): string {
