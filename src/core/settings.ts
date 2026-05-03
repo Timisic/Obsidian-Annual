@@ -13,6 +13,8 @@ export const DEFAULT_SETTINGS: AnnualReviewSettings = {
   aiProvider: "none",
   chatGptApiKey: "",
   chatGptModel: "gpt-4.1",
+  reportLanguage: "system",
+  generatorLanguage: "system",
 };
 
 export function normalizeFolder(folder: string): string {

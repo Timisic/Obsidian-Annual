@@ -30,6 +30,25 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; it is off by default, requires an OpenAI API key, and does not hardcode secrets. |
 | Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
+## Recent Changes
+
+DEC-17 added two report-quality improvements:
+
+- **AI-personalized report section**: the generate modal can switch the AI provider from `None` to `ChatGPT`. The plugin sends annual aggregates, top tags/folders/links, representative notes, link relationships, and clipped note excerpts to the OpenAI Responses API, then appends the returned content as an `AI Personalization` section. Without an API key, it makes no network request and writes a readable provider status plus TODOs into the report.
+- **Richer charts**: reports and the dashboard now include a daily word heatmap plus a monthly growth trend with gained and cumulative words. The heatmap makes high-volume writing days visible; the growth trend makes fast and flat months easier to compare.
+- **AI context placeholder script**: `npm run ai:context-placeholder` prints the future Obsidian skill/CLI context-adapter contract. The current script does not read a vault or make network requests.
+
+## ChatGPT Provider And Privacy
+
+The default remains local-first: `AI provider` is `None`, and report generation does not access the network. To enable ChatGPT:
+
+1. Open the Annual Review plugin settings.
+2. Set `AI provider` to `ChatGPT`.
+3. Enter an `OpenAI API key` and adjust `ChatGPT model` if needed.
+4. Run `Annual Review: Generate report` and confirm the provider for that run in the generate modal.
+
+The privacy boundary is explicit: ChatGPT mode sends the report context, link relationships, and selected note excerpts to OpenAI. The current implementation requires an opt-in provider, stores no hardcoded secret, and skips the request when the key is missing; finer-grained data preview, redaction controls, and Obsidian skill/CLI context enrichment remain captured in the script TODO.
+
 ## Quick Start
 
 ### 1. Install dependencies
@@ -63,7 +82,7 @@ In Obsidian:
 
 1. Enable community plugins.
 2. Enable **Annual Review**.
-3. Open the plugin settings and confirm the report folder, include/exclude folders, metric toggles, and privacy mode.
+3. Open the plugin settings and confirm the report folder, include/exclude folders, report language, generator language, metric toggles, privacy mode, and AI provider.
 
 ### 4. Generate the first annual review
 

@@ -1,10 +1,11 @@
-import { Notice, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
+import { getLanguage, Notice, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
 import { renderAiReportSection } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS } from "./core/commands";
+import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
 import { renderAnnualReview } from "./core/render";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
-import type { AnnualReviewSettings, GenerateReportOptions, SourceFile, YearAggregate } from "./core/types";
+import type { AnnualReviewLanguage, AnnualReviewSettings, GenerateReportOptions, ResolvedAnnualReviewLanguage, SourceFile, YearAggregate } from "./core/types";
 import { AnnualReviewDashboardView, VIEW_TYPE_ANNUAL_REVIEW } from "./obsidian/dashboardView";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
 import { writeReport } from "./obsidian/reportWriter";
@@ -25,13 +26,13 @@ export default class AnnualReviewPlugin extends Plugin {
 
     this.addCommand({
       id: COMMAND_IDS.generate,
-      name: "Generate report",
+      name: this.text().generateCommand,
       callback: () => this.openGenerateModal(),
     });
 
     this.addCommand({
       id: COMMAND_IDS.openDashboard,
-      name: "Open dashboard",
+      name: this.text().openDashboardCommand,
       callback: () => {
         void this.openDashboard();
       },
@@ -39,7 +40,7 @@ export default class AnnualReviewPlugin extends Plugin {
 
     this.addCommand({
       id: COMMAND_IDS.rebuildIndex,
-      name: "Rebuild index",
+      name: this.text().rebuildIndexCommand,
       callback: async () => {
         await this.rebuildIndex();
       },
@@ -60,7 +61,7 @@ export default class AnnualReviewPlugin extends Plugin {
   }
 
   openGenerateModal(): void {
-    const modal = new YearModal(this.app, this.settings);
+    const modal = new YearModal(this.app, this.settings, this.generatorLanguage());
     modal.onChoose = (options) => {
       void this.generateReport(options);
     };
@@ -71,7 +72,7 @@ export default class AnnualReviewPlugin extends Plugin {
     this.indexedFiles = await readVaultMarkdownFiles(this.app, this.settings);
     this.indexedSettingsKey = settingsKey(this.settings);
     this.indexedAt = new Date().toLocaleString();
-    new Notice(`Annual Review index rebuilt: ${this.indexedFiles.length} Markdown files.`);
+    new Notice(this.text().rebuilt(this.indexedFiles.length));
   }
 
   async previewYear(year: number): Promise<void> {
@@ -85,6 +86,10 @@ export default class AnnualReviewPlugin extends Plugin {
 
   getSettings(): AnnualReviewSettings {
     return this.settings;
+  }
+
+  getGeneratorLanguage(): ResolvedAnnualReviewLanguage {
+    return this.generatorLanguage();
   }
 
   getIndexStatus(): { fileCount: number; builtAt: string | null } {
@@ -111,19 +116,21 @@ export default class AnnualReviewPlugin extends Plugin {
   private async generateReport(options: GenerateReportOptions): Promise<void> {
     try {
       const { year, settings } = options;
-      new Notice(`Generating ${year} annual review...`);
+      const text = this.text(settings.generatorLanguage);
+      new Notice(text.generating(year));
       const files = await this.getIndexedFiles(settings);
       const aggregate = buildYearAggregate(files, year, settings);
       const aiSection = await renderAiReportSection({ aggregate, files, settings });
-      const markdown = [renderAnnualReview(aggregate), aiSection].filter(Boolean).join("\n");
+      const reportLanguage = resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage());
+      const markdown = [renderAnnualReview(aggregate, { language: reportLanguage }), aiSection].filter(Boolean).join("\n");
       const report = await writeReport(this.app, settings.reportFolder, year, markdown);
       this.lastAggregate = aggregate;
       this.lastReportPath = report.path;
       await this.app.workspace.getLeaf(false).openFile(report);
-      new Notice(`Annual review generated: ${report.path}`);
+      new Notice(text.generated(report.path));
     } catch (error) {
       console.error("Annual Review generation failed", error);
-      new Notice(`Annual Review failed: ${error instanceof Error ? error.message : String(error)}`);
+      new Notice(this.text().failed(error instanceof Error ? error.message : String(error)));
     }
   }
 
@@ -146,6 +153,14 @@ export default class AnnualReviewPlugin extends Plugin {
     await leaf.setViewState({ type: VIEW_TYPE_ANNUAL_REVIEW, active: true });
     this.app.workspace.revealLeaf(leaf);
   }
+
+  private generatorLanguage(language = this.settings.generatorLanguage): ResolvedAnnualReviewLanguage {
+    return resolveAnnualReviewLanguage(language, getLanguage());
+  }
+
+  private text(language = this.settings.generatorLanguage): (typeof UI_TEXT)[ResolvedAnnualReviewLanguage] {
+    return UI_TEXT[this.generatorLanguage(language)];
+  }
 }
 
 function settingsKey(settings: AnnualReviewSettings): string {
@@ -164,12 +179,14 @@ class AnnualReviewSettingTab extends PluginSettingTab {
 
   display(): void {
     const { containerEl } = this;
+    const language = resolveAnnualReviewLanguage(this.plugin.settings.generatorLanguage, getLanguage());
+    const text = UI_TEXT[language];
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Annual Review" });
+    containerEl.createEl("h2", { text: text.annualReview });
 
     new Setting(containerEl)
-      .setName("Report folder")
-      .setDesc("Generated annual review notes are written here and excluded from future scans.")
+      .setName(text.reportFolder)
+      .setDesc(text.reportFolderDesc)
       .addText((text) => {
         text
           .setPlaceholder(DEFAULT_SETTINGS.reportFolder)
@@ -181,8 +198,8 @@ class AnnualReviewSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Include folders")
-      .setDesc("Comma-separated folder list. Leave empty to scan all Markdown files.")
+      .setName(text.includeFolders)
+      .setDesc(text.includeFoldersDesc)
       .addText((text) => {
         text
           .setPlaceholder("Daily, Projects")
@@ -194,8 +211,8 @@ class AnnualReviewSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Exclude folders")
-      .setDesc("Comma-separated folder list excluded from scans.")
+      .setName(text.excludeFolders)
+      .setDesc(text.excludeFoldersDesc)
       .addText((text) => {
         text
           .setPlaceholder(joinFolderList(DEFAULT_SETTINGS.excludeFolders))
@@ -206,18 +223,19 @@ class AnnualReviewSettingTab extends PluginSettingTab {
           });
       });
 
-    this.addMetricToggle("Include task metrics", "includeTasks");
-    this.addMetricToggle("Include link metrics", "includeLinks");
-    this.addMetricToggle("Include frontmatter metrics", "includeFrontmatter");
-    this.addMetricToggle("Include heading metrics", "includeHeadings");
+    this.addLanguageDropdown(text.reportLanguage, text.reportLanguageDesc, "reportLanguage");
+    this.addLanguageDropdown(text.generatorLanguage, text.generatorLanguageDesc, "generatorLanguage");
+    this.addMetricToggle(text.includeLinkMetrics, "includeLinks");
+    this.addMetricToggle(text.includeFrontmatterMetrics, "includeFrontmatter");
+    this.addMetricToggle(text.includeHeadingMetrics, "includeHeadings");
 
     new Setting(containerEl)
-      .setName("Privacy mode")
-      .setDesc("Private mode labels generated reports as privacy-sensitive without changing local-only behavior.")
+      .setName(text.privacyMode)
+      .setDesc(text.privacyModeDesc)
       .addDropdown((dropdown) => {
         dropdown
-          .addOption("standard", "Standard")
-          .addOption("private", "Private")
+          .addOption("standard", text.standard)
+          .addOption("private", text.private)
           .setValue(this.plugin.settings.privacyMode)
           .onChange(async (value) => {
             this.plugin.settings.privacyMode = value as AnnualReviewSettings["privacyMode"];
@@ -267,7 +285,28 @@ class AnnualReviewSettingTab extends PluginSettingTab {
       });
   }
 
-  private addMetricToggle(name: string, key: "includeTasks" | "includeLinks" | "includeFrontmatter" | "includeHeadings"): void {
+  private addLanguageDropdown(name: string, description: string, key: "reportLanguage" | "generatorLanguage"): void {
+    const text = UI_TEXT[resolveAnnualReviewLanguage(this.plugin.settings.generatorLanguage, getLanguage())];
+    new Setting(this.containerEl)
+      .setName(name)
+      .setDesc(description)
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("system", text.followObsidian)
+          .addOption("zh", text.chinese)
+          .addOption("en", text.english)
+          .setValue(this.plugin.settings[key])
+          .onChange(async (value) => {
+            this.plugin.settings[key] = value as AnnualReviewLanguage;
+            await this.plugin.saveSettings();
+            if (key === "generatorLanguage") {
+              this.display();
+            }
+          });
+      });
+  }
+
+  private addMetricToggle(name: string, key: "includeLinks" | "includeFrontmatter" | "includeHeadings"): void {
     new Setting(this.containerEl)
       .setName(name)
       .addToggle((toggle) => {

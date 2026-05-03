@@ -1,3 +1,6 @@
+export type AnnualReviewLanguage = "system" | "zh" | "en";
+export type ResolvedAnnualReviewLanguage = Exclude<AnnualReviewLanguage, "system">;
+
 export interface AnnualReviewSettings {
   reportFolder: string;
   includeFolders: string[];
@@ -11,6 +14,8 @@ export interface AnnualReviewSettings {
   aiProvider: "none" | "chatgpt";
   chatGptApiKey: string;
   chatGptModel: string;
+  reportLanguage: AnnualReviewLanguage;
+  generatorLanguage: AnnualReviewLanguage;
 }
 
 export interface ReportScope {
