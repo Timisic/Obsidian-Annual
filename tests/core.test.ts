@@ -84,17 +84,54 @@ describe("aggregation and rendering", () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# 2026 Annual Review");
-    expect(markdown).toContain("Included scope: All Markdown files");
-    expect(markdown).toContain("Excluded scope: .obsidian, Templates, Archive, Attachments");
+    expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u);
+    expect(markdown).not.toContain("Generated:");
+    expect(markdown).not.toContain("Included scope:");
+    expect(markdown).not.toContain("Excluded scope:");
     expect(markdown).toContain("## Year Totals");
     expect(markdown).toContain("## Monthly Timeline");
+    expect(markdown).toContain("| Month | Created | Modified | Words | Characters |");
+    expect(markdown).toContain("| 2026-01 |");
+    expect(markdown).toContain("| 2026-04 |");
+    expect(markdown).not.toContain("| 2026-05 |");
+    expect(markdown).not.toContain("| Tasks |");
+    expect(markdown).not.toContain("Tasks completed");
+    expect(markdown).not.toContain("## Tasks And Project Notes");
     expect(markdown).toContain("## Top Tags");
     expect(markdown).toContain("## Top Links");
     expect(markdown).toContain("## Top Folders");
     expect(markdown).toContain("## Representative Notes");
-    expect(markdown).toContain("## Data Methodology");
-    expect(markdown).toContain("legacy notes modified during the year contribute modification activity");
+    expect(markdown).toContain("Representative notes are selected deterministically");
+    expect(markdown).toContain("This stable evidence set can be reused by later AI summaries.");
+    expect(markdown).not.toContain("## Data Methodology");
+    expect(markdown).not.toContain("## Suggested Next-Year Actions");
     expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
+  });
+
+  it("renders Chinese reports and omits all-zero month metric columns", () => {
+    const aggregate = buildYearAggregate(
+      [
+        {
+          path: "Archive source.md",
+          ctime: new Date("2025-12-01T08:00:00.000Z").getTime(),
+          mtime: new Date("2026-04-01T08:00:00.000Z").getTime(),
+          content: "legacy content",
+        },
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const markdown = renderAnnualReview(aggregate, { language: "zh" });
+    expect(markdown).toContain("report_language: \"zh\"");
+    expect(markdown).toContain("# 2026 年度回顾");
+    expect(markdown).toContain("## 年度统计");
+    expect(markdown).toContain("代表笔记采用确定性规则选择");
+    expect(markdown).toContain("| 月份 | 修改 |");
+    expect(markdown).toContain("| 2026-04 | 1 |");
+    expect(markdown).not.toContain("| 新建 |");
+    expect(markdown).not.toContain("| 字词 |");
+    expect(markdown).not.toContain("| 字符 |");
+    expect(markdown).not.toContain("| 2026-05 |");
   });
 });
 

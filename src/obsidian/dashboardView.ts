@@ -1,6 +1,7 @@
 import { ItemView, Setting, type WorkspaceLeaf } from "obsidian";
+import { UI_TEXT } from "../core/language";
 import { joinFolderList } from "../core/settings";
-import type { AnnualReviewSettings, YearAggregate } from "../core/types";
+import type { AnnualReviewSettings, ResolvedAnnualReviewLanguage, YearAggregate } from "../core/types";
 
 export const VIEW_TYPE_ANNUAL_REVIEW = "annual-review-dashboard";
 
@@ -8,6 +9,7 @@ export interface AnnualReviewDashboardController {
   getLastAggregate(): YearAggregate | null;
   getLastReportPath(): string | null;
   getSettings(): AnnualReviewSettings;
+  getGeneratorLanguage(): ResolvedAnnualReviewLanguage;
   getIndexStatus(): { fileCount: number; builtAt: string | null };
   previewYear(year: number): Promise<void>;
   openGenerateModal(): void;
@@ -27,19 +29,20 @@ export class AnnualReviewDashboardView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "Annual Review";
+    return this.text().annualReview;
   }
 
   async onOpen(): Promise<void> {
-    this.renderLoading("Building preview...");
+    this.renderLoading(this.text().buildingPreview);
     await this.controller.previewYear(this.selectedYear);
     this.render();
   }
 
   render(): void {
     const container = this.containerEl.children[1] as HTMLElement;
+    const text = this.text();
     container.empty();
-    container.createEl("h2", { text: "Annual Review" });
+    container.createEl("h2", { text: text.annualReview });
 
     const aggregate = this.controller.getLastAggregate();
     const settings = this.controller.getSettings();
@@ -48,7 +51,7 @@ export class AnnualReviewDashboardView extends ItemView {
     let year = this.selectedYear;
 
     new Setting(container)
-      .setName("Year")
+      .setName(text.year)
       .addText((text) => {
         text
           .setValue(String(this.selectedYear))
@@ -61,47 +64,47 @@ export class AnnualReviewDashboardView extends ItemView {
       })
       .addButton((button) => {
         button
-          .setButtonText("Preview")
+          .setButtonText(text.preview)
           .setCta()
           .onClick(async () => {
             this.selectedYear = year;
-            this.renderLoading("Refreshing preview...");
+            this.renderLoading(text.refreshingPreview);
             await this.controller.previewYear(year);
             this.render();
           });
       })
       .addButton((button) => {
         button
-          .setButtonText("Generate report")
+          .setButtonText(text.generateReport)
           .onClick(() => {
             this.controller.openGenerateModal();
           });
       })
       .addButton((button) => {
         button
-          .setButtonText("Rebuild")
+          .setButtonText(text.rebuild)
           .onClick(async () => {
-            this.renderLoading("Rebuilding index...");
+            this.renderLoading(text.refreshingPreview);
             await this.controller.rebuildIndex();
             await this.controller.previewYear(year);
             this.render();
           });
       });
 
-    container.createEl("h3", { text: "Scope" });
+    container.createEl("h3", { text: text.scope });
     renderList(container, [
-      `Include: ${settings.includeFolders.length > 0 ? joinFolderList(settings.includeFolders) : "All Markdown files"}`,
-      `Exclude: ${settings.excludeFolders.length > 0 ? joinFolderList(settings.excludeFolders) : "None"}`,
-      `Privacy: ${settings.privacyMode}`,
-      `Index: ${index.builtAt ? `${index.fileCount} files, rebuilt ${index.builtAt}` : "Not built yet"}`,
-    ]);
+      `${text.include}: ${settings.includeFolders.length > 0 ? joinFolderList(settings.includeFolders) : text.allMarkdownFiles}`,
+      `${text.exclude}: ${settings.excludeFolders.length > 0 ? joinFolderList(settings.excludeFolders) : text.none}`,
+      `${text.privacy}: ${settings.privacyMode}`,
+      `${text.index}: ${index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet}`,
+    ], this.controller.getGeneratorLanguage());
 
     const reportPath = this.controller.getLastReportPath();
     new Setting(container)
-      .setName(reportPath ? `Report: ${reportPath}` : "No report generated yet")
+      .setName(reportPath ? text.report(reportPath) : text.noReportGenerated)
       .addButton((button) => {
         button
-          .setButtonText("Open report")
+          .setButtonText(text.openReport)
           .setDisabled(!reportPath)
           .onClick(async () => {
             await this.controller.openLastReport();
@@ -109,34 +112,38 @@ export class AnnualReviewDashboardView extends ItemView {
       });
 
     if (!aggregate) {
-      container.createEl("p", { text: "No preview data found for this year." });
+      container.createEl("p", { text: text.noPreviewData });
       return;
     }
 
     const summary = container.createDiv({ cls: "annual-review-dashboard-summary" });
-    renderMetric(summary, "Created", String(aggregate.createdCount));
-    renderMetric(summary, "Modified", String(aggregate.modifiedCount));
-    renderMetric(summary, "Active days", String(aggregate.activeDays));
-    renderMetric(summary, "Words", String(aggregate.totalWords));
+    renderMetric(summary, text.created, String(aggregate.createdCount));
+    renderMetric(summary, text.modified, String(aggregate.modifiedCount));
+    renderMetric(summary, text.activeDays, String(aggregate.activeDays));
+    renderMetric(summary, text.words, String(aggregate.totalWords));
 
-    container.createEl("h3", { text: "Monthly Trend" });
+    container.createEl("h3", { text: text.monthlyTrend });
     renderTrend(container, aggregate);
 
-    container.createEl("h3", { text: "Top Tags" });
-    renderList(container, aggregate.topTags.map((item) => `${item.name}: ${item.count}`));
-    container.createEl("h3", { text: "Top Folders" });
-    renderList(container, aggregate.topFolders.map((item) => `${item.name}: ${item.count}`));
-    container.createEl("h3", { text: "Top Links" });
-    renderList(container, aggregate.topLinks.map((item) => `${item.name}: ${item.count}`));
-    container.createEl("h3", { text: "Representative Notes" });
-    renderList(container, aggregate.representativeNotes.map((note) => `${note.path} (${note.words} words)`));
+    container.createEl("h3", { text: text.topTags });
+    renderList(container, aggregate.topTags.map((item) => `${item.name}: ${item.count}`), this.controller.getGeneratorLanguage());
+    container.createEl("h3", { text: text.topFolders });
+    renderList(container, aggregate.topFolders.map((item) => `${item.name}: ${item.count}`), this.controller.getGeneratorLanguage());
+    container.createEl("h3", { text: text.topLinks });
+    renderList(container, aggregate.topLinks.map((item) => `${item.name}: ${item.count}`), this.controller.getGeneratorLanguage());
+    container.createEl("h3", { text: text.representativeNotes });
+    renderList(container, aggregate.representativeNotes.map((note) => `${note.path} (${text.noteWords(note.words)})`), this.controller.getGeneratorLanguage());
   }
 
   private renderLoading(message: string): void {
     const container = this.containerEl.children[1] as HTMLElement;
     container.empty();
-    container.createEl("h2", { text: "Annual Review" });
+    container.createEl("h2", { text: this.text().annualReview });
     container.createEl("p", { text: message });
+  }
+
+  private text(): (typeof UI_TEXT)[ResolvedAnnualReviewLanguage] {
+    return UI_TEXT[this.controller.getGeneratorLanguage()];
   }
 }
 
@@ -147,9 +154,10 @@ function renderMetric(parent: HTMLElement, label: string, value: string): void {
 }
 
 function renderTrend(parent: Element, aggregate: YearAggregate): void {
-  const maxWords = Math.max(1, ...aggregate.monthBuckets.map((bucket) => bucket.words));
+  const months = aggregate.monthBuckets.filter((bucket) => bucket.created > 0 || bucket.modified > 0 || bucket.words > 0 || bucket.characters > 0);
+  const maxWords = Math.max(1, ...months.map((bucket) => bucket.words));
   const chart = parent.createEl("div", { cls: "annual-review-dashboard-bars" });
-  for (const bucket of aggregate.monthBuckets) {
+  for (const bucket of months) {
     const row = chart.createDiv({ cls: "annual-review-dashboard-bar-row" });
     row.createEl("span", { text: bucket.month.slice(5) });
     const bar = row.createDiv({ cls: "annual-review-dashboard-bar" });
@@ -158,9 +166,9 @@ function renderTrend(parent: Element, aggregate: YearAggregate): void {
   }
 }
 
-function renderList(parent: Element, items: string[]): void {
+function renderList(parent: Element, items: string[], language: ResolvedAnnualReviewLanguage): void {
   const list = parent.createEl("ul");
-  for (const item of items.length > 0 ? items : ["No data found."]) {
+  for (const item of items.length > 0 ? items : [UI_TEXT[language].noDataFound]) {
     list.createEl("li", { text: item });
   }
 }
