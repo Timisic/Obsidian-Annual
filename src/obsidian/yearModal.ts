@@ -91,7 +91,7 @@ export class YearModal extends Modal {
 
     new Setting(contentEl)
       .setName("AI provider")
-      .setDesc("None keeps this run local. ChatGPT sends selected annual context to OpenAI only when an API key is configured in settings.")
+      .setDesc("None keeps this run local. ChatGPT uses the configured OpenAI API key or falls back to local Codex CLI auth.")
       .addDropdown((dropdown) => {
         dropdown
           .addOption("none", "None")

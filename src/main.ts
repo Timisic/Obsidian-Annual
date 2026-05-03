@@ -3,12 +3,12 @@ import { renderAiReportSection } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS, COMMAND_NAMES } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
-import { renderAnnualReview } from "./core/render";
+import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "./core/render";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
 import type { AnnualReviewLanguage, AnnualReviewSettings, GenerateReportOptions, ResolvedAnnualReviewLanguage, SourceFile, YearAggregate } from "./core/types";
 import { AnnualReviewDashboardView, VIEW_TYPE_ANNUAL_REVIEW } from "./obsidian/dashboardView";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
-import { writeReport } from "./obsidian/reportWriter";
+import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
 import { YearModal } from "./obsidian/yearModal";
 
 export default class AnnualReviewPlugin extends Plugin {
@@ -122,8 +122,10 @@ export default class AnnualReviewPlugin extends Plugin {
       const aggregate = buildYearAggregate(files, year, settings);
       const aiSection = await renderAiReportSection({ aggregate, files, settings });
       const reportLanguage = resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage());
-      const markdown = [renderAnnualReview(aggregate, { language: reportLanguage }), aiSection].filter(Boolean).join("\n");
-      const report = await writeReport(this.app, settings.reportFolder, year, markdown);
+      const chartPaths = buildAnnualReviewChartPaths(settings.reportFolder, year);
+      const chartAssets = buildAnnualReviewChartAssets(aggregate, { language: reportLanguage, chartPaths });
+      const markdown = [renderAnnualReview(aggregate, { language: reportLanguage, chartPaths }), aiSection].filter(Boolean).join("\n");
+      const report = await writeAnnualReviewOutput(this.app, settings.reportFolder, year, markdown, chartAssets);
       this.lastAggregate = aggregate;
       this.lastReportPath = report.path;
       await this.app.workspace.getLeaf(false).openFile(report);
@@ -245,7 +247,7 @@ class AnnualReviewSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("AI provider")
-      .setDesc("Default report generation provider. None keeps generation local; ChatGPT sends selected annual context to OpenAI when an API key is configured.")
+      .setDesc("Default report generation provider. None keeps generation local; ChatGPT uses an OpenAI API key when present, otherwise it tries the local Codex CLI/auth environment.")
       .addDropdown((dropdown) => {
         dropdown
           .addOption("none", "None")
@@ -272,7 +274,7 @@ class AnnualReviewSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("OpenAI API key")
-      .setDesc("Stored in Obsidian plugin data for local use; leave empty to skip the network request even when ChatGPT is selected.")
+      .setDesc("Optional. When empty and ChatGPT is selected, Annual Review tries local Codex CLI auth instead of sending a direct OpenAI API request.")
       .addText((text) => {
         text.inputEl.type = "password";
         text
