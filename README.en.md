@@ -4,7 +4,7 @@
 
 Obsidian Annual Review is a local-first Obsidian plugin that turns vault activity into an editable, evidence-backed yearly review note.
 
-The plugin scans Markdown notes, properties, tags, links, headings, tasks, and daily-note patterns inside the active Obsidian vault. It then generates `Annual Reviews/YYYY Annual Review.md` with yearly totals, monthly rhythm, representative notes, top tags/folders/links, and methodology notes. The output stays in your vault as Markdown, so it remains editable, linkable, syncable, versionable, and auditable.
+The plugin scans Markdown notes, properties, tags, links, headings, tasks, and daily-note patterns inside the active Obsidian vault. It then generates `Annual Reviews/YYYY Annual Review.md` around writing growth, topic evolution, high-value notes, and next-period actions. The output stays in your vault as Markdown, so it remains editable, linkable, syncable, versionable, and auditable.
 
 > Repository status: this repo includes the plugin scaffold, TypeScript source, tests, product spec, and research notes. It does not yet publish packaged community-plugin release artifacts.
 
@@ -24,17 +24,17 @@ The plugin scans Markdown notes, properties, tags, links, headings, tasks, and d
 | Reindexing | Baseline implemented | Run `Annual Review: Rebuild index` after vault or setting changes. |
 | Local analysis | Baseline implemented | Reads Markdown, frontmatter, tags, Obsidian-resolved links, headings, tasks, and file timestamps through Obsidian APIs. |
 | Mixed-language counting | Baseline implemented | Keeps Latin word counts and CJK character counts useful for Chinese, English, and mixed vaults. |
-| Evidence links | Baseline implemented | Uses Obsidian links for representative notes and ranked note references. |
-| Daily word heatmap | Baseline implemented | Writes a standalone SVG asset and references it from the report with an Obsidian image link. |
-| Word growth trend | Baseline implemented | Writes a standalone SVG curve chart for monthly word growth with clear axes and data-table values. |
+| Evidence links | Baseline implemented | Uses Obsidian links for topic evidence and high-value note references. |
+| Writing growth charts | Baseline implemented | Writes daily cumulative words, monthly growth, and heatmap SVG assets, then references them from the report with Obsidian image links. |
 | ChatGPT provider | Optional baseline | Report generation can opt into ChatGPT; with an API key it uses the Responses API, otherwise it tries local Codex CLI/auth. |
 | Privacy controls | Partial | Default processing is local; AI requires explicit selection, while richer redaction preview remains future work. |
 
 ## Recent Changes
 
 - **Obsidian-resolved link metrics**: top links use `metadataCache.resolvedLinks` / `unresolvedLinks` inside Obsidian, so aliases, heading anchors, embeds, and Markdown links merge under the destination Obsidian resolves.
-- **AI-personalized report section**: the generate modal can switch the AI provider from `None` to `ChatGPT`. With an OpenAI API key it calls the Responses API; without a key it tries local Codex CLI/auth.
-- **Standalone SVG chart assets**: the daily word heatmap and monthly word-growth curve are written to `Annual Reviews/YYYY Annual Review Assets/`, then referenced from the annual report with Obsidian image links. Data tables remain below the chart references for exact values.
+- **Reduced final report structure**: generated Markdown now keeps only the one-sentence judgment, writing growth, topic evolution, high-value notes, and next-period actions.
+- **AI one-sentence judgment**: the generate modal can switch the AI provider from `None` to `ChatGPT`. With an OpenAI API key it calls the Responses API; without a key it tries local Codex CLI/auth. The result fills the one-sentence judgment instead of appending a separate AI section.
+- **Standalone SVG chart assets**: the daily cumulative word chart, monthly word-growth curve, daily word heatmap, and topic-evolution chart are written to `Annual Reviews/YYYY Annual Review Assets/`, then referenced from the annual report with Obsidian image links. Data tables remain below the chart references for exact values.
 - **AI context placeholder script**: `npm run ai:context-placeholder` keeps the future Obsidian skill/CLI context-adapter contract. The current script does not read a vault or make network requests.
 
 ## ChatGPT Provider And Privacy
@@ -89,17 +89,17 @@ In Obsidian:
 2. Run `Annual Review: Generate report`.
 3. Select the year and generation options.
 4. Open `Annual Reviews/YYYY Annual Review.md`.
-5. Review the yearly totals, SVG daily word heatmap, SVG word-growth curve, top tags/folders/links, representative notes, and methodology.
+5. Review the one-sentence judgment, writing growth charts, topic evolution, high-value notes, and next-period actions.
 6. Edit the Markdown report in your own voice; rerun generation after the vault changes.
 7. Run `Annual Review: Open dashboard` when you want a metric preview first.
 
 ## Use Cases
 
 - **Personal yearly review**: turn daily notes, projects, ideas, and tasks into an editable annual summary.
-- **Writing review**: inspect yearly words/characters, active days, streaks, active months, and representative long-form notes.
-- **Research review**: identify top tags, central links, dominant folders, and topic shifts across the year.
+- **Writing review**: inspect total new words, writing days, longest streak, daily cumulative growth, monthly growth, and heatmap patterns.
+- **Research review**: identify top topics, topic evolution, emerging and declining themes, and next-period topic suggestions.
 - **Project retrospective**: collect project-note, folder, and task activity into review material.
-- **Vault maintenance**: surface frequently edited areas, high-signal themes, and notes that need metadata cleanup.
+- **Vault maintenance**: surface high-value notes, output-ready notes, maintenance-needed notes, and isolated-potential notes.
 - **Share preparation**: generate a complete private report locally, then manually select safe excerpts for public sharing.
 
 ## Repository Layout
