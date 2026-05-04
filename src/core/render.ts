@@ -205,27 +205,29 @@ const REPORT_TEXT = {
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
-    highValueNotes: "High Value Notes",
-    aiValueReason: "Value reason",
-    topHighValueNotes: "Top 10 high-value notes",
+    highValueNotes: "Review Candidates",
+    aiValueReason: "Recommendation rationale",
+    topHighValueNotes: "Suggested review candidates",
     outputReadyNotes: "Output-ready notes",
     maintenanceNotes: "Notes needing maintenance",
     noOutputReadyNotes: "No output-ready notes found.",
     noMaintenanceNotes: "No maintenance-needed notes found.",
     highValueNotesSummary: (count: number) =>
-      `These ${count} notes carry the strongest combination of content, links, and review momentum this period.`,
+      `These ${count} notes are suggested for review because their content, links, or activity signals give concrete reasons to inspect them. Confirm or reject each one manually before treating it as representative.`,
     highValueNote: "Note",
     highValueType: "Type",
-    highValueReason: "Value reason",
+    highValueReason: "Recommendation rationale",
     suggestedAction: "Suggested action",
-    highValueFeedback: "High Value Note Reading",
+    manualConfirmation: "Manual confirmation",
+    manualConfirmationInstruction: "Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.",
+    highValueFeedback: "Review Candidate Reading",
     priorityNotes: (notes: string) =>
-      `This period's best notes to keep moving are ${notes}.`,
+      `Suggested candidates to review first: ${notes}. Confirm them manually before moving them into the report.`,
     outputReadySignal: (count: number) =>
       `${count} notes have enough structure to be shaped into an article, index, or review memo.`,
     staleCoreSignal: (count: number) =>
       `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
-    noHighValueNotes: "No high-value note signals found.",
+    noHighValueNotes: "No review-candidate signals found.",
     nextPeriodActions: "Next-Period Actions",
     aiNextActions: "Next Actions",
     mocAction: (topic: string) =>
@@ -235,12 +237,12 @@ const REPORT_TEXT = {
     noIsolatedNotesAction:
       "No isolated-potential notes need immediate handling.",
     highValuePushAction: (notes: string) =>
-      `Move forward ${notes} as the next high-value note focus.`,
+      `Review ${notes} as next-period candidates, then confirm the actual focus manually.`,
     noHighValuePushAction:
-      "No high-value note push is available from the current signals.",
+      "No review-candidate push is available from the current signals.",
     nextPeriodSuggestion: "Next Period Suggestion",
     highValueNextStep:
-      "Prioritize these notes instead of adding undifferentiated new content.",
+      "Review these candidates with their rationale before adding undifferentiated new content.",
     representativeNotes: "Representative Notes",
     representativeNotesDescription:
       "Representative notes are selected deterministically: each active month contributes the highest-volume note from that month's created notes, or from modified notes when the note was created in another year. Ranking uses counted words, then characters, then path as the tie-breaker. This stable evidence set can be reused by later AI summaries.",
@@ -343,26 +345,28 @@ const REPORT_TEXT = {
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
-    highValueNotes: "高价值笔记",
-    aiValueReason: "价值理由",
-    topHighValueNotes: "Top 10 高价值笔记",
+    highValueNotes: "候选回看笔记",
+    aiValueReason: "推荐理由",
+    topHighValueNotes: "Suggested review candidates",
     outputReadyNotes: "可输出笔记",
     maintenanceNotes: "需维护笔记",
     noOutputReadyNotes: "未找到可输出笔记。",
     noMaintenanceNotes: "未找到需维护笔记。",
     highValueNotesSummary: (count: number) =>
-      `下面 ${count} 篇笔记同时具备内容密度、链接位置和复盘价值，适合逐篇回看。`,
+      `下面 ${count} 篇笔记因为内容、链接或活动信号而被建议回看。请逐篇人工确认或否决，再把它们视为年度代表内容。`,
     highValueNote: "笔记",
     highValueType: "类型",
-    highValueReason: "价值原因",
+    highValueReason: "推荐理由",
     suggestedAction: "建议动作",
-    highValueFeedback: "高价值笔记解读",
-    priorityNotes: (notes: string) => `本期最值得继续推进的是 ${notes}。`,
+    manualConfirmation: "人工确认",
+    manualConfirmationInstruction: "请人工确认、重命名、忽略或归档后再写入年报。",
+    highValueFeedback: "候选笔记解读",
+    priorityNotes: (notes: string) => `建议优先回看的候选笔记：${notes}。请人工确认后再写入年报。`,
     outputReadySignal: (count: number) =>
       `有 ${count} 篇笔记已经具备整理成文章、索引页或复盘备忘的条件。`,
     staleCoreSignal: (count: number) =>
       `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
-    noHighValueNotes: "未找到高价值笔记信号。",
+    noHighValueNotes: "未找到候选回看笔记信号。",
     nextPeriodActions: "下期行动",
     aiNextActions: "下期行动",
     mocAction: (topic: string) =>
@@ -371,10 +375,10 @@ const REPORT_TEXT = {
       `处理 ${count} 篇孤立潜力笔记，补链或判断是否归档。`,
     noIsolatedNotesAction: "当前没有需要立即处理的孤立潜力笔记。",
     highValuePushAction: (notes: string) =>
-      `推进 ${notes} 作为下期高价值笔记重点。`,
-    noHighValuePushAction: "当前高价值笔记信号不足，暂无明确推进对象。",
+      `把 ${notes} 作为下期候选回看对象，并在行动前人工确认真正重点。`,
+    noHighValuePushAction: "当前候选笔记信号不足，暂无明确推进对象。",
     nextPeriodSuggestion: "下期建议",
-    highValueNextStep: "优先处理这些笔记，避免继续无差别新增内容。",
+    highValueNextStep: "结合推荐理由人工确认这些候选笔记，再决定是否继续推进。",
     representativeNotes: "代表笔记",
     representativeNotesDescription:
       "代表笔记采用确定性规则选择：每个活跃月份选出该月新建笔记中内容量最高的一篇；如果笔记不是当年新建但在该月被修改，也会参与该月选择。排序依次比较计数字词、字符数和路径。这个稳定证据集可供后续 AI 总结复用。",
@@ -1195,8 +1199,8 @@ function renderHighValueNotes(
               text,
             ),
           )
-        : aggregate.highValueNotes.map(
-            (note) => `- ${wikiLink(note.path, note.title)} (${note.kind})`,
+        : aggregate.highValueNotes.flatMap((note) =>
+            renderHighValueNoteSection(note, undefined, text),
           )
       : [`- ${text.noHighValueNotes}`];
   const rows = [
@@ -1225,6 +1229,8 @@ function renderHighValueNoteSection(
     `${labels.highValueType}: ${note.kind}。${labels.highValueReason}: ${reason}`,
     "",
     `${labels.suggestedAction}: ${action}`,
+    "",
+    `${labels.manualConfirmation}: ${labels.manualConfirmationInstruction}`,
     "",
   ];
 }

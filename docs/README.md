@@ -6,8 +6,9 @@
 
 - [产品定义](product-definition.md)：说明 Annual Review 的新定位、第一性原理、产品闭环和信任边界。
 - [SPEC](product-specification.md)：中文主规格，定义 Review Workflow、数据模型、状态流转、隐私边界、失败场景和验证计划。
+- [Feature Inventory](feature-inventory.md)：把功能分为 Core、Support、Backlog、Remove，约束 README 和路线图只展示主流程。
 - [Roadmap](roadmap.md)：只保留与年度复盘工作流直接相关的路线。
-- [Agent 安装指南](agent-installation.md)：给用户代理的插件安装、构建和 vault 部署指南。
+- [Agent 安装指南](agent-installation.md)：开发和自动化附录，不作为普通用户安装主路径。
 - [AI 报告生成设计](ai-report-design.md)：说明 AI 作为可选增强时如何读取受控上下文，并生成可追溯的 Markdown 草稿。
 - [项目调研](research/project-research.md)：早期调研资料，记录 Obsidian 年度报告插件方向、竞品启发和技术建议。
 - [中文 README](../README.md)：仓库默认入口，面向首次使用和本地开发。

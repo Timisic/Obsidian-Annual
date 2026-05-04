@@ -475,7 +475,7 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## High Value Notes");
+    expect(markdown).toContain("## Review Candidates");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
@@ -490,7 +490,7 @@ describe("aggregation and rendering", () => {
       "## Annual Overview",
       "## Writing Growth",
       "## Topic Evolution",
-      "## High Value Notes",
+      "## Review Candidates",
       "## Next-Period Actions",
     ]);
     expect(markdown).toContain("| Total new words |");
@@ -526,13 +526,14 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## High Value Notes");
-    expect(markdown).toContain("### Top 10 high-value notes");
+    expect(markdown).toContain("## Review Candidates");
+    expect(markdown).toContain("### Suggested review candidates");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
-    expect(markdown).not.toContain("#### [[");
-    expect(markdown).toContain("- [[");
+    expect(markdown).toContain("#### [[");
+    expect(markdown).toContain("Recommendation rationale:");
+    expect(markdown).toContain("Manual confirmation: Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.");
     for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
       expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
     }
@@ -544,7 +545,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Next-Period Actions");
     expect(markdown).toContain("1. Create a compact index");
     expect(markdown).toContain("2. ");
-    expect(markdown).toContain("3. Move forward");
+    expect(markdown).toContain("3. Review");
     expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
   });
 
@@ -568,7 +569,7 @@ describe("aggregation and rendering", () => {
       "## 年度总览",
       "## 写作增长",
       "## 主题演化",
-      "## 高价值笔记",
+      "## 候选回看笔记",
       "## 下期行动",
     ]);
     expect(markdown).toContain("### 累计增长");
@@ -579,7 +580,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(markdown).toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 高价值笔记");
+    expect(markdown).toContain("## 候选回看笔记");
+    expect(markdown).toContain("- 未找到候选回看笔记信号。");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
     expect(markdown).toContain("## 下期行动");
@@ -588,7 +590,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
   });
 
-  it("renders AI-synthesized themes and high-value reasons when AI enhancements are present", async () => {
+  it("renders AI-synthesized themes and review-candidate reasons when AI enhancements are present", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate, {
       aiEnabled: true,
@@ -659,7 +661,7 @@ describe("aggregation and rendering", () => {
     expect(chartAssets[4]?.content).toContain("\"declining_topics\"");
   });
 
-  it("identifies high-value, maintenance, output-ready, and isolated potential notes", () => {
+  it("identifies review candidates, maintenance, output-ready, and isolated potential notes", () => {
     const notes = [
       noteFrom({
         path: "AI工作流.md",
@@ -724,7 +726,7 @@ describe("aggregation and rendering", () => {
     expect(insights.highValueFeedback.staleCoreCount).toBe(1);
   });
 
-  it("limits high-value notes to a Top 10 result set", () => {
+  it("limits review candidates to a 10-note result set", () => {
     const notes = Array.from({ length: 12 }, (_, index) =>
       noteFrom({
         path: `Ideas/Note ${String(index + 1).padStart(2, "0")}.md`,
@@ -847,7 +849,7 @@ describe("AI provider", () => {
     expect(prompt).toContain("obsidianSkillHandoff");
     expect(prompt).toContain("obsidian-cli");
     expect(prompt).toContain("obsidian-markdown");
-    expect(prompt).toContain("obsidian-bases");
+    expect(prompt).not.toContain("obsidian-bases");
     expect(prompt).toContain("\"highValueNotes\"");
     expect(prompt).toContain("\"topLinks\"");
     expect(prompt).toContain("\"contextNotes\"");
@@ -1065,14 +1067,12 @@ describe("plugin command ids", () => {
   it("exposes stable command ids and English command palette labels", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
-      generate2026Smoke: "generate-annual-review-2026",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
-      generate2026Smoke: "Generate 2026 report (smoke)",
-      openDashboard: "Open dashboard",
+      openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });
   });

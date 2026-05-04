@@ -84,7 +84,7 @@ cp manifest.json main.js versions.json "$PLUGIN_DIR/"
 需要先看指标时，可以运行：
 
 ```text
-Annual Review: Open dashboard
+Annual Review: Open Review Board
 ```
 
 ## ChatGPT 设置
