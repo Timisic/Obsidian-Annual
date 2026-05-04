@@ -90,7 +90,7 @@ Obsidian 年度报告的故事模块可以设计为：
 
 ### 一级入口
 
-- Command palette：`Annual Review: Generate report`、`Annual Review: Open dashboard`。
+- Command palette：`Annual Review: Generate report`、`Annual Review: Open Review Board`。
 - Ribbon icon：适合年度报告入口，但不要常驻太多 UI。
 - Status bar：仅显示索引状态或年度活跃摘要，例如 `2026: 43 active days`。
 

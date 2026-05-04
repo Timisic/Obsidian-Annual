@@ -93,11 +93,11 @@ export async function renderAiReportEnhancements(
       instructions: [
         "You enrich an Obsidian review from supplied vault statistics, note excerpts, backlinks, and linked-note context.",
         "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions.",
-        "Use the embedded Obsidian CLI/Markdown/Bases skill handoff as binding output guidance.",
+        "Use the embedded Obsidian CLI/Markdown handoff as binding output guidance.",
         "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
         "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
         "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
-        "High-value note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
+        "Review-candidate reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
         "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
@@ -192,7 +192,7 @@ export function buildAiPrompt(
 
   return JSON.stringify(
     {
-      task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer high-value-note reasons, and concrete next actions.",
+      task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer review-candidate reasons, and concrete next actions.",
       outputSchema: {
         periodJudgment: "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
         themeInsights: [
@@ -267,13 +267,13 @@ export function buildCodexPrompt(
 ): string {
   return [
     "You are generating structured Obsidian annual review enrichment.",
-    "Use the embedded Obsidian CLI/Markdown/Bases skill handoff as binding guidance.",
+    "Use the embedded Obsidian CLI/Markdown handoff as binding guidance.",
     "Use only the supplied JSON context unless your runtime exposes the vault read-only; preserve source note paths exactly.",
     "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions.",
     "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
     "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
     "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
-    "High-value note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
+    "Review-candidate reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
   ].join("\n");
@@ -307,14 +307,14 @@ function buildCodexContext(
       themeInsights:
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
-        "path-specific value reasons and suggested actions for important notes",
+        "path-specific recommendation rationale and suggested actions for review-candidate notes",
       nextActions: "3 grounded next actions",
     },
     obsidianSkillHandoff: obsidianSkillHandoff(),
     contextPolicy: {
       noteCoverage: `${contextNotes.length} active notes include excerpts and backlink summaries for local Codex fallback.`,
       evidenceSources:
-        "Use listed note paths, excerpts, topic metrics, link metrics, high-value note signals, and backlink context only.",
+        "Use listed note paths, excerpts, topic metrics, link metrics, review-candidate signals, and backlink context only.",
     },
     year: aggregate.year,
     privacyMode: aggregate.scope.privacyMode,
@@ -565,7 +565,7 @@ function fallbackHighValueReasonZh(
     `这篇把「${target}」里的核心冲突写得最集中，${note.periodWordCount} 个本期字词提供了足够上下文；${relation}，适合先整理成年度入口。`,
     `这篇的价值在于把「${target}」从感受推进到可讨论的问题，${inbound}；${relation}。`,
     `这篇适合作为「${target}」的复盘样本，因为它保留了当时的判断、情绪和行动线索；${relation}，后续可以补出更清楚的结论。`,
-    `这篇在 Top 10 里承担的是桥接作用：它把「${target}」和周边笔记接起来，让单篇日记可以进入更长的主题链；${relation}。`,
+    `这篇作为候选回看笔记承担的是桥接作用：它把「${target}」和周边笔记接起来，让单篇日记可以进入更长的主题链；${relation}。`,
   ];
   if (note.kind === "孤立潜力") {
     return `这篇还没有进入稳定链接网络，但 ${note.periodWordCount} 个本期字词已经显露出「${target}」的材料潜力；先补出双链和小结，才能判断它是否值得继续发展。`;
@@ -611,7 +611,7 @@ function fallbackHighValueReasonEn(
     `${title} concentrates the main tension inside ${target}, and its ${note.periodWordCount} period words leave enough context to turn the note into a review entry. ${relation}.`,
     `${title} matters because it moves ${target} from a passing observation into a question that recurs across the vault. ${inbound}.`,
     `${title} works as a review sample for ${target}: it preserves the original judgment, mood, and action trace while still leaving room for a clearer conclusion. ${relation}.`,
-    `${title} plays a bridging role in the Top 10 by connecting ${target} with nearby notes, so it can turn a single diary entry into a longer theme chain. ${relation}.`,
+    `${title} plays a bridging role as a review candidate by connecting ${target} with nearby notes, so it can turn a single diary entry into a longer theme chain. ${relation}.`,
   ];
   if (note.kind === "孤立潜力") {
     return `${title} has not entered the stable link network yet, but its ${note.periodWordCount} period words show material for ${target}; linking and summarizing it will clarify whether it should keep growing.`;
@@ -707,7 +707,7 @@ function normalizeLinkIdentity(value: string): string {
 
 function obsidianSkillHandoff(): Record<string, unknown> {
   return {
-    invokedSkills: ["obsidian-cli", "obsidian-markdown", "obsidian-bases"],
+    invokedSkills: ["obsidian-cli", "obsidian-markdown"],
     obsidianCli: [
       "Treat active-year notes, backlinks, and linked-note excerpts as if read through Obsidian vault APIs/CLI.",
       "When citing evidence, use exact vault-relative note paths supplied in context.",
@@ -716,10 +716,6 @@ function obsidianSkillHandoff(): Record<string, unknown> {
       "Use Obsidian wikilinks for internal evidence and preserve paths without inventing aliases.",
       "Avoid raw pipes inside Markdown table cells; table wikilinks should use plain [[path]] form.",
       "Generated prose should be valid Obsidian Flavored Markdown and readable as an editable note.",
-    ],
-    obsidianBases: [
-      "Think of theme/high-value-note outputs as database-like rows: stable title, evidence notes, synthesis, and action fields.",
-      "Prefer structured, reusable fields over vague paragraphs.",
     ],
   };
 }

@@ -3,10 +3,10 @@
 [English](README.en.md) | [文档索引](docs/README.md) | [SPEC](docs/product-specification.md)
 
 Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
-帮助你从一年的笔记中筛选重要主题、复核关键笔记、形成行动决定，
+帮助你从一年的笔记中筛选候选主题、复核候选笔记、形成行动决定，
 并输出可追溯、可编辑、可重复生成的 Markdown 年报。
 
-它解决的是当前复盘中最难的事情：不知道哪些内容值得回看、不知道哪些主题贯穿时间线、不知道哪些笔记该继续推进或归档，以及不信任没有证据的自动总结。
+它只承诺一个主流程：本地扫描 vault，给出带推荐理由和证据链接的候选项，由你人工确认后写入受保护的 Markdown 年报。
 
 ## 适合谁
 
@@ -22,7 +22,7 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 ```
 
 1. **扫描**：选择年份、包含/排除目录和隐私模式，插件只读取当前 vault 内允许范围的 Markdown、属性、标签、链接、任务和时间线信号。
-2. **候选**：插件提出年度主题、代表笔记、项目/任务线索、异常活动和沉睡资产，并给出“为什么被选中”的理由；如果你显式启用 AI，它可以在这一环节增强候选理由和补充可复核线索。
+2. **候选**：插件提出年度主题、候选回看笔记、项目/任务线索、异常活动和沉睡资产，并给出“为什么被推荐”的理由和证据链接；如果你显式启用 AI，它只能增强候选理由和补充可复核线索。
 3. **审核**：你在 Review Board 中逐项确认、重命名、合并、忽略或归档候选项。
 4. **决策**：你为确认过的主题和笔记写下继续推进、合并、归档、放弃或转成项目的行动。
 5. **年报**：插件把已确认内容、证据链接、行动决定和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
@@ -78,8 +78,8 @@ cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
 | 命令 | 用途 |
 | --- | --- |
 | `Annual Review: Rebuild index` | 重新扫描当前 vault 中允许范围的 Markdown 笔记。 |
-| `Annual Review: Generate report` | 选择年份和生成选项，写入年度 Markdown 报告。 |
-| `Annual Review: Open dashboard` | 打开本地预览和控制界面，用于查看候选信号与触发生成。 |
+| `Annual Review: Generate report` | 选择年份和生成选项，写入受保护的年度 Markdown 报告。 |
+| `Annual Review: Open Review Board` | 打开候选审核界面，用于复核推荐理由、证据链接和确认状态。 |
 
 ## 开发命令
 
@@ -90,7 +90,6 @@ cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
 | `npm run build` | 生成可安装到 Obsidian 的插件 bundle。 |
 | `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
 | `npm run deploy:plugin` | 构建插件并可部署到任意 vault 的 `.obsidian`。 |
-| `npm run deploy:smoke` | 构建并部署到仓库配置的 smoke vault。 |
 
 ## 验证建议
 
@@ -115,6 +114,7 @@ npm run build
 
 - [Product Definition](docs/product-definition.md)
 - [SPEC](docs/product-specification.md)
+- [Feature Inventory](docs/feature-inventory.md)
 - [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
 - [AI 报告生成设计](docs/ai-report-design.md)

@@ -3,14 +3,13 @@
 [中文](README.md) | [Docs index](docs/README.md) | [SPEC](docs/product-specification.md)
 
 Obsidian Annual Review is a local-first annual review workflow plugin for
-Obsidian. It helps you select important themes from a year of notes, review key
-notes, make follow-up decisions, and generate a traceable, editable,
+Obsidian. It helps you select candidate themes from a year of notes, review
+candidate notes, make follow-up decisions, and generate a traceable, editable,
 repeatable Markdown annual report.
 
-The plugin is not trying to produce a polished recap first. It addresses the
-harder review problems: finding what is worth revisiting, seeing which themes
-persisted, deciding which notes should move forward or be archived, and trusting
-the result because every recommendation has evidence.
+The plugin has one main promise: scan the local vault, suggest candidates with
+rationale and evidence links, let the user confirm them manually, and write the
+confirmed results into a protected Markdown annual report.
 
 ## Who it is for
 
@@ -32,9 +31,9 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
 1. **Scan**: choose a year, include/exclude folders, and privacy mode. The
    plugin reads only allowed Markdown, properties, tags, links, tasks, and
    timeline signals inside the active vault.
-2. **Candidates**: the plugin proposes annual themes, representative notes,
+2. **Candidates**: the plugin proposes annual themes, suggested review candidates,
    project/task signals, unusual activity, and dormant assets with a short
-   reason for each recommendation.
+   recommendation rationale and evidence links.
 3. **Review**: you confirm, rename, merge, ignore, or archive candidates in the
    Review Board.
 4. **Decisions**: you decide whether confirmed themes and notes should continue,
@@ -105,9 +104,9 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 - `Annual Review: Rebuild index`: rescan allowed Markdown notes in the active
   vault.
 - `Annual Review: Generate report`: choose a year and generation options, then
-  write the annual Markdown report.
-- `Annual Review: Open dashboard`: open the local preview/control surface for
-  candidate signals and report actions.
+  write the protected annual Markdown report.
+- `Annual Review: Open Review Board`: review candidate rationale, evidence
+  links, and confirmation status.
 
 ## Development Commands
 
@@ -118,8 +117,6 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 - `npm run dev`: start esbuild watch mode for local plugin development.
 - `npm run deploy:plugin`: build and optionally deploy to any vault
   `.obsidian` folder.
-- `npm run deploy:smoke`: build and deploy to the smoke vault configured by
-  this repository.
 
 ## Validation
 
@@ -146,6 +143,7 @@ Manual validation:
 
 - [Product Definition](docs/product-definition.md)
 - [SPEC](docs/product-specification.md)
+- [Feature Inventory](docs/feature-inventory.md)
 - [Roadmap](docs/roadmap.md)
 - [Docs index](docs/README.md)
 - [AI report design](docs/ai-report-design.md)
