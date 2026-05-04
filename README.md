@@ -4,7 +4,17 @@
 
 Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一年里的笔记活动整理成一份可编辑、可追溯的年度回顾 Markdown 笔记。
 
-插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出写作增长、主题演化、高价值笔记和下期行动，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果保留在 vault 中，可以继续编辑、链接、同步、版本管理和审阅。
+插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出写作增长、主题演化、TOP10高价值笔记，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果保留在 vault 中，可以继续编辑、链接、同步、版本管理和审阅。
+
+## 让 Agent 帮你安装
+
+复制下面这句话给你的 Agent：
+
+```text
+请打开 Timisic/Obsidian-Annual 仓库中的 docs/agent-installation.md，并按其中步骤把这个 Obsidian 插件安装到我的 vault 中。
+```
+
+对应文档：[Agent 安装指南](docs/agent-installation.md)。
 
 ## 适合谁
 
@@ -21,11 +31,8 @@ Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一�
 | 仪表盘 | 命令面板运行 `Annual Review: Open dashboard`，预览年度指标、热门列表并触发生成。 |
 | 重建索引 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
 | 本地统计 | 读取 vault 内 Markdown、frontmatter、标签、Obsidian 解析后的链接、标题、任务和文件时间。 |
-| 中英混合计数 | 同时保留英文词数和 CJK 字符数，适合中文、英文和混合 vault。 |
 | 证据链接 | 报告里的主题和高价值笔记会链接回 Obsidian 源笔记。 |
 | 写作增长图表 | 生成日累计字数、月度增长和每日字数热力图 SVG 资产，并在报告中用 Obsidian 图片链接引用。 |
-| 可选 ChatGPT | 生成报告时可选择 ChatGPT；有 OpenAI API key 时直连 Responses API，否则可配置本地 Codex CLI/auth 路径。 |
-| 隐私边界 | 默认本地处理；AI 需要用户明确选择。 |
 
 ## ChatGPT provider 与隐私
 
@@ -103,7 +110,6 @@ cp manifest.json main.js versions.json "$PLUGIN_DIR/"
 - **研究复盘**：识别 Top 主题、主题演化、新兴/衰退方向和下期主题建议。
 - **项目回顾**：从项目笔记、任务和文件夹活动中整理团队或个人项目的年度材料。
 - **vault 整理**：发现高价值笔记、可输出笔记、需维护笔记和孤立潜力笔记。
-- **分享前整理**：先在本地生成完整私密报告，再手动挑选可以公开的片段。
 
 ## 仓库结构
 
@@ -116,19 +122,22 @@ cp manifest.json main.js versions.json "$PLUGIN_DIR/"
 ├── scripts/                   # 构建、部署和报告辅助脚本
 ├── docs/                      # 产品规格、设计和调研文档
 │   ├── README.md              # 文档索引
+│   ├── agent-installation.md   # 给用户代理的插件安装指南
 │   ├── product-specification.md
 │   ├── ai-report-design.md
 │   └── research/project-research.md
 └── .codex/skills/             # repo 内验证和开发辅助 skill
 ```
 
-## 设计边界
+## TODO / Roadmap
 
-- 默认不访问网络。
-- 默认不调用外部 AI。
-- 不要求安装 Dataview、Bases、Tasks、Kanban、Projects 或 Novel Word Count。
-- 插件运行时不读取当前 Obsidian vault 之外的文件。
-- Markdown 年度报告是主要产物，仪表盘只是预览和操作入口。
+- **主题命名质量**：继续减少 raw tag、月份文件夹和单篇标题对主题名称的影响，让主题更接近内容线索。
+- **高价值笔记解释**：让每条理由更贴近笔记正文、反链和相邻笔记，减少只依赖字数或链接数的判断。
+- **仪表盘交互**：补充更清晰的索引新鲜度、打开历史报告和大 vault 进度反馈。
+- **导出和分享**：补充分享卡、Canvas、Bases 或 HTML 等用户主动触发的输出方式。
+- **AI Provider**：添加其他的 AI Provider。
+- **图表美化**：当前已有热力图/日累计字数曲线图/月度字数柱状图，待美化。
+- **Review Board**：更个性化，可以以week/month/year...或更自定义的时间进行Review
 
 ## 开发命令
 
@@ -173,6 +182,6 @@ npm run deploy:smoke
 
 - [英文 README](README.en.md)
 - [文档索引](docs/README.md)
+- [Agent 安装指南](docs/agent-installation.md)
 - [产品规格](docs/product-specification.md)
-- [AI 报告生成设计](docs/ai-report-design.md)
 - [项目调研](docs/research/project-research.md)
