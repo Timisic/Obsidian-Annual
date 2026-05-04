@@ -496,9 +496,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("| Total new words |");
     expect(markdown).toContain("| Writing days |");
     expect(markdown).toContain("| Longest writing streak |");
-    expect(markdown).toContain("### Daily Cumulative Word Chart");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
-    expect(markdown).toContain("### Monthly Growth Chart");
+    expect(markdown).not.toContain("### Daily Cumulative Word Chart");
+    expect(markdown).not.toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(markdown).toContain("### Monthly New Notes");
     expect(markdown).toContain("### Heatmap");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("xmlns=\"http://www.w3.org/2000/svg\"");
@@ -507,15 +507,16 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Legend: . = 0 words");
     expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).not.toContain("## Word Growth Trend");
-    expect(markdown).toContain("Y-axis: monthly created-note word growth");
+    expect(markdown).toContain("each bar shows notes created in that active month");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
-    expect(markdown).toContain("class=\"chart-line\"");
+    expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
     expect(markdown).toContain("## Topic Evolution");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(markdown).toContain("| Topic | Added words | New notes | Representative Notes |");
+    expect(markdown).toContain("content-thread synthesis is generated only when summarization is enabled");
+    expect(markdown).not.toContain("| Topic | Added words | New notes | Representative Notes |");
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
     expect(markdown).not.toContain("### Feedback Signals");
-    expect(markdown).toContain("### Writing Growth Feedback");
+    expect(markdown).toContain("### Activity Reading");
     expect(markdown).toContain("- Advantage:");
     expect(markdown).toContain("- Risk:");
     expect(markdown).toContain("- Suggestion:");
@@ -530,7 +531,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("### Top 10 high-value notes");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
-    expect(markdown).toContain("| Note | Type | Value reason | Suggested action |");
+    expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
+    expect(markdown).not.toContain("#### [[");
+    expect(markdown).toContain("- [[");
     for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
       expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
     }
@@ -569,9 +572,9 @@ describe("aggregation and rendering", () => {
       "## 高价值笔记",
       "## 下期行动",
     ]);
-    expect(markdown).toContain("### 日累计字数图");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
-    expect(markdown).toContain("### 月度增长图");
+    expect(markdown).not.toContain("### 日累计字数图");
+    expect(markdown).not.toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(markdown).toContain("### 每月新增笔记");
     expect(markdown).toContain("### 热力图");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
@@ -613,10 +616,12 @@ describe("aggregation and rendering", () => {
     });
 
     expect(markdown).toContain("## Topic Evolution");
-    expect(markdown).toContain("### AI Theme Synthesis");
+    expect(markdown).toContain("### Content Threads");
     expect(markdown).toContain("Research review loop");
     expect(markdown).toContain("[[Daily/2026-01-01]]");
-    expect(markdown).toContain("| Note | Type | AI value reason | Suggested action |");
+    expect(markdown).not.toContain("| Theme |");
+    expect(markdown).not.toContain("| Note | Type | AI value reason | Suggested action |");
+    expect(markdown).toContain("#### [[Projects/Research|Research]]");
     expect(markdown).toContain("This note links source evidence back to the project synthesis");
     expect(markdown).toContain("1. Create a review hub from [[Projects/Research]].");
     expect(markdown).not.toContain("### Feedback Signals");
@@ -628,31 +633,29 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { chartPaths });
     const chartAssets = buildAnnualReviewChartAssets(aggregate, { chartPaths });
 
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Daily Cumulative Word Chart|900]]");
+    expect(markdown).not.toContain("daily-cumulative-words.svg");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap|900]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Word Growth Trend|900]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Monthly New Notes|900]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]");
     expect(markdown).not.toContain("<svg");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
-    expect(markdown).toContain("| Month | Word growth | Cumulative words |");
+    expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
 
-    expect(chartAssets).toHaveLength(5);
+    expect(chartAssets).toHaveLength(4);
     expect(chartAssets.map((asset) => asset.path)).toEqual([
-      "Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg",
       "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
       "Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg",
       "Annual Reviews/2026 Annual Review Assets/topic-evolution.svg",
       "Annual Reviews/2026 Annual Review Assets/topic-evolution.json",
     ]);
-    expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
-    expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
-    expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
-    expect(chartAssets[2]?.content).toContain("class=\"chart-line\"");
-    expect(chartAssets[2]?.content).toContain("class=\"endpoint-dot\"");
-    expect(chartAssets[3]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(chartAssets[4]?.content).toContain("\"top_topics\"");
-    expect(chartAssets[4]?.content).toContain("\"emerging_topics\"");
-    expect(chartAssets[4]?.content).toContain("\"declining_topics\"");
+    expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
+    expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(chartAssets[1]?.content).toContain("<rect");
+    expect(chartAssets[1]?.content).not.toContain("class=\"chart-line\"");
+    expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
+    expect(chartAssets[3]?.content).toContain("\"top_topics\"");
+    expect(chartAssets[3]?.content).toContain("\"emerging_topics\"");
+    expect(chartAssets[3]?.content).toContain("\"declining_topics\"");
   });
 
   it("identifies high-value, maintenance, output-ready, and isolated potential notes", () => {
