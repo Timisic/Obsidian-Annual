@@ -2,7 +2,7 @@
 
 状态：MVP 基础版已实现，后续功能按阶段推进
 技术栈：TypeScript + Obsidian API + esbuild
-背景调研：[项目调研](research/dec-7-project-research.md)
+背景调研：[项目调研](research/project-research.md)
 
 ## 1. 目标
 
