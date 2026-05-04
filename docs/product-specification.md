@@ -1,107 +1,160 @@
-# Obsidian Annual Review 产品规格
+# Annual Review SPEC
 
-状态：本地优先年度回顾插件已进入可用 MVP；文档按当前 `main` 分支实现更新。
+状态：DEC-39 重新定位版。本文定义目标产品体验，不把当前代码实现当作上限。
 技术栈：TypeScript + Obsidian API + esbuild + Vitest。
-背景调研：[项目调研](research/project-research.md)。
 
-## 1. 产品目标
+## 1. 产品定位
 
-Obsidian Annual Review 把当前 vault 中一年的 Markdown 笔记活动整理成可编辑、可追溯的年度回顾笔记。核心产物是 `Annual Reviews/YYYY Annual Review.md`，同时生成图表 SVG 和主题演化 JSON 资产，保留 Obsidian wiki link，方便用户继续编辑、链接、同步、版本管理和人工审阅。
+Annual Review 是 Obsidian 的年度复盘工作流插件。它从用户一年的笔记中
+生成候选主题、候选笔记和行动线索，引导用户逐项审核、取舍和决策，
+最终输出一份可追溯、可编辑、可重复生成的 Markdown 年报。
 
-## 2. 当前产品原则
+核心体验是 Review Workflow，不是统计面板，也不是 AI 总结生成器。年报文件是最终工件；真正的产品价值来自扫描、候选、审核、决策和证据复核。
 
-- 本地优先：默认只读取当前 vault，不访问网络。
-- Markdown 优先：年度回顾笔记是主要交付物，仪表盘承担预览、重建索引和触发生成职责。
-- 证据可追溯：主题、高价值笔记和代表性内容尽量回链到源笔记。
-- Obsidian 原生：使用命令面板、设置页、`ItemView`、vault 文件 API、metadata cache 和主题变量。
-- AI 明确 opt-in：用户选择 ChatGPT 后，才会通过 OpenAI Responses API 或本地 Codex CLI/auth 生成增强内容。
-- 依赖克制：核心路径不依赖 Dataview、Bases、Tasks、Kanban、Projects 或 Novel Word Count。
-- 分支名可维护：仓库协作分支只使用 ASCII 字符，避免 GitHub head ref Unicode 提示。
+## 2. 产品原则
 
-## 3. 目标用户
+- 复盘流程优先：先帮助用户完成筛选、确认、取舍和行动，再生成年报。
+- 证据优先：每个主题、笔记推荐和行动建议都能回到源笔记、标签、链接、任务或时间线。
+- 用户判断优先：插件只给候选项、理由和证据；最终主题命名、价值判断和行动决定由用户确认。
+- 小闭环优先：先跑通扫描、候选、审核、决策、年报，再扩展图表或导出。
+- 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
 
-- 用 daily notes、项目笔记、读书笔记、研究笔记和 evergreen notes 记录长期材料的 Obsidian 用户。
-- 想复盘写作量、活跃天数、主题变化、代表性内容和下一阶段行动的写作者或研究者。
-- 需要本地 Markdown 年度总结，并希望生成内容可继续手动润色的人。
-- 愿意在明确隐私边界内使用 ChatGPT 或本地 Codex 生成更完整叙事的人。
+## 3. 目标用户与痛点
 
-## 4. 已实现用户路径
+目标用户：
 
-1. 用户安装插件并打开设置。
-2. 用户确认报告目录、包含/排除目录、语言、隐私模式、指标开关和 AI provider。
-3. 用户运行 `Annual Review: Rebuild index`，或由生成/仪表盘预览触发读取。
-4. 插件通过 Obsidian API 扫描 vault Markdown 文件和 metadata cache。
-5. 用户运行 `Annual Review: Generate report`，在弹窗中选择年份、范围、语言、隐私模式、指标开关和本次 AI provider。
-6. 插件聚合年度数据，必要时调用 ChatGPT 或本地 Codex。
-7. 插件写入 `Annual Reviews/YYYY Annual Review.md`，并写入 `Annual Reviews/YYYY Annual Review Assets/` 下的 SVG/JSON 资产。
-8. 用户打开报告，检查图表、wiki link、主题演化、高价值笔记和下期行动。
-9. 用户运行 `Annual Review: Open dashboard` 查看指标预览、趋势、热力图、热门标签/文件夹/链接和代表性笔记。
+- 长期使用 Obsidian 写 daily notes、项目记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
+- 年底希望快速完成第一轮有意义复盘，而不是先手动整理大量笔记的人。
+- 不信任黑盒总结，但愿意接受带理由、证据和可撤回状态的候选推荐的人。
 
-## 5. 当前命令
+核心痛点：
 
-| 命令 | 用途 |
-| --- | --- |
-| `Annual Review: Generate report` | 打开年份弹窗，生成指定年份年度回顾。 |
-| `Annual Review: Generate 2026 report (smoke)` | 用于 smoke vault 的固定年份验证命令。 |
-| `Annual Review: Open dashboard` | 打开右侧仪表盘，预览指标并触发生成或重建索引。 |
-| `Annual Review: Rebuild index` | 清理当前索引缓存并重新读取 vault Markdown 文件。 |
+- 不知道哪些内容值得回看。
+- 不知道哪些主题真正贯穿全年。
+- 不知道哪些笔记应继续推进、合并、归档或放弃。
+- 容易遗忘沉睡但仍有价值的笔记。
+- 不信任自动生成的漂亮总结。
 
-## 6. 当前设置
+## 4. Review Workflow
 
-| 设置 | 当前行为 |
-| --- | --- |
-| `reportFolder` | 默认 `Annual Reviews`，报告和资产写入该目录，并从扫描输入中排除。 |
-| `includeFolders` | 可限制扫描范围；为空时扫描所有符合条件的 Markdown。 |
-| `excludeFolders` | 默认排除 `.obsidian`、`Templates`、`Archive`、`Attachments`。 |
-| `excludePatterns` | 支持额外排除模式。 |
-| `includeTasks` | 控制 Markdown 任务统计。 |
-| `includeLinks` | 控制 Obsidian resolved/unresolved link 统计。 |
-| `includeFrontmatter` | 控制 frontmatter / Properties 参与提取。 |
-| `includeHeadings` | 控制标题提取。 |
-| `privacyMode` | `private` 会在报告元数据中标记隐私敏感。 |
-| `reportLanguage` | `system`、`zh`、`en`，控制报告语言。 |
-| `generatorLanguage` | `system`、`zh`、`en`，控制设置页和弹窗语言。 |
-| `aiProvider` | `none` 或 `chatgpt`。默认 `none`。 |
-| `chatGptApiKey` | 有 key 时走 OpenAI Responses API。 |
-| `chatGptModel` | 默认 `gpt-4.1`。 |
-| `localCodexCommand` | 无 API key 且选择 ChatGPT 时的本地 Codex fallback。 |
+目标闭环：
 
-## 7. 数据来源和过滤
+```text
+选择年份和范围
+  -> 扫描 vault
+  -> 生成候选
+  -> Review Board 审核
+  -> 行动决策
+  -> 可重复生成的 Markdown 年报
+```
 
-当前实现读取：
+### 4.1 选择年份和范围
+
+用户选择：
+
+- 年份。
+- include folders。
+- exclude folders 和 exclude patterns。
+- 是否包含任务、链接、frontmatter、标题。
+- 隐私模式。
+- 生成语言。
+
+默认排除：
+
+- `.obsidian`。
+- 报告目录。
+- 模板目录。
+- 归档目录。
+- 附件目录。
+- 用户显式排除的路径。
+
+### 4.2 扫描
+
+插件读取：
 
 - `app.vault.getMarkdownFiles()`。
 - `vault.cachedRead(file)`。
 - `metadataCache.getFileCache(file)`。
 - `metadataCache.resolvedLinks` 和 `metadataCache.unresolvedLinks`。
 - frontmatter / Properties。
-- Markdown 标签、wiki link、嵌入、标题和任务。
+- Markdown 标签、wiki links、嵌入、标题和任务。
 - 文件路径、目录、ctime、mtime。
 
-过滤策略：
+插件不读取：
 
-- 只处理 Markdown 文件。
-- 排除报告目录、模板、归档、附件目录和用户配置的排除范围。
-- 支持 includeFolders 缩小扫描范围。
-- 生成报告和图表资产不会再次成为下一次年度报告输入。
+- vault 外部文件。
+- 非 Markdown 文件正文。
+- 默认排除范围内的 Markdown。
+- 生成出的年报和资产目录。
 
-## 8. 聚合指标
+### 4.3 候选生成
 
-当前年度聚合输出 `YearAggregate`，包含：
+候选类型：
 
-- 年份、生成时间、报告范围和隐私模式。
-- 活跃天数、最长连续记录天数。
-- 年内创建笔记数、年内修改笔记数。
-- 创建笔记的英文词数和 CJK 字符数。
-- 任务总数和完成任务数。
-- 月度桶、每日桶和月度新增趋势。
-- Top 标签、文件夹、链接、代表性笔记和 Top 笔记。
-- 主题演化数据，包括 Top topics、新兴主题、衰退主题、月度主题桶和笔记主题分配。
-- 高价值笔记、输出候选、需维护笔记、孤立潜力笔记和反馈信号。
+| 类型 | 用途 | 证据 |
+| --- | --- | --- |
+| Annual Theme | 贯穿全年的主题或方向 | 标签、文件夹、标题、链接、月度分布、代表笔记 |
+| Representative Note | 值得回看的代表笔记 | 字数、链接、任务、修改时间、主题归属、上下文摘录 |
+| Project Thread | 可能需要继续推进的项目线 | 文件夹、任务、双链、时间跨度 |
+| Action Candidate | 继续、合并、归档、放弃或转项目的建议 | note evidence、任务状态、近期活动、沉睡时间 |
+| Dormant Asset | 很久未动但可能有价值的笔记 | 历史链接、主题归属、最后修改时间 |
+| Anomaly | 异常活跃或突然中断的活动 | 时间线、月度桶、任务和修改信号 |
 
-排序要求：top-N 先按主要分数降序，再使用路径或名称做稳定 tie-break。
+每个候选项必须包含：
 
-## 9. 年度 Markdown 报告
+- 稳定 ID。
+- 类型。
+- 建议标题。
+- 简短理由。
+- evidence links。
+- 初始状态。
+- 可选分数和排序解释。
+
+### 4.4 Review Board
+
+Review Board 是复盘主界面。用户逐项处理候选，而不是直接接受一份完整总结。
+
+必需操作：
+
+- Confirm：确认候选进入年报。
+- Rename：改主题或候选名称。
+- Merge：合并重复主题或候选。
+- Ignore：本次复盘忽略。
+- Archive：标记为归档方向。
+- Open evidence：打开源笔记、标签、链接、任务或时间线证据。
+- Add decision：记录行动决定。
+
+推荐交互：
+
+- 左侧候选队列。
+- 中间证据和理由。
+- 右侧决策和年报预览。
+- 可筛选待审核、已确认、已忽略、需决策项。
+- 进度显示，例如 `7/18 reviewed`。
+
+### 4.5 行动决策
+
+行动是年报的核心输出之一。候选被确认后，用户可以选择：
+
+| 行动 | 含义 |
+| --- | --- |
+| Continue | 下一年继续推进。 |
+| Merge | 与另一个主题或笔记合并。 |
+| Archive | 归档，暂不推进。 |
+| Drop | 明确放弃。 |
+| Convert to project | 转成项目或任务。 |
+| Revisit | 设为未来复核对象。 |
+
+行动记录应包含：
+
+- action type。
+- 用户备注。
+- 来源候选。
+- evidence links。
+- 创建时间。
+- 是否写入年报。
+
+### 4.6 年报生成
 
 默认路径：
 
@@ -109,113 +162,233 @@ Obsidian Annual Review 把当前 vault 中一年的 Markdown 笔记活动整理�
 Annual Reviews/YYYY Annual Review.md
 ```
 
-默认资产目录：
+年报结构：
 
-```text
-Annual Reviews/YYYY Annual Review Assets/
+- YAML frontmatter：年份、生成时间、扫描范围、隐私模式、插件版本。
+- 方法说明：本次扫描了什么、排除了什么、哪些内容由用户确认。
+- 年度主题：至少 3 个用户确认主题，包含理由和证据。
+- 代表笔记：至少 5 篇用户确认笔记，包含为什么值得回看。
+- 行动决定：至少 3 条用户确认行动。
+- 用户手写区：保留给个人叙事、反思和补充。
+- 再生成记录：说明哪些区块可再生、哪些区块由用户维护。
+
+AI 可以作为可选步骤帮助润色已确认内容，但不能替代候选、审核、决策和证据链。
+
+## 5. 数据模型
+
+### 5.1 NoteSignal
+
+```ts
+type NoteSignal = {
+  path: string;
+  title: string;
+  ctime: number;
+  mtime: number;
+  yearTouched: number[];
+  tags: string[];
+  folders: string[];
+  linksOut: string[];
+  linksIn: string[];
+  headings: string[];
+  tasks: TaskSignal[];
+  wordCount: number;
+  cjkCharCount: number;
+};
 ```
 
-报告包含：
+### 5.2 Candidate
 
-- YAML frontmatter：生成时间、年份、范围、排除范围、隐私模式和报告语言。
-- 本期一句话判断。
-- 写作增长：总新增字数、写作天数、最长连续记录、年度总览、月度时间线和活动反馈。
-- 图表：每日累计字数、每日字数热力图、月度新增笔记趋势。
-- 主题演化：主题 SVG、主题 JSON、Top topics、新兴主题、衰退主题和下一步建议。
-- 高价值笔记：Top 10、输出候选、需维护笔记、孤立潜力笔记和建议动作。
-- 下期行动：基于本地信号或 AI 增强内容生成。
+```ts
+type CandidateStatus =
+  | "candidate"
+  | "confirmed"
+  | "renamed"
+  | "merged"
+  | "ignored"
+  | "archived";
 
-当用户启用 ChatGPT 时，报告会优先使用 AI 返回的年度判断、内容线程、高价值笔记理由和下一步行动。AI 输出解析失败时，报告回退到本地统计模板。
-
-## 10. 仪表盘
-
-仪表盘是 Obsidian `ItemView`，当前功能包括：
-
-- 年份输入和预览按钮。
-- 生成报告按钮。
-- 重建索引按钮。
-- 包含范围、排除范围、隐私模式、AI provider 和索引状态卡片。
-- 上一份报告打开入口。
-- 创建数、修改数、活跃天数和词数总览。
-- 月度趋势条形图。
-- 每日字数热力图。
-- 月度新增趋势。
-- Top 标签、文件夹、链接和代表性笔记列表。
-
-仍需加强的体验包括索引新鲜度解释、长任务进度、历史报告列表和大 vault 场景下的响应反馈。
-
-## 11. AI provider 和隐私边界
-
-默认行为：
-
-- 不访问网络。
-- 不调用外部 AI。
-- 不上传统计数据。
-- 不要求 telemetry。
-- 生成报告保存在 vault 内。
-
-ChatGPT 模式：
-
-- 用户必须在设置或生成弹窗中选择 `ChatGPT`。
-- 有 API key 时，插件调用 OpenAI Responses API。
-- 无 API key 时，插件调用配置的本地 Codex CLI/auth 命令。
-- 上下文包含年度统计、链接关系、部分笔记摘录、反链和相邻笔记信息。
-- Prompt 要求返回 JSON，并要求保留源笔记路径、避免虚构私有事实、避免公式化对比句式。
-
-待补充能力：
-
-- 发送前预览。
-- 字段级脱敏。
-- 更细粒度的排除规则。
-- 本地模型 provider 评估。
-- 长会话 app-server 集成评估。
-
-## 12. 架构
-
-当前源码结构：
-
-```text
-src/
-  main.ts                         # Obsidian 插件入口、命令注册、设置页、运行流程
-  core/
-    aggregate.ts                  # 年度聚合
-    ai.ts                         # ChatGPT / 本地 Codex 报告增强
-    commands.ts                   # 命令 ID 和命令名
-    extract.ts                    # frontmatter、标签、链接、标题、任务提取
-    filters.ts                    # 路径包含/排除
-    highValueNotes.ts             # 高价值笔记和建议动作
-    language.ts                   # 中英文 UI 文案
-    render.ts                     # 年度报告 Markdown、SVG 和 JSON 资产渲染
-    settings.ts                   # 默认设置和列表解析
-    tokenizer.ts                  # 英文词数和 CJK 字符计数
-    topics.ts                     # 主题演化
-    types.ts                      # 类型契约
-    writingGrowth.ts              # 独立写作增长报告核心
-  obsidian/
-    dashboardView.ts              # 仪表盘 ItemView
-    progressModal.ts              # 生成进度弹窗
-    reportWriter.ts               # 报告和资产写入
-    vaultFiles.ts                 # Obsidian vault 读取
-    yearModal.ts                  # 生成年份弹窗
-scripts/
-  deploy-plugin.mjs               # 构建并部署到 vault
-  writing-growth-report.mjs       # 独立写作增长 CLI
-  obsidian-ai-context-placeholder.mjs
+type ReviewCandidate = {
+  id: string;
+  type: "theme" | "note" | "project" | "action" | "dormant" | "anomaly";
+  title: string;
+  reason: string;
+  evidence: EvidenceRef[];
+  sourcePaths: string[];
+  score?: number;
+  status: CandidateStatus;
+  mergedIntoId?: string;
+  userTitle?: string;
+  userNote?: string;
+  decisionIds: string[];
+};
 ```
 
-数据流：
+### 5.3 EvidenceRef
 
-```text
-Vault Markdown files
-  -> path filters
-  -> metadata + Markdown extractor
-  -> NoteStats[]
-  -> YearAggregate
-  -> optional AI enhancements
-  -> Markdown report + SVG/JSON assets + dashboard preview
+```ts
+type EvidenceRef = {
+  kind: "note" | "tag" | "link" | "task" | "timeline" | "folder";
+  label: string;
+  target: string;
+  excerpt?: string;
+  reason?: string;
+};
 ```
 
-## 13. 验证计划
+### 5.4 Decision
+
+```ts
+type ReviewDecision = {
+  id: string;
+  candidateId: string;
+  action: "continue" | "merge" | "archive" | "drop" | "convert-to-project" | "revisit";
+  note: string;
+  evidence: EvidenceRef[];
+  createdAt: string;
+  includeInReport: boolean;
+};
+```
+
+### 5.5 ReviewSession
+
+```ts
+type ReviewSession = {
+  id: string;
+  year: number;
+  scope: ReviewScope;
+  status: ReviewSessionStatus;
+  candidates: ReviewCandidate[];
+  decisions: ReviewDecision[];
+  reportPath?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+```
+
+## 6. 状态流转
+
+### 6.1 ReviewSessionStatus
+
+```text
+new
+  -> scanning
+  -> candidates-ready
+  -> reviewing
+  -> ready-to-generate
+  -> generating
+  -> report-written
+```
+
+失败状态：
+
+```text
+scan-failed
+generation-failed
+write-conflict
+cancelled
+```
+
+恢复规则：
+
+- `scan-failed`：保留错误说明，允许修改范围后重试。
+- `generation-failed`：保留已确认候选和行动，允许跳过 AI 或只重新生成年报。
+- `write-conflict`：不覆盖已有用户编辑，提示创建副本或查看 diff。
+- `cancelled`：保留会话草稿，允许继续或删除。
+
+### 6.2 CandidateStatus
+
+```text
+candidate
+  -> confirmed
+  -> renamed
+  -> merged
+  -> ignored
+  -> archived
+```
+
+规则：
+
+- `confirmed`、`renamed`、`merged` 可进入年报。
+- `ignored` 默认不进入年报，但保留在会话记录中。
+- `archived` 可进入行动决定区，作为明确取舍。
+- `merged` 必须记录目标候选 ID。
+
+## 7. 用户编辑保护
+
+年报使用区块边界保护用户编辑：
+
+```md
+<!-- annual-review:generated:start section=\"themes\" -->
+...
+<!-- annual-review:generated:end section=\"themes\" -->
+
+<!-- annual-review:user:start section=\"reflection\" -->
+用户写作区
+<!-- annual-review:user:end section=\"reflection\" -->
+```
+
+规则：
+
+- 只替换 `annual-review:generated` 区块。
+- 不修改 `annual-review:user` 区块。
+- 未识别的手写内容默认保留。
+- 重新生成前读取当前文件并合并，而不是从空文件覆盖。
+- 如果区块结构损坏，写入新副本并提示用户手动合并。
+- 可选创建 `Annual Reviews/.history/YYYY Annual Review.<timestamp>.md` 备份。
+
+## 8. 隐私边界
+
+默认模式：
+
+- 无网络请求。
+- 无外部 AI。
+- 无 telemetry。
+- 不读取 vault 外部文件。
+- 不扫描排除范围。
+- 不把报告生成结果再次作为下一轮输入。
+
+AI opt-in 模式：
+
+- 用户必须显式选择 provider。
+- 发送前展示上下文摘要、摘录数量、目标 provider 和排除范围。
+- 只发送已确认候选、必要统计和有限摘录。
+- 不发送完整 vault。
+- 不写入硬编码密钥。
+- provider 失败时回退到本地确定性年报。
+
+## 9. 失败场景
+
+| 场景 | 风险 | 处理 |
+| --- | --- | --- |
+| vault 很大导致扫描慢 | 用户以为卡死 | 展示进度、允许取消、保留已扫描结果 |
+| include/exclude 配置错误 | 候选不可信 | 在年报方法说明中列出扫描范围和排除范围 |
+| metadata cache 不完整 | 链接/标签证据缺失 | 标注证据来源，允许重建索引 |
+| 候选质量差 | 用户失去信任 | 每项展示理由、分数来源和忽略操作 |
+| 重复主题过多 | 审核成本高 | 支持合并、重命名和批量忽略 |
+| AI 输出失败或不可解析 | 年报中断 | 回退确定性模板，保留用户已确认内容 |
+| 重新生成遇到用户编辑 | 内容丢失 | 只替换 generated 区块，必要时写副本 |
+| 目标文件被外部同步修改 | 覆盖冲突 | 比较 mtime/hash，提示 diff 或新副本 |
+| 源笔记被删除或移动 | 证据链接失效 | 标注 missing evidence，允许重新扫描 |
+
+## 10. 成功标准
+
+- 用户 10-15 分钟内完成第一轮有意义的年度复盘。
+- 年报中至少包含 3 个用户确认的年度主题。
+- 年报中至少包含 5 篇用户确认的代表笔记。
+- 年报中至少包含 3 条用户确认行动。
+- 每个推荐项都有简短理由和 evidence links。
+- 重新生成不会抹掉用户手写内容。
+- 默认模式无网络请求。
+
+## 11. 非目标
+
+- 不做不可解释的一键自动总结。
+- 不把 AI provider 数量作为核心竞争力。
+- 不优先做泛用图表、分享页或导出矩阵。
+- 不依赖 Dataview、Bases、Tasks、Kanban、Projects 或其他第三方插件完成核心路径。
+- 不在默认模式下读取 vault 外部文件或发送网络请求。
+
+## 12. 验证计划
 
 自动验证：
 
@@ -225,61 +398,24 @@ npm run typecheck
 npm run build
 ```
 
-测试覆盖应包含：
+核心行为测试应覆盖：
 
-- 英文、中文、中英混合和空内容 tokenizer。
-- 路径过滤：报告目录、模板、归档、附件和非 Markdown 文件。
-- frontmatter、标签、Obsidian resolved/unresolved link、标题和任务提取。
-- 年度聚合、月度桶、每日桶、连续记录、top-N 稳定排序。
-- 主题演化：frontmatter、标签、文件夹和 fallback cluster。
-- 高价值笔记：核心笔记、输出候选、需维护、孤立潜力和 Top 10 限制。
-- Markdown renderer：中英文报告、frontmatter、wiki link、图表引用、AI 增强回退。
-- 图表资产写入顺序。
-- AI provider：OpenAI Responses API、本地 Codex fallback、失败状态提示。
-- Obsidian 命令 ID 和命令名。
+- 路径过滤和报告目录排除。
+- NoteSignal 提取。
+- Candidate 生成和稳定排序。
+- Candidate 状态流转。
+- Decision 创建和年报写入。
+- generated/user 区块合并，确认重新生成不覆盖手写内容。
+- 默认无 AI provider 时不访问网络。
+- AI provider 失败时回退确定性报告。
 
 手动验证：
 
-1. 在 Obsidian 桌面测试 vault 中安装构建产物。
-2. 运行 `Annual Review: Rebuild index`。
-3. 运行 `Annual Review: Generate report`。
-4. 确认报告和资产目录生成。
-5. 确认报告链接能打开源笔记。
-6. 打开仪表盘，确认年份预览、重新生成和打开报告入口可用。
-7. 在没有第三方插件的干净 vault 中重复核心流程。
-8. 在 ChatGPT 关闭、有 API key、无 API key 本地 Codex 三种场景中验证隐私提示和失败文案。
-
-## 14. 当前 To Do
-
-| 方向 | 待办 | 来源线索 |
-| --- | --- | --- |
-| 大 vault 性能 | 增量索引、事件驱动更新、启动延迟扫描和更明确的重建状态。 | `Rebuild index`、dashboard index 状态、早期规格中的缓存规划。 |
-| AI 隐私控制 | 发送前预览、脱敏、排除字段和上下文大小解释。 | PR #18 ChatGPT 增强、AI 设计文档。 |
-| 主题质量 | 进一步削弱 raw tag、月份文件夹和单篇标题对主题名称的影响。 | PR #18 AI 总结、`topics.ts` fallback 规则。 |
-| 高价值笔记 | 让理由更多引用正文、反链和相邻笔记上下文。 | PR #13 高价值笔记、PR #18 AI 高价值理由。 |
-| 仪表盘 | 历史报告列表、索引新鲜度解释、长任务进度和错误恢复。 | PR #16 可读性和 dashboard fit。 |
-| 导出分享 | 分享卡、Canvas、Bases、HTML 等用户主动触发的输出。 | 早期规格 Phase 4。 |
-| 本地 AI | 改善 macOS GUI Codex 路径发现、错误提示和本地模型 provider 评估。 | PR #17 本地 Codex 路径。 |
-| 分支卫生 | 合并后自动删除 head branch，所有分支统一 ASCII 命名。 | PR #19 清理分支、GitHub head ref Unicode 提示。 |
-
-## 15. 阶段路线
-
-| 阶段 | 状态 | 重点 |
-| --- | --- | --- |
-| Phase 0 | 已完成 | 规格、调研、fixture vault、统计口径。 |
-| Phase 1 | 已完成 | 扫描、tokenizer、元数据提取、聚合、Markdown 输出。 |
-| Phase 2 | 已完成 | 命令面板、设置页、报告写入、基础索引缓存。 |
-| Phase 3 | 已完成基础版 | `ItemView` 仪表盘、年份/范围控制、指标总览、热门列表。 |
-| Phase 4 | 待推进 | 增量索引、导出分享、Canvas/Bases adapter、历史报告管理。 |
-| Phase 5 | 进行中 | opt-in ChatGPT、本地 Codex fallback、证据链接、上下文治理。 |
-
-## 16. 风险和缓解
-
-| 风险 | 缓解 |
-| --- | --- |
-| 大 vault 扫描慢 | 使用 include/exclude 缩小范围，推进增量缓存和事件驱动更新。 |
-| AI 上下文过宽 | 限制摘录数量和长度，增加发送前预览、脱敏和排除规则。 |
-| 主题名称不稳定 | 优先 frontmatter 主题和标签，过滤月份/路径噪声，继续改进内容聚类。 |
-| Obsidian GUI 环境找不到 Codex | 支持本地 Codex 命令配置，文档建议使用绝对路径。 |
-| 图表资产路径变化影响链接 | 集中通过 `buildAnnualReviewChartPaths` 生成路径，测试覆盖 wiki link 引用。 |
-| 分支名 Unicode 提示 | 使用 ASCII 分支命名，合并后删除 head branch，必要时重新开 ASCII 分支 PR。 |
+1. 在测试 vault 中选择年份和扫描范围。
+2. 运行重建索引。
+3. 查看候选主题、代表笔记、项目/任务线索和沉睡资产。
+4. 确认、重命名、合并、忽略和归档若干候选。
+5. 为至少 3 个确认项添加行动决定。
+6. 生成年报，确认报告包含方法说明、证据链接、确认主题、代表笔记和行动。
+7. 编辑用户手写区，重新生成，确认手写内容仍在。
+8. 默认设置下确认没有外部网络请求。

@@ -1,143 +1,85 @@
 # Obsidian Annual Review
 
-[English](README.en.md) | [文档索引](docs/README.md) | [产品规格](docs/product-specification.md)
+[English](README.en.md) | [文档索引](docs/README.md) | [SPEC](docs/product-specification.md)
 
-Obsidian Annual Review 是一个本地优先的 Obsidian 插件，用来把一年里的笔记活动整理成一份可编辑、可追溯的年度回顾 Markdown 笔记。
+Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
+帮助你从一年的笔记中筛选重要主题、复核关键笔记、形成行动决定，
+并输出可追溯、可编辑、可重复生成的 Markdown 年报。
 
-插件会扫描当前 vault 内的 Markdown 笔记、属性、标签、链接、标题、任务和日记路径，聚合出写作增长、主题演化、TOP10高价值笔记，并生成 `Annual Reviews/YYYY Annual Review.md`。生成结果保留在 vault 中，可以继续编辑、链接、同步、版本管理和审阅。
-
-## 让 Agent 帮你安装
-
-复制下面这句话给你的 Agent：
-
-```text
-请打开 Timisic/Obsidian-Annual 仓库中的 docs/agent-installation.md，并按其中步骤把这个 Obsidian 插件安装到我的 vault 中。
-```
-
-对应文档：[Agent 安装指南](docs/agent-installation.md)。
+它解决的是当前复盘中最难的事情：不知道哪些内容值得回看、不知道哪些主题贯穿时间线、不知道哪些笔记该继续推进或归档，以及不信任没有证据的自动总结。
 
 ## 适合谁
 
-- 用 Obsidian 写日记、项目记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
-- 想复盘全年写作量、活跃天数、主题变化和代表性内容的写作者/研究者。
-- 希望年度总结保留在本地 Markdown 中，而不是上传到云端报告页的 Obsidian 用户。
-- 想先获得可信统计和证据链接，再手动润色年度总结的人。
+- 用 Obsidian 写日记复盘、项目记录、读书笔记、研究笔记的个人用户。
+- 想在 10-15 分钟内完成第一轮年度复盘，而不是先整理完整个 vault 的用户。
+- 希望推荐项带有理由和源笔记链接，最终判断仍由自己确认的人。
+- 需要把年报保留为本地 Markdown，并配合 Obsidian Sync、Git 或其他版本管理工具审阅差异的人。
 
-## 核心功能
+## 核心流程
 
-| 功能 | 说明 |
-| --- | --- |
-| 生成年度回顾 | 命令面板运行 `Annual Review: Generate report`，生成指定年份的 Markdown 报告。 |
-| 仪表盘 | 命令面板运行 `Annual Review: Open dashboard`，预览年度指标、热门列表并触发生成。 |
-| 重建索引 | 命令面板运行 `Annual Review: Rebuild index`，在 vault 或设置变化后重新扫描。 |
-| 本地统计 | 读取 vault 内 Markdown、frontmatter、标签、Obsidian 解析后的链接、标题、任务和文件时间。 |
-| 证据链接 | 报告里的主题和高价值笔记会链接回 Obsidian 源笔记。 |
-| 写作增长图表 | 生成日累计字数、月度增长和每日字数热力图 SVG 资产，并在报告中用 Obsidian 图片链接引用。 |
+```text
+扫描范围 -> 生成候选 -> Review Board 审核 -> 决策 -> Markdown 年报
+```
 
-## ChatGPT provider 与隐私
+1. **扫描**：选择年份、包含/排除目录和隐私模式，插件只读取当前 vault 内允许范围的 Markdown、属性、标签、链接、任务和时间线信号。
+2. **候选**：插件提出年度主题、代表笔记、项目/任务线索、异常活动和沉睡资产，并给出“为什么被选中”的理由；如果你显式启用 AI，它可以在这一环节增强候选理由和补充可复核线索。
+3. **审核**：你在 Review Board 中逐项确认、重命名、合并、忽略或归档候选项。
+4. **决策**：你为确认过的主题和笔记写下继续推进、合并、归档、放弃或转成项目的行动。
+5. **年报**：插件把已确认内容、证据链接、行动决定和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
 
-默认设置保持本地优先：`AI provider` 为 `None`，生成报告不访问网络。要启用 ChatGPT：
+> 截图占位：Review Board 候选列表、证据链接、行动决定和生成后的 Markdown 年报。
 
-1. 打开 Annual Review 插件设置。
-2. 将 `AI provider` 设置为 `ChatGPT`。
-3. 可选：填入 `OpenAI API key`，并按需修改 `ChatGPT model`。
-4. 如果 API key 留空，确认 `Local Codex command`。macOS GUI 版 Obsidian 找不到 `codex` 时，可以使用本机 `codex` 可执行文件的绝对路径。
-5. 运行 `Annual Review: Generate report`，在生成弹窗中确认本次运行的 provider。
+## 隐私边界
 
-隐私边界需要明确：ChatGPT 模式会把本次年度报告所需的统计、链接关系和部分笔记摘录交给所选生成路径。有 API key 时发送到 OpenAI Responses API；无 key 时走本机 Codex CLI/auth 环境。当前实现是显式选择、无硬编码密钥，并允许配置本地 Codex 命令。
+- 默认不访问网络，不调用外部 AI，不发送遥测。
+- 默认只读取当前 Obsidian vault 内的 Markdown 和 Obsidian metadata cache。
+- 报告目录、模板、归档、附件和用户排除范围不会进入扫描输入。
+- AI 只作为可选的候选增强和报告草稿辅助步骤；核心审核、取舍、行动决定和证据复核仍由用户完成。
+- 如果用户显式启用外部 AI，插件在发送前说明 provider、上下文范围、摘录数量和可排除内容。
 
-## 快速开始
+## 本插件如何保护用户编辑
 
-### 1. 安装依赖
+- 年报是普通 Markdown 文件，保存在 vault 内，可以用 Obsidian、Git 或同步工具查看历史差异。
+- 生成内容应写入插件管理区块，用户手写区块保留给个人叙事和修改。
+- 重新生成只替换可再生区块，不覆盖用户手写内容。
+- 重新生成前应保留上一版备份或形成可 diff 的变更，方便回滚。
+- 每个候选项和行动建议都保留源笔记、标签、链接、任务或时间线证据，用户可以复核后再采纳。
+
+## 安装方式
+
+### 从 Obsidian 社区插件安装
+
+插件进入社区插件列表后：
+
+1. 打开 Obsidian `Settings -> Community plugins`。
+2. 搜索 **Annual Review**。
+3. 点击 **Install**，再点击 **Enable**。
+
+### 手动安装开发版
 
 ```bash
 npm install
-```
-
-### 2. 确认项目可运行
-
-```bash
-npm run test
-npm run typecheck
 npm run build
 ```
 
-这些命令分别验证核心统计逻辑、TypeScript 类型和 Obsidian 插件打包产物。`npm run build` 会生成 `main.js`，用于手动安装到 Obsidian vault。
-
-### 3. 安装到测试 vault
-
-如果使用仓库配置的 smoke vault，可运行：
-
-```bash
-npm run deploy:smoke
-```
-
-安装到其他 vault 时，使用通用部署脚本：
-
-```bash
-npm run deploy:plugin -- --target /path/to/YourVault/.obsidian
-```
-
-也可以手动复制构建产物：
+然后复制构建产物到 vault 插件目录：
 
 ```bash
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js versions.json "$PLUGIN_DIR/"
+cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
 ```
 
-打开 Obsidian 后进入设置：
+打开 Obsidian 后，在 `Settings -> Community plugins` 中启用 **Annual Review**。
 
-1. 启用社区插件。
-2. 在 Community plugins 中启用 **Annual Review**。
-3. 打开插件设置，确认报告目录、包含/排除目录、报告语言、生成器语言、指标开关、隐私模式和 AI provider。
+## 当前可用命令
 
-### 4. 生成第一份年度回顾
-
-1. 在命令面板运行 `Annual Review: Rebuild index`，确保插件读取最新 vault 内容。
-2. 运行 `Annual Review: Generate report`。
-3. 选择要复盘的年份和生成选项。
-4. 打开 `Annual Reviews/YYYY Annual Review.md`。
-5. 检查本期一句话判断、写作增长图表、主题演化、高价值笔记和下期行动。
-6. 按自己的写作风格编辑生成的 Markdown；vault 更新后可以重新运行生成命令。
-7. 需要先看指标时，运行 `Annual Review: Open dashboard` 打开仪表盘。
-
-## 常见使用场景
-
-- **个人年终总结**：把 daily notes、项目日志、灵感和任务整理成一份可继续编辑的年度复盘。
-- **写作复盘**：查看全年词数/字符数、活跃天数、最长连续记录、最活跃月份和代表性长文。
-- **研究复盘**：识别 Top 主题、主题演化、新兴/衰退方向和下期主题建议。
-- **项目回顾**：从项目笔记、任务和文件夹活动中整理团队或个人项目的年度材料。
-- **vault 整理**：发现高价值笔记、可输出笔记、需维护笔记和孤立潜力笔记。
-
-## 仓库结构
-
-```text
-.
-├── manifest.json              # Obsidian 插件清单
-├── package.json               # 开发、测试、构建和部署脚本
-├── src/                       # 插件源码
-├── tests/                     # Vitest 测试和 fixture vault
-├── scripts/                   # 构建、部署和报告辅助脚本
-├── docs/                      # 产品规格、设计和调研文档
-│   ├── README.md              # 文档索引
-│   ├── agent-installation.md   # 给用户代理的插件安装指南
-│   ├── product-specification.md
-│   ├── ai-report-design.md
-│   └── research/project-research.md
-└── .codex/skills/             # repo 内验证和开发辅助 skill
-```
-
-## TODO / Roadmap
-
-- **主题命名质量**：继续减少 raw tag、月份文件夹和单篇标题对主题名称的影响，让主题更接近内容线索。
-- **高价值笔记解释**：让每条理由更贴近笔记正文、反链和相邻笔记，减少只依赖字数或链接数的判断。
-- **仪表盘交互**：补充更清晰的索引新鲜度、打开历史报告和大 vault 进度反馈。
-- **导出和分享**：补充分享卡、Canvas、Bases 或 HTML 等用户主动触发的输出方式。
-- **AI Provider**：添加其他的 AI Provider。
-- **图表美化**：当前已有热力图/日累计字数曲线图/月度字数柱状图，待美化。
-- **Review Board**：更个性化，可以以week/month/year...或更自定义的时间进行Review
+| 命令 | 用途 |
+| --- | --- |
+| `Annual Review: Rebuild index` | 重新扫描当前 vault 中允许范围的 Markdown 笔记。 |
+| `Annual Review: Generate report` | 选择年份和生成选项，写入年度 Markdown 报告。 |
+| `Annual Review: Open dashboard` | 打开本地预览和控制界面，用于查看候选信号与触发生成。 |
 
 ## 开发命令
 
@@ -145,12 +87,10 @@ cp manifest.json main.js versions.json "$PLUGIN_DIR/"
 | --- | --- |
 | `npm run test` | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。 |
 | `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
-| `npm run build` | 生成可安装到 Obsidian 的 `main.js`。 |
+| `npm run build` | 生成可安装到 Obsidian 的插件 bundle。 |
 | `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
-| `npm run deploy:plugin` | 构建插件，生成 `dist/annual-review/`，并可部署到任意 vault 的 `.obsidian`。 |
+| `npm run deploy:plugin` | 构建插件并可部署到任意 vault 的 `.obsidian`。 |
 | `npm run deploy:smoke` | 构建并部署到仓库配置的 smoke vault。 |
-| `npm run writing-growth` | 运行独立写作增长报告脚本。 |
-| `npm run ai:context-placeholder` | 输出未来 Obsidian skill/CLI AI 上下文适配器的占位契约。 |
 
 ## 验证建议
 
@@ -162,26 +102,19 @@ npm run typecheck
 npm run build
 ```
 
-Smoke vault 验证：
-
-```bash
-npm run deploy:smoke
-.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --no-deploy
-```
-
 手动验证：
 
-1. 把插件安装到测试 vault。
-2. 运行重建索引、生成报告、打开仪表盘。
-3. 确认报告文件在 `Annual Reviews/` 下生成，图表 SVG 在 `Annual Reviews/YYYY Annual Review Assets/` 下生成。
-4. 确认报告中的 Obsidian 链接能打开源笔记。
-5. 重新生成报告，确认不会重复堆叠旧内容。
-6. 在没有第三方插件的干净 vault 中重复核心流程。
+1. 在测试 vault 中启用插件。
+2. 运行 `Annual Review: Rebuild index`。
+3. 运行 `Annual Review: Generate report`。
+4. 确认报告生成在 `Annual Reviews/` 下，并且候选项能回链到源笔记。
+5. 修改年报中的用户手写区块后重新生成，确认手写内容未被覆盖。
+6. 在默认设置下确认没有外部网络请求或 AI 调用。
 
 ## 更多文档
 
-- [英文 README](README.en.md)
+- [Product Definition](docs/product-definition.md)
+- [SPEC](docs/product-specification.md)
+- [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
-- [Agent 安装指南](docs/agent-installation.md)
-- [产品规格](docs/product-specification.md)
-- [项目调研](docs/research/project-research.md)
+- [AI 报告生成设计](docs/ai-report-design.md)
