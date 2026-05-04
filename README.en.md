@@ -1,147 +1,125 @@
 # Obsidian Annual Review
 
-[中文](README.md) | [Docs index](docs/README.md) | [Product specification](docs/product-specification.md)
+[中文](README.md) | [Docs index](docs/README.md) | [SPEC](docs/product-specification.md)
 
-Obsidian Annual Review is a local-first Obsidian plugin that turns vault activity into an editable, evidence-backed yearly review note.
+Obsidian Annual Review is a local-first annual review workflow plugin for
+Obsidian. It helps you select important themes from a year of notes, review key
+notes, make follow-up decisions, and generate a traceable, editable,
+repeatable Markdown annual report.
 
-The plugin scans Markdown notes, properties, tags, links, headings, tasks, and daily-note patterns inside the active Obsidian vault. It then generates `Annual Reviews/YYYY Annual Review.md` around writing growth, topic evolution, high-value notes, and next-period actions. The output stays in your vault as Markdown, so it remains editable, linkable, syncable, versionable, and auditable.
+The plugin is not trying to produce a polished recap first. It addresses the
+harder review problems: finding what is worth revisiting, seeing which themes
+persisted, deciding which notes should move forward or be archived, and trusting
+the result because every recommendation has evidence.
 
 ## Who it is for
 
-- Obsidian users who write daily notes, project logs, reading notes, research notes, or evergreen notes.
-- Writers and researchers who want to review writing volume, active days, topic shifts, and representative work.
-- Users who want annual-review material to stay local instead of being uploaded to a hosted recap page.
-- Users who prefer an evidence-backed draft they can edit into their own yearly narrative.
+- Obsidian users who write daily notes, project logs, reading notes, research
+  notes, or evergreen notes.
+- People who want a meaningful first annual review pass in 10-15 minutes
+  without organizing the whole vault first.
+- Users who want recommendations with reasons and source-note links, while
+  keeping final judgment in their own hands.
+- Users who keep annual reports as local Markdown and review changes with
+  Obsidian Sync, Git, or another versioning tool.
 
-## Features
+## Core Workflow
 
-| Feature | What it does |
-| --- | --- |
-| Annual report generation | Run `Annual Review: Generate report` to create a Markdown report for a selected year. |
-| Dashboard | Run `Annual Review: Open dashboard` to preview metrics, top lists, and report actions. |
-| Reindexing | Run `Annual Review: Rebuild index` after vault or setting changes. |
-| Local analysis | Reads Markdown, frontmatter, tags, Obsidian-resolved links, headings, tasks, and file timestamps through Obsidian APIs. |
-| Mixed-language counting | Keeps Latin word counts and CJK character counts useful for Chinese, English, and mixed vaults. |
-| Evidence links | Uses Obsidian links for topic evidence and high-value note references. |
-| Writing growth charts | Writes daily cumulative words, monthly growth, and heatmap SVG assets, then references them from the report with Obsidian image links. |
-| Optional ChatGPT | Report generation can opt into ChatGPT; with an API key it uses the Responses API, otherwise it can use a configured local Codex CLI/auth path. |
-| Privacy boundary | Default processing is local; AI requires explicit user selection. |
+```text
+Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown report
+```
 
-## ChatGPT Provider And Privacy
+1. **Scan**: choose a year, include/exclude folders, and privacy mode. The
+   plugin reads only allowed Markdown, properties, tags, links, tasks, and
+   timeline signals inside the active vault.
+2. **Candidates**: the plugin proposes annual themes, representative notes,
+   project/task signals, unusual activity, and dormant assets with a short
+   reason for each recommendation.
+3. **Review**: you confirm, rename, merge, ignore, or archive candidates in the
+   Review Board.
+4. **Decisions**: you decide whether confirmed themes and notes should continue,
+   merge, archive, stop, or become projects.
+5. **Annual report**: the plugin writes confirmed material, evidence links,
+   action decisions, and method notes to
+   `Annual Reviews/YYYY Annual Review.md`.
 
-The default remains local-first: `AI provider` is `None`, and report generation does not access the network. To enable ChatGPT:
+> Screenshot placeholder: Review Board candidate list, evidence links, action
+> decisions, and the generated Markdown annual report.
 
-1. Open the Annual Review plugin settings.
-2. Set `AI provider` to `ChatGPT`.
-3. Optionally enter an `OpenAI API key` and adjust `ChatGPT model`.
-4. If the key is empty, confirm `Local Codex command`. If macOS GUI-launched Obsidian cannot find `codex`, use the absolute path to the local `codex` executable on that machine.
-5. Run `Annual Review: Generate report` and confirm the provider for that run in the generate modal.
+## Privacy Boundary
 
-The privacy boundary is explicit: ChatGPT mode sends the report context, link relationships, and selected note excerpts to the selected generation path. With an API key, that path is the OpenAI Responses API; without a key, it is the local Codex CLI/auth environment. The current implementation requires an opt-in provider, stores no hardcoded secret, and lets users configure the local Codex command.
+- No network access, external AI calls, or telemetry by default.
+- By default, the plugin reads only Markdown files and Obsidian metadata cache
+  inside the active vault.
+- The report folder, templates, archives, attachments, and user-excluded scopes
+  are not scanned as source input.
+- AI is an optional report-drafting enhancement; the core candidate, review,
+  decision, and evidence workflow does not depend on AI.
+- If a user explicitly enables an external AI provider, the plugin must explain
+  the provider, context scope, excerpt count, and available exclusions before
+  sending.
 
-## Quick Start
+## How The Plugin Protects User Edits
 
-### 1. Install dependencies
+- The annual report is a normal Markdown file in the vault, so Obsidian, Git, or
+  sync tools can inspect its history.
+- Generated content should live in plugin-managed sections, while user sections
+  remain reserved for personal writing and edits.
+- Regeneration only replaces reproducible sections and does not overwrite
+  user-written sections.
+- Before regeneration, the plugin should preserve the previous version or
+  produce a diffable change for rollback.
+- Every candidate and action suggestion keeps source-note, tag, link, task, or
+  timeline evidence so the user can verify it before accepting it.
+
+## Installation
+
+### Install From Obsidian Community Plugins
+
+After the plugin is listed in the community plugin browser:
+
+1. Open Obsidian `Settings -> Community plugins`.
+2. Search for **Annual Review**.
+3. Click **Install**, then **Enable**.
+
+### Manually Install The Development Build
 
 ```bash
 npm install
-```
-
-### 2. Verify the project
-
-```bash
-npm run test
-npm run typecheck
 npm run build
 ```
 
-These commands validate the core logic, TypeScript types, and Obsidian plugin bundle. `npm run build` creates `main.js` for manual installation.
-
-### 3. Install into a test vault
-
-For the smoke vault configured by this repository, run:
-
-```bash
-npm run deploy:smoke
-```
-
-For another vault, use the generic deploy script:
-
-```bash
-npm run deploy:plugin -- --target /path/to/YourVault/.obsidian
-```
-
-You can also copy build artifacts manually:
+Then copy the build artifacts into the vault plugin directory:
 
 ```bash
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js versions.json "$PLUGIN_DIR/"
+cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
 ```
 
-In Obsidian:
+Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 
-1. Enable community plugins.
-2. Enable **Annual Review**.
-3. Open the plugin settings and confirm the report folder, include/exclude folders, report language, generator language, metric toggles, privacy mode, and AI provider.
+## Current Commands
 
-### 4. Generate the first annual review
-
-1. Run `Annual Review: Rebuild index` from the command palette.
-2. Run `Annual Review: Generate report`.
-3. Select the year and generation options.
-4. Open `Annual Reviews/YYYY Annual Review.md`.
-5. Review the one-sentence judgment, writing growth charts, topic evolution, high-value notes, and next-period actions.
-6. Edit the Markdown report in your own voice; rerun generation after the vault changes.
-7. Run `Annual Review: Open dashboard` when you want a metric preview first.
-
-## Use Cases
-
-- **Personal yearly review**: turn daily notes, projects, ideas, and tasks into an editable annual summary.
-- **Writing review**: inspect total new words, writing days, longest streak, daily cumulative growth, monthly growth, and heatmap patterns.
-- **Research review**: identify top topics, topic evolution, emerging and declining themes, and next-period topic suggestions.
-- **Project retrospective**: collect project-note, folder, and task activity into review material.
-- **Vault maintenance**: surface high-value notes, output-ready notes, maintenance-needed notes, and isolated-potential notes.
-- **Share preparation**: generate a complete private report locally, then manually select safe excerpts for public sharing.
-
-## Repository Layout
-
-```text
-.
-├── manifest.json              # Obsidian plugin manifest
-├── package.json               # Development, test, build, and deploy scripts
-├── src/                       # Plugin source
-├── tests/                     # Vitest coverage and fixture vault content
-├── scripts/                   # Build, deploy, and reporting helpers
-├── docs/                      # Product, design, and research docs
-│   ├── README.md              # Docs index
-│   ├── product-specification.md
-│   ├── ai-report-design.md
-│   └── research/project-research.md
-└── .codex/skills/             # Repo-local validation and development skills
-```
-
-## Boundaries
-
-- No default network access.
-- No default external AI calls.
-- No required Dataview, Bases, Tasks, Kanban, Projects, or Novel Word Count dependency.
-- No reading files outside the active Obsidian vault during plugin operation.
-- The Markdown annual review remains the primary artifact; the dashboard is a preview and control surface.
+- `Annual Review: Rebuild index`: rescan allowed Markdown notes in the active
+  vault.
+- `Annual Review: Generate report`: choose a year and generation options, then
+  write the annual Markdown report.
+- `Annual Review: Open dashboard`: open the local preview/control surface for
+  candidate signals and report actions.
 
 ## Development Commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm run test` | Run Vitest coverage for tokenizer, filters, extraction, aggregation, and Markdown rendering. |
-| `npm run typecheck` | Run TypeScript without emitting build files. |
-| `npm run build` | Bundle the plugin into `main.js`. |
-| `npm run dev` | Start esbuild watch mode for local plugin development. |
-| `npm run deploy:plugin` | Build the plugin, generate `dist/annual-review/`, and optionally deploy to any vault `.obsidian` folder. |
-| `npm run deploy:smoke` | Build and deploy to the smoke vault configured by this repository. |
-| `npm run writing-growth` | Run the standalone writing-growth report script. |
-| `npm run ai:context-placeholder` | Print the placeholder contract for a future Obsidian skill/CLI AI context adapter. |
+- `npm run test`: run Vitest coverage for tokenizer, filters, metadata
+  extraction, aggregation, and Markdown rendering.
+- `npm run typecheck`: run TypeScript without emitting build files.
+- `npm run build`: bundle the installable Obsidian plugin.
+- `npm run dev`: start esbuild watch mode for local plugin development.
+- `npm run deploy:plugin`: build and optionally deploy to any vault
+  `.obsidian` folder.
+- `npm run deploy:smoke`: build and deploy to the smoke vault configured by
+  this repository.
 
 ## Validation
 
@@ -153,26 +131,21 @@ npm run typecheck
 npm run build
 ```
 
-Smoke-vault validation:
-
-```bash
-npm run deploy:smoke
-.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --no-deploy
-```
-
 Manual validation:
 
-1. Install the plugin into a test vault.
-2. Rebuild the index, generate a report, and open the dashboard.
-3. Confirm the report is created under `Annual Reviews/` and chart SVGs are created under `Annual Reviews/YYYY Annual Review Assets/`.
-4. Confirm Obsidian links in the report open source notes.
-5. Regenerate the report and confirm old content is not duplicated.
-6. Repeat the core flow in a clean vault without third-party plugins.
+1. Enable the plugin in a test vault.
+2. Run `Annual Review: Rebuild index`.
+3. Run `Annual Review: Generate report`.
+4. Confirm the report appears under `Annual Reviews/` and candidates link back
+   to source notes.
+5. Edit a user-written section in the report, regenerate, and confirm the user
+   edit remains intact.
+6. Confirm default settings make no external network request or AI call.
 
 ## More Documentation
 
-- [Chinese README](README.md)
+- [Product Definition](docs/product-definition.md)
+- [SPEC](docs/product-specification.md)
+- [Roadmap](docs/roadmap.md)
 - [Docs index](docs/README.md)
-- [Product specification](docs/product-specification.md)
 - [AI report design](docs/ai-report-design.md)
-- [Research notes](docs/research/project-research.md)
