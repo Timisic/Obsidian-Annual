@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportSection } from "../src/core/ai";
+import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportEnhancements, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { extractNoteStats, parseFrontmatter, parseObsidianWikilinks } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
@@ -514,7 +514,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
     expect(markdown).toContain("| Topic | Added words | New notes | Representative Notes |");
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
-    expect(markdown).toContain("### Feedback Signals");
+    expect(markdown).not.toContain("### Feedback Signals");
     expect(markdown).toContain("### Writing Growth Feedback");
     expect(markdown).toContain("- Advantage:");
     expect(markdown).toContain("- Risk:");
@@ -528,8 +528,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Folders");
     expect(markdown).toContain("## High Value Notes");
     expect(markdown).toContain("### Top 10 high-value notes");
-    expect(markdown).toContain("### Output-ready notes");
-    expect(markdown).toContain("### Notes needing maintenance");
+    expect(markdown).not.toContain("### Output-ready notes");
+    expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).toContain("| Note | Type | Value reason | Suggested action |");
     for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
       expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
@@ -576,14 +576,50 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(markdown).toContain("## 主题演化");
-    expect(markdown).toContain("### 反馈信号");
+    expect(markdown).not.toContain("### 反馈信号");
     expect(markdown).toContain("## 高价值笔记");
-    expect(markdown).toContain("### 可输出笔记");
-    expect(markdown).toContain("### 需维护笔记");
+    expect(markdown).not.toContain("### 可输出笔记");
+    expect(markdown).not.toContain("### 需维护笔记");
     expect(markdown).toContain("## 下期行动");
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
+  });
+
+  it("renders AI-synthesized themes and high-value reasons when AI enhancements are present", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const markdown = renderAnnualReview(aggregate, {
+      aiEnabled: true,
+      aiEnhancements: {
+        periodJudgment: "The year centers on turning daily writing into a research review loop.",
+        themeInsights: [
+          {
+            title: "Research review loop",
+            synthesis: "Daily notes and project notes form a reusable evidence loop.",
+            connections: "Connects daily capture to project synthesis.",
+            evidenceNotes: ["Daily/2026-01-01.md", "Projects/Research.md"],
+            nextQuestion: "Which project note should become the entry point?",
+          },
+        ],
+        highValueNotes: [
+          {
+            path: "Projects/Research.md",
+            reason: "This note links source evidence back to the project synthesis and can become the review hub.",
+            suggestedAction: "Turn it into a compact Obsidian index with evidence notes.",
+          },
+        ],
+        nextActions: ["Create a review hub from [[Projects/Research]]."],
+      },
+    });
+
+    expect(markdown).toContain("## Topic Evolution");
+    expect(markdown).toContain("### AI Theme Synthesis");
+    expect(markdown).toContain("Research review loop");
+    expect(markdown).toContain("[[Daily/2026-01-01]]");
+    expect(markdown).toContain("| Note | Type | AI value reason | Suggested action |");
+    expect(markdown).toContain("This note links source evidence back to the project synthesis");
+    expect(markdown).toContain("1. Create a review hub from [[Projects/Research]].");
+    expect(markdown).not.toContain("### Feedback Signals");
   });
 
   it("can reference generated chart SVG assets instead of embedding chart SVG in the note", async () => {
@@ -799,16 +835,20 @@ describe("AI provider", () => {
     expect(message).not.toContain("SECRET_PROMPT_TEXT");
   });
 
-  it("uses compact aggregate context for the local Codex prompt", async () => {
+  it("uses Obsidian skill and note-link context for the local Codex prompt", async () => {
     const files = await fixtureVault();
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const prompt = buildCodexPrompt(aggregate, files, DEFAULT_SETTINGS);
 
-    expect(prompt).toContain("Compact aggregate-only context");
+    expect(prompt).toContain("obsidianSkillHandoff");
+    expect(prompt).toContain("obsidian-cli");
+    expect(prompt).toContain("obsidian-markdown");
+    expect(prompt).toContain("obsidian-bases");
     expect(prompt).toContain("\"highValueNotes\"");
     expect(prompt).toContain("\"topLinks\"");
-    expect(prompt).not.toContain("\"contextNotes\"");
-    expect(prompt.length).toBeLessThan(8_000);
+    expect(prompt).toContain("\"contextNotes\"");
+    expect(prompt).toContain("\"backlinks\"");
+    expect(prompt.length).toBeLessThan(24_000);
   });
 
   it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {
@@ -837,6 +877,52 @@ describe("AI provider", () => {
     expect(section).toBe("Use [[Daily/2026-01-01]] as evidence.");
     expect(section).toContain("[[Daily/2026-01-01]]");
     expect(section).not.toContain("Provider:");
+  });
+
+  it("normalizes AI-authored .md wikilinks for Obsidian Markdown", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const enhancements = await renderAiReportEnhancements({
+      aggregate,
+      files,
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+        chatGptApiKey: "test-key",
+      },
+      fetcher: async () =>
+        new Response(
+          JSON.stringify({
+            output_text: JSON.stringify({
+              periodJudgment: "Use [[Daily/2026-01-01.md]] as evidence.",
+              themeInsights: [
+                {
+                  title: "Research loop",
+                  synthesis: "Connect [[Daily/2026-01-01.md]] to project synthesis.",
+                  connections: "[[Projects/Research.md]] carries the backlink.",
+                  evidenceNotes: ["[[Daily/2026-01-01.md]]"],
+                  nextQuestion: "How should [[Projects/Research.md]] evolve?",
+                },
+              ],
+              highValueNotes: [
+                {
+                  path: "Projects/Research.md",
+                  reason: "[[Projects/Research.md]] links the evidence.",
+                  suggestedAction: "Update [[Projects/Research.md]].",
+                },
+              ],
+              nextActions: ["Promote [[Projects/Research.md]]."],
+            }),
+          }),
+          { status: 200 },
+        ),
+    });
+
+    expect(enhancements.periodJudgment).toContain("[[Daily/2026-01-01]]");
+    expect(enhancements.themeInsights[0]?.connections).toContain("[[Projects/Research]]");
+    expect(enhancements.themeInsights[0]?.evidenceNotes).toEqual(["Daily/2026-01-01"]);
+    expect(enhancements.highValueNotes[0]?.reason).toContain("[[Projects/Research]]");
+    expect(enhancements.nextActions[0]).toContain("[[Projects/Research]]");
   });
 
   it("builds provider context from annual stats, links, and note evidence", async () => {

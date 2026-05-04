@@ -1,10 +1,27 @@
 import { toTopicEvolutionJson } from "./topics";
-import type { DayBucket, HighValueNote, MonthBucket, RankedMetric, RankedNote, ResolvedAnnualReviewLanguage, TopicEvolutionData, TopicMonthlyBucket, TopTopic, WordGrowthBucket, YearAggregate } from "./types";
+import type {
+  AiHighValueNoteInsight,
+  AiReportEnhancements,
+  AiThemeInsight,
+  DayBucket,
+  HighValueNote,
+  MonthBucket,
+  RankedMetric,
+  RankedNote,
+  ResolvedAnnualReviewLanguage,
+  TopicEvolutionData,
+  TopicMonthlyBucket,
+  TopTopic,
+  WordGrowthBucket,
+  YearAggregate,
+} from "./types";
 
 interface RenderOptions {
   language?: ResolvedAnnualReviewLanguage;
   chartPaths?: Partial<Record<AnnualReviewChartKind, string>>;
   periodJudgment?: string;
+  aiEnhancements?: AiReportEnhancements;
+  aiEnabled?: boolean;
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
@@ -128,6 +145,13 @@ const REPORT_TEXT = {
     trend: "Trend",
     cumulativeWords: "Cumulative words",
     topicEvolution: "Topic Evolution",
+    aiThemeSynthesis: "AI Theme Synthesis",
+    localTopicSignals: "Local Topic Signals",
+    aiTheme: "AI theme",
+    aiThemeSummaryColumn: "Summary",
+    aiThemeConnections: "Connections",
+    aiThemeNextQuestion: "Next question",
+    aiThemeSummary: (topics: string[]) => `AI synthesized the main content threads as ${formatQuotedList(topics)}.`,
     topicEvolutionSummary: (topics: string[]) => `The clearest content growth this period is in ${formatQuotedList(topics)}.`,
     topicEvolutionEmpty: "No topic data found.",
     topicEvolutionLegend: "Stacked SVG chart: monthly created-note words by top topic, with smaller topics grouped as Other.",
@@ -146,6 +170,7 @@ const REPORT_TEXT = {
     topFolders: "Top Folders",
     topLinks: "Top Links",
     highValueNotes: "High Value Notes",
+    aiValueReason: "AI value reason",
     topHighValueNotes: "Top 10 high-value notes",
     outputReadyNotes: "Output-ready notes",
     maintenanceNotes: "Notes needing maintenance",
@@ -162,6 +187,7 @@ const REPORT_TEXT = {
     staleCoreSignal: (count: number) => `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
     noHighValueNotes: "No high-value note signals found.",
     nextPeriodActions: "Next-Period Actions",
+    aiNextActions: "AI Next Actions",
     mocAction: (topic: string) => `Create a compact index for ${topic}: evidence notes, current conclusion, and one next question.`,
     isolatedNotesAction: (count: number) => `Connect or decide the fate of ${count} isolated potential note${count === 1 ? "" : "s"}.`,
     noIsolatedNotesAction: "No isolated-potential notes need immediate handling.",
@@ -230,6 +256,13 @@ const REPORT_TEXT = {
     trend: "趋势",
     cumulativeWords: "累计字词",
     topicEvolution: "主题演化",
+    aiThemeSynthesis: "AI 提炼主题",
+    localTopicSignals: "本地主题信号",
+    aiTheme: "AI 提炼主题",
+    aiThemeSummaryColumn: "总结",
+    aiThemeConnections: "关联",
+    aiThemeNextQuestion: "下一步问题",
+    aiThemeSummary: (topics: string[]) => `AI 将本期主线提炼为${formatQuotedList(topics)}。`,
     topicEvolutionSummary: (topics: string[]) => `本期真正有内容增长的主题主要是${formatQuotedList(topics)}。`,
     topicEvolutionEmpty: "未找到主题数据。",
     topicEvolutionLegend: "堆叠 SVG 图表：按 Top 主题展示每月新建笔记字词量，小主题合并为「其他」。",
@@ -248,6 +281,7 @@ const REPORT_TEXT = {
     topFolders: "高频文件夹",
     topLinks: "高频链接",
     highValueNotes: "高价值笔记",
+    aiValueReason: "AI 价值理由",
     topHighValueNotes: "Top 10 高价值笔记",
     outputReadyNotes: "可输出笔记",
     maintenanceNotes: "需维护笔记",
@@ -264,6 +298,7 @@ const REPORT_TEXT = {
     staleCoreSignal: (count: number) => `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
     noHighValueNotes: "未找到高价值笔记信号。",
     nextPeriodActions: "下期行动",
+    aiNextActions: "AI 下期行动",
     mocAction: (topic: string) => `围绕「${topic}」整理一页小索引：证据笔记、当前判断和一个下一步问题。`,
     isolatedNotesAction: (count: number) => `处理 ${count} 篇孤立潜力笔记，补链或判断是否归档。`,
     noIsolatedNotesAction: "当前没有需要立即处理的孤立潜力笔记。",
@@ -289,6 +324,8 @@ const OTHER_TOPIC = "其他";
 export function renderAnnualReview(aggregate: YearAggregate, options: RenderOptions = {}): string {
   const language = options.language ?? "en";
   const text = REPORT_TEXT[language];
+  const aiEnhancements = hasAiEnhancements(options.aiEnhancements) ? options.aiEnhancements : undefined;
+  const aiEnabled = options.aiEnabled || Boolean(aiEnhancements);
   return [
     renderMetadata(aggregate, language),
     "",
@@ -296,7 +333,7 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     "",
     `## ${text.periodJudgment}`,
     "",
-    renderPeriodJudgment(aggregate, language, options.periodJudgment),
+    renderPeriodJudgment(aggregate, language, aiEnhancements?.periodJudgment || options.periodJudgment),
     "",
     `## ${text.writingGrowth}`,
     "",
@@ -304,17 +341,21 @@ export function renderAnnualReview(aggregate: YearAggregate, options: RenderOpti
     "",
     `## ${text.topicEvolution}`,
     "",
-    renderTopicEvolution(aggregate.topicEvolution, language, options.chartPaths?.["topic-evolution"]),
+    renderTopicEvolution(aggregate.topicEvolution, language, options.chartPaths?.["topic-evolution"], aiEnhancements?.themeInsights, aiEnabled),
     "",
     `## ${text.highValueNotes}`,
     "",
-    renderHighValueNotes(aggregate, language),
+    renderHighValueNotes(aggregate, language, aiEnhancements?.highValueNotes, aiEnabled),
     "",
     `## ${text.nextPeriodActions}`,
     "",
-    renderNextPeriodActions(aggregate, language),
+    renderNextPeriodActions(aggregate, language, aiEnhancements?.nextActions, aiEnhancements?.themeInsights),
     "",
   ].join("\n");
+}
+
+function hasAiEnhancements(enhancements?: AiReportEnhancements): enhancements is AiReportEnhancements {
+  return Boolean(enhancements && (enhancements.periodJudgment || enhancements.themeInsights.length > 0 || enhancements.highValueNotes.length > 0 || enhancements.nextActions.length > 0));
 }
 
 function renderPeriodJudgment(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage, periodJudgment?: string): string {
@@ -454,14 +495,18 @@ function renderWordGrowthTrend(growth: WordGrowthBucket[], language: ResolvedAnn
   ].join("\n");
 }
 
-function renderTopicEvolution(data: TopicEvolutionData, language: ResolvedAnnualReviewLanguage, chartPath?: string): string {
+function renderTopicEvolution(data: TopicEvolutionData, language: ResolvedAnnualReviewLanguage, chartPath?: string, aiThemes: AiThemeInsight[] = [], aiEnabled = false): string {
   const text = REPORT_TEXT[language];
+  if (aiThemes.length > 0) {
+    return renderAiThemeEvolution(data, language, aiThemes);
+  }
+
   if (data.topTopics.length === 0) {
     return `- ${text.topicEvolutionEmpty}`;
   }
 
   const mainTopics = data.topTopics.slice(0, 3).map((topic) => topic.name);
-  return [
+  const rows = [
     text.topicEvolutionSummary(mainTopics),
     "",
     text.topicEvolutionLegend,
@@ -471,19 +516,57 @@ function renderTopicEvolution(data: TopicEvolutionData, language: ResolvedAnnual
     `| ${text.topic} | ${text.addedWords} | ${text.newNotes} | ${text.representativeNotes} |`,
     "| --- | ---: | ---: | --- |",
     ...data.topTopics.map(renderTopicTableRow),
-    "",
-    `### ${text.topicFeedback}`,
-    "",
-    `- ${text.mainThreads(mainTopics)}`,
-    `- ${data.emergingTopics.length > 0 ? text.emergingDirection(data.emergingTopics) : text.noEmergingDirection}`,
-    `- ${data.decliningTopics.length > 0 ? text.needsAttention(data.decliningTopics) : text.noDecliningDirection}`,
-    `- ${text.nextTopicAction}`,
-  ].join("\n");
+  ];
+
+  if (aiEnabled) {
+    rows.push(
+      "",
+      `### ${text.topicFeedback}`,
+      "",
+      `- ${text.mainThreads(mainTopics)}`,
+      `- ${data.emergingTopics.length > 0 ? text.emergingDirection(data.emergingTopics) : text.noEmergingDirection}`,
+      `- ${data.decliningTopics.length > 0 ? text.needsAttention(data.decliningTopics) : text.noDecliningDirection}`,
+      `- ${text.nextTopicAction}`,
+    );
+  }
+
+  return rows.join("\n");
 }
 
 function renderTopicTableRow(topic: TopTopic): string {
   const representativeNotes = topic.representativeNotes.map(wikiLinkPlain).join(", ") || "n/a";
   return tableRow([topic.name, formatInteger(topic.addedWords), String(topic.newNotes), representativeNotes]);
+}
+
+function renderAiThemeEvolution(data: TopicEvolutionData, language: ResolvedAnnualReviewLanguage, themes: AiThemeInsight[]): string {
+  const text = REPORT_TEXT[language];
+  const themeNames = themes.slice(0, 3).map((theme) => theme.title);
+  const localSignals = data.topTopics
+    .slice(0, 5)
+    .map((topic) => `${topic.name} (${formatInteger(topic.addedWords)})`)
+    .join(", ");
+  return [
+    text.aiThemeSummary(themeNames),
+    "",
+    `### ${text.aiThemeSynthesis}`,
+    "",
+    `| ${text.aiTheme} | ${text.aiThemeSummaryColumn} | ${text.aiThemeConnections} | ${text.representativeNotes} | ${text.aiThemeNextQuestion} |`,
+    "| --- | --- | --- | --- | --- |",
+    ...themes.map(renderAiThemeRow),
+    ...(localSignals
+      ? [
+          "",
+          `### ${text.localTopicSignals}`,
+          "",
+          `- ${localSignals}`,
+        ]
+      : []),
+  ].join("\n");
+}
+
+function renderAiThemeRow(theme: AiThemeInsight): string {
+  const evidence = theme.evidenceNotes.map(wikiLinkPlain).join(", ") || "n/a";
+  return tableRow([theme.title, theme.synthesis, theme.connections || "n/a", evidence, theme.nextQuestion || "n/a"]);
 }
 
 function renderDailyHeatmapSvg(days: DayBucket[], language: ResolvedAnnualReviewLanguage): string {
@@ -820,34 +903,46 @@ function renderMetricList(items: RankedMetric[], prefix = "", language: Resolved
   return items.map((item) => `- ${prefix}${item.name}: ${item.count}`).join("\n");
 }
 
-function renderHighValueNotes(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string {
+function renderHighValueNotes(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage, aiNotes: AiHighValueNoteInsight[] = [], aiEnabled = false): string {
   const text = REPORT_TEXT[language];
+  const aiNoteMap = new Map(aiNotes.map((note) => [note.path, note]));
   const topNotes =
     aggregate.highValueNotes.length > 0
       ? [
-          `| ${text.highValueNote} | ${text.highValueType} | ${text.highValueReason} | ${text.suggestedAction} |`,
+          `| ${text.highValueNote} | ${text.highValueType} | ${aiNotes.length > 0 ? text.aiValueReason : text.highValueReason} | ${text.suggestedAction} |`,
           "| --- | --- | --- | --- |",
-          ...aggregate.highValueNotes.map((note) => renderHighValueNoteRow(note)),
+          ...aggregate.highValueNotes.map((note) => renderHighValueNoteRow(note, aiNoteMap.get(note.path))),
         ].join("\n")
       : `- ${text.noHighValueNotes}`;
-  return [
+  const rows = [
     ...(aggregate.highValueNotes.length > 0 ? [text.highValueNotesSummary(aggregate.highValueNotes.length, aggregate.highValueFeedback.outputReadyCount), ""] : []),
     `### ${text.topHighValueNotes}`,
     "",
     topNotes,
-    "",
-    `### ${text.outputReadyNotes}`,
-    "",
-    renderHighValueActionList(aggregate.outputReadyNotes, text.noOutputReadyNotes),
-    "",
-    `### ${text.maintenanceNotes}`,
-    "",
-    renderHighValueActionList(aggregate.maintenanceNotes, text.noMaintenanceNotes),
-  ].join("\n");
+  ];
+
+  if (aiEnabled) {
+    rows.push(
+      "",
+      `### ${text.highValueFeedback}`,
+      "",
+      ...renderHighValueFeedback(aggregate, language),
+      "",
+      `### ${text.outputReadyNotes}`,
+      "",
+      renderHighValueActionList(aggregate.outputReadyNotes, text.noOutputReadyNotes),
+      "",
+      `### ${text.maintenanceNotes}`,
+      "",
+      renderHighValueActionList(aggregate.maintenanceNotes, text.noMaintenanceNotes),
+    );
+  }
+
+  return rows.join("\n");
 }
 
-function renderHighValueNoteRow(note: HighValueNote): string {
-  return tableRow([wikiLinkPlain(note.path), note.kind, note.reason, note.suggestedAction]);
+function renderHighValueNoteRow(note: HighValueNote, aiNote?: AiHighValueNoteInsight): string {
+  return tableRow([wikiLinkPlain(note.path), note.kind, aiNote?.reason || note.reason, aiNote?.suggestedAction || note.suggestedAction]);
 }
 
 function renderHighValueFeedback(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string[] {
@@ -869,9 +964,12 @@ function renderHighValueActionList(notes: HighValueNote[], emptyText: string): s
   return notes.map((note) => `- ${wikiLink(note.path, note.title)}: ${note.suggestedAction}`).join("\n");
 }
 
-function renderNextPeriodActions(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): string {
+function renderNextPeriodActions(aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage, aiActions: string[] = [], aiThemes: AiThemeInsight[] = []): string {
+  if (aiActions.length > 0) {
+    return aiActions.map((action, index) => `${index + 1}. ${action}`).join("\n");
+  }
   const text = REPORT_TEXT[language];
-  const topTopic = aggregate.topicEvolution.topTopics[0]?.name ?? (language === "zh" ? "增长最快主题" : "the fastest-growing topic");
+  const topTopic = aiThemes[0]?.title || aggregate.topicEvolution.topTopics[0]?.name || (language === "zh" ? "增长最快主题" : "the fastest-growing topic");
   const highValueFocus = aggregate.highValueNotes.slice(0, 2).map((note) => wikiLink(note.path, note.title));
   return [
     `1. ${text.mocAction(topTopic)}`,
