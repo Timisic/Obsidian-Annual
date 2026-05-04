@@ -487,7 +487,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## One-Sentence Judgment",
+      "## Annual Overview",
       "## Writing Growth",
       "## Topic Evolution",
       "## High Value Notes",
@@ -496,8 +496,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("| Total new words |");
     expect(markdown).toContain("| Writing days |");
     expect(markdown).toContain("| Longest writing streak |");
-    expect(markdown).not.toContain("### Daily Cumulative Word Chart");
-    expect(markdown).not.toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(markdown).toContain("### Cumulative Growth");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
     expect(markdown).toContain("### Monthly New Notes");
     expect(markdown).toContain("### Heatmap");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
@@ -507,7 +507,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Legend: . = 0 words");
     expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).not.toContain("## Word Growth Trend");
-    expect(markdown).toContain("each bar shows notes created in that active month");
+    expect(markdown).toContain("Notes created in each active month");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
     expect(markdown).toContain("## Topic Evolution");
@@ -517,9 +517,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
     expect(markdown).not.toContain("### Feedback Signals");
     expect(markdown).toContain("### Activity Reading");
-    expect(markdown).toContain("- Advantage:");
-    expect(markdown).toContain("- Risk:");
-    expect(markdown).toContain("- Suggestion:");
+    expect(markdown).toContain("Writing appeared on");
+    expect(markdown).toContain("Writing volume is concentrated");
     expect(markdown).not.toContain("Tasks completed");
     expect(markdown).not.toContain("## Tasks And Project Notes");
     expect(markdown).not.toContain("## Year Totals");
@@ -566,14 +565,14 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("report_language: \"zh\"");
     expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## 本期一句话判断",
+      "## 年度总览",
       "## 写作增长",
       "## 主题演化",
       "## 高价值笔记",
       "## 下期行动",
     ]);
-    expect(markdown).not.toContain("### 日累计字数图");
-    expect(markdown).not.toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(markdown).toContain("### 累计增长");
+    expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
     expect(markdown).toContain("### 每月新增笔记");
     expect(markdown).toContain("### 热力图");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
@@ -633,7 +632,7 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { chartPaths });
     const chartAssets = buildAnnualReviewChartAssets(aggregate, { chartPaths });
 
-    expect(markdown).not.toContain("daily-cumulative-words.svg");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Cumulative Growth|900]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap|900]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Monthly New Notes|900]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]");
@@ -641,21 +640,23 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
 
-    expect(chartAssets).toHaveLength(4);
+    expect(chartAssets).toHaveLength(5);
     expect(chartAssets.map((asset) => asset.path)).toEqual([
+      "Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg",
       "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
       "Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg",
       "Annual Reviews/2026 Annual Review Assets/topic-evolution.svg",
       "Annual Reviews/2026 Annual Review Assets/topic-evolution.json",
     ]);
-    expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
-    expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
-    expect(chartAssets[1]?.content).toContain("<rect");
-    expect(chartAssets[1]?.content).not.toContain("class=\"chart-line\"");
-    expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(chartAssets[3]?.content).toContain("\"top_topics\"");
-    expect(chartAssets[3]?.content).toContain("\"emerging_topics\"");
-    expect(chartAssets[3]?.content).toContain("\"declining_topics\"");
+    expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
+    expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(chartAssets[2]?.content).toContain("<rect");
+    expect(chartAssets[2]?.content).not.toContain("class=\"chart-line\"");
+    expect(chartAssets[3]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
+    expect(chartAssets[4]?.content).toContain("\"top_topics\"");
+    expect(chartAssets[4]?.content).toContain("\"emerging_topics\"");
+    expect(chartAssets[4]?.content).toContain("\"declining_topics\"");
   });
 
   it("identifies high-value, maintenance, output-ready, and isolated potential notes", () => {

@@ -94,7 +94,10 @@ export async function renderAiReportEnhancements(
         "You enrich an Obsidian review from supplied vault statistics, note excerpts, backlinks, and linked-note context.",
         "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions.",
         "Use the embedded Obsidian CLI/Markdown/Bases skill handoff as binding output guidance.",
+        "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+        "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
         "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
+        "High-value note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
         "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
@@ -191,7 +194,7 @@ export function buildAiPrompt(
     {
       task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer high-value-note reasons, and concrete next actions.",
       outputSchema: {
-        periodJudgment: "one evidence-backed sentence for the whole year",
+        periodJudgment: "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
         themeInsights: [
           {
             title:
@@ -267,7 +270,10 @@ export function buildCodexPrompt(
     "Use the embedded Obsidian CLI/Markdown/Bases skill handoff as binding guidance.",
     "Use only the supplied JSON context unless your runtime exposes the vault read-only; preserve source note paths exactly.",
     "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions.",
+    "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+    "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
     "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
+    "High-value note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
   ].join("\n");
@@ -296,7 +302,8 @@ function buildCodexContext(
   return {
     task: "Generate content-synthesized annual review enrichment JSON from aggregate evidence plus note excerpts/backlinks.",
     outputSchema: {
-      periodJudgment: "one evidence-backed sentence",
+      periodJudgment:
+        "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
       themeInsights:
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
@@ -461,21 +468,42 @@ function withFallbackHighValueEnhancements(
   enhancements: AiReportEnhancements,
   options: ChatGptReportOptions,
 ): AiReportEnhancements {
-  if (
-    enhancements.highValueNotes.length > 0 ||
-    enhancements.themeInsights.length === 0
-  ) {
+  if (enhancements.themeInsights.length === 0) {
     return enhancements;
+  }
+  const fallbackNotes = fallbackHighValueNotes(
+    options.aggregate,
+    options.files,
+    options.settings,
+    enhancements.themeInsights,
+  );
+  if (enhancements.highValueNotes.length > 0) {
+    const aiByPath = new Map(
+      enhancements.highValueNotes.map((note) => [
+        normalizeLinkIdentity(note.path),
+        note,
+      ]),
+    );
+    return {
+      ...enhancements,
+      highValueNotes: fallbackNotes.map((fallback) => {
+        const aiNote = aiByPath.get(normalizeLinkIdentity(fallback.path));
+        return aiNote && !isGenericHighValueReason(aiNote)
+          ? aiNote
+          : fallback;
+      }),
+    };
   }
   return {
     ...enhancements,
-    highValueNotes: fallbackHighValueNotes(
-      options.aggregate,
-      options.files,
-      options.settings,
-      enhancements.themeInsights,
-    ),
+    highValueNotes: fallbackNotes,
   };
+}
+
+function isGenericHighValueReason(note: AiHighValueNoteInsight): boolean {
+  return /^(入链 \d+ 次且内容完整|连接 \d+ 个主题|内容已到 \d+ 字词|补一张主题关系图|提炼成主题索引)/u.test(
+    `${note.reason} ${note.suggestedAction}`,
+  );
 }
 
 function fallbackHighValueNotes(
@@ -489,7 +517,7 @@ function fallbackHighValueNotes(
     activeNotes.map((entry) => [entry.note.path, entry]),
   );
   const language = settings.reportLanguage === "en" ? "en" : "zh";
-  return aggregate.highValueNotes.slice(0, 10).map((note) => {
+  return aggregate.highValueNotes.slice(0, 10).map((note, index) => {
     const entry = noteByPath.get(note.path);
     const linkedTitles = entry
       ? linkedNoteContext(entry.note, noteByPath, 3).map((linked) =>
@@ -505,16 +533,105 @@ function fallbackHighValueNotes(
     if (language === "en") {
       return {
         path: note.path,
-        reason: `${title} is valuable because its content can anchor ${theme || "a synthesized annual theme"} and is supported by ${related.length > 0 ? related.join(", ") : "its current link context"}, not just by raw word/link counts.`,
-        suggestedAction: `Add a short current-judgment section, list evidence notes, and turn the note into an Obsidian index for ${theme || title}.`,
+        reason: fallbackHighValueReasonEn(note, title, theme, related, index),
+        suggestedAction: fallbackHighValueActionEn(note, title, theme),
       };
     }
     return {
       path: note.path,
-      reason: `这篇的价值不只是 ${note.inboundLinks} 个入链或 ${note.periodWordCount} 字词，而是能承载「${theme || title}」这条主线，并和${related.length > 0 ? `「${related.join("」「")}」等笔记` : "现有双链上下文"}形成证据链。`,
-      suggestedAction: `补一段“当前判断 / 证据笔记 / 下一步问题”，把它整理成「${theme || title}」的 Obsidian 主题入口。`,
+      reason: fallbackHighValueReasonZh(note, title, theme, related, index),
+      suggestedAction: fallbackHighValueActionZh(note, title, theme),
     };
   });
+}
+
+function fallbackHighValueReasonZh(
+  note: { kind: string; inboundLinks: number; periodWordCount: number },
+  title: string,
+  theme: string,
+  related: string[],
+  index: number,
+): string {
+  const target = theme || title;
+  const relation =
+    related.length > 0
+      ? `它和「${related.join("」「")}」互相照应`
+      : "它目前链接较少，反而适合作为下一轮补链的起点";
+  const inbound =
+    note.inboundLinks > 0
+      ? `${note.inboundLinks} 个入链说明它已经被多处记录反复引用`
+      : "当前入链还少，说明它需要一个更明确的入口";
+  const templates = [
+    `这篇把「${target}」里的核心冲突写得最集中，${note.periodWordCount} 个本期字词提供了足够上下文；${relation}，适合先整理成年度入口。`,
+    `这篇的价值在于把「${target}」从感受推进到可讨论的问题，${inbound}；${relation}。`,
+    `这篇适合作为「${target}」的复盘样本，因为它保留了当时的判断、情绪和行动线索；${relation}，后续可以补出更清楚的结论。`,
+    `这篇在 Top 10 里承担的是桥接作用：它把「${target}」和周边笔记接起来，让单篇日记可以进入更长的主题链；${relation}。`,
+  ];
+  if (note.kind === "孤立潜力") {
+    return `这篇还没有进入稳定链接网络，但 ${note.periodWordCount} 个本期字词已经显露出「${target}」的材料潜力；先补出双链和小结，才能判断它是否值得继续发展。`;
+  }
+  if (note.kind === "输出候选") {
+    return templates[index % 3] ?? templates[0];
+  }
+  return templates[(index + 1) % templates.length] ?? templates[0];
+}
+
+function fallbackHighValueActionZh(
+  note: { kind: string },
+  title: string,
+  theme: string,
+): string {
+  const target = theme || title;
+  if (note.kind === "输出候选") {
+    return `补一段“当前判断”和 3 条证据链接，把它改成「${target}」的可输出草稿。`;
+  }
+  if (note.kind === "孤立潜力") {
+    return `先补 2-3 个上下文双链，再写一段它和「${target}」的关系说明。`;
+  }
+  return `在文末加一个「关联笔记 / 当前结论 / 下一步问题」小节，让它成为「${target}」的复盘入口。`;
+}
+
+function fallbackHighValueReasonEn(
+  note: { kind: string; inboundLinks: number; periodWordCount: number },
+  title: string,
+  theme: string,
+  related: string[],
+  index: number,
+): string {
+  const target = theme || title;
+  const relation =
+    related.length > 0
+      ? `It is reinforced by ${related.join(", ")}`
+      : "Its sparse link context makes it a useful candidate for deliberate linking";
+  const inbound =
+    note.inboundLinks > 0
+      ? `Its ${note.inboundLinks} inbound links show that other notes already depend on it`
+      : "Its sparse inbound-link context shows that it needs a clearer entry point";
+  const templates = [
+    `${title} concentrates the main tension inside ${target}, and its ${note.periodWordCount} period words leave enough context to turn the note into a review entry. ${relation}.`,
+    `${title} matters because it moves ${target} from a passing observation into a question that recurs across the vault. ${inbound}.`,
+    `${title} works as a review sample for ${target}: it preserves the original judgment, mood, and action trace while still leaving room for a clearer conclusion. ${relation}.`,
+    `${title} plays a bridging role in the Top 10 by connecting ${target} with nearby notes, so it can turn a single diary entry into a longer theme chain. ${relation}.`,
+  ];
+  if (note.kind === "孤立潜力") {
+    return `${title} has not entered the stable link network yet, but its ${note.periodWordCount} period words show material for ${target}; linking and summarizing it will clarify whether it should keep growing.`;
+  }
+  return templates[index % templates.length] ?? templates[0];
+}
+
+function fallbackHighValueActionEn(
+  note: { kind: string },
+  title: string,
+  theme: string,
+): string {
+  const target = theme || title;
+  if (note.kind === "孤立潜力") {
+    return `Add 2-3 contextual wikilinks, then write one paragraph explaining how it belongs to ${target}.`;
+  }
+  if (note.kind === "输出候选") {
+    return `Add a current-judgment section and three evidence links so it can become an output draft for ${target}.`;
+  }
+  return `Add related notes, current conclusion, and next question sections so it can serve as a review entry for ${target}.`;
 }
 
 function relatedTheme(

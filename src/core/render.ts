@@ -62,6 +62,14 @@ export function buildAnnualReviewChartAssets(
     buildAnnualReviewChartPaths("Annual Reviews", aggregate.year);
   const assets: AnnualReviewChartAsset[] = [];
 
+  if (aggregate.dayBuckets.length > 0 && paths["daily-cumulative-words"]) {
+    assets.push({
+      kind: "daily-cumulative-words",
+      path: paths["daily-cumulative-words"],
+      content: renderDailyCumulativeWordsSvg(activePeriodDays(aggregate.dayBuckets), language),
+    });
+  }
+
   if (aggregate.dayBuckets.length > 0 && paths["daily-word-heatmap"]) {
     assets.push({
       kind: "daily-word-heatmap",
@@ -108,17 +116,19 @@ const REPORT_TEXT = {
     title: (year: number) => `${year} Annual Review`,
     allMarkdownFiles: "All Markdown files",
     none: "None",
-    periodJudgment: "One-Sentence Judgment",
+    periodJudgment: "Annual Overview",
     defaultPeriodJudgment: (
       words: number,
       activeDays: number,
       _topics: string[],
     ) =>
-      `This period added ${formatInteger(words)} words across ${activeDays} writing days; the report keeps local evidence compact for later content-thread synthesis.`,
+      `This review covers ${formatInteger(words)} new words across ${activeDays} writing days. The local evidence points to the year's writing rhythm, strongest activity windows, and notes worth revisiting; turning those signals into content threads works best when summary generation is enabled.`,
     writingGrowth: "Writing Growth",
     totalNewWords: "Total new words",
     writingDays: "Writing days",
     longestWritingStreak: "Longest writing streak",
+    dailyCumulativeGrowth: "Cumulative Growth",
+    dailyCumulativeWords: "Cumulative words",
     monthlyGrowthChart: "Monthly New Notes",
     heatmap: "Heatmap",
     growthFeedback: "Activity Reading",
@@ -150,14 +160,13 @@ const REPORT_TEXT = {
     dailyWordHeatmap: "Daily Word Heatmap",
     dailyWordHeatmapEmpty: "No daily word data found.",
     dailyWordHeatmapLegend:
-      "Embedded SVG chart: darker cells show higher daily created-note word volume.",
+      "Darker cells show higher daily created-note word volume.",
     dailyWordHeatmapColumn: "Daily word heatmap",
     peakDay: "Peak day",
     notAvailable: "n/a",
     wordGrowthTrend: "Monthly New Notes",
     wordGrowthTrendEmpty: "No monthly note data found.",
-    wordGrowthYAxis:
-      "Embedded SVG chart: each bar shows notes created in that active month.",
+    wordGrowthYAxis: "Notes created in each active month.",
     wordGrowth: "New notes",
     trend: "Trend",
     cumulativeWords: "Cumulative words",
@@ -248,17 +257,19 @@ const REPORT_TEXT = {
     title: (year: number) => `${year} 年度回顾`,
     allMarkdownFiles: "全部 Markdown 文件",
     none: "无",
-    periodJudgment: "本期一句话判断",
+    periodJudgment: "年度总览",
     defaultPeriodJudgment: (
       words: number,
       activeDays: number,
       _topics: string[],
     ) =>
-      `本期新增 ${formatInteger(words)} 个字词，覆盖 ${activeDays} 个写作日；本地报告先保留紧凑证据，内容主线留待总结生成。`,
+      `这一年新增 ${formatInteger(words)} 个字词，分布在 ${activeDays} 个写作日里。单看本地指标，已经能看出写作节奏、活跃月份和需要回看的核心笔记；如果启用总结生成，这些证据还可以继续提炼成更完整的内容主线。`,
     writingGrowth: "写作增长",
     totalNewWords: "总新增字数",
     writingDays: "写作天数",
     longestWritingStreak: "最长连续写作",
+    dailyCumulativeGrowth: "累计增长",
+    dailyCumulativeWords: "累计字词",
     monthlyGrowthChart: "每月新增笔记",
     heatmap: "热力图",
     growthFeedback: "活动解读",
@@ -288,14 +299,13 @@ const REPORT_TEXT = {
     noMonthlyActivity: "未找到月度活动。",
     dailyWordHeatmap: "每日字词热力图",
     dailyWordHeatmapEmpty: "未找到每日字词数据。",
-    dailyWordHeatmapLegend:
-      "嵌入 SVG 图表：颜色越深，表示当天新建笔记字词量越高。",
+    dailyWordHeatmapLegend: "颜色越深，表示当天新建笔记字词量越高。",
     dailyWordHeatmapColumn: "每日字词热力图",
     peakDay: "峰值日",
     notAvailable: "无",
     wordGrowthTrend: "每月新增笔记",
     wordGrowthTrendEmpty: "未找到月度新增笔记数据。",
-    wordGrowthYAxis: "嵌入 SVG 图表：每根柱表示该活跃月份新建的笔记数。",
+    wordGrowthYAxis: "每根柱表示该活跃月份新建的笔记数。",
     wordGrowth: "新增笔记",
     trend: "趋势",
     cumulativeWords: "累计字词",
@@ -364,7 +374,7 @@ const REPORT_TEXT = {
       `推进 ${notes} 作为下期高价值笔记重点。`,
     noHighValuePushAction: "当前高价值笔记信号不足，暂无明确推进对象。",
     nextPeriodSuggestion: "下期建议",
-    highValueNextStep: "优先处理这些笔记，而不是继续无差别新增内容。",
+    highValueNextStep: "优先处理这些笔记，避免继续无差别新增内容。",
     representativeNotes: "代表笔记",
     representativeNotesDescription:
       "代表笔记采用确定性规则选择：每个活跃月份选出该月新建笔记中内容量最高的一篇；如果笔记不是当年新建但在该月被修改，也会参与该月选择。排序依次比较计数字词、字符数和路径。这个稳定证据集可供后续 AI 总结复用。",
@@ -469,7 +479,7 @@ function renderPeriodJudgment(
 ): string {
   const text = REPORT_TEXT[language];
   return (
-    sanitizeInlineMarkdown(periodJudgment) ||
+    sanitizeParagraphMarkdown(periodJudgment) ||
     text.defaultPeriodJudgment(
       aggregate.totalWords,
       aggregate.activeDays,
@@ -494,6 +504,14 @@ function renderWritingGrowth(
     `| ${text.notesModified} | ${aggregate.modifiedCount} |`,
     `| ${text.writingDays} | ${aggregate.activeDays} |`,
     `| ${text.longestWritingStreak} | ${aggregate.longestStreak} |`,
+    "",
+    `### ${text.dailyCumulativeGrowth}`,
+    "",
+    renderDailyCumulativeWords(
+      days,
+      language,
+      chartPaths?.["daily-cumulative-words"],
+    ),
     "",
     `### ${text.monthlyGrowthChart}`,
     "",
@@ -526,9 +544,7 @@ function renderGrowthFeedback(
     (month) => month.words > 0,
   ).length;
   return [
-    `- ${text.strength}: ${text.growthStrength(aggregate.activeDays, aggregate.longestStreak)}`,
-    `- ${text.risk}: ${text.growthRisk(activeMonths)}`,
-    `- ${text.suggestion}: ${text.growthSuggestion}`,
+    `${text.growthStrength(aggregate.activeDays, aggregate.longestStreak)} ${text.growthRisk(activeMonths)} ${text.growthSuggestion}`,
   ];
 }
 
@@ -601,8 +617,6 @@ function renderDailyHeatmap(
   }
 
   return [
-    text.dailyWordHeatmapLegend,
-    "",
     chartPath
       ? renderChartReference(chartPath, text.dailyWordHeatmap)
       : renderDailyHeatmapSvg(days, language),
@@ -624,6 +638,20 @@ function renderDailyHeatmap(
   ].join("\n");
 }
 
+function renderDailyCumulativeWords(
+  days: DayBucket[],
+  language: ResolvedAnnualReviewLanguage,
+  chartPath?: string,
+): string {
+  const text = REPORT_TEXT[language];
+  if (days.length === 0) {
+    return text.dailyWordHeatmapEmpty;
+  }
+  return chartPath
+    ? renderChartReference(chartPath, text.dailyCumulativeGrowth)
+    : renderDailyCumulativeWordsSvg(days, language);
+}
+
 function renderMonthlyCreatedNotes(
   months: MonthBucket[],
   language: ResolvedAnnualReviewLanguage,
@@ -635,8 +663,6 @@ function renderMonthlyCreatedNotes(
   }
 
   return [
-    text.wordGrowthYAxis,
-    "",
     chartPath
       ? renderChartReference(chartPath, text.wordGrowthTrend)
       : renderMonthlyCreatedNotesSvg(months, language),
@@ -661,8 +687,6 @@ function renderTopicEvolution(
 
   const rows = [
     text.topicEvolutionNeedsSynthesis,
-    "",
-    text.topicEvolutionLegend,
     "",
     chartPath
       ? renderChartReference(chartPath, text.topicEvolutionChart)
@@ -706,18 +730,18 @@ function renderAiThemeSection(
   const rows = [
     `#### ${sanitizeHeading(theme.title)}`,
     "",
-    sanitizeInlineMarkdown(theme.synthesis) || text.noDataFound,
+    sanitizeParagraphMarkdown(theme.synthesis) || text.noDataFound,
   ];
   if (theme.connections) {
     rows.push(
       "",
-      `- ${text.aiThemeConnections}: ${sanitizeInlineMarkdown(theme.connections)}`,
+      `${text.aiThemeConnections}: ${sanitizeParagraphMarkdown(theme.connections)}`,
     );
   }
   if (theme.nextQuestion) {
     rows.push(
       "",
-      `- ${text.aiThemeNextQuestion}: ${sanitizeInlineMarkdown(theme.nextQuestion)}`,
+      `${text.aiThemeNextQuestion}: ${sanitizeInlineMarkdown(theme.nextQuestion)}`,
     );
   }
   if (theme.evidenceNotes.length > 0) {
@@ -729,6 +753,73 @@ function renderAiThemeSection(
   }
   rows.push("");
   return rows;
+}
+
+function renderDailyCumulativeWordsSvg(
+  days: DayBucket[],
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const text = REPORT_TEXT[language];
+  const width = 820;
+  const height = 280;
+  const left = 62;
+  const right = 26;
+  const top = 24;
+  const bottom = 48;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const cumulativeDays = days.reduce<Array<DayBucket & { cumulativeWords: number }>>(
+    (acc, day) => {
+      const previous = acc[acc.length - 1];
+      const cumulativeWords = (previous?.cumulativeWords ?? 0) + day.words;
+      acc.push({ ...day, cumulativeWords });
+      return acc;
+    },
+    [],
+  );
+  const maxWords = niceMax(Math.max(1, ...cumulativeDays.map((day) => day.cumulativeWords)));
+  const xScale = (index: number) =>
+    left + (plotWidth * index) / Math.max(1, cumulativeDays.length - 1);
+  const yScale = (value: number) =>
+    top + plotHeight - (value / maxWords) * plotHeight;
+  const ticks = [0, maxWords / 2, maxWords];
+
+  const grid = ticks
+    .map((tick) => {
+      const y = yScale(tick);
+      return [
+        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
+        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
+      ].join("\n");
+    })
+    .join("\n");
+  const path = cumulativeDays
+    .map((day, index) => `${index === 0 ? "M" : "L"} ${formatNumber(xScale(index))} ${formatNumber(yScale(day.cumulativeWords))}`)
+    .join(" ");
+  const monthLabels = cumulativeDays
+    .filter((day, index) => index === 0 || day.dayOfMonth === 1)
+    .map((day, index) => {
+      const dayIndex = cumulativeDays.indexOf(day);
+      const anchor = index === 0 ? "start" : "middle";
+      return `<text x="${formatNumber(xScale(dayIndex))}" y="${height - 20}" font-size="10" text-anchor="${anchor}" fill="currentColor">${escapeHtml(day.month.slice(5))}</text>`;
+    })
+    .join("\n");
+
+  return [
+    `<svg class="annual-review-chart annual-review-daily-cumulative" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.dailyCumulativeGrowth)}">`,
+    `<title>${escapeHtml(text.dailyCumulativeGrowth)}</title>`,
+    grid,
+    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
+    `<text x="18" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 ${top + plotHeight / 2})">${escapeHtml(text.dailyCumulativeWords)}</text>`,
+    `<path d="${path}" fill="none" stroke="#4f7cac" stroke-width="3" stroke-linejoin="round" />`,
+    ...cumulativeDays.map((day, index) => {
+      const title = `${day.date}: ${day.cumulativeWords} ${text.cumulativeWords}`;
+      return `<circle cx="${formatNumber(xScale(index))}" cy="${formatNumber(yScale(day.cumulativeWords))}" r="2.6" fill="#4f7cac"><title>${escapeHtml(title)}</title></circle>`;
+    }),
+    monthLabels,
+    "</svg>",
+  ].join("\n");
 }
 
 function renderDailyHeatmapSvg(
@@ -998,7 +1089,7 @@ function sanitizeInlineMarkdown(markdown?: string): string {
   if (!markdown) {
     return "";
   }
-  const body = markdown
+  const body = softenFormulaicContrast(markdown)
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter(
@@ -1011,6 +1102,36 @@ function sanitizeInlineMarkdown(markdown?: string): string {
     .trim();
   const sentence = body.match(/^(.+?[.!?。！？])(?:\s|$)/u)?.[1] ?? body;
   return sentence.slice(0, 240).trim();
+}
+
+function sanitizeParagraphMarkdown(markdown?: string): string {
+  if (!markdown) {
+    return "";
+  }
+  return softenFormulaicContrast(markdown)
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line),
+    )
+    .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
+    .join(" ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 900);
+}
+
+function softenFormulaicContrast(markdown: string): string {
+  return markdown
+    .replace(/不再只是[^，。；]+，而是/gu, "更具体地说，是")
+    .replace(/并不只是[^，。；]+，而是/gu, "更关键的是")
+    .replace(/并不只是/gu, "除了")
+    .replace(/不只是[^，。；]+，而是/gu, "更关键的是")
+    .replace(/不是[^，。；]+，而是/gu, "更关键的是")
+    .replace(/，而不是/gu, "，避免")
+    .replace(/not just [^,.;]+, but /giu, "")
+    .replace(/not only [^,.;]+, but also /giu, "");
 }
 
 function sanitizeHeading(markdown?: string): string {
@@ -1061,12 +1182,18 @@ function renderHighValueNotes(
   aiEnabled = false,
 ): string {
   const text = REPORT_TEXT[language];
-  const aiNoteMap = new Map(aiNotes.map((note) => [note.path, note]));
+  const aiNoteMap = new Map(
+    aiNotes.map((note) => [normalizeNotePath(note.path), note]),
+  );
   const topNotes =
     aggregate.highValueNotes.length > 0
       ? aiEnabled
         ? aggregate.highValueNotes.flatMap((note) =>
-            renderHighValueNoteSection(note, aiNoteMap.get(note.path), text),
+            renderHighValueNoteSection(
+              note,
+              aiNoteMap.get(normalizeNotePath(note.path)),
+              text,
+            ),
           )
         : aggregate.highValueNotes.map(
             (note) => `- ${wikiLink(note.path, note.title)} (${note.kind})`,
@@ -1081,16 +1208,6 @@ function renderHighValueNotes(
     ...topNotes,
   ];
 
-  if (aiEnabled) {
-    rows.push(
-      "",
-      `### ${text.highValueFeedback}`,
-      "",
-      `- ${text.priorityNotes(formatInlineList(aggregate.highValueNotes.slice(0, 3).map((note) => wikiLink(note.path, note.title)), language))}`,
-      `- ${text.staleCoreSignal(aggregate.highValueFeedback.staleCoreCount)}`,
-    );
-  }
-
   return rows.join("\n");
 }
 
@@ -1100,12 +1217,14 @@ function renderHighValueNoteSection(
   text?: (typeof REPORT_TEXT)[ResolvedAnnualReviewLanguage],
 ): string[] {
   const labels = text ?? REPORT_TEXT.en;
+  const reason = sanitizeParagraphMarkdown(aiNote?.reason || note.reason);
+  const action = sanitizeInlineMarkdown(aiNote?.suggestedAction || note.suggestedAction);
   return [
     `#### ${wikiLink(note.path, note.title)}`,
     "",
-    `- ${labels.highValueType}: ${note.kind}`,
-    `- ${labels.highValueReason}: ${sanitizeInlineMarkdown(aiNote?.reason || note.reason)}`,
-    `- ${labels.suggestedAction}: ${sanitizeInlineMarkdown(aiNote?.suggestedAction || note.suggestedAction)}`,
+    `${labels.highValueType}: ${note.kind}。${labels.highValueReason}: ${reason}`,
+    "",
+    `${labels.suggestedAction}: ${action}`,
     "",
   ];
 }
@@ -1237,6 +1356,10 @@ function lastIndexOf<T>(items: T[], predicate: (item: T) => boolean): number {
 
 function wikiLink(path: string, title: string): string {
   return `[[${path.replace(/\.md$/u, "")}|${title}]]`;
+}
+
+function normalizeNotePath(path: string): string {
+  return path.replace(/\.md$/iu, "");
 }
 
 function wikiLinkPlain(path: string): string {
