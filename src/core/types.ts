@@ -172,6 +172,27 @@ export interface YearAggregate {
   highValueFeedback: HighValueNoteFeedback;
 }
 
+export interface AiThemeInsight {
+  title: string;
+  synthesis: string;
+  connections: string;
+  evidenceNotes: string[];
+  nextQuestion: string;
+}
+
+export interface AiHighValueNoteInsight {
+  path: string;
+  reason: string;
+  suggestedAction: string;
+}
+
+export interface AiReportEnhancements {
+  periodJudgment: string;
+  themeInsights: AiThemeInsight[];
+  highValueNotes: AiHighValueNoteInsight[];
+  nextActions: string[];
+}
+
 export interface SourceFile {
   path: string;
   ctime: number;

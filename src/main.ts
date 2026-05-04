@@ -1,5 +1,5 @@
 import { getLanguage, Notice, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
-import { renderAiReportSection } from "./core/ai";
+import { renderAiReportEnhancements } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS, COMMAND_NAMES } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settin
 import type { AnnualReviewLanguage, AnnualReviewSettings, GenerateReportOptions, ResolvedAnnualReviewLanguage, SourceFile, YearAggregate } from "./core/types";
 import { AnnualReviewDashboardView, VIEW_TYPE_ANNUAL_REVIEW } from "./obsidian/dashboardView";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
+import { AnnualReviewProgressModal } from "./obsidian/progressModal";
 import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
 import { YearModal } from "./obsidian/yearModal";
 
@@ -122,25 +123,37 @@ export default class AnnualReviewPlugin extends Plugin {
   }
 
   private async generateReport(options: GenerateReportOptions): Promise<void> {
+    let progress: AnnualReviewProgressModal | null = null;
     try {
       const { year, settings } = options;
       const text = this.text(settings.generatorLanguage);
       new Notice(text.generating(year));
+      if (settings.aiProvider !== "none") {
+        progress = new AnnualReviewProgressModal(this.app, text.aiProgressTitle(year));
+        progress.open();
+        progress.update(text.progressReadingVault, 8);
+      }
       const files = await this.getIndexedFiles(settings);
+      progress?.update(text.progressAiSummary, 35);
       const aggregate = buildYearAggregate(files, year, settings);
-      const aiSummary = await renderAiReportSection({ aggregate, files, settings });
+      const aiEnhancements = await renderAiReportEnhancements({ aggregate, files, settings });
       const reportLanguage = resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage());
       const chartPaths = buildAnnualReviewChartPaths(settings.reportFolder, year);
+      progress?.update(text.progressRendering, 78);
       const chartAssets = buildAnnualReviewChartAssets(aggregate, { language: reportLanguage, chartPaths });
-      const markdown = renderAnnualReview(aggregate, { language: reportLanguage, chartPaths, periodJudgment: aiSummary });
+      const markdown = renderAnnualReview(aggregate, { language: reportLanguage, chartPaths, aiEnhancements, aiEnabled: settings.aiProvider !== "none" });
+      progress?.update(text.progressWriting, 92);
       const report = await writeAnnualReviewOutput(this.app, settings.reportFolder, year, markdown, chartAssets);
       this.lastAggregate = aggregate;
       this.lastReportPath = report.path;
       await this.app.workspace.getLeaf(false).openFile(report);
+      progress?.update(text.generated(report.path), 100);
+      progress?.close();
       new Notice(text.generated(report.path));
     } catch (error) {
       console.error("Annual Review generation failed", error);
       new Notice(this.text().failed(error instanceof Error ? error.message : String(error)));
+      progress?.close();
     }
   }
 

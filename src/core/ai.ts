@@ -5,13 +5,28 @@ import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
-import type { AnnualReviewSettings, SourceFile, YearAggregate } from "./types";
+import type {
+  AiHighValueNoteInsight,
+  AiReportEnhancements,
+  AiThemeInsight,
+  AnnualReviewSettings,
+  NoteStats,
+  SourceFile,
+  YearAggregate,
+} from "./types";
 
 const MAX_AI_CONTEXT_NOTES = 80;
 const MAX_AI_CONTEXT_EXCERPT_CHARS = 700;
+const MAX_CODEX_CONTEXT_NOTES = 28;
+const MAX_LINKED_NOTE_CONTEXT = 4;
 const LOCAL_CODEX_TIMEOUT_MS = 300_000;
-const LOCAL_CODEX_PATH_ENTRIES = ["/Users/hong/.npm-global/bin", "/opt/homebrew/bin", "/usr/local/bin"];
-const ABSOLUTE_CODEX_COMMAND_EXAMPLE = '/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c \'features.codex_hooks=false\' --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
+const LOCAL_CODEX_PATH_ENTRIES = [
+  "/Users/hong/.npm-global/bin",
+  "/opt/homebrew/bin",
+  "/usr/local/bin",
+];
+const ABSOLUTE_CODEX_COMMAND_EXAMPLE =
+  "/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;
@@ -21,7 +36,10 @@ export interface ChatGptReportOptions {
   codexExecutor?: CodexExecutor;
 }
 
-export type CodexExecutor = (prompt: string, command: string) => Promise<CodexExecutorResult>;
+export type CodexExecutor = (
+  prompt: string,
+  command: string,
+) => Promise<CodexExecutorResult>;
 
 interface CodexExecutorResult {
   ok: boolean;
@@ -38,13 +56,24 @@ interface OpenAiResponse {
   }>;
 }
 
-export async function renderAiReportSection(options: ChatGptReportOptions): Promise<string> {
+export async function renderAiReportSection(
+  options: ChatGptReportOptions,
+): Promise<string> {
+  const enhancements = await renderAiReportEnhancements(options);
+  return enhancements.periodJudgment;
+}
+
+export async function renderAiReportEnhancements(
+  options: ChatGptReportOptions,
+): Promise<AiReportEnhancements> {
   if (options.settings.aiProvider === "none") {
-    return "";
+    return emptyAiEnhancements();
   }
 
   if (options.settings.aiProvider !== "chatgpt") {
-    return aiUnavailableSummary(`Unsupported AI provider: ${options.settings.aiProvider}`);
+    return unavailableAiEnhancements(
+      `Unsupported AI provider: ${options.settings.aiProvider}`,
+    );
   }
 
   const apiKey = options.settings.chatGptApiKey.trim();
@@ -56,80 +85,145 @@ export async function renderAiReportSection(options: ChatGptReportOptions): Prom
   const response = await fetcher("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: options.settings.chatGptModel.trim() || "gpt-4.1",
+      model: options.settings.chatGptModel.trim() || "gpt-5.5",
       instructions: [
-        "You draft one concise, evidence-backed annual review judgment sentence for an Obsidian user.",
-        "Use only the supplied vault statistics, note excerpts, tags, folders, and links.",
-        "Return one sentence only. Preserve source note paths when making claims.",
+        "You enrich an Obsidian review from supplied vault statistics, note excerpts, backlinks, and linked-note context.",
+        "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions.",
+        "Use the embedded Obsidian CLI/Markdown/Bases skill handoff as binding output guidance.",
+        "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+        "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
+        "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
+        "High-value note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
+        "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
       input: buildAiPrompt(options.aggregate, options.files, options.settings),
-      max_output_tokens: 1200,
+      max_output_tokens: 2600,
     }),
   });
 
   if (!response.ok) {
     const message = await safeResponseText(response);
-    return aiUnavailableSummary(`ChatGPT provider request failed (${response.status}): ${message}`);
+    return unavailableAiEnhancements(
+      `ChatGPT provider request failed (${response.status}): ${message}`,
+    );
   }
 
   const data = (await response.json()) as OpenAiResponse;
   const content = extractResponseText(data).trim();
   if (!content) {
-    return aiUnavailableSummary("ChatGPT provider returned an empty response.");
+    return unavailableAiEnhancements(
+      "ChatGPT provider returned an empty response.",
+    );
   }
 
-  return toOneSentenceSummary(content);
+  return withFallbackHighValueEnhancements(
+    parseAiEnhancements(content),
+    options,
+  );
 }
 
-async function renderCodexReportSection(options: ChatGptReportOptions): Promise<string> {
+async function renderCodexReportSection(
+  options: ChatGptReportOptions,
+): Promise<AiReportEnhancements> {
   const executor = options.codexExecutor ?? runLocalCodex;
-  const command = options.settings.localCodexCommand.trim() || DEFAULT_LOCAL_CODEX_COMMAND;
-  const result = await executor(buildCodexPrompt(options.aggregate, options.files, options.settings), command);
+  const command =
+    options.settings.localCodexCommand.trim() || DEFAULT_LOCAL_CODEX_COMMAND;
+  const result = await executor(
+    buildCodexPrompt(options.aggregate, options.files, options.settings),
+    command,
+  );
   if (!result.ok || !result.content.trim()) {
-    return aiUnavailableSummary(`ChatGPT provider was selected without an OpenAI API key, and local Codex generation was unavailable: ${result.content || "No response."}`);
+    return unavailableAiEnhancements(
+      `ChatGPT provider was selected without an OpenAI API key, and local Codex generation was unavailable: ${result.content || "No response."}`,
+    );
   }
 
-  return toOneSentenceSummary(result.content);
+  return withFallbackHighValueEnhancements(
+    parseAiEnhancements(result.content),
+    options,
+  );
 }
 
-export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], settings: AnnualReviewSettings): string {
-  const activeNotes = files
-    .filter((file) => shouldIncludePath(file.path, settings))
-    .map((file) => ({ file, note: extractNoteStats(file, settings) }))
-    .filter((entry) => new Date(entry.note.ctime).getFullYear() === aggregate.year || new Date(entry.note.mtime).getFullYear() === aggregate.year)
-    .sort((a, b) => a.note.path.localeCompare(b.note.path));
+export function buildAiPrompt(
+  aggregate: YearAggregate,
+  files: SourceFile[],
+  settings: AnnualReviewSettings,
+): string {
+  const activeNotes = activeNoteEntries(aggregate, files, settings);
+  const noteByPath = new Map(
+    activeNotes.map((entry) => [entry.note.path, entry]),
+  );
 
-  const contextNotes = activeNotes.slice(0, MAX_AI_CONTEXT_NOTES).map(({ file, note }) => ({
-    path: note.path,
-    folder: note.folder,
-    created: new Date(note.ctime).toISOString(),
-    modified: new Date(note.mtime).toISOString(),
-    words: note.wordCount,
-    characters: note.charCount,
-    tags: note.tags,
-    links: note.links,
-    headings: note.headings,
-    excerpt: excerpt(file.content),
-  }));
+  const contextNotes = activeNotes
+    .slice(0, MAX_AI_CONTEXT_NOTES)
+    .map(({ file, note }) => ({
+      path: note.path,
+      folder: note.folder,
+      created: new Date(note.ctime).toISOString(),
+      modified: new Date(note.mtime).toISOString(),
+      words: note.wordCount,
+      characters: note.charCount,
+      tags: note.tags,
+      links: note.links,
+      headings: note.headings,
+      backlinks: backlinkContext(
+        note.path,
+        activeNotes,
+        MAX_LINKED_NOTE_CONTEXT,
+      ),
+      linkedNotes: linkedNoteContext(note, noteByPath, MAX_LINKED_NOTE_CONTEXT),
+      excerpt: excerpt(file.content),
+    }));
 
   const linkGraph = activeNotes.map(({ note }) => ({
     path: note.path,
     links: note.links,
   }));
 
-  const omittedNoteCount = Math.max(0, activeNotes.length - contextNotes.length);
+  const omittedNoteCount = Math.max(
+    0,
+    activeNotes.length - contextNotes.length,
+  );
 
   return JSON.stringify(
     {
-      task: "Generate one personalized but concise annual review judgment sentence. Focus on themes, writing rhythm, and concrete evidence links.",
+      task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer high-value-note reasons, and concrete next actions.",
+      outputSchema: {
+        periodJudgment: "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
+        themeInsights: [
+          {
+            title:
+              "synthesized content theme; do not use raw tags/folders/months/document titles",
+            synthesis:
+              "2-3 sentence annual summary grounded in note excerpts and backlinks",
+            connections: "how this theme connects to other themes or notes",
+            evidenceNotes: ["exact source note paths from contextNotes"],
+            nextQuestion: "one concrete review question",
+          },
+        ],
+        highValueNotes: [
+          {
+            path: "exact source note path from highValueEvidence",
+            reason: "content-specific value reason, not only link/word metrics",
+            suggestedAction: "Obsidian-native next action",
+          },
+        ],
+        nextActions: ["3 concise actions grounded in the supplied notes"],
+      },
+      obsidianSkillHandoff: obsidianSkillHandoff(),
       contextPolicy: {
-        noteCoverage: omittedNoteCount === 0 ? "All active notes are included with excerpts." : `${contextNotes.length} active notes include excerpts; ${omittedNoteCount} additional active notes are represented in the link graph only.`,
+        noteCoverage:
+          omittedNoteCount === 0
+            ? "All active notes are included with excerpts."
+            : `${contextNotes.length} active notes include excerpts; ${omittedNoteCount} additional active notes are represented in the link graph only.`,
         excerptLimit: `${MAX_AI_CONTEXT_EXCERPT_CHARS} characters per included note`,
+        evidenceRules:
+          "Use supplied excerpts, backlinks, linkedNotes, and exact Obsidian note paths. Preserve wikilink compatibility.",
       },
       year: aggregate.year,
       privacyMode: aggregate.scope.privacyMode,
@@ -146,12 +240,17 @@ export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], set
         created: month.created,
         modified: month.modified,
         words: month.words,
-        cumulativeWords: aggregate.wordGrowthBuckets.find((growth) => growth.month === month.month)?.cumulativeWords ?? 0,
+        cumulativeWords:
+          aggregate.wordGrowthBuckets.find(
+            (growth) => growth.month === month.month,
+          )?.cumulativeWords ?? 0,
       })),
       topTags: aggregate.topTags,
       topFolders: aggregate.topFolders,
       topLinks: aggregate.topLinks,
       representativeNotes: aggregate.representativeNotes,
+      statisticalTopicSeeds: aggregate.topicEvolution.topTopics,
+      highValueEvidence: highValueEvidence(aggregate, activeNotes, noteByPath),
       linkGraph,
       contextNotes,
       omittedNoteCount,
@@ -161,23 +260,61 @@ export function buildAiPrompt(aggregate: YearAggregate, files: SourceFile[], set
   );
 }
 
-export function buildCodexPrompt(aggregate: YearAggregate, files: SourceFile[], settings: AnnualReviewSettings): string {
+export function buildCodexPrompt(
+  aggregate: YearAggregate,
+  files: SourceFile[],
+  settings: AnnualReviewSettings,
+): string {
   return [
-    "You are generating one concise judgment sentence for an Obsidian annual review.",
-    "Use only the supplied compact JSON context. Preserve source note paths when making claims.",
-    "Do not run tools, inspect files, or infer private facts that are absent from the context.",
-    "Return one sentence only; do not include a heading, list, provider note, or TODO.",
+    "You are generating structured Obsidian annual review enrichment.",
+    "Use the embedded Obsidian CLI/Markdown/Bases skill handoff as binding guidance.",
+    "Use only the supplied JSON context unless your runtime exposes the vault read-only; preserve source note paths exactly.",
+    "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions.",
+    "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+    "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
+    "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
+    "High-value note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
   ].join("\n");
 }
 
-function buildCodexContext(aggregate: YearAggregate, _files: SourceFile[], _settings: AnnualReviewSettings): unknown {
+function buildCodexContext(
+  aggregate: YearAggregate,
+  files: SourceFile[],
+  settings: AnnualReviewSettings,
+): unknown {
+  const activeNotes = activeNoteEntries(aggregate, files, settings);
+  const noteByPath = new Map(
+    activeNotes.map((entry) => [entry.note.path, entry]),
+  );
+  const contextNotes = activeNotes
+    .slice(0, MAX_CODEX_CONTEXT_NOTES)
+    .map(({ file, note }) => ({
+      path: note.path,
+      headings: note.headings,
+      tags: note.tags,
+      links: note.links,
+      backlinks: backlinkContext(note.path, activeNotes, 3),
+      excerpt: excerpt(file.content),
+    }));
+
   return {
-    task: "Generate one personalized but concise annual review judgment sentence from this aggregate evidence.",
+    task: "Generate content-synthesized annual review enrichment JSON from aggregate evidence plus note excerpts/backlinks.",
+    outputSchema: {
+      periodJudgment:
+        "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
+      themeInsights:
+        "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
+      highValueNotes:
+        "path-specific value reasons and suggested actions for important notes",
+      nextActions: "3 grounded next actions",
+    },
+    obsidianSkillHandoff: obsidianSkillHandoff(),
     contextPolicy: {
-      noteCoverage: "Compact aggregate-only context for local Codex CLI fallback.",
-      evidenceSources: "Use listed note paths, topic metrics, link metrics, and high-value note reasons only.",
+      noteCoverage: `${contextNotes.length} active notes include excerpts and backlink summaries for local Codex fallback.`,
+      evidenceSources:
+        "Use listed note paths, excerpts, topic metrics, link metrics, high-value note signals, and backlink context only.",
     },
     year: aggregate.year,
     privacyMode: aggregate.scope.privacyMode,
@@ -190,8 +327,15 @@ function buildCodexContext(aggregate: YearAggregate, _files: SourceFile[], _sett
       totalCharacters: aggregate.totalCharacters,
     },
     monthlyWords: aggregate.monthBuckets
-      .filter((month) => month.words > 0 || month.created > 0 || month.modified > 0)
-      .map((month) => ({ month: month.month, created: month.created, modified: month.modified, words: month.words })),
+      .filter(
+        (month) => month.words > 0 || month.created > 0 || month.modified > 0,
+      )
+      .map((month) => ({
+        month: month.month,
+        created: month.created,
+        modified: month.modified,
+        words: month.words,
+      })),
     topTags: aggregate.topTags.slice(0, 6),
     topFolders: aggregate.topFolders.slice(0, 5),
     topLinks: aggregate.topLinks.slice(0, 6),
@@ -212,13 +356,378 @@ function buildCodexContext(aggregate: YearAggregate, _files: SourceFile[], _sett
       suggestedAction: note.suggestedAction,
       periodWordCount: note.periodWordCount,
     })),
-    outputReadyNotes: aggregate.outputReadyNotes.slice(0, 3).map((note) => note.path),
-    maintenanceNotes: aggregate.maintenanceNotes.slice(0, 3).map((note) => note.path),
-    isolatedPotentialNotes: aggregate.isolatedPotentialNotes.slice(0, 3).map((note) => note.path),
+    highValueEvidence: highValueEvidence(aggregate, activeNotes, noteByPath),
+    contextNotes,
+    outputReadyNotes: aggregate.outputReadyNotes
+      .slice(0, 3)
+      .map((note) => note.path),
+    maintenanceNotes: aggregate.maintenanceNotes
+      .slice(0, 3)
+      .map((note) => note.path),
+    isolatedPotentialNotes: aggregate.isolatedPotentialNotes
+      .slice(0, 3)
+      .map((note) => note.path),
   };
 }
 
-export async function runLocalCodex(prompt: string, command = DEFAULT_LOCAL_CODEX_COMMAND): Promise<CodexExecutorResult> {
+function activeNoteEntries(
+  aggregate: YearAggregate,
+  files: SourceFile[],
+  settings: AnnualReviewSettings,
+): Array<{ file: SourceFile; note: NoteStats }> {
+  return files
+    .filter((file) => shouldIncludePath(file.path, settings))
+    .map((file) => ({ file, note: extractNoteStats(file, settings) }))
+    .filter(
+      (entry) =>
+        new Date(entry.note.ctime).getFullYear() === aggregate.year ||
+        new Date(entry.note.mtime).getFullYear() === aggregate.year,
+    )
+    .sort((a, b) => a.note.path.localeCompare(b.note.path));
+}
+
+function backlinkContext(
+  path: string,
+  activeNotes: Array<{ file: SourceFile; note: NoteStats }>,
+  limit: number,
+): Array<{ path: string; count: number; excerpt: string }> {
+  return activeNotes
+    .flatMap(({ file, note }) => {
+      if (note.path === path) {
+        return [];
+      }
+      const count = Object.entries(note.linkCounts).reduce(
+        (sum, [link, amount]) =>
+          sum + (linkTargetMatches(link, path) ? amount : 0),
+        0,
+      );
+      return count > 0
+        ? [{ path: note.path, count, excerpt: excerpt(file.content) }]
+        : [];
+    })
+    .sort((a, b) => b.count - a.count || a.path.localeCompare(b.path))
+    .slice(0, limit);
+}
+
+function linkedNoteContext(
+  note: NoteStats,
+  noteByPath: Map<string, { file: SourceFile; note: NoteStats }>,
+  limit: number,
+): Array<{ path: string; count: number; excerpt: string }> {
+  return Object.entries(note.linkCounts)
+    .map(([link, count]) => {
+      const target = noteByPath.get(resolveLinkTarget(link, noteByPath));
+      return target
+        ? {
+            path: target.note.path,
+            count,
+            excerpt: excerpt(target.file.content),
+          }
+        : null;
+    })
+    .filter(
+      (entry): entry is { path: string; count: number; excerpt: string } =>
+        Boolean(entry),
+    )
+    .sort((a, b) => b.count - a.count || a.path.localeCompare(b.path))
+    .slice(0, limit);
+}
+
+function highValueEvidence(
+  aggregate: YearAggregate,
+  activeNotes: Array<{ file: SourceFile; note: NoteStats }>,
+  noteByPath: Map<string, { file: SourceFile; note: NoteStats }>,
+): Array<Record<string, unknown>> {
+  return aggregate.highValueNotes.slice(0, 10).map((item) => {
+    const entry = noteByPath.get(item.path);
+    return {
+      path: item.path,
+      kind: item.kind,
+      metricReason: item.reason,
+      metricSuggestedAction: item.suggestedAction,
+      inboundLinks: item.inboundLinks,
+      outboundLinks: item.outboundLinks,
+      topics: item.topics,
+      lastUpdated: item.lastUpdated,
+      periodWordCount: item.periodWordCount,
+      headings: entry?.note.headings ?? [],
+      excerpt: entry ? excerpt(entry.file.content) : "",
+      backlinks: backlinkContext(
+        item.path,
+        activeNotes,
+        MAX_LINKED_NOTE_CONTEXT,
+      ),
+      linkedNotes: entry
+        ? linkedNoteContext(entry.note, noteByPath, MAX_LINKED_NOTE_CONTEXT)
+        : [],
+    };
+  });
+}
+
+function withFallbackHighValueEnhancements(
+  enhancements: AiReportEnhancements,
+  options: ChatGptReportOptions,
+): AiReportEnhancements {
+  if (enhancements.themeInsights.length === 0) {
+    return enhancements;
+  }
+  const fallbackNotes = fallbackHighValueNotes(
+    options.aggregate,
+    options.files,
+    options.settings,
+    enhancements.themeInsights,
+  );
+  if (enhancements.highValueNotes.length > 0) {
+    const aiByPath = new Map(
+      enhancements.highValueNotes.map((note) => [
+        normalizeLinkIdentity(note.path),
+        note,
+      ]),
+    );
+    return {
+      ...enhancements,
+      highValueNotes: fallbackNotes.map((fallback) => {
+        const aiNote = aiByPath.get(normalizeLinkIdentity(fallback.path));
+        return aiNote && !isGenericHighValueReason(aiNote)
+          ? aiNote
+          : fallback;
+      }),
+    };
+  }
+  return {
+    ...enhancements,
+    highValueNotes: fallbackNotes,
+  };
+}
+
+function isGenericHighValueReason(note: AiHighValueNoteInsight): boolean {
+  return /^(入链 \d+ 次且内容完整|连接 \d+ 个主题|内容已到 \d+ 字词|补一张主题关系图|提炼成主题索引)/u.test(
+    `${note.reason} ${note.suggestedAction}`,
+  );
+}
+
+function fallbackHighValueNotes(
+  aggregate: YearAggregate,
+  files: SourceFile[],
+  settings: AnnualReviewSettings,
+  themes: AiThemeInsight[],
+): AiHighValueNoteInsight[] {
+  const activeNotes = activeNoteEntries(aggregate, files, settings);
+  const noteByPath = new Map(
+    activeNotes.map((entry) => [entry.note.path, entry]),
+  );
+  const language = settings.reportLanguage === "en" ? "en" : "zh";
+  return aggregate.highValueNotes.slice(0, 10).map((note, index) => {
+    const entry = noteByPath.get(note.path);
+    const linkedTitles = entry
+      ? linkedNoteContext(entry.note, noteByPath, 3).map((linked) =>
+          titleFromPath(linked.path),
+        )
+      : [];
+    const backlinks = backlinkContext(note.path, activeNotes, 3).map((linked) =>
+      titleFromPath(linked.path),
+    );
+    const related = [...new Set([...linkedTitles, ...backlinks])].slice(0, 3);
+    const theme = relatedTheme(note, themes);
+    const title = titleFromPath(note.path);
+    if (language === "en") {
+      return {
+        path: note.path,
+        reason: fallbackHighValueReasonEn(note, title, theme, related, index),
+        suggestedAction: fallbackHighValueActionEn(note, title, theme),
+      };
+    }
+    return {
+      path: note.path,
+      reason: fallbackHighValueReasonZh(note, title, theme, related, index),
+      suggestedAction: fallbackHighValueActionZh(note, title, theme),
+    };
+  });
+}
+
+function fallbackHighValueReasonZh(
+  note: { kind: string; inboundLinks: number; periodWordCount: number },
+  title: string,
+  theme: string,
+  related: string[],
+  index: number,
+): string {
+  const target = theme || title;
+  const relation =
+    related.length > 0
+      ? `它和「${related.join("」「")}」互相照应`
+      : "它目前链接较少，反而适合作为下一轮补链的起点";
+  const inbound =
+    note.inboundLinks > 0
+      ? `${note.inboundLinks} 个入链说明它已经被多处记录反复引用`
+      : "当前入链还少，说明它需要一个更明确的入口";
+  const templates = [
+    `这篇把「${target}」里的核心冲突写得最集中，${note.periodWordCount} 个本期字词提供了足够上下文；${relation}，适合先整理成年度入口。`,
+    `这篇的价值在于把「${target}」从感受推进到可讨论的问题，${inbound}；${relation}。`,
+    `这篇适合作为「${target}」的复盘样本，因为它保留了当时的判断、情绪和行动线索；${relation}，后续可以补出更清楚的结论。`,
+    `这篇在 Top 10 里承担的是桥接作用：它把「${target}」和周边笔记接起来，让单篇日记可以进入更长的主题链；${relation}。`,
+  ];
+  if (note.kind === "孤立潜力") {
+    return `这篇还没有进入稳定链接网络，但 ${note.periodWordCount} 个本期字词已经显露出「${target}」的材料潜力；先补出双链和小结，才能判断它是否值得继续发展。`;
+  }
+  if (note.kind === "输出候选") {
+    return templates[index % 3] ?? templates[0];
+  }
+  return templates[(index + 1) % templates.length] ?? templates[0];
+}
+
+function fallbackHighValueActionZh(
+  note: { kind: string },
+  title: string,
+  theme: string,
+): string {
+  const target = theme || title;
+  if (note.kind === "输出候选") {
+    return `补一段“当前判断”和 3 条证据链接，把它改成「${target}」的可输出草稿。`;
+  }
+  if (note.kind === "孤立潜力") {
+    return `先补 2-3 个上下文双链，再写一段它和「${target}」的关系说明。`;
+  }
+  return `在文末加一个「关联笔记 / 当前结论 / 下一步问题」小节，让它成为「${target}」的复盘入口。`;
+}
+
+function fallbackHighValueReasonEn(
+  note: { kind: string; inboundLinks: number; periodWordCount: number },
+  title: string,
+  theme: string,
+  related: string[],
+  index: number,
+): string {
+  const target = theme || title;
+  const relation =
+    related.length > 0
+      ? `It is reinforced by ${related.join(", ")}`
+      : "Its sparse link context makes it a useful candidate for deliberate linking";
+  const inbound =
+    note.inboundLinks > 0
+      ? `Its ${note.inboundLinks} inbound links show that other notes already depend on it`
+      : "Its sparse inbound-link context shows that it needs a clearer entry point";
+  const templates = [
+    `${title} concentrates the main tension inside ${target}, and its ${note.periodWordCount} period words leave enough context to turn the note into a review entry. ${relation}.`,
+    `${title} matters because it moves ${target} from a passing observation into a question that recurs across the vault. ${inbound}.`,
+    `${title} works as a review sample for ${target}: it preserves the original judgment, mood, and action trace while still leaving room for a clearer conclusion. ${relation}.`,
+    `${title} plays a bridging role in the Top 10 by connecting ${target} with nearby notes, so it can turn a single diary entry into a longer theme chain. ${relation}.`,
+  ];
+  if (note.kind === "孤立潜力") {
+    return `${title} has not entered the stable link network yet, but its ${note.periodWordCount} period words show material for ${target}; linking and summarizing it will clarify whether it should keep growing.`;
+  }
+  return templates[index % templates.length] ?? templates[0];
+}
+
+function fallbackHighValueActionEn(
+  note: { kind: string },
+  title: string,
+  theme: string,
+): string {
+  const target = theme || title;
+  if (note.kind === "孤立潜力") {
+    return `Add 2-3 contextual wikilinks, then write one paragraph explaining how it belongs to ${target}.`;
+  }
+  if (note.kind === "输出候选") {
+    return `Add a current-judgment section and three evidence links so it can become an output draft for ${target}.`;
+  }
+  return `Add related notes, current conclusion, and next question sections so it can serve as a review entry for ${target}.`;
+}
+
+function relatedTheme(
+  note: { path: string; topics: string[] },
+  themes: AiThemeInsight[],
+): string {
+  const noteTitle = titleFromPath(note.path);
+  const evidenceMatch = themes.find((theme) =>
+    theme.evidenceNotes.some(
+      (path) =>
+        normalizeLinkIdentity(path) === normalizeLinkIdentity(note.path),
+    ),
+  );
+  if (evidenceMatch) {
+    return evidenceMatch.title;
+  }
+  const topicMatch = themes.find((theme) =>
+    [theme.title, theme.synthesis, theme.connections].some((text) =>
+      note.topics.some((topic) =>
+        text.toLocaleLowerCase().includes(topic.toLocaleLowerCase()),
+      ),
+    ),
+  );
+  return (
+    topicMatch?.title ||
+    themes.find(
+      (theme) =>
+        theme.synthesis.includes(noteTitle) ||
+        theme.connections.includes(noteTitle),
+    )?.title ||
+    ""
+  );
+}
+
+function titleFromPath(path: string): string {
+  return path.split("/").pop()?.replace(/\.md$/iu, "") ?? path;
+}
+
+function linkTargetMatches(link: string, path: string): boolean {
+  return (
+    normalizeLinkIdentity(link) === normalizeLinkIdentity(path) ||
+    normalizeLinkIdentity(link) ===
+      normalizeLinkIdentity(path.replace(/\.md$/iu, ""))
+  );
+}
+
+function resolveLinkTarget(
+  link: string,
+  noteByPath: Map<string, { file: SourceFile; note: NoteStats }>,
+): string {
+  const normalized = normalizeLinkIdentity(link);
+  for (const path of noteByPath.keys()) {
+    if (
+      normalizeLinkIdentity(path) === normalized ||
+      normalizeLinkIdentity(path.replace(/\.md$/iu, "")) === normalized ||
+      normalizeLinkIdentity(
+        path.split("/").pop()?.replace(/\.md$/iu, "") ?? path,
+      ) === normalized
+    ) {
+      return path;
+    }
+  }
+  return link;
+}
+
+function normalizeLinkIdentity(value: string): string {
+  return value
+    .trim()
+    .replace(/\.md$/iu, "")
+    .replace(/\\/gu, "/")
+    .toLocaleLowerCase();
+}
+
+function obsidianSkillHandoff(): Record<string, unknown> {
+  return {
+    invokedSkills: ["obsidian-cli", "obsidian-markdown", "obsidian-bases"],
+    obsidianCli: [
+      "Treat active-year notes, backlinks, and linked-note excerpts as if read through Obsidian vault APIs/CLI.",
+      "When citing evidence, use exact vault-relative note paths supplied in context.",
+    ],
+    obsidianMarkdown: [
+      "Use Obsidian wikilinks for internal evidence and preserve paths without inventing aliases.",
+      "Avoid raw pipes inside Markdown table cells; table wikilinks should use plain [[path]] form.",
+      "Generated prose should be valid Obsidian Flavored Markdown and readable as an editable note.",
+    ],
+    obsidianBases: [
+      "Think of theme/high-value-note outputs as database-like rows: stable title, evidence notes, synthesis, and action fields.",
+      "Prefer structured, reusable fields over vague paragraphs.",
+    ],
+  };
+}
+
+export async function runLocalCodex(
+  prompt: string,
+  command = DEFAULT_LOCAL_CODEX_COMMAND,
+): Promise<CodexExecutorResult> {
   const outputDir = await mkdtemp(join(tmpdir(), "annual-review-codex-"));
   const outputPath = join(outputDir, "last-message.md");
   return new Promise((resolve) => {
@@ -240,7 +749,10 @@ export async function runLocalCodex(prompt: string, command = DEFAULT_LOCAL_CODE
     };
     const timeout = setTimeout(() => {
       child.kill("SIGTERM");
-      finish({ ok: false, content: `Local Codex generation timed out after ${Math.round(LOCAL_CODEX_TIMEOUT_MS / 1000)} seconds while running localCodexCommand: ${command}.` });
+      finish({
+        ok: false,
+        content: `Local Codex generation timed out after ${Math.round(LOCAL_CODEX_TIMEOUT_MS / 1000)} seconds while running localCodexCommand: ${command}.`,
+      });
     }, LOCAL_CODEX_TIMEOUT_MS);
 
     child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
@@ -254,26 +766,48 @@ export async function runLocalCodex(prompt: string, command = DEFAULT_LOCAL_CODE
       const output = Buffer.concat(stdout).toString("utf8").trim();
       const errorOutput = Buffer.concat(stderr).toString("utf8").trim();
       const lastMessage = await readCodexLastMessage(outputPath);
-      const streamMessage = extractCodexStreamMessage(output) || extractCodexStreamMessage(errorOutput);
+      const streamMessage =
+        extractCodexStreamMessage(output) ||
+        extractCodexStreamMessage(errorOutput);
       if (code === 0 && (lastMessage || streamMessage || output)) {
         finish({ ok: true, content: lastMessage || streamMessage || output });
         return;
       }
-      finish({ ok: false, content: formatLocalCodexFailure(command, errorOutput, output, code, env.PATH ?? "") });
+      finish({
+        ok: false,
+        content: formatLocalCodexFailure(
+          command,
+          errorOutput,
+          output,
+          code,
+          env.PATH ?? "",
+        ),
+      });
     });
     child.stdin.end(prompt);
   });
 }
 
-export function buildLocalCodexEnv(baseEnv: NodeJS.ProcessEnv, outputPath: string): NodeJS.ProcessEnv {
+export function buildLocalCodexEnv(
+  baseEnv: NodeJS.ProcessEnv,
+  outputPath: string,
+): NodeJS.ProcessEnv {
   return {
     ...baseEnv,
-    PATH: [...LOCAL_CODEX_PATH_ENTRIES, baseEnv.PATH ?? ""].filter(Boolean).join(":"),
+    PATH: [...LOCAL_CODEX_PATH_ENTRIES, baseEnv.PATH ?? ""]
+      .filter(Boolean)
+      .join(":"),
     CODEX_ANNUAL_REVIEW_OUTPUT: outputPath,
   };
 }
 
-export function formatLocalCodexFailure(command: string, stderr: string, stdout: string, code: number | null, path: string): string {
+export function formatLocalCodexFailure(
+  command: string,
+  stderr: string,
+  stdout: string,
+  code: number | null,
+  path: string,
+): string {
   const commandNotFound = extractCommandNotFound(stderr || stdout);
   if (commandNotFound) {
     return `Local Codex was not found from Obsidian's runtime PATH while running localCodexCommand: ${command}; PATH used for fallback: ${path || "(empty)"}; try setting localCodexCommand to: ${ABSOLUTE_CODEX_COMMAND_EXAMPLE}; underlying error: ${commandNotFound}.`;
@@ -283,7 +817,10 @@ export function formatLocalCodexFailure(command: string, stderr: string, stdout:
 }
 
 function extractCommandNotFound(output: string): string {
-  return output.match(/(?:bash: (?:line \d+: )?)?codex: command not found/u)?.[0] ?? "";
+  return (
+    output.match(/(?:bash: (?:line \d+: )?)?codex: command not found/u)?.[0] ??
+    ""
+  );
 }
 
 function extractCodexStreamMessage(output: string): string {
@@ -297,7 +834,12 @@ function extractCodexStreamMessage(output: string): string {
   }
   return lines
     .slice(markerIndex + 1)
-    .filter((line) => line !== "tokens used" && !/^\d[\d,]*$/u.test(line) && !line.startsWith("hook:"))
+    .filter(
+      (line) =>
+        line !== "tokens used" &&
+        !/^\d[\d,]*$/u.test(line) &&
+        !line.startsWith("hook:"),
+    )
     .join(" ")
     .trim();
 }
@@ -311,7 +853,10 @@ async function readCodexLastMessage(path: string): Promise<string> {
 }
 
 function excerpt(content: string): string {
-  const body = content.replace(/^---\n[\s\S]*?\n---\n?/u, "").replace(/\s+/gu, " ").trim();
+  const body = content
+    .replace(/^---\n[\s\S]*?\n---\n?/u, "")
+    .replace(/\s+/gu, " ")
+    .trim();
   if (body.length <= MAX_AI_CONTEXT_EXCERPT_CHARS) {
     return body;
   }
@@ -326,7 +871,10 @@ function toOneSentenceSummary(markdown: string, maxLength = 240): string {
   const body = markdown
     .split(/\r?\n/u)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
+    .filter(
+      (line) =>
+        line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line),
+    )
     .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
     .join(" ")
     .replace(/\s+/gu, " ")
@@ -343,12 +891,135 @@ function extractResponseText(data: OpenAiResponse): string {
   const chunks: string[] = [];
   for (const output of data.output ?? []) {
     for (const content of output.content ?? []) {
-      if ((content.type === "output_text" || content.type === "text") && typeof content.text === "string") {
+      if (
+        (content.type === "output_text" || content.type === "text") &&
+        typeof content.text === "string"
+      ) {
         chunks.push(content.text);
       }
     }
   }
   return chunks.join("\n\n");
+}
+
+function parseAiEnhancements(content: string): AiReportEnhancements {
+  const parsed = parseJsonObject(content);
+  if (!parsed) {
+    return {
+      ...emptyAiEnhancements(),
+      periodJudgment: toOneSentenceSummary(content),
+    };
+  }
+
+  return {
+    periodJudgment:
+      stringValue(parsed.periodJudgment) || toOneSentenceSummary(content),
+    themeInsights: arrayValue(parsed.themeInsights)
+      .map(toThemeInsight)
+      .filter((theme): theme is AiThemeInsight => Boolean(theme))
+      .slice(0, 5),
+    highValueNotes: arrayValue(parsed.highValueNotes)
+      .map(toHighValueNoteInsight)
+      .filter((note): note is AiHighValueNoteInsight => Boolean(note))
+      .slice(0, 10),
+    nextActions: arrayValue(parsed.nextActions)
+      .map(stringValue)
+      .filter(Boolean)
+      .slice(0, 5),
+  };
+}
+
+function parseJsonObject(content: string): Record<string, unknown> | null {
+  const candidates = [
+    content.match(/```(?:json)?\s*([\s\S]*?)```/iu)?.[1],
+    content,
+    content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1),
+  ].filter((candidate): candidate is string =>
+    Boolean(candidate && candidate.trim().startsWith("{")),
+  );
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  return null;
+}
+
+function toThemeInsight(value: unknown): AiThemeInsight | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const title = stringValue(record.title);
+  const synthesis = stringValue(record.synthesis);
+  if (!title || !synthesis) {
+    return null;
+  }
+  return {
+    title,
+    synthesis,
+    connections: stringValue(record.connections),
+    evidenceNotes: arrayValue(record.evidenceNotes)
+      .map(notePathValue)
+      .filter(Boolean)
+      .slice(0, 5),
+    nextQuestion: stringValue(record.nextQuestion),
+  };
+}
+
+function toHighValueNoteInsight(value: unknown): AiHighValueNoteInsight | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const path = notePathValue(record.path);
+  const reason = stringValue(record.reason);
+  if (!path || !reason) {
+    return null;
+  }
+  return {
+    path,
+    reason,
+    suggestedAction: stringValue(record.suggestedAction),
+  };
+}
+
+function arrayValue(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? sanitizeInlineMarkdown(value, 700) : "";
+}
+
+function notePathValue(value: unknown): string {
+  const text = stringValue(value);
+  const wikilink = text.match(
+    /^\[\[([^\]|#\]]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]$/u,
+  )?.[1];
+  return (wikilink || text).replace(/\.md$/iu, "").trim();
+}
+
+function emptyAiEnhancements(): AiReportEnhancements {
+  return {
+    periodJudgment: "",
+    themeInsights: [],
+    highValueNotes: [],
+    nextActions: [],
+  };
+}
+
+function unavailableAiEnhancements(reason: string): AiReportEnhancements {
+  return {
+    ...emptyAiEnhancements(),
+    periodJudgment: aiUnavailableSummary(reason),
+  };
 }
 
 async function safeResponseText(response: Response): Promise<string> {
@@ -358,4 +1029,17 @@ async function safeResponseText(response: Response): Promise<string> {
   } catch {
     return "Could not read response body.";
   }
+}
+
+function sanitizeInlineMarkdown(value: string, maxLength: number): string {
+  return value
+    .replace(
+      /\[\[([^\]|#\]]+?)\.md((?:#[^\]|]+)?(?:\|[^\]]+)?)?\]\]/giu,
+      (_match, path: string, suffix = "") => `[[${path}${suffix}]]`,
+    )
+    .replace(/\r?\n/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, maxLength)
+    .trim();
 }

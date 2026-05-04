@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportSection } from "../src/core/ai";
+import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportEnhancements, renderAiReportSection } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { extractNoteStats, parseFrontmatter, parseObsidianWikilinks } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
@@ -487,7 +487,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## One-Sentence Judgment",
+      "## Annual Overview",
       "## Writing Growth",
       "## Topic Evolution",
       "## High Value Notes",
@@ -496,9 +496,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("| Total new words |");
     expect(markdown).toContain("| Writing days |");
     expect(markdown).toContain("| Longest writing streak |");
-    expect(markdown).toContain("### Daily Cumulative Word Chart");
+    expect(markdown).toContain("### Cumulative Growth");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
-    expect(markdown).toContain("### Monthly Growth Chart");
+    expect(markdown).toContain("### Monthly New Notes");
     expect(markdown).toContain("### Heatmap");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("xmlns=\"http://www.w3.org/2000/svg\"");
@@ -507,18 +507,18 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Legend: . = 0 words");
     expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).not.toContain("## Word Growth Trend");
-    expect(markdown).toContain("Y-axis: monthly created-note word growth");
+    expect(markdown).toContain("Notes created in each active month");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
-    expect(markdown).toContain("class=\"chart-line\"");
+    expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
     expect(markdown).toContain("## Topic Evolution");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(markdown).toContain("| Topic | Added words | New notes | Representative Notes |");
+    expect(markdown).toContain("content-thread synthesis is generated only when summarization is enabled");
+    expect(markdown).not.toContain("| Topic | Added words | New notes | Representative Notes |");
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
-    expect(markdown).toContain("### Feedback Signals");
-    expect(markdown).toContain("### Writing Growth Feedback");
-    expect(markdown).toContain("- Advantage:");
-    expect(markdown).toContain("- Risk:");
-    expect(markdown).toContain("- Suggestion:");
+    expect(markdown).not.toContain("### Feedback Signals");
+    expect(markdown).toContain("### Activity Reading");
+    expect(markdown).toContain("Writing appeared on");
+    expect(markdown).toContain("Writing volume is concentrated");
     expect(markdown).not.toContain("Tasks completed");
     expect(markdown).not.toContain("## Tasks And Project Notes");
     expect(markdown).not.toContain("## Year Totals");
@@ -528,9 +528,11 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Folders");
     expect(markdown).toContain("## High Value Notes");
     expect(markdown).toContain("### Top 10 high-value notes");
-    expect(markdown).toContain("### Output-ready notes");
-    expect(markdown).toContain("### Notes needing maintenance");
-    expect(markdown).toContain("| Note | Type | Value reason | Suggested action |");
+    expect(markdown).not.toContain("### Output-ready notes");
+    expect(markdown).not.toContain("### Notes needing maintenance");
+    expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
+    expect(markdown).not.toContain("#### [[");
+    expect(markdown).toContain("- [[");
     for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
       expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
     }
@@ -563,27 +565,65 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("report_language: \"zh\"");
     expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## 本期一句话判断",
+      "## 年度总览",
       "## 写作增长",
       "## 主题演化",
       "## 高价值笔记",
       "## 下期行动",
     ]);
-    expect(markdown).toContain("### 日累计字数图");
+    expect(markdown).toContain("### 累计增长");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
-    expect(markdown).toContain("### 月度增长图");
+    expect(markdown).toContain("### 每月新增笔记");
     expect(markdown).toContain("### 热力图");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
     expect(markdown).toContain("## 主题演化");
-    expect(markdown).toContain("### 反馈信号");
+    expect(markdown).not.toContain("### 反馈信号");
     expect(markdown).toContain("## 高价值笔记");
-    expect(markdown).toContain("### 可输出笔记");
-    expect(markdown).toContain("### 需维护笔记");
+    expect(markdown).not.toContain("### 可输出笔记");
+    expect(markdown).not.toContain("### 需维护笔记");
     expect(markdown).toContain("## 下期行动");
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
+  });
+
+  it("renders AI-synthesized themes and high-value reasons when AI enhancements are present", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const markdown = renderAnnualReview(aggregate, {
+      aiEnabled: true,
+      aiEnhancements: {
+        periodJudgment: "The year centers on turning daily writing into a research review loop.",
+        themeInsights: [
+          {
+            title: "Research review loop",
+            synthesis: "Daily notes and project notes form a reusable evidence loop.",
+            connections: "Connects daily capture to project synthesis.",
+            evidenceNotes: ["Daily/2026-01-01.md", "Projects/Research.md"],
+            nextQuestion: "Which project note should become the entry point?",
+          },
+        ],
+        highValueNotes: [
+          {
+            path: "Projects/Research.md",
+            reason: "This note links source evidence back to the project synthesis and can become the review hub.",
+            suggestedAction: "Turn it into a compact Obsidian index with evidence notes.",
+          },
+        ],
+        nextActions: ["Create a review hub from [[Projects/Research]]."],
+      },
+    });
+
+    expect(markdown).toContain("## Topic Evolution");
+    expect(markdown).toContain("### Content Threads");
+    expect(markdown).toContain("Research review loop");
+    expect(markdown).toContain("[[Daily/2026-01-01]]");
+    expect(markdown).not.toContain("| Theme |");
+    expect(markdown).not.toContain("| Note | Type | AI value reason | Suggested action |");
+    expect(markdown).toContain("#### [[Projects/Research|Research]]");
+    expect(markdown).toContain("This note links source evidence back to the project synthesis");
+    expect(markdown).toContain("1. Create a review hub from [[Projects/Research]].");
+    expect(markdown).not.toContain("### Feedback Signals");
   });
 
   it("can reference generated chart SVG assets instead of embedding chart SVG in the note", async () => {
@@ -592,13 +632,13 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { chartPaths });
     const chartAssets = buildAnnualReviewChartAssets(aggregate, { chartPaths });
 
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Daily Cumulative Word Chart|900]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Cumulative Growth|900]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap|900]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Word Growth Trend|900]]");
+    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Monthly New Notes|900]]");
     expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]");
     expect(markdown).not.toContain("<svg");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
-    expect(markdown).toContain("| Month | Word growth | Cumulative words |");
+    expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
 
     expect(chartAssets).toHaveLength(5);
     expect(chartAssets.map((asset) => asset.path)).toEqual([
@@ -611,8 +651,8 @@ describe("aggregation and rendering", () => {
     expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
     expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
     expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
-    expect(chartAssets[2]?.content).toContain("class=\"chart-line\"");
-    expect(chartAssets[2]?.content).toContain("class=\"endpoint-dot\"");
+    expect(chartAssets[2]?.content).toContain("<rect");
+    expect(chartAssets[2]?.content).not.toContain("class=\"chart-line\"");
     expect(chartAssets[3]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
     expect(chartAssets[4]?.content).toContain("\"top_topics\"");
     expect(chartAssets[4]?.content).toContain("\"emerging_topics\"");
@@ -799,16 +839,20 @@ describe("AI provider", () => {
     expect(message).not.toContain("SECRET_PROMPT_TEXT");
   });
 
-  it("uses compact aggregate context for the local Codex prompt", async () => {
+  it("uses Obsidian skill and note-link context for the local Codex prompt", async () => {
     const files = await fixtureVault();
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const prompt = buildCodexPrompt(aggregate, files, DEFAULT_SETTINGS);
 
-    expect(prompt).toContain("Compact aggregate-only context");
+    expect(prompt).toContain("obsidianSkillHandoff");
+    expect(prompt).toContain("obsidian-cli");
+    expect(prompt).toContain("obsidian-markdown");
+    expect(prompt).toContain("obsidian-bases");
     expect(prompt).toContain("\"highValueNotes\"");
     expect(prompt).toContain("\"topLinks\"");
-    expect(prompt).not.toContain("\"contextNotes\"");
-    expect(prompt.length).toBeLessThan(8_000);
+    expect(prompt).toContain("\"contextNotes\"");
+    expect(prompt).toContain("\"backlinks\"");
+    expect(prompt.length).toBeLessThan(24_000);
   });
 
   it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {
@@ -837,6 +881,52 @@ describe("AI provider", () => {
     expect(section).toBe("Use [[Daily/2026-01-01]] as evidence.");
     expect(section).toContain("[[Daily/2026-01-01]]");
     expect(section).not.toContain("Provider:");
+  });
+
+  it("normalizes AI-authored .md wikilinks for Obsidian Markdown", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const enhancements = await renderAiReportEnhancements({
+      aggregate,
+      files,
+      settings: {
+        ...DEFAULT_SETTINGS,
+        aiProvider: "chatgpt",
+        chatGptApiKey: "test-key",
+      },
+      fetcher: async () =>
+        new Response(
+          JSON.stringify({
+            output_text: JSON.stringify({
+              periodJudgment: "Use [[Daily/2026-01-01.md]] as evidence.",
+              themeInsights: [
+                {
+                  title: "Research loop",
+                  synthesis: "Connect [[Daily/2026-01-01.md]] to project synthesis.",
+                  connections: "[[Projects/Research.md]] carries the backlink.",
+                  evidenceNotes: ["[[Daily/2026-01-01.md]]"],
+                  nextQuestion: "How should [[Projects/Research.md]] evolve?",
+                },
+              ],
+              highValueNotes: [
+                {
+                  path: "Projects/Research.md",
+                  reason: "[[Projects/Research.md]] links the evidence.",
+                  suggestedAction: "Update [[Projects/Research.md]].",
+                },
+              ],
+              nextActions: ["Promote [[Projects/Research.md]]."],
+            }),
+          }),
+          { status: 200 },
+        ),
+    });
+
+    expect(enhancements.periodJudgment).toContain("[[Daily/2026-01-01]]");
+    expect(enhancements.themeInsights[0]?.connections).toContain("[[Projects/Research]]");
+    expect(enhancements.themeInsights[0]?.evidenceNotes).toEqual(["Daily/2026-01-01"]);
+    expect(enhancements.highValueNotes[0]?.reason).toContain("[[Projects/Research]]");
+    expect(enhancements.nextActions[0]).toContain("[[Projects/Research]]");
   });
 
   it("builds provider context from annual stats, links, and note evidence", async () => {

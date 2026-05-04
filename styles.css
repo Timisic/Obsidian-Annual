@@ -133,3 +133,20 @@
 .annual-review-dashboard-empty {
   color: var(--text-muted);
 }
+
+.annual-review-progress-modal {
+  display: grid;
+  gap: 12px;
+}
+
+.annual-review-progress-status {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.annual-review-progress-bar {
+  width: 100%;
+  height: 12px;
+  accent-color: var(--interactive-accent);
+}
