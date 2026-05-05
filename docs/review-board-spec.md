@@ -138,7 +138,7 @@ type ReviewSessionState = {
 Merge rule for repeated scans:
 
 1. Match scanned candidates by stable `id`.
-2. If the stored candidate has a user-confirmed status, preserve stored status, `userTitle`, decisions, highlight flag, merge target, and user note.
+2. If the stored candidate has a user-decided status, preserve stored status, `userTitle`, decisions, highlight flag, merge target, and user note.
 3. Refresh machine-owned fields such as `reason`, `score`, `rank`, and evidence when the candidate is still `candidate`.
 4. Append newly scanned candidates as `candidate`.
 5. Keep stored candidates that disappeared from a new scan if they are not `candidate`; mark evidence as missing instead of dropping the decision.
@@ -157,7 +157,7 @@ Every candidate must include at least one `EvidenceSource`:
 | `label` | Human-readable evidence label. |
 | `excerpt` | Optional short source text. |
 | `reason` | Why this evidence supports the candidate. |
-| `missing` | True when a previously confirmed source cannot be found after rescan. |
+| `missing` | True when evidence for a previously accepted or otherwise user-decided candidate cannot be found after rescan. |
 
 The UI must never show an accepted candidate without evidence. If all evidence is missing after rescan, keep the user decision and show a "missing evidence" warning.
 

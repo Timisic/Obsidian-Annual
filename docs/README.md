@@ -7,7 +7,7 @@
 - [产品定义](product-definition.md)：说明 Annual Review 的新定位、第一性原理、产品闭环和信任边界。
 - [SPEC](product-specification.md)：中文主规格，定义 Review Workflow、数据模型、状态流转、隐私边界、失败场景和验证计划。
 - [Review Board v1 规格](review-board-spec.md)：定义 Review Board 的候选类型、状态、操作、最小 UI 和持久化结构。
-- [Review Board 对齐决策](review-board-alignment-decisions.md)：列出 Review Board v1 与现有 README/docs 表述需要决策或统一的地方。
+- [Review Board 对齐决策](review-board-alignment-decisions.md)：记录 Review Board v1 与现有 README/docs 表述的已采纳对齐方向。
 - [Feature Inventory](feature-inventory.md)：把功能分为 Core、Support、Backlog、Remove，约束 README 和路线图只展示主流程。
 - [Roadmap](roadmap.md)：只保留与年度复盘工作流直接相关的路线。
 - [Agent 安装指南](agent-installation.md)：开发和自动化附录，不作为普通用户安装主路径。

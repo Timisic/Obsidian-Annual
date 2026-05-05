@@ -80,7 +80,7 @@ describe("review state", () => {
     });
   });
 
-  it("preserves user-confirmed choices when repeated scans refresh candidates", () => {
+  it("preserves user-decided choices when repeated scans refresh candidates", () => {
     const stored = applyReviewAction(sessionWith([candidate("topic-1", "topic"), candidate("note-1", "note")]), {
       type: "rename-topic",
       candidateId: "topic-1",

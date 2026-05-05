@@ -13,9 +13,9 @@ Annual Review 是 Obsidian 的年度复盘工作流插件。它从用户一年�
 
 ## 2. 产品原则
 
-- 复盘流程优先：先帮助用户完成筛选、确认、取舍和行动，再生成年报。
+- 复盘流程优先：先帮助用户完成筛选、接受、取舍和行动，再生成年报。
 - 证据优先：每个主题、笔记推荐和行动建议都能回到源笔记、标签、链接、任务或时间线。
-- 用户判断优先：插件只给候选项、理由和证据；最终主题命名、价值判断和行动决定由用户确认。
+- 用户判断优先：插件只给候选项、理由和证据；最终主题命名、价值判断和行动决定由用户接受或取舍。
 - 小闭环优先：先跑通扫描、候选、审核、决策、年报，再扩展图表或导出。
 - 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
 
@@ -93,12 +93,14 @@ Annual Review 是 Obsidian 的年度复盘工作流插件。它从用户一年�
 
 | 类型 | 用途 | 证据 |
 | --- | --- | --- |
-| Annual Theme | 贯穿全年的主题或方向 | 标签、文件夹、标题、链接、月度分布、代表笔记 |
-| Representative Note | 值得回看的代表笔记 | 字数、链接、任务、修改时间、主题归属、上下文摘录 |
-| Project Thread | 可能需要继续推进的项目线 | 文件夹、任务、双链、时间跨度 |
-| Action Candidate | 继续、合并、归档、放弃或转项目的建议 | note evidence、任务状态、近期活动、沉睡时间 |
-| Dormant Asset | 很久未动但可能有价值的笔记 | 历史链接、主题归属、最后修改时间 |
-| Anomaly | 异常活跃或突然中断的活动 | 时间线、月度桶、任务和修改信号 |
+| `topic` | 贯穿全年的主题或方向 | 标签、文件夹、标题、链接、月度分布、代表笔记 |
+| `note` | 值得回看的代表笔记 | 字数、链接、任务、修改时间、主题归属、上下文摘录 |
+| `project` | 可能需要继续推进的项目线 | 文件夹、任务、双链、时间跨度 |
+| `task` | 需要年度层面判断或下一步行动的任务/任务簇 | Markdown 任务、任务状态、上下文标题、源笔记 |
+| `dormant-note` | 很久未动但可能有价值的笔记 | 历史链接、主题归属、最后修改时间 |
+| `bridge-note` | 连接多个主题或项目区域的桥接笔记 | 反链、出链、跨文件夹连接、主题跨度 |
+
+`Anomaly` 不作为 Review Board v1 候选类型；它是候选生成阶段的扫描信号，可用于解释 `topic`、`note`、`project`、`task`、`dormant-note` 或 `bridge-note` 为什么出现。
 
 每个候选项必须包含：
 
@@ -116,38 +118,40 @@ Review Board 是复盘主界面。用户逐项处理候选，而不是直接接�
 
 必需操作：
 
-- Confirm：确认候选进入年报。
-- Rename：改主题或候选名称。
-- Merge：合并重复主题或候选。
+- Accept：接受候选进入年报候选结果。
+- Rename topic：改主题或候选名称。
+- Merge topic：合并重复主题。
 - Ignore：本次复盘忽略。
 - Archive：标记为归档方向。
-- Open evidence：打开源笔记、标签、链接、任务或时间线证据。
-- Add decision：记录行动决定。
+- Add to annual highlights：加入年度精选。
+- Add to actions：记录下一步行动。
+- Open source note：打开源笔记、标签、链接、任务或时间线证据。
 
 推荐交互：
 
 - 左侧候选队列。
-- 中间证据和理由。
-- 右侧决策和年报预览。
-- 可筛选待审核、已确认、已忽略、需决策项。
+- 右侧证据、理由和操作按钮。
+- 底部复盘进度。
+- 可筛选待审核、已接受、行动、已忽略/归档项。
 - 进度显示，例如 `7/18 reviewed`。
 
 ### 4.5 行动决策
 
-行动是年报的核心输出之一。候选被确认后，用户可以选择：
+行动是年报的核心输出之一。候选被接受后，Review Board v1 的按钮只使用 DEC-40 操作集；行动记录可以保留更具体的结果标签，方便年报表达。
 
-| 行动 | 含义 |
+| Review Board 操作 | 含义 |
 | --- | --- |
-| Continue | 下一年继续推进。 |
-| Merge | 与另一个主题或笔记合并。 |
-| Archive | 归档，暂不推进。 |
-| Drop | 明确放弃。 |
-| Convert to project | 转成项目或任务。 |
-| Revisit | 设为未来复核对象。 |
+| Accept | 接受候选作为年度复盘结果。 |
+| Ignore | 本次复盘不采用，但保留状态。 |
+| Merge topic | 将重复主题合并到目标主题。 |
+| Rename topic | 使用用户命名替代机器建议标题。 |
+| Add to annual highlights | 将主题、笔记或桥接笔记加入年度精选。 |
+| Add to actions | 将候选转为下一步行动，可附带 continue、archive、drop、convert-to-project 或 revisit 等结果标签。 |
+| Open source note | 打开候选或证据来源，不改变状态。 |
 
 行动记录应包含：
 
-- action type。
+- action label。
 - 用户备注。
 - 来源候选。
 - evidence links。
@@ -165,14 +169,14 @@ Annual Reviews/YYYY Annual Review.md
 年报结构：
 
 - YAML frontmatter：年份、生成时间、扫描范围、隐私模式、插件版本。
-- 方法说明：本次扫描了什么、排除了什么、哪些内容由用户确认。
-- 年度主题：至少 3 个用户确认主题，包含理由和证据。
-- 代表笔记：至少 5 篇用户确认笔记，包含为什么值得回看。
-- 行动决定：至少 3 条用户确认行动。
+- 方法说明：本次扫描了什么、排除了什么、哪些内容由用户接受。
+- 年度主题：至少 3 个用户接受主题，包含理由和证据。
+- 代表笔记：至少 5 篇用户接受笔记，包含为什么值得回看。
+- 行动决定：至少 3 条用户接受行动。
 - 用户手写区：保留给个人叙事、反思和补充。
 - 再生成记录：说明哪些区块可再生、哪些区块由用户维护。
 
-AI 可以作为可选步骤帮助润色已确认内容，但不能替代候选、审核、决策和证据链。
+AI 可以作为可选步骤帮助润色已接受内容，但不能替代候选、审核、决策和证据链。
 
 ## 5. 数据模型
 
@@ -201,15 +205,16 @@ type NoteSignal = {
 ```ts
 type CandidateStatus =
   | "candidate"
-  | "confirmed"
+  | "accepted"
   | "renamed"
   | "merged"
   | "ignored"
-  | "archived";
+  | "archived"
+  | "next-action";
 
 type ReviewCandidate = {
   id: string;
-  type: "theme" | "note" | "project" | "action" | "dormant" | "anomaly";
+  type: "topic" | "note" | "project" | "task" | "dormant-note" | "bridge-note";
   title: string;
   reason: string;
   evidence: EvidenceRef[];
@@ -227,11 +232,14 @@ type ReviewCandidate = {
 
 ```ts
 type EvidenceRef = {
-  kind: "note" | "tag" | "link" | "task" | "timeline" | "folder";
+  id: string;
+  kind: "note" | "tag" | "link" | "task" | "timeline" | "folder" | "excerpt";
   label: string;
   target: string;
+  sourcePath?: string;
   excerpt?: string;
   reason?: string;
+  missing?: boolean;
 };
 ```
 
@@ -241,7 +249,8 @@ type EvidenceRef = {
 type ReviewDecision = {
   id: string;
   candidateId: string;
-  action: "continue" | "merge" | "archive" | "drop" | "convert-to-project" | "revisit";
+  action: "continue" | "merge" | "archive" | "drop" | "convert-to-project" | "revisit" | "custom";
+  label: string;
   note: string;
   evidence: EvidenceRef[];
   createdAt: string;
@@ -291,7 +300,7 @@ cancelled
 恢复规则：
 
 - `scan-failed`：保留错误说明，允许修改范围后重试。
-- `generation-failed`：保留已确认候选和行动，允许跳过 AI 或只重新生成年报。
+- `generation-failed`：保留已接受候选和行动，允许跳过 AI 或只重新生成年报。
 - `write-conflict`：不覆盖已有用户编辑，提示创建副本或查看 diff。
 - `cancelled`：保留会话草稿，允许继续或删除。
 
@@ -299,19 +308,22 @@ cancelled
 
 ```text
 candidate
-  -> confirmed
+  -> accepted
   -> renamed
   -> merged
   -> ignored
   -> archived
+  -> next-action
 ```
 
 规则：
 
-- `confirmed`、`renamed`、`merged` 可进入年报。
+- `accepted`、`renamed`、`merged` 可进入年报。
 - `ignored` 默认不进入年报，但保留在会话记录中。
 - `archived` 可进入行动决定区，作为明确取舍。
+- `next-action` 可进入行动决定区，并且必须关联行动记录。
 - `merged` 必须记录目标候选 ID。
+- 重复扫描不得覆盖 `accepted`、`renamed`、`merged`、`ignored`、`archived` 或 `next-action` 等用户已决定状态。
 
 ## 7. 用户编辑保护
 
@@ -351,7 +363,7 @@ AI opt-in 模式：
 
 - 用户必须显式选择 provider。
 - 发送前展示上下文摘要、摘录数量、目标 provider 和排除范围。
-- 只发送已确认候选、必要统计和有限摘录。
+- 只发送已接受候选、必要统计和有限摘录。
 - 不发送完整 vault。
 - 不写入硬编码密钥。
 - provider 失败时回退到本地确定性年报。
@@ -365,7 +377,7 @@ AI opt-in 模式：
 | metadata cache 不完整 | 链接/标签证据缺失 | 标注证据来源，允许重建索引 |
 | 候选质量差 | 用户失去信任 | 每项展示理由、分数来源和忽略操作 |
 | 重复主题过多 | 审核成本高 | 支持合并、重命名和批量忽略 |
-| AI 输出失败或不可解析 | 年报中断 | 回退确定性模板，保留用户已确认内容 |
+| AI 输出失败或不可解析 | 年报中断 | 回退确定性模板，保留用户已接受内容 |
 | 重新生成遇到用户编辑 | 内容丢失 | 只替换 generated 区块，必要时写副本 |
 | 目标文件被外部同步修改 | 覆盖冲突 | 比较 mtime/hash，提示 diff 或新副本 |
 | 源笔记被删除或移动 | 证据链接失效 | 标注 missing evidence，允许重新扫描 |
@@ -373,9 +385,9 @@ AI opt-in 模式：
 ## 10. 成功标准
 
 - 用户 10-15 分钟内完成第一轮有意义的年度复盘。
-- 年报中至少包含 3 个用户确认的年度主题。
-- 年报中至少包含 5 篇用户确认的代表笔记。
-- 年报中至少包含 3 条用户确认行动。
+- 年报中至少包含 3 个用户接受的年度主题。
+- 年报中至少包含 5 篇用户接受的代表笔记。
+- 年报中至少包含 3 条用户接受行动。
 - 每个推荐项都有简短理由和 evidence links。
 - 重新生成不会抹掉用户手写内容。
 - 默认模式无网络请求。
@@ -413,9 +425,9 @@ npm run build
 
 1. 在测试 vault 中选择年份和扫描范围。
 2. 运行重建索引。
-3. 查看候选主题、代表笔记、项目/任务线索和沉睡资产。
-4. 确认、重命名、合并、忽略和归档若干候选。
-5. 为至少 3 个确认项添加行动决定。
-6. 生成年报，确认报告包含方法说明、证据链接、确认主题、代表笔记和行动。
+3. 查看主题、笔记、项目、任务、沉睡笔记和桥接笔记候选。
+4. 接受、重命名、合并主题、忽略和归档若干候选。
+5. 为至少 3 个接受项添加行动决定。
+6. 生成年报，确认报告包含方法说明、证据链接、已接受主题、代表笔记和行动。
 7. 编辑用户手写区，重新生成，确认手写内容仍在。
 8. 默认设置下确认没有外部网络请求。

@@ -82,7 +82,7 @@ export type ReviewAction =
   | { type: "add-to-actions"; candidateId: string; decision: Omit<ReviewDecision, "candidateId" | "evidence" | "createdAt">; at: string }
   | { type: "open-source-note"; candidateId: string; evidenceId?: string };
 
-const USER_CONFIRMED_STATUSES = new Set<ReviewCandidateStatus>(["accepted", "renamed", "merged", "ignored", "archived", "next-action"]);
+const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>(["accepted", "renamed", "merged", "ignored", "archived", "next-action"]);
 
 export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
   if (candidate.evidence.length === 0) {
@@ -190,7 +190,7 @@ export function mergeScannedCandidates(
       }
       scannedById.delete(storedCandidate.id);
       assertCandidateHasEvidence(scanned);
-      if (USER_CONFIRMED_STATUSES.has(storedCandidate.status)) {
+      if (USER_DECIDED_STATUSES.has(storedCandidate.status)) {
         return {
           ...scanned,
           status: storedCandidate.status,
