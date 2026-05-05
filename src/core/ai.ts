@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
@@ -21,12 +21,12 @@ const MAX_CODEX_CONTEXT_NOTES = 28;
 const MAX_LINKED_NOTE_CONTEXT = 4;
 const LOCAL_CODEX_TIMEOUT_MS = 300_000;
 const LOCAL_CODEX_PATH_ENTRIES = [
-  "/Users/hong/.npm-global/bin",
+  join(homedir(), ".npm-global", "bin"),
   "/opt/homebrew/bin",
   "/usr/local/bin",
 ];
 const ABSOLUTE_CODEX_COMMAND_EXAMPLE =
-  "/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
+  "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;

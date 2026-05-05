@@ -55,41 +55,43 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 2. 搜索 **Annual Review**。
 3. 点击 **Install**，再点击 **Enable**。
 
-### 手动安装开发版
+### 手动安装发布包
 
 ```bash
 npm install
-npm run build
+npm run release:plugin
 ```
 
-然后复制构建产物到 vault 插件目录：
+然后复制发布产物到 vault 插件目录：
 
 ```bash
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
+cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 ```
 
 打开 Obsidian 后，在 `Settings -> Community plugins` 中启用 **Annual Review**。
 
 ## 当前可用命令
 
-| 命令 | 用途 |
-| --- | --- |
-| `Annual Review: Rebuild index` | 重新扫描当前 vault 中允许范围的 Markdown 笔记。 |
-| `Annual Review: Generate report` | 选择年份和生成选项，写入受保护的年度 Markdown 报告。 |
+| 命令                               | 用途                                                     |
+| ---------------------------------- | -------------------------------------------------------- |
+| `Annual Review: Rebuild index`     | 重新扫描当前 vault 中允许范围的 Markdown 笔记。          |
+| `Annual Review: Generate report`   | 选择年份和生成选项，写入受保护的年度 Markdown 报告。     |
 | `Annual Review: Open Review Board` | 打开候选审核界面，用于复核推荐理由、证据链接和接受状态。 |
 
 ## 开发命令
 
-| 命令 | 用途 |
-| --- | --- |
-| `npm run test` | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。 |
-| `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
-| `npm run build` | 生成可安装到 Obsidian 的插件 bundle。 |
-| `npm run dev` | 启动 esbuild watch，适合本地插件开发。 |
-| `npm run deploy:plugin` | 构建插件并可部署到任意 vault 的 `.obsidian`。 |
+| 命令                     | 用途                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `npm run test`           | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。 |
+| `npm run typecheck`      | 运行 TypeScript 类型检查，不生成构建文件。                                    |
+| `npm run build`          | 生成可安装到 Obsidian 的插件 bundle。                                         |
+| `npm run lint`           | 运行 ESLint。                                                                 |
+| `npm run release:plugin` | 生成 `dist/annual-review/` 发布资产。                                         |
+| `npm run dev`            | 启动 esbuild watch，适合本地插件开发。                                        |
+| `npm run deploy:plugin`  | 构建插件并可部署到任意 vault 的 `.obsidian`。                                 |
 
 ## 验证建议
 
@@ -99,6 +101,7 @@ cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
 npm run test
 npm run typecheck
 npm run build
+npm run lint
 ```
 
 手动验证：
@@ -118,3 +121,4 @@ npm run build
 - [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
 - [AI 报告生成设计](docs/ai-report-design.md)
+- [发布检查清单](docs/release-checklist.md)

@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportEnhancements, renderAiReportSection } from "../src/core/ai";
@@ -774,7 +774,8 @@ describe("AI provider", () => {
   it("passes the configured local Codex command to the fallback executor", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const commands: string[] = [];
-    const absoluteCommand = '/Users/hong/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
+    const absoluteCommand =
+      '$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
     const section = await renderAiReportSection({
       aggregate,
       files: await fixtureVault(),
@@ -816,7 +817,7 @@ describe("AI provider", () => {
 
     expect(env.CODEX_ANNUAL_REVIEW_OUTPUT).toBe("/tmp/annual-review-output.md");
     expect(env.PATH?.split(":").slice(0, 4)).toEqual([
-      "/Users/hong/.npm-global/bin",
+      join(homedir(), ".npm-global", "bin"),
       "/opt/homebrew/bin",
       "/usr/local/bin",
       "/usr/bin",
@@ -829,13 +830,13 @@ describe("AI provider", () => {
       "bash: codex: command not found\nPRIVATE_VAULT_CONTENT",
       "SECRET_PROMPT_TEXT",
       127,
-      "/Users/hong/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      "$HOME/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
     );
 
     expect(message).toContain("Local Codex was not found from Obsidian's runtime PATH");
     expect(message).toContain("running localCodexCommand");
     expect(message).toContain(DEFAULT_SETTINGS.localCodexCommand);
-    expect(message).toContain("/Users/hong/.npm-global/bin/codex exec");
+    expect(message).toContain("$HOME/.npm-global/bin/codex exec");
     expect(message).toContain("bash: codex: command not found");
     expect(message).not.toContain("PRIVATE_VAULT_CONTENT");
     expect(message).not.toContain("SECRET_PROMPT_TEXT");
