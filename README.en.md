@@ -8,8 +8,8 @@ candidate notes, make follow-up decisions, and generate a traceable, editable,
 repeatable Markdown annual report.
 
 The plugin has one main promise: scan the local vault, suggest candidates with
-rationale and evidence links, let the user confirm them manually, and write the
-confirmed results into a protected Markdown annual report.
+rationale and evidence links, let the user accept them in Review Board, and
+write accepted results into a protected Markdown annual report.
 
 ## Who it is for
 
@@ -31,14 +31,14 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
 1. **Scan**: choose a year, include/exclude folders, and privacy mode. The
    plugin reads only allowed Markdown, properties, tags, links, tasks, and
    timeline signals inside the active vault.
-2. **Candidates**: the plugin proposes annual themes, suggested review candidates,
-   project/task signals, unusual activity, and dormant assets with a short
-   recommendation rationale and evidence links.
-3. **Review**: you confirm, rename, merge, ignore, or archive candidates in the
-   Review Board.
-4. **Decisions**: you decide whether confirmed themes and notes should continue,
-   merge, archive, stop, or become projects.
-5. **Annual report**: the plugin writes confirmed material, evidence links,
+2. **Candidates**: the plugin proposes topic, note, project, task, dormant-note,
+   and bridge-note candidates with a short recommendation rationale and
+   evidence links. Unusual activity is only a signal for candidate generation.
+3. **Review**: you accept, rename, merge topics, ignore, archive, or add
+   candidates to actions in the Review Board.
+4. **Decisions**: you decide whether accepted topics, notes, projects, tasks,
+   dormant notes, and bridge notes become annual highlights or next actions.
+5. **Annual report**: the plugin writes accepted material, evidence links,
    action decisions, and method notes to
    `Annual Reviews/YYYY Annual Review.md`.
 
@@ -106,7 +106,7 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 - `Annual Review: Generate report`: choose a year and generation options, then
   write the protected annual Markdown report.
 - `Annual Review: Open Review Board`: review candidate rationale, evidence
-  links, and confirmation status.
+  links, and accepted status.
 
 ## Development Commands
 
