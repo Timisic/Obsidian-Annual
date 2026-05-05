@@ -25,7 +25,7 @@ This inventory keeps the product surface focused on the trusted annual-review wo
 | Review Board preview/control view | Support | Exposed as the Review Board, not as a broad analytics dashboard. |
 | Basic progress and scan feedback | Support | Limited to evidence-chain status and generation progress. |
 | Optional AI enrichment | Support | Hidden behind explicit provider setup and context preview; cannot replace review or accepted decisions. |
-| Build and deploy scripts | Support | Kept for maintainers, but smoke-vault deployment is not a public main-path command. |
+| Build, release, and deploy scripts | Support | Kept for maintainers, but private validation vault deployment is not a public main-path command. |
 
 ## Backlog
 
@@ -45,6 +45,6 @@ This inventory keeps the product surface focused on the trusted annual-review wo
 | Feature | Status | Action |
 | --- | --- | --- |
 | Smoke report command in the command palette | Remove | Removed from command registration; keep smoke validation as an internal skill/workflow only. |
-| Smoke-vault deploy script in public package scripts | Remove | Removed from `package.json` to avoid exposing local development paths as product surface. |
+| Private validation vault deploy script in public package scripts | Remove | Removed from `package.json` to avoid exposing local development paths as product surface. |
 | Absolute note-value wording | Remove | Replace user-facing text with review candidates, recommendation rationale, and manual accept/reject language. |
 | Unprotected overwrite-style regeneration promises | Remove | Main docs only describe protected regeneration with user-written sections preserved. |

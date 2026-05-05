@@ -11,11 +11,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { basename, join, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 
-const DEFAULT_TARGET = "/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault/.obsidian";
 const DEFAULT_ARTIFACT_DIR = "dist/annual-review";
-const OPTIONAL_FILES = ["styles.css", "versions.json"];
+const REQUIRED_ARTIFACT_FILES = ["manifest.json", "main.js", "styles.css"];
+const OPTIONAL_ARTIFACT_FILES = ["versions.json"];
 
 main();
 
@@ -41,7 +41,13 @@ function main() {
 
   if (args.noDeploy) return;
 
-  const obsidianDir = resolveObsidianDir(String(args.target ?? DEFAULT_TARGET));
+  if (!args.target) {
+    throw new Error(
+      "Deployment requires --target <vault root or .obsidian path>. Use --no-deploy to generate release assets only.",
+    );
+  }
+
+  const obsidianDir = resolveObsidianDir(String(args.target));
   const pluginsDir = join(obsidianDir, "plugins");
   const pluginDir = join(pluginsDir, pluginId);
   mkdirSync(pluginDir, { recursive: true });
@@ -65,10 +71,11 @@ function writeArtifact(repoRoot, artifactDir) {
   rmSync(artifactDir, { recursive: true, force: true });
   mkdirSync(artifactDir, { recursive: true });
 
-  copyRequired(join(repoRoot, "main.js"), join(artifactDir, "main.js"));
-  copyRequired(join(repoRoot, "manifest.json"), join(artifactDir, "manifest.json"));
+  for (const file of REQUIRED_ARTIFACT_FILES) {
+    copyRequired(join(repoRoot, file), join(artifactDir, file), repoRoot);
+  }
 
-  for (const file of OPTIONAL_FILES) {
+  for (const file of OPTIONAL_ARTIFACT_FILES) {
     const source = join(repoRoot, file);
     if (existsSync(source)) {
       copyFileSync(source, join(artifactDir, file));
@@ -76,9 +83,9 @@ function writeArtifact(repoRoot, artifactDir) {
   }
 }
 
-function copyRequired(source, destination) {
+function copyRequired(source, destination, repoRoot) {
   if (!existsSync(source)) {
-    throw new Error(`Required build output is missing: ${source}`);
+    throw new Error(`Required release asset is missing: ${relative(repoRoot, source)}`);
   }
   copyFileSync(source, destination);
 }
@@ -146,7 +153,7 @@ into an Obsidian vault's .obsidian/plugins/<plugin-id> directory.
 
 Options:
   --target <path>         Vault root or .obsidian path.
-                          Default: ${DEFAULT_TARGET}
+                          Required unless --no-deploy is set.
   --artifact-dir <path>   Directory to generate for manual copy/paste.
                           Default: ${DEFAULT_ARTIFACT_DIR}
   --plugin-id <id>        Override manifest.json id.
@@ -156,8 +163,8 @@ Options:
   -h, --help              Show this help.
 
 Examples:
-  npm run deploy:smoke
   npm run deploy:plugin -- --target /path/to/Vault/.obsidian
   npm run deploy:plugin -- --no-deploy
+  npm run release:plugin
 `);
 }

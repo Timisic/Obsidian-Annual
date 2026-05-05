@@ -81,20 +81,20 @@ After the plugin is listed in the community plugin browser:
 2. Search for **Annual Review**.
 3. Click **Install**, then **Enable**.
 
-### Manually Install The Development Build
+### Manually Install The Release Package
 
 ```bash
 npm install
-npm run build
+npm run release:plugin
 ```
 
-Then copy the build artifacts into the vault plugin directory:
+Then copy the release assets into the vault plugin directory:
 
 ```bash
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js styles.css versions.json "$PLUGIN_DIR/"
+cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 ```
 
 Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
@@ -114,6 +114,8 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
   extraction, aggregation, and Markdown rendering.
 - `npm run typecheck`: run TypeScript without emitting build files.
 - `npm run build`: bundle the installable Obsidian plugin.
+- `npm run lint`: run ESLint.
+- `npm run release:plugin`: create `dist/annual-review/` release assets.
 - `npm run dev`: start esbuild watch mode for local plugin development.
 - `npm run deploy:plugin`: build and optionally deploy to any vault
   `.obsidian` folder.
@@ -126,6 +128,7 @@ Automated validation:
 npm run test
 npm run typecheck
 npm run build
+npm run lint
 ```
 
 Manual validation:
@@ -147,3 +150,4 @@ Manual validation:
 - [Roadmap](docs/roadmap.md)
 - [Docs index](docs/README.md)
 - [AI report design](docs/ai-report-design.md)
+- [Release checklist](docs/release-checklist.md)

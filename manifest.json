@@ -2,8 +2,8 @@
   "id": "annual-review",
   "name": "Annual Review",
   "version": "0.1.0",
-  "minAppVersion": "1.5.0",
-  "description": "Generate local-first annual review notes from vault activity.",
-  "author": "",
-  "isDesktopOnly": false
+  "minAppVersion": "1.7.2",
+  "description": "Create editable annual review notes from local vault activity and review decisions.",
+  "author": "Timisic",
+  "isDesktopOnly": true
 }

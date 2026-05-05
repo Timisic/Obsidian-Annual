@@ -10,6 +10,8 @@
 - [Review Board 对齐决策](review-board-alignment-decisions.md)：记录 Review Board v1 与现有 README/docs 表述的已采纳对齐方向。
 - [Feature Inventory](feature-inventory.md)：把功能分为 Core、Support、Backlog、Remove，约束 README 和路线图只展示主流程。
 - [Roadmap](roadmap.md)：只保留与年度复盘工作流直接相关的路线。
+- [发布检查清单](release-checklist.md)：发布前验证 manifest、构建、release assets、手动安装和社区提交材料。
+- [GitHub release 草案](github-release-draft.md)：首个 `0.1.0` release 的标题、说明和资产清单草稿。
 - [Agent 安装指南](agent-installation.md)：开发和自动化附录，不作为普通用户安装主路径。
 - [AI 报告生成设计](ai-report-design.md)：说明 AI 作为可选增强时如何读取受控上下文，并生成可追溯的 Markdown 草稿。
 - [项目调研](research/project-research.md)：早期调研资料，记录 Obsidian 年度报告插件方向、竞品启发和技术建议。

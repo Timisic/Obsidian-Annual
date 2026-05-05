@@ -34,10 +34,10 @@ cd Obsidian-Annual
 
 ```bash
 npm install
-npm run build
+npm run release:plugin
 ```
 
-构建成功后，仓库根目录会生成 Obsidian 插件入口文件 `main.js`。
+构建成功后，`dist/annual-review/` 会包含手动安装所需的发布资产。
 
 ## 安装到用户的 Obsidian vault
 
@@ -55,7 +55,7 @@ npm run deploy:plugin -- --target /path/to/YourVault/.obsidian
 VAULT="/path/to/YourVault"
 PLUGIN_DIR="$VAULT/.obsidian/plugins/annual-review"
 mkdir -p "$PLUGIN_DIR"
-cp manifest.json main.js versions.json "$PLUGIN_DIR/"
+cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 ```
 
 ## 让用户在 Obsidian 中启用插件
@@ -114,7 +114,7 @@ Annual Review: Open Review Board
 ```text
 manifest.json
 main.js
-versions.json
+styles.css
 ```
 
 ### 构建失败
