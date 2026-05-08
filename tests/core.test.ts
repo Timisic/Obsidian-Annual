@@ -26,6 +26,12 @@ import {
   renderAnnualReview,
 } from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
+import {
+  createVaultSnapshot,
+  normalizeSnapshotFile,
+  selectSnapshotComparison,
+  SNAPSHOT_SCHEMA_VERSION,
+} from "../src/core/snapshot";
 import { countText } from "../src/core/tokenizer";
 import { toTopicEvolutionJson } from "../src/core/topics";
 import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
@@ -198,6 +204,132 @@ describe("filters", () => {
     );
     expect(shouldIncludePath("Archive/Old.md", DEFAULT_SETTINGS)).toBe(false);
     expect(shouldIncludePath("Assets/photo.png", DEFAULT_SETTINGS)).toBe(false);
+  });
+});
+
+describe("vault snapshots", () => {
+  it("creates deterministic snapshots from the filtered vault scope", async () => {
+    const snapshot = createVaultSnapshot(
+      await fixtureVault(),
+      {
+        ...DEFAULT_SETTINGS,
+        excludePatterns: ["2026-01-02"],
+      },
+      "2026-05-08T00:00:00.000Z",
+    );
+
+    expect(snapshot.schemaVersion).toBe(SNAPSHOT_SCHEMA_VERSION);
+    expect(snapshot.scope).toMatchObject({
+      includeFolders: [],
+      excludeFolders: [".obsidian", "Archive", "Attachments", "Templates"],
+      excludePatterns: ["2026-01-02"],
+      reportFolder: "Annual Reviews",
+    });
+    expect(snapshot.notes.map((note) => note.path)).toEqual([
+      "Daily/2026-01-01.md",
+      "Projects/Legacy.md",
+      "Projects/Research.md",
+    ]);
+    expect(snapshot.notes).not.toContainEqual(
+      expect.objectContaining({ path: "Annual Reviews/2026 Annual Review.md" }),
+    );
+    expect(snapshot.notes).not.toContainEqual(
+      expect.objectContaining({ path: "Archive/Old.md" }),
+    );
+    expect(snapshot.notes[0]).toMatchObject({
+      folder: "Daily",
+      modifiedTime: Date.parse("2026-01-01T10:00:00.000Z"),
+      tags: ["journal", "writing", "中文"],
+    });
+  });
+
+  it("normalizes snapshot files and computes real deltas across imports and batch mtimes", () => {
+    const baseline = createVaultSnapshot(
+      [
+        sourceFrom({
+          path: "Projects/Stable.md",
+          ctime: "2025-01-01T08:00:00.000Z",
+          mtime: "2026-01-01T08:00:00.000Z",
+          content: "one two three",
+        }),
+      ],
+      DEFAULT_SETTINGS,
+      "2026-01-01T00:00:00.000Z",
+    );
+    const current = createVaultSnapshot(
+      [
+        sourceFrom({
+          path: "Projects/Stable.md",
+          ctime: "2025-01-01T08:00:00.000Z",
+          mtime: "2026-04-01T08:00:00.000Z",
+          content: "one two three",
+        }),
+        sourceFrom({
+          path: "Projects/Imported.md",
+          ctime: "2024-01-01T08:00:00.000Z",
+          mtime: "2026-04-01T08:00:00.000Z",
+          content: "imported words are real vault growth",
+        }),
+      ],
+      DEFAULT_SETTINGS,
+      "2026-04-01T00:00:00.000Z",
+    );
+
+    const normalized = normalizeSnapshotFile({
+      schemaVersion: SNAPSHOT_SCHEMA_VERSION,
+      snapshots: [current, baseline],
+    });
+    const comparison = selectSnapshotComparison(normalized.snapshots, current);
+
+    expect(normalized.snapshots.map((snapshot) => snapshot.capturedAt)).toEqual([
+      "2026-01-01T00:00:00.000Z",
+      "2026-04-01T00:00:00.000Z",
+    ]);
+    expect(comparison).toMatchObject({
+      source: "historical-snapshot",
+      baselineCapturedAt: "2026-01-01T00:00:00.000Z",
+      currentCapturedAt: "2026-04-01T00:00:00.000Z",
+      wordDelta: 6,
+      addedNotes: ["Projects/Imported.md"],
+      changedNotes: [],
+    });
+  });
+
+  it("refuses historical deltas when snapshot scan scopes differ", () => {
+    const baseline = createVaultSnapshot(
+      [
+        sourceFrom({
+          path: "Projects/A.md",
+          ctime: "2026-01-01T08:00:00.000Z",
+          mtime: "2026-01-01T08:00:00.000Z",
+          content: "baseline words",
+        }),
+      ],
+      DEFAULT_SETTINGS,
+      "2026-01-01T00:00:00.000Z",
+    );
+    const current = createVaultSnapshot(
+      [
+        sourceFrom({
+          path: "Projects/A.md",
+          ctime: "2026-01-01T08:00:00.000Z",
+          mtime: "2026-02-01T08:00:00.000Z",
+          content: "baseline words plus more",
+        }),
+      ],
+      {
+        ...DEFAULT_SETTINGS,
+        includeFolders: ["Projects"],
+      },
+      "2026-02-01T00:00:00.000Z",
+    );
+
+    expect(selectSnapshotComparison([baseline], current)).toMatchObject({
+      source: "scope-mismatch",
+      wordDelta: 0,
+      baselineCapturedAt: "2026-01-01T00:00:00.000Z",
+      currentCapturedAt: "2026-02-01T00:00:00.000Z",
+    });
   });
 });
 
@@ -591,7 +723,7 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# 2026 Annual Review");
     expect(markdown).toMatch(
-      /^---\ngenerated: ".+"\nyear: 2026\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
+      /^---\ngenerated: ".+"\nyear: 2026\ngrowth_data_source: "current-vault inference"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
     );
     expect(markdown).not.toContain("Generated:");
     expect(markdown).not.toContain("Included scope:");
@@ -602,6 +734,7 @@ describe("aggregation and rendering", () => {
       "## Topic Evolution",
       "## Review Candidates",
       "## Next-Period Actions",
+      "## Data Methodology",
     ]);
     expect(markdown).toContain("| Total new words |");
     expect(markdown).toContain("| Writing days |");
@@ -671,13 +804,53 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("score");
     expect(markdown).not.toContain("## Representative Notes");
     expect(markdown).not.toContain("Representative notes are selected deterministically");
-    expect(markdown).not.toContain("## Data Methodology");
+    expect(markdown).toContain("## Data Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
     expect(markdown).toContain("## Next-Period Actions");
     expect(markdown).toContain("1. Create a compact index");
     expect(markdown).toContain("2. ");
     expect(markdown).toContain("3. Review");
     expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
+  });
+
+  it("labels fallback growth as current-vault inference when no historical snapshot is available", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const markdown = renderAnnualReview(aggregate);
+
+    expect(markdown).toContain('growth_data_source: "current-vault inference"');
+    expect(markdown).toContain("Data Methodology");
+    expect(markdown).toContain("current vault inference");
+    expect(markdown).toContain("not a historical word-count delta");
+  });
+
+  it("renders historical snapshot statistics when comparable snapshots are available", async () => {
+    const current = createVaultSnapshot(
+      await fixtureVault(),
+      DEFAULT_SETTINGS,
+      "2026-05-08T00:00:00.000Z",
+    );
+    const baseline = createVaultSnapshot(
+      [
+        sourceFrom({
+          path: "Daily/2026-01-01.md",
+          ctime: "2026-01-01T08:00:00.000Z",
+          mtime: "2026-01-01T10:00:00.000Z",
+          content: "small baseline",
+        }),
+      ],
+      DEFAULT_SETTINGS,
+      "2026-01-01T00:00:00.000Z",
+    );
+    const comparison = selectSnapshotComparison([baseline], current);
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS, {
+      snapshotComparison: comparison,
+    });
+    const markdown = renderAnnualReview(aggregate);
+
+    expect(markdown).toContain('growth_data_source: "historical snapshot statistics"');
+    expect(markdown).toContain("Historical snapshot statistics");
+    expect(markdown).toContain("2026-01-01T00:00:00.000Z");
+    expect(markdown).toContain("| Snapshot word delta |");
   });
 
   it("renders Chinese reports and omits all-zero month metric columns", () => {
@@ -702,6 +875,7 @@ describe("aggregation and rendering", () => {
       "## 主题演化",
       "## 候选回看笔记",
       "## 下期行动",
+      "## 数据口径",
     ]);
     expect(markdown).toContain("### 累计增长");
     expect(markdown).toContain(
@@ -1534,6 +1708,20 @@ function noteFrom(input: {
     },
     DEFAULT_SETTINGS,
   );
+}
+
+function sourceFrom(input: {
+  path: string;
+  ctime: string;
+  mtime: string;
+  content: string;
+}) {
+  return {
+    path: input.path,
+    ctime: Date.parse(input.ctime),
+    mtime: Date.parse(input.mtime),
+    content: input.content,
+  };
 }
 
 function repeatedWords(count: number): string {

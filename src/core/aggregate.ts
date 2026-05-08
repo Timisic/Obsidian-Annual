@@ -1,6 +1,7 @@
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
 import { buildHighValueNoteInsights } from "./highValueNotes";
+import { createSnapshotScope } from "./snapshot";
 import { buildTopicEvolution } from "./topics";
 import type {
   AnnualReviewSettings,
@@ -10,15 +11,21 @@ import type {
   RankedMetric,
   RankedNote,
   ReportScope,
+  SnapshotComparison,
   SourceFile,
   WordGrowthBucket,
   YearAggregate,
 } from "./types";
 
+interface BuildYearAggregateOptions {
+  snapshotComparison?: SnapshotComparison;
+}
+
 export function buildYearAggregate(
   files: SourceFile[],
   year: number,
   settings: AnnualReviewSettings,
+  options: BuildYearAggregateOptions = {},
 ): YearAggregate {
   const notes = files
     .filter((file) => shouldIncludePath(file.path, settings))
@@ -75,17 +82,23 @@ export function buildYearAggregate(
 
   const scope: ReportScope = {
     year,
+    reportFolder: settings.reportFolder,
     includeFolders: settings.includeFolders,
     excludeFolders: settings.excludeFolders,
+    excludePatterns: settings.excludePatterns,
     privacyMode: settings.privacyMode,
   };
   const generatedAt = new Date().toISOString();
   const highValueInsights = buildHighValueNoteInsights(notes, year, generatedAt);
+  const snapshotComparison =
+    options.snapshotComparison ??
+    buildCurrentVaultInference(totalWords, notes.length, settings, generatedAt);
 
   return {
     year,
     generatedAt,
     scope,
+    snapshotComparison,
     activeDays: activeDates.size,
     longestStreak: longestDateStreak([...activeDates]),
     createdCount,
@@ -106,6 +119,26 @@ export function buildYearAggregate(
     ),
     topicEvolution: buildTopicEvolution(notes, year),
     ...highValueInsights,
+  };
+}
+
+function buildCurrentVaultInference(
+  totalWords: number,
+  noteCount: number,
+  settings: AnnualReviewSettings,
+  capturedAt: string,
+): SnapshotComparison {
+  return {
+    source: "current-vault-inference",
+    currentCapturedAt: capturedAt,
+    baselineTotalWords: 0,
+    currentTotalWords: totalWords,
+    wordDelta: totalWords,
+    noteCountDelta: noteCount,
+    addedNotes: [],
+    removedNotes: [],
+    changedNotes: [],
+    scope: createSnapshotScope(settings),
   };
 }
 

@@ -21,11 +21,11 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 扫描范围 -> 生成候选 -> Review Board 审核 -> 决策 -> Markdown 年报
 ```
 
-1. **扫描**：选择年份、包含/排除目录和隐私模式，插件只读取当前 vault 内允许范围的 Markdown、属性、标签、链接、任务和时间线信号。
-2. **候选**：插件提出主题、笔记、项目、任务、沉睡笔记和桥接笔记候选，并给出“为什么被推荐”的理由和证据链接；异常活动只作为生成候选的信号。如果你显式启用 AI，它只能增强候选理由和补充可复核线索。
+1. **扫描**：选择年份、包含/排除目录和隐私模式，插件只读取当前 vault 内允许范围的 Markdown、属性、标签、链接、任务和时间线信号，并在 rebuild/run 时记录 vault snapshot。
+2. **候选**：插件提出主题、笔记、项目、任务、沉睡笔记和桥接笔记候选，并给出可审计的“为什么被推荐”理由、统计字段和证据链接；异常活动只作为生成候选的信号。如果你显式启用 AI，它只能增强候选理由和补充可复核线索。
 3. **审核**：你在 Review Board 中逐项接受、重命名、合并主题、忽略、归档，或把候选项加入行动。
 4. **决策**：你为已接受的主题、笔记、项目、任务、沉睡笔记和桥接笔记写下年度精选或下一步行动。
-5. **年报**：插件把已接受内容、证据链接、行动决定和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
+5. **年报**：插件把已接受内容、证据链接、行动决定、图表资产和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
 
 > 截图占位：Review Board 候选列表、证据链接、行动决定和生成后的 Markdown 年报。
 
@@ -34,6 +34,7 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 - 默认不访问网络，不调用外部 AI，不发送遥测。
 - 默认只读取当前 Obsidian vault 内的 Markdown 和 Obsidian metadata cache。
 - 报告目录、模板、归档、附件和用户排除范围不会进入扫描输入。
+- `annual-review-snapshots.json` 保存在插件自己的 `.obsidian/plugins/<plugin-id>/` 数据目录中，用于后续比较字数增量；它不写入源笔记 frontmatter。
 - AI 只作为可选的候选增强和报告草稿辅助步骤；核心审核、取舍、行动决定和证据复核仍由用户完成。
 - 如果用户显式启用外部 AI，插件在发送前说明 provider、上下文范围、摘录数量和可排除内容。
 
@@ -44,6 +45,13 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 - 重新生成只替换可再生区块，不覆盖用户手写内容。
 - 重新生成前应保留上一版备份或形成可 diff 的变更，方便回滚。
 - 每个候选项和行动建议都保留源笔记、标签、链接、任务或时间线证据，用户可以复核后再采纳。
+
+## 数据口径
+
+- 有可比较的历史 snapshot 时，年报会展示基于 snapshot 的真实 vault 字数增量。
+- 没有历史 snapshot，或 include/exclude 范围变化导致 snapshot 不可比较时，增长统计会标记为“当前 vault 推断”，避免把 `ctime`/`mtime` 推断写成确定历史结论。
+- Snapshot 捕获复用同一套 include/exclude folder、exclude pattern 和报告目录排除规则；被排除目录不会进入 snapshot 或增量统计。
+- 详细格式和限制见 [Data Methodology](docs/data-methodology.md)。
 
 ## 安装方式
 
@@ -75,11 +83,11 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 
 ## 当前可用命令
 
-| 命令                               | 用途                                                     |
-| ---------------------------------- | -------------------------------------------------------- |
-| `Annual Review: Rebuild index`     | 重新扫描当前 vault 中允许范围的 Markdown 笔记。          |
-| `Annual Review: Generate report`   | 选择年份和生成选项，写入受保护的年度 Markdown 报告。     |
-| `Annual Review: Open Review Board` | 打开候选审核界面，用于复核推荐理由、证据链接和接受状态。 |
+| 命令                               | 用途                                                             |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| `Annual Review: Rebuild index`     | 重新扫描当前 vault 中允许范围的 Markdown 笔记，并记录 snapshot。 |
+| `Annual Review: Generate report`   | 选择年份和生成选项，写入受保护的年度 Markdown 报告。             |
+| `Annual Review: Open Review Board` | 打开候选审核界面，用于复核推荐理由、证据链接和接受状态。         |
 
 ## 开发命令
 
@@ -121,4 +129,5 @@ npm run lint
 - [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
 - [AI 报告生成设计](docs/ai-report-design.md)
+- [Data Methodology](docs/data-methodology.md)
 - [发布检查清单](docs/release-checklist.md)

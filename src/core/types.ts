@@ -21,8 +21,10 @@ export interface AnnualReviewSettings {
 
 export interface ReportScope {
   year: number;
+  reportFolder: string;
   includeFolders: string[];
   excludeFolders: string[];
+  excludePatterns: string[];
   privacyMode: AnnualReviewSettings["privacyMode"];
 }
 
@@ -192,10 +194,61 @@ export interface HighValueNoteFeedback {
   staleCoreCount: number;
 }
 
+export interface SnapshotScope {
+  reportFolder: string;
+  includeFolders: string[];
+  excludeFolders: string[];
+  excludePatterns: string[];
+  privacyMode: AnnualReviewSettings["privacyMode"];
+}
+
+export interface VaultSnapshotNote {
+  path: string;
+  wordCount: number;
+  modifiedTime: number;
+  folder: string;
+  tags: string[];
+}
+
+export interface VaultSnapshot {
+  schemaVersion: number;
+  capturedAt: string;
+  scope: SnapshotScope;
+  noteCount: number;
+  totalWords: number;
+  notes: VaultSnapshotNote[];
+}
+
+export interface VaultSnapshotFile {
+  schemaVersion: number;
+  snapshots: VaultSnapshot[];
+}
+
+export type SnapshotComparisonSource =
+  | "historical-snapshot"
+  | "current-vault-inference"
+  | "scope-mismatch";
+
+export interface SnapshotComparison {
+  source: SnapshotComparisonSource;
+  baselineCapturedAt?: string;
+  currentCapturedAt: string;
+  baselineTotalWords: number;
+  currentTotalWords: number;
+  wordDelta: number;
+  noteCountDelta: number;
+  addedNotes: string[];
+  removedNotes: string[];
+  changedNotes: string[];
+  scope: SnapshotScope;
+  baselineScope?: SnapshotScope;
+}
+
 export interface YearAggregate {
   year: number;
   generatedAt: string;
   scope: ReportScope;
+  snapshotComparison: SnapshotComparison;
   activeDays: number;
   longestStreak: number;
   createdCount: number;
