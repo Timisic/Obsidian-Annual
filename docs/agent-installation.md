@@ -1,6 +1,12 @@
 # Agent 安装指南
 
-本文面向用户的 Agent，用于帮用户把 Obsidian Annual Review 安装到一个 Obsidian vault 中。这个仓库是 Obsidian 插件仓库，普通用户只需要安装、启用并运行插件。
+本文面向自动化 Agent，用于帮用户把 Obsidian Annual Review 安装到一个明确指定的 Obsidian vault 中。这个仓库是 Obsidian 插件仓库；普通用户主路径仍是社区插件安装或手动安装发布包，而不是从本指南开始。
+
+路径边界：
+
+- 用户 vault：用户明确提供的 Obsidian vault，本指南只能写入这个路径。
+- repo-local fixture vault：`tests/fixtures/vault`，只用于自动化测试样本，不要当作用户 vault。
+- agent smoke vault：release/agent 验证用的真实 Obsidian vault；用于端到端证据，不是普通用户安装目标。
 
 默认仓库地址：`https://github.com/Timisic/Obsidian-Annual.git`
 
@@ -12,7 +18,7 @@
 2. 安装依赖。
 3. 构建 Obsidian 插件产物。
 4. 把插件复制到用户指定 vault 的 `.obsidian/plugins/annual-review/` 目录。
-5. 告诉用户如何在 Obsidian 中启用插件并生成第一份年度回顾。
+5. 告诉用户如何在 Obsidian 中启用插件、打开 Review Board 并生成第一份年度回顾。
 
 ## 前置条件
 
@@ -81,7 +87,7 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 - 图表资产目录：`Annual Reviews/YYYY Annual Review Assets/`
 - 报告中的 Obsidian wiki link 是否能打开源笔记。
 
-需要先看指标时，可以运行：
+需要先审核候选时，可以运行：
 
 ```text
 Annual Review: Open Review Board
@@ -97,7 +103,7 @@ Annual Review: Open Review Board
 2. 将 `AI provider` 改为 `ChatGPT`。
 3. 有 OpenAI API key 时，填入 `OpenAI API key`。
 4. 没有 API key 时，可以配置本机 Codex CLI 路径作为本地 fallback。
-5. 提醒用户：ChatGPT 模式会把年度报告所需的统计、链接关系和部分笔记摘录发送到所选生成路径。
+5. 提醒用户：AI 是可选报告草稿辅助，不替代 Review Board 审核；ChatGPT 模式会把年度报告所需的统计、链接关系和部分笔记摘录发送到所选生成路径。
 
 ## 常见问题
 

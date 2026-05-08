@@ -22,12 +22,10 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 ```
 
 1. **扫描**：选择年份、包含/排除目录和隐私模式，插件只读取当前 vault 内允许范围的 Markdown、属性、标签、链接、任务和时间线信号，并在 rebuild/run 时记录 vault snapshot。
-2. **候选**：插件提出主题、笔记、项目、任务、沉睡笔记和桥接笔记候选，并给出可审计的“为什么被推荐”理由、统计字段和证据链接；异常活动只作为生成候选的信号。如果你显式启用 AI，它只能增强候选理由和补充可复核线索。
+2. **候选**：插件提出主题、笔记、项目、任务、沉睡笔记和桥接笔记候选，并给出可审计的“为什么被推荐”理由、统计字段和证据链接；异常活动只作为生成候选的信号。
 3. **审核**：你在 Review Board 中逐项接受、重命名、合并主题、忽略、归档，或把候选项加入行动。
 4. **决策**：你为已接受的主题、笔记、项目、任务、沉睡笔记和桥接笔记写下年度精选或下一步行动。
-5. **年报**：插件把已接受内容、证据链接、行动决定、图表资产和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
-
-> 截图占位：Review Board 候选列表、证据链接、行动决定和生成后的 Markdown 年报。
+5. **年报**：插件把已接受内容、证据链接、行动决定和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
 
 ## 隐私边界
 
@@ -35,7 +33,7 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 - 默认只读取当前 Obsidian vault 内的 Markdown 和 Obsidian metadata cache。
 - 报告目录、模板、归档、附件和用户排除范围不会进入扫描输入。
 - `annual-review-snapshots.json` 保存在插件自己的 `.obsidian/plugins/<plugin-id>/` 数据目录中，用于后续比较字数增量；它不写入源笔记 frontmatter。
-- AI 只作为可选的候选增强和报告草稿辅助步骤；核心审核、取舍、行动决定和证据复核仍由用户完成。
+- AI 只作为可选的报告草稿辅助步骤；核心候选、审核、取舍、行动决定和证据复核仍由用户完成。
 - 如果用户显式启用外部 AI，插件在发送前说明 provider、上下文范围、摘录数量和可排除内容。
 
 ## 本插件如何保护用户编辑
@@ -53,7 +51,13 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 - Snapshot 捕获复用同一套 include/exclude folder、exclude pattern 和报告目录排除规则；被排除目录不会进入 snapshot 或增量统计。
 - 详细格式和限制见 [Data Methodology](docs/data-methodology.md)。
 
-## 安装方式
+## 安装和路径边界
+
+文档中的 vault 路径分为三类，避免把测试路径当成用户路径：
+
+- **普通用户 vault**：用户自己的 Obsidian vault。社区插件安装和手动安装都以这个路径为目标。
+- **repo-local fixture vault**：`tests/fixtures/vault`，只用于单元测试和确定性 Markdown 样本，不是一个需要 Obsidian 打开的真实用户 vault。
+- **真实 smoke vault**：自动化 agent/release reviewer 用来通过 Obsidian CLI 做端到端验证的本地测试 vault，不是普通用户安装路径，也不是公开 package script 的主入口。
 
 ### 从 Obsidian 社区插件安装
 
@@ -99,7 +103,7 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 | `npm run lint`           | 运行 ESLint。                                                                 |
 | `npm run release:plugin` | 生成 `dist/annual-review/` 发布资产。                                         |
 | `npm run dev`            | 启动 esbuild watch，适合本地插件开发。                                        |
-| `npm run deploy:plugin`  | 构建插件并可部署到任意 vault 的 `.obsidian`。                                 |
+| `npm run deploy:plugin`  | 构建插件并复制到显式传入的 vault `.obsidian` 目录；不猜测私人 vault 路径。    |
 
 ## 验证建议
 
@@ -114,7 +118,7 @@ npm run lint
 
 手动验证：
 
-1. 在测试 vault 中启用插件。
+1. 在你的临时测试 vault 或 agent smoke vault 中启用插件。
 2. 运行 `Annual Review: Rebuild index`。
 3. 运行 `Annual Review: Generate report`。
 4. 确认报告生成在 `Annual Reviews/` 下，并且候选项能回链到源笔记。
@@ -128,6 +132,5 @@ npm run lint
 - [Feature Inventory](docs/feature-inventory.md)
 - [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
-- [AI 报告生成设计](docs/ai-report-design.md)
 - [Data Methodology](docs/data-methodology.md)
 - [发布检查清单](docs/release-checklist.md)
