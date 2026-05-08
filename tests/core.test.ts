@@ -1699,9 +1699,8 @@ describe("plugin command ids", () => {
 
 describe("MVP public surface", () => {
   it("keeps package scripts on release and dev-only deploy surfaces", () => {
-    const scripts = JSON.parse(
-      readFileSync(join(process.cwd(), "package.json"), "utf8"),
-    ).scripts as Record<string, string>;
+    const scripts = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"))
+      .scripts as Record<string, string>;
 
     expect(scripts["release:plugin"]).toBe("node scripts/deploy-plugin.mjs --no-deploy");
     expect(scripts["release:check"]).toContain("release:plugin");

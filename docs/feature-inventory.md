@@ -2,6 +2,8 @@
 
 This inventory keeps the product surface focused on the trusted annual-review workflow. Core and Support items may appear in the main user path. Backlog and Remove items must not be presented as current primary capabilities.
 
+Canonical MVP flow: local scan -> candidates -> Review Board decisions -> protected Markdown annual report. README, SPEC, release, and agent docs should use this flow and should not promote dashboard analytics, AI summaries, screenshots, or private validation vault deployment as the current product promise.
+
 ## Core
 
 | Feature                          | Status | Main-path rule                                                                                            |
@@ -19,13 +21,21 @@ This inventory keeps the product surface focused on the trusted annual-review wo
 
 ## Support
 
-| Feature                            | Status  | Constraint                                                                                              |
-| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
-| Rebuild index command              | Support | Exposed because it helps users refresh the local scan deliberately.                                     |
-| Review Board preview/control view  | Support | Exposed as the Review Board, not as a broad analytics dashboard.                                        |
-| Basic progress and scan feedback   | Support | Limited to evidence-chain status and generation progress.                                               |
-| Optional AI enrichment             | Support | Hidden behind explicit provider setup and context preview; cannot replace review or accepted decisions. |
+| Feature                                | Status  | Constraint                                                                                                                                                                                                |
+| -------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rebuild index command                  | Support | Exposed because it helps users refresh the local scan deliberately.                                                                                                                                       |
+| Review Board preview/control view      | Support | Exposed as the Review Board, not as a broad analytics dashboard.                                                                                                                                          |
+| Basic progress and scan feedback       | Support | Limited to evidence-chain status and generation progress.                                                                                                                                                 |
+| Optional AI enrichment                 | Support | Hidden behind explicit provider setup and context preview; can assist report drafting but cannot replace review or accepted decisions.                                                                    |
 | Build, release, and dev deploy scripts | Support | Kept for maintainers. `release:*` builds copyable assets; explicit vault deployment is named `dev:deploy-plugin`; smoke-vault deployment is named `dev:deploy-smoke` and limited to dev/agent validation. |
+
+## Validation Path Boundaries
+
+| Path                     | Purpose                                                   | Main-path rule                                                                  |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Normal user vault        | User-owned Obsidian vault for community or manual install | Never guessed by scripts or docs; users or agents must supply the path.         |
+| Repo-local fixture vault | `tests/fixtures/vault` samples for deterministic tests    | Test input only; not a real Obsidian smoke vault and not a public install path. |
+| Real smoke vault         | Obsidian CLI validation vault for release/agent evidence  | Internal validation path; keep separate from ordinary user instructions.        |
 
 ## Backlog
 
@@ -42,10 +52,10 @@ This inventory keeps the product surface focused on the trusted annual-review wo
 
 ## Remove
 
-| Feature                                                          | Status | Action                                                                                                        |
-| ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
-| Smoke report command in the command palette                      | Remove | Removed from command registration; keep smoke validation as an internal skill/workflow only.                  |
+| Feature                                                          | Status | Action                                                                                                                                                       |
+| ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Smoke report command in the command palette                      | Remove | Removed from command registration; keep smoke validation as an internal skill/workflow only.                                                                 |
 | Private validation vault deploy script in public package scripts | Remove | Removed from public package-script names; smoke validation stays under the dev-only `dev:deploy-smoke` name and is documented as agent/developer validation. |
-| Placeholder/backlog helper scripts in package scripts            | Remove | AI context placeholder and writing-growth helpers are kept as internal files/tests only, not ordinary package script capabilities. |
-| Absolute note-value wording                                      | Remove | Replace user-facing text with review candidates, recommendation rationale, and manual accept/reject language. |
-| Unprotected overwrite-style regeneration promises                | Remove | Main docs only describe protected regeneration with user-written sections preserved.                          |
+| Placeholder/backlog helper scripts in package scripts            | Remove | AI context placeholder and writing-growth helpers are kept as internal files/tests only, not ordinary package script capabilities.                           |
+| Absolute note-value wording                                      | Remove | Replace user-facing text with review candidates, recommendation rationale, and manual accept/reject language.                                                |
+| Unprotected overwrite-style regeneration promises                | Remove | Main docs only describe protected regeneration with user-written sections preserved.                                                                         |

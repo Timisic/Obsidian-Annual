@@ -1,6 +1,6 @@
 # Annual Review SPEC
 
-状态：DEC-39 重新定位版。本文定义目标产品体验，不把当前代码实现当作上限。
+状态：MVP 规格。本文定义最小可发布闭环；当前公开 README 和 release 文档的主路径以 `docs/feature-inventory.md` 的 Core/Support 分类为准。
 技术栈：TypeScript + Obsidian API + esbuild + Vitest。
 
 ## 1. 产品定位
@@ -176,7 +176,7 @@ Annual Reviews/YYYY Annual Review.md
 - 用户手写区：保留给个人叙事、反思和补充。
 - 再生成记录：说明哪些区块可再生、哪些区块由用户维护。
 
-AI 可以作为可选步骤帮助润色已接受内容，但不能替代候选、审核、决策和证据链。
+AI 可以作为可选步骤帮助润色已接受内容或生成草稿补充，但不能替代候选、审核、决策和证据链；默认模式不启用 AI。
 
 ## 5. 数据模型
 
@@ -421,6 +421,13 @@ npm run typecheck
 npm run build
 ```
 
+文档和 release 交接还应运行：
+
+```bash
+npm run format:check
+npm run release:check
+```
+
 核心行为测试应覆盖：
 
 - 路径过滤和报告目录排除。
@@ -432,7 +439,11 @@ npm run build
 - 默认无 AI provider 时不访问网络。
 - AI provider 失败时回退确定性报告。
 
-手动验证：
+手动验证路径：
+
+- 普通用户或 reviewer 的临时 Obsidian vault：验证安装、启用、命令面板和报告输出。
+- repo-local fixture vault：`tests/fixtures/vault`，只用于自动化测试样本，不作为真实 Obsidian 验证。
+- agent smoke vault：由本仓库的 smoke-vault skill/Obsidian CLI 工作流驱动，用于 release reviewer 的端到端证据，不作为公开用户路径。
 
 1. 在测试 vault 中选择年份和扫描范围。
 2. 运行重建索引。
