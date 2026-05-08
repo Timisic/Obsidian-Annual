@@ -47,6 +47,32 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
 > Screenshot placeholder: Review Board candidate list, evidence links, action
 > decisions, and the generated Markdown annual report.
 
+## Review Board Decision Loop
+
+`Annual Review: Open Review Board` opens the candidate queue for the selected
+year and scope. The queue shows each candidate's type, title, current status,
+recommendation rationale, evidence count, and review progress. Selecting a
+candidate shows the source notes, tags, tasks, or excerpts that justify it, and
+source notes can be opened directly for verification.
+
+MVP decision actions include:
+
+- `Accept`: include the candidate in annual-report input.
+- `Ignore`: exclude the candidate from report generation.
+- `Rename topic`: use the user-confirmed title in the report.
+- `Merge topic`: merge a topic into a target topic instead of reporting it as a
+  standalone candidate.
+- `Add to annual highlights`: mark the candidate as an annual highlight.
+- `Add to actions`: turn the candidate into a next action.
+- `Open source note`: open evidence without changing review state.
+
+Review state is stored in plugin-owned data and does not modify source-note
+frontmatter. Rebuilding the index can refresh rationale and evidence for
+undecided candidates; user decisions such as accepted, renamed, merged,
+ignored, highlighted, or actioned candidates are preserved. Report generation
+reads accepted, highlight, and action decisions, and excludes ignored candidates
+or candidates that were merged into another source.
+
 ## Privacy Boundary
 
 - No network access, external AI calls, or telemetry by default.
@@ -124,8 +150,9 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
   vault and record a snapshot.
 - `Annual Review: Generate report`: choose a year and generation options, then
   write the protected annual Markdown report.
-- `Annual Review: Open Review Board`: review candidate rationale, evidence
-  links, and accepted status.
+- `Annual Review: Open Review Board`: open the candidate review queue, verify
+  evidence, and apply accept, ignore, rename, merge, highlight, action, or
+  source-note decisions.
 
 ## Development Commands
 
@@ -154,12 +181,19 @@ Manual validation:
 
 1. Enable the plugin in a test vault.
 2. Run `Annual Review: Rebuild index`.
-3. Run `Annual Review: Generate report`.
-4. Confirm the report appears under `Annual Reviews/` and candidates link back
-   to source notes.
-5. Edit a user-written section in the report, regenerate, and confirm the user
+3. Run `Annual Review: Open Review Board` and confirm the candidate queue,
+   rationale, evidence sources, and progress are visible.
+4. Apply at least one decision: accept, ignore, rename, merge, add to annual
+   highlights, or add to actions, and confirm opening a source note works.
+5. Reload the plugin or rebuild the index, then confirm user decisions were not
+   overwritten.
+6. Run `Annual Review: Generate report`.
+7. Confirm the report appears under `Annual Reviews/`, accepted/highlight/action
+   decisions appear in the report, ignored candidates are excluded, and
+   candidates link back to source notes.
+8. Edit a user-written section in the report, regenerate, and confirm the user
    edit remains intact.
-6. Confirm default settings make no external network request or AI call.
+9. Confirm default settings make no external network request or AI call.
 
 ## More Documentation
 
