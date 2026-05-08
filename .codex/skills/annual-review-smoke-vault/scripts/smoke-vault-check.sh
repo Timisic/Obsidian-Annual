@@ -68,7 +68,7 @@ fi
 
 if [[ "$DEPLOY" == 1 ]]; then
   echo "==> Deploy plugin to smoke vault"
-  (cd "$REPO_ROOT" && npm run deploy:smoke)
+  (cd "$REPO_ROOT" && npm run dev:deploy-smoke)
 fi
 
 echo "==> Enable/reload plugin and rebuild index"

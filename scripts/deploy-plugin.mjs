@@ -186,9 +186,9 @@ Options:
   -h, --help              Show this help.
 
 Examples:
-  npm run deploy:plugin -- --target /path/to/Vault/.obsidian
-  npm run deploy:smoke
-  npm run deploy:plugin -- --no-deploy
+  npm run dev:deploy-plugin -- --target /path/to/Vault/.obsidian
+  npm run dev:deploy-smoke
+  npm run dev:deploy-plugin -- --no-deploy
   npm run release:plugin
 `);
 }

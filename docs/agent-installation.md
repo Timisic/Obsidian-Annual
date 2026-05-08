@@ -1,6 +1,6 @@
 # Agent 安装指南
 
-本文面向用户的 Agent，用于帮用户把 Obsidian Annual Review 安装到一个 Obsidian vault 中。这个仓库是 Obsidian 插件仓库，普通用户只需要安装、启用并运行插件。
+本文是开发和自动化附录，用于 agent/dev smoke 验证时把 Obsidian Annual Review 安装到明确指定的测试 vault 中。它不是普通用户安装主路径；普通用户应优先使用社区插件或 README 中的手动发布包安装方式。
 
 默认仓库地址：`https://github.com/Timisic/Obsidian-Annual.git`
 
@@ -41,10 +41,10 @@ npm run release:plugin
 
 ## 安装到用户的 Obsidian vault
 
-推荐使用仓库脚本：
+开发/agent smoke 验证可使用仓库脚本：
 
 ```bash
-npm run deploy:plugin -- --target /path/to/YourVault/.obsidian
+npm run dev:deploy-plugin -- --target /path/to/YourVault/.obsidian
 ```
 
 把 `/path/to/YourVault` 替换为用户的 vault 路径。
@@ -66,7 +66,7 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 2. 进入 Community plugins。
 3. 如果 Safe mode 或 Restricted mode 已开启，先允许社区插件。
 4. 在 Installed plugins 中启用 **Annual Review**。
-5. 打开 Annual Review 设置页，确认报告目录、包含/排除目录、报告语言、隐私模式和 AI provider。
+5. 打开 Annual Review 设置页，确认报告目录、包含/排除目录、报告语言、隐私模式；只有在测试可选 AI 增强时才切换 provider。
 
 ## 生成第一份年度回顾
 
@@ -89,12 +89,12 @@ Annual Review: Open Review Board
 
 ## ChatGPT 设置
 
-默认 `AI provider` 为 `None`，插件会在本地生成报告，不访问网络。
+默认 `Optional AI enrichment` 为 `None`，插件会在本地生成报告，不访问网络。
 
 如果用户想使用 ChatGPT：
 
 1. 打开 Annual Review 设置页。
-2. 将 `AI provider` 改为 `ChatGPT`。
+2. 将 `Optional AI enrichment` 改为 `ChatGPT`。
 3. 有 OpenAI API key 时，填入 `OpenAI API key`。
 4. 没有 API key 时，可以配置本机 Codex CLI 路径作为本地 fallback。
 5. 提醒用户：ChatGPT 模式会把年度报告所需的统计、链接关系和部分笔记摘录发送到所选生成路径。
@@ -139,4 +139,4 @@ npm run build
 
 ### macOS Obsidian 找不到 codex
 
-GUI 应用的 PATH 可能缺少 shell 初始化路径。把 `Local Codex command` 改成 `codex` 可执行文件的绝对路径。
+GUI 应用的 PATH 可能缺少 shell 初始化路径。仅在已显式启用 ChatGPT fallback 时，把 `Local Codex command` 改成 `codex` 可执行文件的绝对路径。
