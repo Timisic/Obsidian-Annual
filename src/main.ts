@@ -16,12 +16,23 @@ import {
   renderAnnualReview,
 } from "./core/render";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
+import {
+  appendSnapshot,
+  createVaultSnapshot,
+  emptySnapshotFile,
+  normalizeSnapshotFile,
+  selectSnapshotComparison,
+  serializeSnapshotFile,
+  SNAPSHOT_FILE_NAME,
+} from "./core/snapshot";
 import type {
   AnnualReviewLanguage,
   AnnualReviewSettings,
   GenerateReportOptions,
   ResolvedAnnualReviewLanguage,
   SourceFile,
+  VaultSnapshot,
+  VaultSnapshotFile,
   YearAggregate,
 } from "./core/types";
 import {
@@ -95,6 +106,7 @@ export default class AnnualReviewPlugin extends Plugin {
 
   async rebuildIndex(): Promise<void> {
     this.indexedFiles = await readVaultMarkdownFiles(this.app, this.settings);
+    await this.recordVaultSnapshot(this.indexedFiles, this.settings);
     this.indexedSettingsKey = settingsKey(this.settings);
     this.indexedAt = new Date().toLocaleString();
     new Notice(this.text().rebuilt(this.indexedFiles.length));
@@ -150,8 +162,17 @@ export default class AnnualReviewPlugin extends Plugin {
         progress.update(text.progressReadingVault, 8);
       }
       const files = await this.getIndexedFiles(settings);
+      const currentSnapshot = createVaultSnapshot(files, settings);
+      const snapshotFile = await this.readVaultSnapshotFile();
+      const snapshotComparison = selectSnapshotComparison(
+        snapshotFile.snapshots,
+        currentSnapshot,
+      );
+      await this.writeVaultSnapshotFile(appendSnapshot(snapshotFile, currentSnapshot));
       progress?.update(text.progressAiSummary, 35);
-      const aggregate = buildYearAggregate(files, year, settings);
+      const aggregate = buildYearAggregate(files, year, settings, {
+        snapshotComparison,
+      });
       const aiEnhancements = await renderAiReportEnhancements({
         aggregate,
         files,
@@ -207,6 +228,46 @@ export default class AnnualReviewPlugin extends Plugin {
     return this.indexedFiles;
   }
 
+  private async recordVaultSnapshot(
+    files: SourceFile[],
+    settings: AnnualReviewSettings,
+  ): Promise<VaultSnapshot> {
+    const snapshot = createVaultSnapshot(files, settings);
+    const snapshotFile = await this.readVaultSnapshotFile();
+    await this.writeVaultSnapshotFile(appendSnapshot(snapshotFile, snapshot));
+    return snapshot;
+  }
+
+  private async readVaultSnapshotFile(): Promise<VaultSnapshotFile> {
+    const path = this.snapshotDataPath();
+    const exists = await this.app.vault.adapter.exists(path);
+    if (!exists) {
+      return emptySnapshotFile();
+    }
+
+    try {
+      return normalizeSnapshotFile(
+        JSON.parse(await this.app.vault.adapter.read(path)) as unknown,
+      );
+    } catch (error) {
+      console.warn("Annual Review snapshot file could not be read", error);
+      return emptySnapshotFile();
+    }
+  }
+
+  private async writeVaultSnapshotFile(snapshotFile: VaultSnapshotFile): Promise<void> {
+    const path = this.snapshotDataPath();
+    await ensureAdapterFolder(this.app, path.split("/").slice(0, -1).join("/"));
+    await this.app.vault.adapter.write(path, serializeSnapshotFile(snapshotFile));
+  }
+
+  private snapshotDataPath(): string {
+    const folder =
+      this.manifest.dir ||
+      `${this.app.vault.configDir}/plugins/${this.manifest.id || "annual-review"}`;
+    return normalizeDataPath(`${folder}/${SNAPSHOT_FILE_NAME}`);
+  }
+
   private async openDashboard(): Promise<void> {
     const leaf = this.app.workspace.getRightLeaf(false);
     if (!leaf) {
@@ -236,6 +297,28 @@ function settingsKey(settings: AnnualReviewSettings): string {
     excludeFolders: settings.excludeFolders,
     excludePatterns: settings.excludePatterns,
   });
+}
+
+async function ensureAdapterFolder(app: App, folder: string): Promise<void> {
+  if (!folder || (await app.vault.adapter.exists(folder))) {
+    return;
+  }
+
+  const parts = folder.split("/");
+  let current = "";
+  for (const part of parts) {
+    current = current ? `${current}/${part}` : part;
+    if (!(await app.vault.adapter.exists(current))) {
+      await app.vault.adapter.mkdir(current);
+    }
+  }
+}
+
+function normalizeDataPath(path: string): string {
+  return path
+    .replace(/\\/gu, "/")
+    .replace(/\/{2,}/gu, "/")
+    .replace(/^\/+|\/+$/gu, "");
 }
 
 class AnnualReviewSettingTab extends PluginSettingTab {

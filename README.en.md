@@ -30,16 +30,18 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
 
 1. **Scan**: choose a year, include/exclude folders, and privacy mode. The
    plugin reads only allowed Markdown, properties, tags, links, tasks, and
-   timeline signals inside the active vault.
+   timeline signals inside the active vault, and records a vault snapshot during
+   rebuild/run.
 2. **Candidates**: the plugin proposes topic, note, project, task, dormant-note,
-   and bridge-note candidates with a short recommendation rationale and
-   evidence links. Unusual activity is only a signal for candidate generation.
+   and bridge-note candidates with auditable recommendation rationale, stat
+   fields, and evidence links. Unusual activity is only a signal for candidate
+   generation.
 3. **Review**: you accept, rename, merge topics, ignore, archive, or add
    candidates to actions in the Review Board.
 4. **Decisions**: you decide whether accepted topics, notes, projects, tasks,
    dormant notes, and bridge notes become annual highlights or next actions.
 5. **Annual report**: the plugin writes accepted material, evidence links,
-   action decisions, and method notes to
+   action decisions, chart assets, and method notes to
    `Annual Reviews/YYYY Annual Review.md`.
 
 > Screenshot placeholder: Review Board candidate list, evidence links, action
@@ -52,6 +54,9 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
   inside the active vault.
 - The report folder, templates, archives, attachments, and user-excluded scopes
   are not scanned as source input.
+- `annual-review-snapshots.json` is stored in the plugin-owned
+  `.obsidian/plugins/<plugin-id>/` data directory for later word-delta
+  comparison; it does not modify source-note frontmatter.
 - AI is an optional report-drafting enhancement; the core candidate, review,
   decision, and evidence workflow does not depend on AI.
 - If a user explicitly enables an external AI provider, the plugin must explain
@@ -70,6 +75,20 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
   produce a diffable change for rollback.
 - Every candidate and action suggestion keeps source-note, tag, link, task, or
   timeline evidence so the user can verify it before accepting it.
+
+## Data Methodology
+
+- When comparable historical snapshots exist, the annual report shows real vault
+  word-count deltas computed from snapshot history.
+- When no historical snapshot exists, or include/exclude scope changes make
+  snapshots incompatible, growth metrics are labeled as current-vault inference
+  instead of precise historical growth.
+- Snapshot capture reuses the same include/exclude folders, exclude patterns,
+  and report-folder exclusion as the report scan. Excluded directories do not
+  enter snapshots or delta statistics.
+- See [Data Methodology](docs/data-methodology.md) for the JSON format,
+  capture timing, limitations, imports, batch modifications, and excluded
+  directory behavior.
 
 ## Installation
 
@@ -102,7 +121,7 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 ## Current Commands
 
 - `Annual Review: Rebuild index`: rescan allowed Markdown notes in the active
-  vault.
+  vault and record a snapshot.
 - `Annual Review: Generate report`: choose a year and generation options, then
   write the protected annual Markdown report.
 - `Annual Review: Open Review Board`: review candidate rationale, evidence
@@ -150,4 +169,5 @@ Manual validation:
 - [Roadmap](docs/roadmap.md)
 - [Docs index](docs/README.md)
 - [AI report design](docs/ai-report-design.md)
+- [Data Methodology](docs/data-methodology.md)
 - [Release checklist](docs/release-checklist.md)

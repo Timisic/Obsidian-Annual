@@ -116,6 +116,25 @@ const REPORT_TEXT = {
     title: (year: number) => `${year} Annual Review`,
     allMarkdownFiles: "All Markdown files",
     none: "None",
+    dataMethodology: "Data Methodology",
+    currentVaultInference: "current-vault inference",
+    historicalSnapshotStatistics: "historical snapshot statistics",
+    scopeMismatch:
+      "current-vault inference; historical snapshot unavailable because scan scope changed",
+    snapshotWordDelta: "Snapshot word delta",
+    snapshotBaseline: "Snapshot baseline",
+    currentSnapshot: "Current snapshot",
+    scanScope: "Scan scope",
+    excludedScope: "Excluded scope",
+    growthDataSource: "Growth data source",
+    reportFolder: "Report folder",
+    excludePatterns: "Excluded patterns",
+    methodologyHistorical: (baseline: string, current: string) =>
+      `Historical snapshot statistics compare the vault snapshot captured at ${baseline} with the current snapshot captured at ${current}. Mtime-only batch changes do not count as word growth unless note word counts changed.`,
+    methodologyFallback:
+      "Growth is labeled as current vault inference because no comparable historical snapshot is available yet. Counts are derived from current file timestamps and are not a historical word-count delta.",
+    methodologyScopeMismatch: (baseline: string) =>
+      `A previous snapshot from ${baseline} exists, but its include/exclude scope differs from this run. Historical comparison is disabled to avoid mixing incompatible scan ranges.`,
     periodJudgment: "Annual Overview",
     defaultPeriodJudgment: (words: number, activeDays: number, _topics: string[]) =>
       `This review covers ${formatInteger(words)} new words across ${activeDays} writing days. The local evidence points to the year's writing rhythm, strongest activity windows, and notes worth revisiting; turning those signals into content threads works best when summary generation is enabled.`,
@@ -260,6 +279,24 @@ const REPORT_TEXT = {
     title: (year: number) => `${year} 年度回顾`,
     allMarkdownFiles: "全部 Markdown 文件",
     none: "无",
+    dataMethodology: "数据口径",
+    currentVaultInference: "当前 vault 推断",
+    historicalSnapshotStatistics: "历史 snapshot 统计",
+    scopeMismatch: "当前 vault 推断；扫描范围变化导致历史 snapshot 不可比较",
+    snapshotWordDelta: "Snapshot 字数增量",
+    snapshotBaseline: "Snapshot 基线",
+    currentSnapshot: "当前 Snapshot",
+    scanScope: "扫描范围",
+    excludedScope: "排除范围",
+    growthDataSource: "增长数据来源",
+    reportFolder: "报告目录",
+    excludePatterns: "排除模式",
+    methodologyHistorical: (baseline: string, current: string) =>
+      `增长数据使用历史 snapshot 统计：对比 ${baseline} 捕获的 vault snapshot 与 ${current} 捕获的当前 snapshot。仅 mtime 批量变化不会计入字数增长，除非笔记字数实际改变。`,
+    methodologyFallback:
+      "增长数据标记为当前 vault 推断，因为还没有可比较的历史 snapshot。相关计数来自当前文件时间戳，不应解读为精确历史字数增量。",
+    methodologyScopeMismatch: (baseline: string) =>
+      `存在 ${baseline} 的旧 snapshot，但它的包含/排除范围与本次运行不同。为避免跨范围误导，本次不做历史增量比较。`,
     periodJudgment: "年度总览",
     defaultPeriodJudgment: (words: number, activeDays: number, _topics: string[]) =>
       `这一年新增 ${formatInteger(words)} 个字词，分布在 ${activeDays} 个写作日里。单看本地指标，已经能看出写作节奏、活跃月份和需要回看的核心笔记；如果启用总结生成，这些证据还可以继续提炼成更完整的内容主线。`,
@@ -460,6 +497,10 @@ export function renderAnnualReview(
       aiEnhancements?.themeInsights,
     ),
     "",
+    `## ${text.dataMethodology}`,
+    "",
+    renderDataMethodology(aggregate, language),
+    "",
   ].join("\n");
 }
 
@@ -502,6 +543,7 @@ function renderWritingGrowth(
   return [
     `| ${text.metric} | ${text.value} |`,
     "| --- | ---: |",
+    ...renderSnapshotMetricRows(aggregate, language),
     `| ${text.totalNewWords} | ${formatInteger(aggregate.totalWords)} |`,
     `| ${text.notesCreated} | ${aggregate.createdCount} |`,
     `| ${text.notesModified} | ${aggregate.modifiedCount} |`,
@@ -537,6 +579,19 @@ function renderGrowthFeedback(
   ];
 }
 
+function renderSnapshotMetricRows(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const text = REPORT_TEXT[language];
+  if (aggregate.snapshotComparison.source !== "historical-snapshot") {
+    return [];
+  }
+  return [
+    `| ${text.snapshotWordDelta} | ${formatSignedInteger(aggregate.snapshotComparison.wordDelta)} |`,
+  ];
+}
+
 function formatScope(items: string[], emptyLabel: string): string {
   return items.length > 0 ? items.join(", ") : emptyLabel;
 }
@@ -550,12 +605,66 @@ function renderMetadata(
     "---",
     `generated: ${JSON.stringify(aggregate.generatedAt)}`,
     `year: ${aggregate.year}`,
+    `growth_data_source: ${JSON.stringify(growthDataSourceLabel(aggregate, language))}`,
     `included_scope: ${JSON.stringify(formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles))}`,
     `excluded_scope: ${JSON.stringify(formatScope(aggregate.scope.excludeFolders, text.none))}`,
+    `excluded_patterns: ${JSON.stringify(formatScope(aggregate.scope.excludePatterns, text.none))}`,
+    `report_folder: ${JSON.stringify(aggregate.scope.reportFolder)}`,
     `privacy_mode: ${JSON.stringify(aggregate.scope.privacyMode)}`,
     `report_language: ${JSON.stringify(language)}`,
     "---",
   ].join("\n");
+}
+
+function renderDataMethodology(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const text = REPORT_TEXT[language];
+  const comparison = aggregate.snapshotComparison;
+  const methodology =
+    comparison.source === "historical-snapshot" && comparison.baselineCapturedAt
+      ? text.methodologyHistorical(
+          comparison.baselineCapturedAt,
+          comparison.currentCapturedAt,
+        )
+      : comparison.source === "scope-mismatch" && comparison.baselineCapturedAt
+        ? text.methodologyScopeMismatch(comparison.baselineCapturedAt)
+        : text.methodologyFallback;
+
+  return [
+    methodology,
+    "",
+    `| ${text.metric} | ${text.value} |`,
+    "| --- | --- |",
+    `| ${text.growthDataSource} | ${growthDataSourceLabel(aggregate, language)} |`,
+    `| ${text.scanScope} | ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)} |`,
+    `| ${text.excludedScope} | ${formatScope(aggregate.scope.excludeFolders, text.none)} |`,
+    `| ${text.excludePatterns} | ${formatScope(aggregate.scope.excludePatterns, text.none)} |`,
+    `| ${text.reportFolder} | ${aggregate.scope.reportFolder} |`,
+    ...(comparison.baselineCapturedAt
+      ? [`| ${text.snapshotBaseline} | ${comparison.baselineCapturedAt} |`]
+      : []),
+    `| ${text.currentSnapshot} | ${comparison.currentCapturedAt} |`,
+  ].join("\n");
+}
+
+function growthDataSourceLabel(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const text = REPORT_TEXT[language];
+  if (aggregate.snapshotComparison.source === "historical-snapshot") {
+    return text.historicalSnapshotStatistics;
+  }
+  if (aggregate.snapshotComparison.source === "scope-mismatch") {
+    return text.scopeMismatch;
+  }
+  return text.currentVaultInference;
+}
+
+function formatSignedInteger(value: number): string {
+  return value > 0 ? `+${formatInteger(value)}` : formatInteger(value);
 }
 
 function renderMonthTable(
