@@ -85,16 +85,22 @@ function mergeAnnualReviewContent(
     return formatMachineSection(nextMachineContent);
   }
 
-  return [
-    existingContent.slice(0, section.startIndex),
+  const managedStartIndex = machineSectionStartIndex(existingContent, section.startIndex);
+  return appendUserContent(
     formatMachineSection(nextMachineContent),
+    existingContent.slice(0, managedStartIndex),
     existingContent.slice(section.endIndex),
-  ].join("");
+  );
 }
 
 function formatMachineSection(content: string): string {
-  const machineContent = content.endsWith("\n") ? content : `${content}\n`;
-  return `${ANNUAL_REVIEW_START_MARKER}\n${machineContent}${ANNUAL_REVIEW_END_MARKER}`;
+  const frontmatter = extractLeadingFrontmatter(content);
+  const machineContent = frontmatter ? frontmatter.body : content;
+  const normalizedContent = machineContent.endsWith("\n")
+    ? machineContent
+    : `${machineContent}\n`;
+  const machineSection = `${ANNUAL_REVIEW_START_MARKER}\n${normalizedContent}${ANNUAL_REVIEW_END_MARKER}`;
+  return frontmatter ? `${frontmatter.block}\n\n${machineSection}` : machineSection;
 }
 
 function hasMachineSection(content: string): boolean {
@@ -121,6 +127,49 @@ function findMachineSection(
     startIndex,
     endIndex: endMarkerIndex + ANNUAL_REVIEW_END_MARKER.length,
   };
+}
+
+function machineSectionStartIndex(content: string, markerStartIndex: number): number {
+  const frontmatter = extractLeadingFrontmatter(content);
+  if (!frontmatter) {
+    return markerStartIndex;
+  }
+
+  const betweenFrontmatterAndMarker = content.slice(
+    frontmatter.endIndex,
+    markerStartIndex,
+  );
+  return betweenFrontmatterAndMarker.trim().length === 0 ? 0 : markerStartIndex;
+}
+
+function extractLeadingFrontmatter(
+  content: string,
+): { block: string; body: string; endIndex: number } | null {
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---(?=\r?\n|$)/u);
+  if (!match) {
+    return null;
+  }
+
+  const block = match[0] ?? "";
+  const endIndex = block.length;
+  return {
+    block,
+    body: content.slice(endIndex).replace(/^\r?\n/u, ""),
+    endIndex,
+  };
+}
+
+function appendUserContent(
+  machineSection: string,
+  userBeforeSection: string,
+  userAfterSection: string,
+): string {
+  const userContent = [userBeforeSection, userAfterSection]
+    .map((content) => content.trim())
+    .filter(Boolean)
+    .join("\n\n");
+
+  return userContent ? `${machineSection}\n\n${userContent}\n` : machineSection;
 }
 
 async function createLegacyBackup(
