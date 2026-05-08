@@ -11,6 +11,7 @@ import type {
   ResolvedAnnualReviewLanguage,
   YearAggregate,
 } from "../core/types";
+import { getActionCandidateId, getNextReviewSelection } from "./reviewSelection";
 
 export const VIEW_TYPE_ANNUAL_REVIEW = "annual-review-dashboard";
 
@@ -299,6 +300,14 @@ export class AnnualReviewDashboardView extends ItemView {
     const actions = parent.createDiv({ cls: "annual-review-board-actions" });
     const runAction = async (action: ReviewAction) => {
       await this.controller.applyReviewAction(action);
+      const actedCandidateId = getActionCandidateId(action);
+      const nextSession = this.controller.getReviewSession();
+      if (actedCandidateId && nextSession) {
+        this.selectedCandidateId = getNextReviewSelection(
+          nextSession.candidates,
+          actedCandidateId,
+        );
+      }
       this.render();
     };
     const at = () => new Date().toISOString();

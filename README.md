@@ -72,8 +72,7 @@ MVP 决策动作包括：
 文档中的 vault 路径分为三类，避免把测试路径当成用户路径：
 
 - **普通用户 vault**：用户自己的 Obsidian vault。社区插件安装和手动安装都以这个路径为目标。
-- **repo-local fixture vault**：`tests/fixtures/vault`，只用于单元测试和确定性 Markdown 样本，不是一个需要 Obsidian 打开的真实用户 vault。
-- **repo-local smoke vault**：`tests/fixtures/obsidian-smoke-vault`，用于在本仓库内部署当前构建并用 Obsidian 打开 Review Board 做验证。
+- **repo-local validation vault**：`tests/fixtures/obsidian-smoke-vault`，同时用于单元测试样本和本仓库内 Review Board 部署验证。
 - **自定义 smoke vault**：自动化 agent/release reviewer 可通过 `SMOKE_VAULT_PATH` 指向显式提供的本地测试 vault；它不是普通用户安装路径。
 
 ### 从 Obsidian 社区插件安装

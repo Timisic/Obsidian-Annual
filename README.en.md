@@ -118,11 +118,11 @@ Documentation uses three distinct vault paths:
 
 - **Normal user vault**: the user's own Obsidian vault. Community installation
   and manual release-package installation target this path.
-- **Repo-local fixture vault**: `tests/fixtures/vault`, used only for unit tests
-  and deterministic Markdown samples. It is not a real Obsidian smoke vault.
-- **Real smoke vault**: the local Obsidian CLI validation vault used by agents
-  and release reviewers for end-to-end checks. It is not the ordinary-user
-  install path and is not exposed as the public package-script main path.
+- **Repo-local validation vault**: `tests/fixtures/obsidian-smoke-vault`, used
+  for both deterministic test samples and in-repository Review Board deploy
+  checks.
+- **Custom smoke vault**: an explicitly supplied `SMOKE_VAULT_PATH` for agent
+  and release-reviewer evidence. It is not the ordinary-user install path.
 
 ### Install From Obsidian Community Plugins
 
@@ -185,7 +185,7 @@ npm run lint
 
 Manual validation:
 
-1. Enable the plugin in your temporary test vault or the agent smoke vault.
+1. Enable the plugin in your temporary test vault, `tests/fixtures/obsidian-smoke-vault`, or an explicitly supplied agent smoke vault.
 2. Run `Annual Review: Rebuild index`.
 3. Run `Annual Review: Open Review Board` and confirm the candidate queue,
    rationale, evidence sources, and progress are visible.

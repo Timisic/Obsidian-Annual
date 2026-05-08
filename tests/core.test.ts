@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -43,6 +43,10 @@ import {
   writeAnnualReviewOutput,
 } from "../src/obsidian/reportWriter";
 import { getAnnualReviewDashboardLeaf } from "../src/obsidian/dashboardLeaf";
+import {
+  getActionCandidateId,
+  getNextReviewSelection,
+} from "../src/obsidian/reviewSelection";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
@@ -174,7 +178,7 @@ describe("writing growth", () => {
         [
           "scripts/writing-growth-report.mjs",
           "--vault",
-          "tests/fixtures/vault",
+          "tests/fixtures/obsidian-smoke-vault",
           "--year",
           "2026",
           "--history",
@@ -1823,6 +1827,13 @@ describe("MVP public surface", () => {
     expect(source).not.toMatch(/\/Users\/hong|install-smoke-vault/u);
   });
 
+  it("uses the repo-local Obsidian validation vault as the only fixture vault", () => {
+    const fixtureSource = readFileSync(join(process.cwd(), "tests/fixtures.ts"), "utf8");
+
+    expect(fixtureSource).toContain('fixtures", "obsidian-smoke-vault');
+    expect(existsSync(join(process.cwd(), "tests", "fixtures", "vault"))).toBe(false);
+  });
+
   it("keeps the Review Board view off broad dashboard analytics", () => {
     const source = readFileSync(
       join(process.cwd(), "src/obsidian/dashboardView.ts"),
@@ -1902,6 +1913,23 @@ describe("MVP public surface", () => {
     }
 
     expect(source).toContain("this.controller.openSourceNote(candidate.id)");
+  });
+
+  it("advances Review Board selection to the next pending candidate after a decision", () => {
+    const candidates = [
+      reviewCandidateFixture("current", "Current Topic", "accepted"),
+      reviewCandidateFixture("next", "Next Topic", "candidate"),
+      reviewCandidateFixture("closed", "Closed Topic", "ignored"),
+    ];
+
+    expect(
+      getActionCandidateId({
+        type: "accept",
+        candidateId: "current",
+        at: "2026-05-08T00:00:00.000Z",
+      }),
+    ).toBe("current");
+    expect(getNextReviewSelection(candidates, "current")).toBe("next");
   });
 });
 
