@@ -352,7 +352,9 @@ function buildCodexContext(
     highValueNotes: aggregate.highValueNotes.slice(0, 5).map((note) => ({
       path: note.path,
       kind: note.kind,
+      suggestionLabel: note.suggestionLabel,
       reason: note.reason,
+      reasons: note.reasons,
       suggestedAction: note.suggestedAction,
       periodWordCount: note.periodWordCount,
     })),
@@ -443,7 +445,9 @@ function highValueEvidence(
     return {
       path: item.path,
       kind: item.kind,
+      suggestionLabel: item.suggestionLabel,
       metricReason: item.reason,
+      metricReasons: item.reasons,
       metricSuggestedAction: item.suggestedAction,
       inboundLinks: item.inboundLinks,
       outboundLinks: item.outboundLinks,
