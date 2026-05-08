@@ -8,6 +8,7 @@ import {
   type ReviewCandidateType,
   type ReviewSessionState,
 } from "../src/core/reviewState";
+import type { ExplanationReason } from "../src/core/types";
 
 const at = "2026-05-04T15:00:00.000Z";
 
@@ -17,6 +18,21 @@ describe("review state", () => {
 
     expect(() => applyReviewAction(session, { type: "accept", candidateId: "topic-1", at })).toThrow(
       "Review candidate topic-1 must include at least one evidence source.",
+    );
+  });
+
+  it("requires every candidate reason to be traceable", () => {
+    const withoutReasons = { ...candidate("topic-1", "topic"), reasons: [] };
+    const withoutTrace = {
+      ...candidate("topic-2", "topic"),
+      reasons: [{ type: "tag", label: "Tag signal", evidenceId: "missing-trace" } as unknown as ExplanationReason],
+    };
+
+    expect(() => applyReviewAction(sessionWith([withoutReasons]), { type: "accept", candidateId: "topic-1", at })).toThrow(
+      "Review candidate topic-1 must include at least one explanation reason.",
+    );
+    expect(() => applyReviewAction(sessionWith([withoutTrace]), { type: "accept", candidateId: "topic-2", at })).toThrow(
+      "Review candidate topic-2 has an explanation reason without traceable evidence.",
     );
   });
 
@@ -168,12 +184,23 @@ function candidate(id: string, type: ReviewCandidateType, evidence: EvidenceSour
     type,
     title: id,
     reason: `Reason for ${id}`,
+    reasons: [reasonFor(id)],
     status: "candidate",
     evidence,
     sourcePaths: [`${id}.md`],
     decisionIds: [],
     createdAt: at,
     updatedAt: at,
+  };
+}
+
+function reasonFor(id: string): ExplanationReason {
+  return {
+    type: "word-count",
+    label: `${id} has enough source text.`,
+    evidenceId: `${id}-reason`,
+    sourcePath: `${id}.md`,
+    statField: "wordCount",
   };
 }
 

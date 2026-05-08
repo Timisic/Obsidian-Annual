@@ -1,3 +1,5 @@
+import type { ExplanationReason } from "./types";
+
 export type ReviewCandidateType = "topic" | "note" | "project" | "task" | "dormant-note" | "bridge-note";
 
 export type ReviewCandidateStatus = "candidate" | "accepted" | "renamed" | "merged" | "ignored" | "archived" | "next-action";
@@ -31,6 +33,7 @@ export interface ReviewCandidate {
   type: ReviewCandidateType;
   title: string;
   reason: string;
+  reasons: ExplanationReason[];
   status: ReviewCandidateStatus;
   evidence: EvidenceSource[];
   sourcePaths: string[];
@@ -87,6 +90,14 @@ const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>(["accepted", "renam
 export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
   if (candidate.evidence.length === 0) {
     throw new Error(`Review candidate ${candidate.id} must include at least one evidence source.`);
+  }
+  if (candidate.reasons.length === 0) {
+    throw new Error(`Review candidate ${candidate.id} must include at least one explanation reason.`);
+  }
+  for (const reason of candidate.reasons) {
+    if (!reason.sourcePath && !reason.statField && (!reason.relatedPaths || reason.relatedPaths.length === 0)) {
+      throw new Error(`Review candidate ${candidate.id} has an explanation reason without traceable evidence.`);
+    }
   }
 }
 

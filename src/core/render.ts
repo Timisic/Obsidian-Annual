@@ -4,6 +4,7 @@ import type {
   AiReportEnhancements,
   AiThemeInsight,
   DayBucket,
+  ExplanationReason,
   HighValueNote,
   MonthBucket,
   RankedMetric,
@@ -215,8 +216,15 @@ const REPORT_TEXT = {
     highValueNotesSummary: (count: number) =>
       `These ${count} notes are suggested for review because their content, links, or activity signals give concrete reasons to inspect them. Confirm or reject each one manually before treating it as representative.`,
     highValueNote: "Note",
-    highValueType: "Type",
+    highValueType: "Suggestion label",
     highValueReason: "Recommendation rationale",
+    highValueReasonList: "Auditable reasons",
+    highValueEvidence: "Evidence",
+    highValueSourceNote: "Source note",
+    highValueRelatedNotes: "Related notes",
+    highValueStatField: "Stat field",
+    highValueNoAuditableEvidence:
+      "No auditable evidence was generated for this candidate; review the source note before treating it as a recommendation.",
     suggestedAction: "Suggested action",
     manualConfirmation: "Manual confirmation",
     manualConfirmationInstruction: "Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.",
@@ -355,8 +363,15 @@ const REPORT_TEXT = {
     highValueNotesSummary: (count: number) =>
       `下面 ${count} 篇笔记因为内容、链接或活动信号而被建议回看。请逐篇人工确认或否决，再把它们视为年度代表内容。`,
     highValueNote: "笔记",
-    highValueType: "类型",
+    highValueType: "建议标签",
     highValueReason: "推荐理由",
+    highValueReasonList: "可审计理由",
+    highValueEvidence: "证据",
+    highValueSourceNote: "源笔记",
+    highValueRelatedNotes: "相关笔记",
+    highValueStatField: "统计字段",
+    highValueNoAuditableEvidence:
+      "此候选项没有生成可审计证据；请先打开源笔记复核，不要把它当作确定推荐。",
     suggestedAction: "建议动作",
     manualConfirmation: "人工确认",
     manualConfirmationInstruction: "请人工确认、重命名、忽略或归档后再写入年报。",
@@ -1221,18 +1236,57 @@ function renderHighValueNoteSection(
   text?: (typeof REPORT_TEXT)[ResolvedAnnualReviewLanguage],
 ): string[] {
   const labels = text ?? REPORT_TEXT.en;
+  const traceableReasons = note.reasons.filter(reasonHasEvidence);
   const reason = sanitizeParagraphMarkdown(aiNote?.reason || note.reason);
   const action = sanitizeInlineMarkdown(aiNote?.suggestedAction || note.suggestedAction);
+  if (traceableReasons.length === 0) {
+    return [
+      `#### ${wikiLink(note.path, note.title)}`,
+      "",
+      `${labels.highValueType}: ${note.suggestionLabel}。${labels.highValueNoAuditableEvidence}`,
+      "",
+      `${labels.manualConfirmation}: ${labels.manualConfirmationInstruction}`,
+      "",
+    ];
+  }
   return [
     `#### ${wikiLink(note.path, note.title)}`,
     "",
-    `${labels.highValueType}: ${note.kind}。${labels.highValueReason}: ${reason}`,
+    `${labels.highValueType}: ${note.suggestionLabel}。${labels.highValueReason}: ${reason}`,
+    "",
+    `${labels.highValueReasonList}:`,
+    ...traceableReasons.flatMap((candidateReason) => renderExplanationReason(candidateReason, labels)),
     "",
     `${labels.suggestedAction}: ${action}`,
     "",
     `${labels.manualConfirmation}: ${labels.manualConfirmationInstruction}`,
     "",
   ];
+}
+
+function renderExplanationReason(
+  reason: ExplanationReason,
+  labels: (typeof REPORT_TEXT)[ResolvedAnnualReviewLanguage],
+): string[] {
+  const evidence = [
+    reason.sourcePath ? `${labels.highValueSourceNote}: ${wikiLinkPlain(reason.sourcePath)}` : "",
+    reason.relatedPaths && reason.relatedPaths.length > 0
+      ? `${labels.highValueRelatedNotes}: ${reason.relatedPaths.map(wikiLinkPlain).join(", ")}`
+      : "",
+    reason.statField ? `${labels.highValueStatField}: \`${reason.statField}\`` : "",
+  ].filter(Boolean);
+  return [
+    `- ${sanitizeInlineMarkdown(reason.label)}`,
+    `  - ${labels.highValueEvidence}: ${evidence.join("; ")}`,
+  ];
+}
+
+function reasonHasEvidence(reason: ExplanationReason): boolean {
+  return Boolean(
+    reason.sourcePath ||
+      reason.statField ||
+      (reason.relatedPaths && reason.relatedPaths.length > 0),
+  );
 }
 
 function renderHighValueFeedback(
