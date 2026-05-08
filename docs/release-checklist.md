@@ -57,26 +57,26 @@ ignore, rename, merge, highlight, or add action. Follow-up: DEC-57.
 
 Evidence summary:
 
-| Gate | Result | Evidence |
-| --- | --- | --- |
-| `npm run test` | Pass | 2 files, 53 tests passed. |
-| `npm run typecheck` | Pass | `tsc -noEmit -skipLibCheck` completed. |
-| `npm run build` | Pass | production esbuild completed. |
-| `npm run lint` | Pass | `eslint .` completed. |
-| `npm run release:check` | Pass | `dist/annual-review` contains `manifest.json`, `main.js`, `styles.css`. |
-| Smoke deploy/reload/rebuild/generate/read | Pass | `.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate` deployed to `install-smoke-vault`, reloaded the plugin, rebuilt index, executed `annual-review:generate-annual-review-2026`, and read `Annual Reviews/2026 Annual Review.md` (3,277 bytes). |
-| Report sanity checks | Pass | No quoted month topics, no deprecated `更新笔记`, no table-row wikilink alias pipes, no SVG embeds without explicit width, no `AI summary unavailable`, no `codex: command not found`; `建立 MOC` count was 0. |
-| Release artifact/version consistency | Pass | `manifest.json`, `package.json`, `versions.json`, and `dist/annual-review/manifest.json` all agree on version `0.1.0`; minimum Obsidian version is `1.7.2`. |
+| Gate                                      | Result | Evidence                                                                                                                                                                                                                                                                      |
+| ----------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test`                            | Pass   | 2 files, 53 tests passed.                                                                                                                                                                                                                                                     |
+| `npm run typecheck`                       | Pass   | `tsc -noEmit -skipLibCheck` completed.                                                                                                                                                                                                                                        |
+| `npm run build`                           | Pass   | production esbuild completed.                                                                                                                                                                                                                                                 |
+| `npm run lint`                            | Pass   | `eslint .` completed.                                                                                                                                                                                                                                                         |
+| `npm run release:check`                   | Pass   | `dist/annual-review` contains `manifest.json`, `main.js`, `styles.css`.                                                                                                                                                                                                       |
+| Smoke deploy/reload/rebuild/generate/read | Pass   | `.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate` deployed to `install-smoke-vault`, reloaded the plugin, rebuilt index, executed `annual-review:generate-annual-review-2026`, and read `Annual Reviews/2026 Annual Review.md` (3,277 bytes). |
+| Report sanity checks                      | Pass   | No quoted month topics, no deprecated `更新笔记`, no table-row wikilink alias pipes, no SVG embeds without explicit width, no `AI summary unavailable`, no `codex: command not found`; `建立 MOC` count was 0.                                                                |
+| Release artifact/version consistency      | Pass   | `manifest.json`, `package.json`, `versions.json`, and `dist/annual-review/manifest.json` all agree on version `0.1.0`; minimum Obsidian version is `1.7.2`.                                                                                                                   |
 
 MVP loop assessment:
 
-| MVP step | Result | Evidence / gap |
-| --- | --- | --- |
-| Select year/range | Pass | Year modal/dashboard year control exist; smoke command generated the 2026 report using configured scope `2026月复盘`. |
-| Scan vault | Pass | Smoke rebuild reported 40 indexed files in the Review Board/dashboard DOM. |
-| Generate candidates | Pass | Generated report includes suggested review candidates with auditable reasons and evidence links. |
-| Review Board review/decision | Fail | Review Board surface is still a preview/dashboard, not a candidate decision board. Gap filed as DEC-57. |
-| Protected Markdown annual report | Pass | Generated report is wrapped in `<!-- annual-review:start -->` / `<!-- annual-review:end -->` and writes assets under `Annual Reviews/2026 Annual Review Assets/`. |
+| MVP step                         | Result | Evidence / gap                                                                                                                                                    |
+| -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Select year/range                | Pass   | Year modal/dashboard year control exist; smoke command generated the 2026 report using configured scope `2026月复盘`.                                             |
+| Scan vault                       | Pass   | Smoke rebuild reported 40 indexed files in the Review Board/dashboard DOM.                                                                                        |
+| Generate candidates              | Pass   | Generated report includes suggested review candidates with auditable reasons and evidence links.                                                                  |
+| Review Board review/decision     | Fail   | Review Board surface is still a preview/dashboard, not a candidate decision board. Gap filed as DEC-57.                                                           |
+| Protected Markdown annual report | Pass   | Generated report is wrapped in `<!-- annual-review:start -->` / `<!-- annual-review:end -->` and writes assets under `Annual Reviews/2026 Annual Review Assets/`. |
 
 ## 手动安装验证
 

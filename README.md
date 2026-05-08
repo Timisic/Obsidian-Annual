@@ -27,6 +27,22 @@ Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
 4. **决策**：你为已接受的主题、笔记、项目、任务、沉睡笔记和桥接笔记写下年度精选或下一步行动。
 5. **年报**：插件把已接受内容、证据链接、行动决定和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
 
+## Review Board 审核闭环
+
+`Annual Review: Open Review Board` 打开的是当前年份/范围的候选队列。队列会显示每个候选的类型、标题、当前状态、推荐理由、证据数量和审核进度；选择候选后，右侧展示源笔记、标签、任务或摘录证据，并可直接打开源笔记复核。
+
+MVP 决策动作包括：
+
+- `Accept`：接受候选，让它进入年报候选输入。
+- `Ignore`：忽略候选，后续生成年报时排除它。
+- `Rename topic`：用用户确认后的标题写入报告。
+- `Merge topic`：把主题合并到目标主题，不再作为独立候选输出。
+- `Add to annual highlights`：把候选标记为年度精选。
+- `Add to actions`：把候选转成下一步行动。
+- `Open source note`：打开证据来源，不改变审核状态。
+
+审核状态保存在插件自己的数据中，不写入源笔记 frontmatter。重复 rebuild index 时，未决候选可以刷新理由和证据；已经接受、重命名、合并、忽略、精选或加入行动的用户决策会保留。生成年报时只读取已接受/精选/行动决策，并排除忽略或已合并为来源的候选。
+
 ## 隐私边界
 
 - 默认不访问网络，不调用外部 AI，不发送遥测。
@@ -87,11 +103,11 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 
 ## 当前可用命令
 
-| 命令                               | 用途                                                             |
-| ---------------------------------- | ---------------------------------------------------------------- |
-| `Annual Review: Rebuild index`     | 重新扫描当前 vault 中允许范围的 Markdown 笔记，并记录 snapshot。 |
-| `Annual Review: Generate report`   | 选择年份和生成选项，写入受保护的年度 Markdown 报告。             |
-| `Annual Review: Open Review Board` | 打开候选审核界面，用于复核推荐理由、证据链接和接受状态。         |
+| 命令                               | 用途                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| `Annual Review: Rebuild index`     | 重新扫描当前 vault 中允许范围的 Markdown 笔记，并记录 snapshot。                 |
+| `Annual Review: Generate report`   | 选择年份和生成选项，写入受保护的年度 Markdown 报告。                             |
+| `Annual Review: Open Review Board` | 打开候选审核队列，用于复核证据并执行接受、忽略、重命名、合并、精选、行动等决策。 |
 
 ## 开发命令
 
@@ -120,10 +136,13 @@ npm run lint
 
 1. 在你的临时测试 vault 或 agent smoke vault 中启用插件。
 2. 运行 `Annual Review: Rebuild index`。
-3. 运行 `Annual Review: Generate report`。
-4. 确认报告生成在 `Annual Reviews/` 下，并且候选项能回链到源笔记。
-5. 修改年报中的用户手写区块后重新生成，确认手写内容未被覆盖。
-6. 在默认设置下确认没有外部网络请求或 AI 调用。
+3. 运行 `Annual Review: Open Review Board`，确认候选队列、推荐理由、证据来源和进度可见。
+4. 对至少一个候选执行接受、忽略、重命名、合并、加入年度精选或加入行动，并确认打开源笔记可用。
+5. 重新加载插件或重新运行 rebuild index，确认已做出的用户决策没有被覆盖。
+6. 运行 `Annual Review: Generate report`。
+7. 确认报告生成在 `Annual Reviews/` 下，接受/精选/行动决策进入报告，忽略候选被排除，并且候选项能回链到源笔记。
+8. 修改年报中的用户手写区块后重新生成，确认手写内容未被覆盖。
+9. 在默认设置下确认没有外部网络请求或 AI 调用。
 
 ## 更多文档
 

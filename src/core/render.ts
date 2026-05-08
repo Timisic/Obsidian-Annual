@@ -1,4 +1,5 @@
 import { toTopicEvolutionJson } from "./topics";
+import type { ReviewCandidate, ReviewDecision, ReviewSessionState } from "./reviewState";
 import type {
   AiHighValueNoteInsight,
   AiReportEnhancements,
@@ -22,6 +23,7 @@ interface RenderOptions {
   periodJudgment?: string;
   aiEnhancements?: AiReportEnhancements;
   aiEnabled?: boolean;
+  reviewSession?: ReviewSessionState;
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
@@ -486,7 +488,13 @@ export function renderAnnualReview(
     "",
     `## ${text.highValueNotes}`,
     "",
-    renderHighValueNotes(aggregate, language, aiEnhancements?.highValueNotes, aiEnabled),
+    renderHighValueNotes(
+      aggregate,
+      language,
+      aiEnhancements?.highValueNotes,
+      aiEnabled,
+      options.reviewSession,
+    ),
     "",
     `## ${text.nextPeriodActions}`,
     "",
@@ -495,6 +503,7 @@ export function renderAnnualReview(
       language,
       aiEnhancements?.nextActions,
       aiEnhancements?.themeInsights,
+      options.reviewSession,
     ),
     "",
     `## ${text.dataMethodology}`,
@@ -1259,8 +1268,12 @@ function renderHighValueNotes(
   language: ResolvedAnnualReviewLanguage,
   aiNotes: AiHighValueNoteInsight[] = [],
   aiEnabled = false,
+  reviewSession?: ReviewSessionState,
 ): string {
   const text = REPORT_TEXT[language];
+  if (reviewSession) {
+    return renderReviewedCandidates(reviewSession, language);
+  }
   const aiNoteMap = new Map(aiNotes.map((note) => [normalizeNotePath(note.path), note]));
   const topNotes =
     aggregate.highValueNotes.length > 0
@@ -1286,6 +1299,89 @@ function renderHighValueNotes(
   ];
 
   return rows.join("\n");
+}
+
+function renderReviewedCandidates(
+  reviewSession: ReviewSessionState,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const text = REPORT_TEXT[language];
+  const candidates = reportIncludedCandidates(reviewSession);
+  if (candidates.length === 0) {
+    return `- ${text.noHighValueNotes}`;
+  }
+  const highlighted = candidates.filter(
+    (candidate) => candidate.includeInAnnualHighlights,
+  );
+  return [
+    reviewedCandidateSummary(candidates.length, language),
+    "",
+    `### ${text.topHighValueNotes}`,
+    "",
+    ...candidates.flatMap((candidate) => renderReviewedCandidate(candidate, language)),
+    ...(highlighted.length > 0
+      ? [
+          `### ${language === "zh" ? "年度精选" : "Annual Highlights"}`,
+          "",
+          ...highlighted.map(
+            (candidate) =>
+              `- ${reviewCandidateLink(candidate)}: ${sanitizeInlineMarkdown(candidate.reason)}`,
+          ),
+        ]
+      : []),
+  ].join("\n");
+}
+
+function reviewedCandidateSummary(
+  count: number,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  return language === "zh"
+    ? `下面 ${count} 个已审核候选将进入年度回顾，因为用户已接受、加入精选或转成行动。`
+    : `These ${count} reviewed candidates are included because they were accepted, highlighted, or turned into actions.`;
+}
+
+function renderReviewedCandidate(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const text = REPORT_TEXT[language];
+  const title = reviewCandidateLink(candidate);
+  const evidence = candidate.evidence
+    .filter((item) => !item.missing)
+    .slice(0, 4)
+    .map((item) => item.sourcePath || item.target)
+    .filter(Boolean);
+  return [
+    `#### ${title}`,
+    "",
+    `${text.highValueType}: ${candidate.status}。${text.highValueReason}: ${sanitizeParagraphMarkdown(candidate.reason)}`,
+    "",
+    evidence.length > 0
+      ? `${text.highValueEvidence}: ${evidence.map(wikiLinkPlain).join(", ")}`
+      : text.highValueNoAuditableEvidence,
+    "",
+  ];
+}
+
+function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCandidate[] {
+  return reviewSession.candidates.filter((candidate) => {
+    if (candidate.status === "ignored" || candidate.status === "merged") {
+      return false;
+    }
+    return (
+      candidate.status === "accepted" ||
+      candidate.status === "renamed" ||
+      candidate.status === "next-action" ||
+      Boolean(candidate.includeInAnnualHighlights)
+    );
+  });
+}
+
+function reviewCandidateLink(candidate: ReviewCandidate): string {
+  const title = candidate.userTitle || candidate.title;
+  const path = candidate.sourcePaths[0];
+  return path ? wikiLink(path, title) : sanitizeHeading(title);
 }
 
 function renderHighValueNoteSection(
@@ -1380,7 +1476,14 @@ function renderNextPeriodActions(
   language: ResolvedAnnualReviewLanguage,
   aiActions: string[] = [],
   aiThemes: AiThemeInsight[] = [],
+  reviewSession?: ReviewSessionState,
 ): string {
+  const reviewActions = reviewSession ? reportActionDecisions(reviewSession) : [];
+  if (reviewActions.length > 0) {
+    return reviewActions
+      .map((decision, index) => `${index + 1}. ${decision.label}`)
+      .join("\n");
+  }
   if (aiActions.length > 0) {
     return aiActions.map((action, index) => `${index + 1}. ${action}`).join("\n");
   }
@@ -1389,14 +1492,18 @@ function renderNextPeriodActions(
     aiThemes[0]?.title ||
     aggregate.topicEvolution.topTopics[0]?.name ||
     (language === "zh" ? "增长最快主题" : "the fastest-growing topic");
-  const highValueFocus = aggregate.highValueNotes
-    .slice(0, 2)
-    .map((note) => wikiLink(note.path, note.title));
+  const highValueFocus = reviewSession
+    ? reportIncludedCandidates(reviewSession).slice(0, 2).map(reviewCandidateLink)
+    : aggregate.highValueNotes.slice(0, 2).map((note) => wikiLink(note.path, note.title));
   return [
     `1. ${text.mocAction(topTopic)}`,
     `2. ${aggregate.isolatedPotentialNotes.length > 0 ? text.isolatedNotesAction(aggregate.isolatedPotentialNotes.length) : text.noIsolatedNotesAction}`,
     `3. ${highValueFocus.length > 0 ? text.highValuePushAction(formatInlineList(highValueFocus, language)) : text.noHighValuePushAction}`,
   ].join("\n");
+}
+
+function reportActionDecisions(reviewSession: ReviewSessionState): ReviewDecision[] {
+  return reviewSession.decisions.filter((decision) => decision.includeInReport);
 }
 
 function renderNoteList(

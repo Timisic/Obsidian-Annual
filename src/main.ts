@@ -15,6 +15,12 @@ import {
   buildAnnualReviewChartPaths,
   renderAnnualReview,
 } from "./core/render";
+import { buildReviewSession, reviewScopeHash } from "./core/reviewCandidates";
+import {
+  applyReviewAction,
+  type ReviewAction,
+  type ReviewSessionState,
+} from "./core/reviewState";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
 import {
   appendSnapshot,
@@ -44,8 +50,13 @@ import { AnnualReviewProgressModal } from "./obsidian/progressModal";
 import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
 import { YearModal } from "./obsidian/yearModal";
 
+interface AnnualReviewPluginData extends Partial<AnnualReviewSettings> {
+  reviewSessions?: Record<string, ReviewSessionState>;
+}
+
 export default class AnnualReviewPlugin extends Plugin {
   settings: AnnualReviewSettings = DEFAULT_SETTINGS;
+  private reviewSessions: Record<string, ReviewSessionState> = {};
   private indexedFiles: SourceFile[] | null = null;
   private indexedSettingsKey: string | null = null;
   private indexedAt: string | null = null;
@@ -91,14 +102,14 @@ export default class AnnualReviewPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = {
-      ...DEFAULT_SETTINGS,
-      ...((await this.loadData()) as Partial<AnnualReviewSettings> | null),
-    };
+    const data = ((await this.loadData()) ?? {}) as AnnualReviewPluginData;
+    const { reviewSessions, ...settings } = data;
+    this.settings = { ...DEFAULT_SETTINGS, ...settings };
+    this.reviewSessions = reviewSessions ?? {};
   }
 
   async saveSettings(): Promise<void> {
-    await this.saveData(this.settings);
+    await this.savePluginData();
   }
 
   openGenerateModal(): void {
@@ -120,10 +131,18 @@ export default class AnnualReviewPlugin extends Plugin {
   async previewYear(year: number): Promise<void> {
     const files = await this.getIndexedFiles(this.settings);
     this.lastAggregate = buildYearAggregate(files, year, this.settings);
+    await this.refreshReviewSession(this.lastAggregate);
   }
 
   getLastAggregate(): YearAggregate | null {
     return this.lastAggregate;
+  }
+
+  getReviewSession(): ReviewSessionState | null {
+    if (!this.lastAggregate) {
+      return null;
+    }
+    return this.reviewSessions[this.reviewSessionKey(this.lastAggregate)] ?? null;
   }
 
   getSettings(): AnnualReviewSettings {
@@ -155,6 +174,36 @@ export default class AnnualReviewPlugin extends Plugin {
     }
   }
 
+  async applyReviewAction(action: ReviewAction): Promise<void> {
+    if (action.type === "open-source-note") {
+      await this.openSourceNote(action.candidateId, action.evidenceId);
+      return;
+    }
+    const session = this.getReviewSession();
+    if (!session) {
+      return;
+    }
+    const next = applyReviewAction(session, action);
+    this.reviewSessions[this.reviewSessionKey(next)] = next;
+    await this.savePluginData();
+  }
+
+  async openSourceNote(candidateId: string, evidenceId?: string): Promise<void> {
+    const session = this.getReviewSession();
+    const candidate = session?.candidates.find((item) => item.id === candidateId);
+    const evidence = evidenceId
+      ? candidate?.evidence.find((item) => item.id === evidenceId)
+      : candidate?.evidence.find((item) => item.sourcePath);
+    const path = evidence?.sourcePath ?? candidate?.sourcePaths[0];
+    if (!path) {
+      return;
+    }
+    const file = this.app.vault.getFileByPath(path);
+    if (file) {
+      await this.app.workspace.getLeaf(false).openFile(file);
+    }
+  }
+
   private async generateReport(options: GenerateReportOptions): Promise<void> {
     let progress: AnnualReviewProgressModal | null = null;
     try {
@@ -178,6 +227,7 @@ export default class AnnualReviewPlugin extends Plugin {
       const aggregate = buildYearAggregate(files, year, settings, {
         snapshotComparison,
       });
+      const reviewSession = await this.refreshReviewSession(aggregate);
       const aiEnhancements = await renderAiReportEnhancements({
         aggregate,
         files,
@@ -198,6 +248,7 @@ export default class AnnualReviewPlugin extends Plugin {
         chartPaths,
         aiEnhancements,
         aiEnabled: settings.aiProvider !== "none",
+        reviewSession,
       });
       progress?.update(text.progressWriting, 92);
       const report = await writeAnnualReviewOutput(
@@ -241,6 +292,30 @@ export default class AnnualReviewPlugin extends Plugin {
     const snapshotFile = await this.readVaultSnapshotFile();
     await this.writeVaultSnapshotFile(appendSnapshot(snapshotFile, snapshot));
     return snapshot;
+  }
+
+  private async refreshReviewSession(
+    aggregate: YearAggregate,
+  ): Promise<ReviewSessionState> {
+    const key = this.reviewSessionKey(aggregate);
+    const next = buildReviewSession(aggregate, this.reviewSessions[key]);
+    this.reviewSessions[key] = next;
+    await this.savePluginData();
+    return next;
+  }
+
+  private reviewSessionKey(input: YearAggregate | ReviewSessionState): string {
+    if ("scopeHash" in input) {
+      return `${input.year}:${input.scopeHash}`;
+    }
+    return `${input.year}:${reviewScopeHash(input)}`;
+  }
+
+  private async savePluginData(): Promise<void> {
+    await this.saveData({
+      ...this.settings,
+      reviewSessions: this.reviewSessions,
+    } satisfies AnnualReviewPluginData);
   }
 
   private async readVaultSnapshotFile(): Promise<VaultSnapshotFile> {

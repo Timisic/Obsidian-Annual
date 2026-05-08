@@ -1721,8 +1721,8 @@ describe("MVP public surface", () => {
       "utf8",
     );
 
-    expect(source).toContain("suggestedReviewCandidates");
-    expect(source).toContain("candidateThemes");
+    expect(source).toContain("reviewQueue");
+    expect(source).toContain("applyReviewAction");
     expect(source).not.toMatch(
       /renderTrend|renderHeatmap|renderGrowth|topTags|topFolders|topLinks|monthlyTrend|dailyWordHeatmap|wordGrowth/u,
     );
