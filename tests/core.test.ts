@@ -36,6 +36,7 @@ import { countText } from "../src/core/tokenizer";
 import { toTopicEvolutionJson } from "../src/core/topics";
 import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
 import { COMMAND_IDS, COMMAND_NAMES, COMMAND_SURFACE } from "../src/core/commands";
+import type { ReviewCandidate, ReviewSessionState } from "../src/core/reviewState";
 import {
   ANNUAL_REVIEW_END_MARKER,
   ANNUAL_REVIEW_START_MARKER,
@@ -778,26 +779,21 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
     expect(markdown).toContain("## Review Candidates");
-    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("No reviewed Review Board decisions are ready");
+    expect(markdown).not.toContain("### Suggested review candidates");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
-    expect(markdown).toContain("#### [[");
-    expect(markdown).toContain("Recommendation rationale:");
-    expect(markdown).toContain("Suggestion label:");
-    expect(markdown).toContain("Auditable reasons:");
-    expect(markdown).toContain("Evidence:");
-    expect(markdown).toContain("Source note:");
-    expect(markdown).toContain("Stat field:");
-    expect(markdown).toMatch(
-      /Suggestion label: (suggested|needs-review|possible-bridge)/u,
-    );
+    expect(markdown).not.toContain("#### [[");
+    expect(markdown).not.toContain("Recommendation rationale:");
+    expect(markdown).not.toContain("Suggestion label:");
+    expect(markdown).not.toContain("Auditable reasons:");
+    expect(markdown).not.toContain("Source note:");
+    expect(markdown).not.toContain("Stat field:");
     expect(markdown).not.toContain("Type: 核心笔记");
     expect(markdown).not.toContain("Type: 输出候选");
     expect(markdown).not.toContain("Type: 桥接笔记");
-    expect(markdown).toContain(
-      "Manual confirmation: Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.",
-    );
+    expect(markdown).not.toContain("Manual confirmation:");
     for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
       expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
     }
@@ -809,8 +805,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Next-Period Actions");
     expect(markdown).toContain("1. Create a compact index");
     expect(markdown).toContain("2. ");
-    expect(markdown).toContain("3. Review");
-    expect(markdown).toContain("[[Daily/2026-01-01|2026-01-01]]");
+    expect(markdown).toContain("3. No review-candidate push is available");
   });
 
   it("labels fallback growth as current-vault inference when no historical snapshot is available", async () => {
@@ -848,9 +843,11 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
 
     expect(markdown).toContain('growth_data_source: "historical snapshot statistics"');
-    expect(markdown).toContain("Historical snapshot statistics");
-    expect(markdown).toContain("2026-01-01T00:00:00.000Z");
-    expect(markdown).toContain("| Snapshot word delta |");
+    expect(markdown).toContain("Growth data source: historical snapshot statistics");
+    expect(markdown).toContain("- Snapshot word delta:");
+    expect(markdown).not.toContain("Snapshot baseline");
+    expect(markdown).not.toContain("Current snapshot");
+    expect(markdown).not.toContain("2026-01-01T00:00:00.000Z");
   });
 
   it("renders Chinese reports and omits all-zero month metric columns", () => {
@@ -888,7 +885,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
     expect(markdown).toContain("## 候选回看笔记");
-    expect(markdown).toContain("- 未找到候选回看笔记信号。");
+    expect(markdown).toContain("还没有可写入年报的 Review Board 审核决策");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
     expect(markdown).toContain("## 下期行动");
@@ -1165,9 +1162,47 @@ describe("aggregation and rendering", () => {
       ],
     });
 
-    expect(markdown).toContain("No auditable evidence was generated for this candidate");
+    expect(markdown).toContain("No reviewed Review Board decisions are ready");
+    expect(markdown).not.toContain("No auditable evidence was generated for this candidate");
     expect(markdown).not.toContain("Unsupported strong claim");
     expect(markdown).not.toContain("Suggested action:");
+    expect(markdown).not.toContain("Manual confirmation:");
+  });
+
+  it("renders only reviewed Review Board decisions in the default English report", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const reviewSession = reviewSessionFixture();
+    const markdown = renderAnnualReview(aggregate, { reviewSession });
+
+    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
+    expect(markdown).toContain("[[Projects/Renamed|Renamed Topic]] (renamed)");
+    expect(markdown).toContain("[[Projects/Action|Action Topic]] (next-action)");
+    expect(markdown).toContain("[[Projects/Highlight|Highlight Topic]] (candidate)");
+    expect(markdown).toContain("### Annual Highlights");
+    expect(markdown).not.toContain("Ignored Topic");
+    expect(markdown).not.toContain("Merged Topic");
+    expect(markdown).not.toContain("Unreviewed Topic");
+    expect(markdown).not.toContain("accepted unsupported reason");
+    expect(markdown).not.toContain("These 4 reviewed candidates are included");
+    expect(markdown).not.toContain("Manual confirmation:");
+    expect(markdown).toContain("1. Convert accepted topic into project");
+  });
+
+  it("renders only reviewed Review Board decisions in the default Chinese report", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession: reviewSessionFixture(),
+    });
+
+    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
+    expect(markdown).toContain("[[Projects/Highlight|Highlight Topic]] (candidate)");
+    expect(markdown).not.toContain("Ignored Topic");
+    expect(markdown).not.toContain("Merged Topic");
+    expect(markdown).not.toContain("下面 4 个已审核候选");
+    expect(markdown).not.toContain("人工确认:");
   });
 
   it("keeps the scoring method documentation present and bounded", () => {
@@ -1499,7 +1534,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      "# 2026 Annual Review",
+      ["---", "year: 2026", "---", "# 2026 Annual Review"].join("\n"),
       [
         {
           kind: "daily-word-heatmap",
@@ -1517,10 +1552,19 @@ describe("Obsidian vault adapter", () => {
       files.get("Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg")
         ?.content,
     ).toBe("<svg />");
-    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe(
-      [ANNUAL_REVIEW_START_MARKER, "# 2026 Annual Review", ANNUAL_REVIEW_END_MARKER].join(
-        "\n",
-      ),
+    const reportContent = files.get("Annual Reviews/2026 Annual Review.md")?.content;
+    expect(reportContent?.split(/\r?\n/u)[0]).toBe("---");
+    expect(reportContent?.match(/^---$/gmu)).toHaveLength(2);
+    expect(reportContent).toBe(
+      [
+        "---",
+        "year: 2026",
+        "---",
+        "",
+        ANNUAL_REVIEW_START_MARKER,
+        "# 2026 Annual Review",
+        ANNUAL_REVIEW_END_MARKER,
+      ].join("\n"),
     );
   });
 
@@ -1543,7 +1587,9 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      ["# 2026 Annual Review", "New machine section."].join("\n"),
+      ["---", "year: 2026", "---", "# 2026 Annual Review", "New machine section."].join(
+        "\n",
+      ),
       [],
     );
 
@@ -1551,14 +1597,19 @@ describe("Obsidian vault adapter", () => {
     expect(modifyCalls).not.toContain("Annual Reviews/2026 Annual Review.md");
     expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe(
       [
-        "User preface stays exactly.",
+        "---",
+        "year: 2026",
+        "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
         "# 2026 Annual Review",
         "New machine section.",
         ANNUAL_REVIEW_END_MARKER,
         "",
+        "User preface stays exactly.",
+        "",
         "- [ ] User action item stays exactly.",
+        "",
       ].join("\n"),
     );
   });
@@ -1577,7 +1628,13 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      "# 2026 Annual Review\nRegenerated machine section.",
+      [
+        "---",
+        "year: 2026",
+        "---",
+        "# 2026 Annual Review",
+        "Regenerated machine section.",
+      ].join("\n"),
       [],
     );
 
@@ -1592,12 +1649,52 @@ describe("Obsidian vault adapter", () => {
     expect(processCalls).toEqual(["Annual Reviews/2026 Annual Review.md"]);
     expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe(
       [
+        "---",
+        "year: 2026",
+        "---",
+        "",
         ANNUAL_REVIEW_START_MARKER,
         "# 2026 Annual Review",
         "Regenerated machine section.",
         ANNUAL_REVIEW_END_MARKER,
       ].join("\n"),
     );
+  });
+
+  it("replaces managed frontmatter once when regenerating a marked annual report", async () => {
+    const existingReport = [
+      "---",
+      "year: 2026",
+      "old: true",
+      "---",
+      "",
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      "Old machine section.",
+      ANNUAL_REVIEW_END_MARKER,
+      "",
+      "User notes stay.",
+    ].join("\n");
+    const { app, files } = createReportWriterMockApp([
+      ["Annual Reviews/2026 Annual Review.md", existingReport],
+    ]);
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      ["---", "year: 2026", "old: false", "---", "# 2026 Annual Review"].join("\n"),
+      [],
+    );
+
+    const reportContent = files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
+    expect(reportContent.split(/\r?\n/u)[0]).toBe("---");
+    expect(reportContent.match(/^---$/gmu)).toHaveLength(2);
+    expect(reportContent).not.toContain("old: true");
+    expect(reportContent).toContain("old: false");
+    expect(reportContent).toContain("User notes stay.");
+    expect(reportContent.match(/annual-review:start/gu)).toHaveLength(1);
+    expect(reportContent.match(/annual-review:end/gu)).toHaveLength(1);
   });
 });
 
@@ -1733,6 +1830,84 @@ function sectionBetween(markdown: string, start: string, end: string): string {
   const startIndex = markdown.indexOf(start);
   const endIndex = markdown.indexOf(end, startIndex);
   return markdown.slice(startIndex, endIndex);
+}
+
+function reviewSessionFixture(): ReviewSessionState {
+  const candidates = [
+    reviewCandidateFixture("accepted", "Accepted Topic", "accepted"),
+    reviewCandidateFixture("renamed", "Renamed Topic", "renamed"),
+    reviewCandidateFixture("action", "Action Topic", "next-action"),
+    reviewCandidateFixture("highlight", "Highlight Topic", "candidate", {
+      includeInAnnualHighlights: true,
+    }),
+    reviewCandidateFixture("ignored", "Ignored Topic", "ignored"),
+    reviewCandidateFixture("merged", "Merged Topic", "merged"),
+    reviewCandidateFixture("unreviewed", "Unreviewed Topic", "candidate"),
+  ];
+
+  return {
+    schemaVersion: 1,
+    year: 2026,
+    scopeHash: "scope",
+    scanId: "scan",
+    candidates,
+    decisions: [
+      {
+        id: "decision-action",
+        candidateId: "action",
+        action: "convert-to-project",
+        label: "Convert accepted topic into project",
+        evidence: candidates[2]?.evidence ?? [],
+        includeInReport: true,
+        createdAt: "2026-05-08T00:00:00.000Z",
+      },
+    ],
+    progress: {
+      total: candidates.length,
+      reviewed: 5,
+      candidate: 2,
+      accepted: 1,
+      renamed: 1,
+      merged: 1,
+      ignored: 1,
+      archived: 0,
+      nextAction: 1,
+      annualHighlights: 1,
+    },
+    createdAt: "2026-05-08T00:00:00.000Z",
+    updatedAt: "2026-05-08T00:00:00.000Z",
+  };
+}
+
+function reviewCandidateFixture(
+  id: string,
+  title: string,
+  status: ReviewCandidate["status"],
+  overrides: Partial<ReviewCandidate> = {},
+): ReviewCandidate {
+  const sourcePath = `Projects/${id[0]?.toUpperCase() ?? ""}${id.slice(1)}.md`;
+  return {
+    id,
+    type: "topic",
+    title,
+    reason: `${id} unsupported reason`,
+    reasons: [],
+    status,
+    evidence: [
+      {
+        id: `${id}-evidence`,
+        kind: "note",
+        label: title,
+        target: sourcePath,
+        sourcePath,
+      },
+    ],
+    sourcePaths: [sourcePath],
+    decisionIds: [],
+    createdAt: "2026-05-08T00:00:00.000Z",
+    updatedAt: "2026-05-08T00:00:00.000Z",
+    ...overrides,
+  };
 }
 
 function noteFrom(input: {
