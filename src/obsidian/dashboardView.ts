@@ -65,6 +65,7 @@ export class AnnualReviewDashboardView extends ItemView {
     const settings = this.controller.getSettings();
     const index = this.controller.getIndexStatus();
     const reviewSession = this.controller.getReviewSession();
+    const reportPath = this.controller.getLastReportPath();
     this.selectedYear = aggregate?.year ?? this.selectedYear;
     let year = this.selectedYear;
 
@@ -91,12 +92,9 @@ export class AnnualReviewDashboardView extends ItemView {
           });
       })
       .addButton((button) => {
-        button
-          .setButtonText(text.generateReport)
-          .setCta()
-          .onClick(() => {
-            this.controller.openGenerateModal();
-          });
+        button.setButtonText(text.generateReport).onClick(() => {
+          this.controller.openGenerateModal();
+        });
       })
       .addButton((button) => {
         button.setButtonText(text.rebuild).onClick(async () => {
@@ -105,9 +103,41 @@ export class AnnualReviewDashboardView extends ItemView {
           await this.controller.previewYear(year);
           this.render();
         });
+      })
+      .addButton((button) => {
+        button
+          .setButtonText(text.openReport)
+          .setDisabled(!reportPath)
+          .onClick(async () => {
+            await this.controller.openLastReport();
+          });
       });
 
-    const scopeGrid = container.createDiv({ cls: "annual-review-dashboard-info-grid" });
+    const status = controls.createDiv({ cls: "annual-review-dashboard-toolbar-status" });
+    status.createSpan({
+      text: index.builtAt
+        ? text.rebuiltAt(index.fileCount, index.builtAt)
+        : text.notBuiltYet,
+    });
+    status.createSpan({
+      text: reportPath ? text.report(reportPath) : text.noReportGenerated,
+    });
+
+    if (!aggregate) {
+      container.createEl("p", {
+        cls: "annual-review-dashboard-empty",
+        text: text.noPreviewData,
+      });
+      return;
+    }
+
+    this.renderReviewBoard(container, reviewSession);
+
+    const secondary = container.createEl("details", {
+      cls: "annual-review-dashboard-secondary",
+    });
+    secondary.createEl("summary", { text: `${text.scope} / ${text.index}` });
+    const scopeGrid = secondary.createDiv({ cls: "annual-review-dashboard-info-grid" });
     renderInfoCard(
       scopeGrid,
       text.include,
@@ -123,37 +153,6 @@ export class AnnualReviewDashboardView extends ItemView {
         : text.none,
     );
     renderInfoCard(scopeGrid, text.privacy, settings.privacyMode);
-    renderInfoCard(
-      scopeGrid,
-      text.index,
-      index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet,
-    );
-
-    const reportPath = this.controller.getLastReportPath();
-    const reportActions = container.createDiv({
-      cls: "annual-review-dashboard-report-actions",
-    });
-    new Setting(reportActions)
-      .setName(reportPath ? text.report(reportPath) : text.noReportGenerated)
-      .addButton((button) => {
-        button
-          .setButtonText(text.openReport)
-          .setDisabled(!reportPath)
-          .onClick(async () => {
-            await this.controller.openLastReport();
-          });
-      });
-
-    if (!aggregate) {
-      container.createEl("p", {
-        cls: "annual-review-dashboard-empty",
-        text: text.noPreviewData,
-      });
-      return;
-    }
-
-    renderSectionTitle(container, text.reviewQueue);
-    this.renderReviewBoard(container, reviewSession);
   }
 
   private renderLoading(message: string): void {
@@ -188,8 +187,13 @@ export class AnnualReviewDashboardView extends ItemView {
     this.selectedCandidateId = current?.id ?? null;
 
     const board = container.createDiv({ cls: "annual-review-board" });
+    renderProgress(board, session, text);
+
     const queue = board.createDiv({ cls: "annual-review-board-queue" });
-    renderProgress(queue, session, text);
+    queue.createEl("h3", {
+      cls: "annual-review-dashboard-section-title",
+      text: text.reviewQueue,
+    });
 
     const groups = [
       {
@@ -224,10 +228,16 @@ export class AnnualReviewDashboardView extends ItemView {
       for (const candidate of group.candidates) {
         const row = section.createEl("button", {
           cls: candidate.id === current?.id ? "is-active" : "",
-          text: `[${candidate.type}] ${displayCandidateTitle(candidate)}`,
         });
         row.type = "button";
-        row.createSpan({ text: ` ${candidate.status}` });
+        row.createSpan({
+          cls: "annual-review-board-queue-title",
+          text: `[${candidate.type}] ${displayCandidateTitle(candidate)}`,
+        });
+        row.createSpan({
+          cls: "annual-review-board-queue-status",
+          text: candidate.status,
+        });
         row.onClickEvent(() => {
           this.selectedCandidateId = candidate.id;
           this.render();
@@ -243,7 +253,9 @@ export class AnnualReviewDashboardView extends ItemView {
       });
       return;
     }
-    detail.createEl("h4", { text: displayCandidateTitle(current) });
+    const detailHeader = detail.createDiv({ cls: "annual-review-board-detail-header" });
+    detailHeader.createEl("h4", { text: displayCandidateTitle(current) });
+    detailHeader.createSpan({ text: `${current.type} / ${current.status}` });
     detail.createEl("p", { cls: "annual-review-board-reason", text: current.reason });
     if (current.rankReason) {
       detail.createEl("p", { cls: "annual-review-board-rank", text: current.rankReason });
@@ -262,7 +274,10 @@ export class AnnualReviewDashboardView extends ItemView {
         await this.controller.openSourceNote(current.id, evidence.id);
       });
       if (evidence.reason) {
-        item.createSpan({ text: ` - ${evidence.reason}` });
+        item.createSpan({
+          cls: "annual-review-board-evidence-reason",
+          text: evidence.reason,
+        });
       }
     }
 
@@ -407,10 +422,6 @@ function renderProgress(
 
 function renderHeader(parent: HTMLElement, title: string): void {
   parent.createEl("h2", { cls: "annual-review-dashboard-title", text: title });
-}
-
-function renderSectionTitle(parent: Element, title: string): void {
-  parent.createEl("h3", { cls: "annual-review-dashboard-section-title", text: title });
 }
 
 function renderInfoCard(parent: Element, label: string, value: string): void {

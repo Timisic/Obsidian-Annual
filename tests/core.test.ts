@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildAiPrompt,
   buildCodexPrompt,
@@ -41,6 +41,7 @@ import {
   ANNUAL_REVIEW_START_MARKER,
   writeAnnualReviewOutput,
 } from "../src/obsidian/reportWriter";
+import { getAnnualReviewDashboardLeaf } from "../src/obsidian/dashboardLeaf";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
@@ -1726,6 +1727,71 @@ describe("MVP public surface", () => {
     expect(source).not.toMatch(
       /renderTrend|renderHeatmap|renderGrowth|topTags|topFolders|topLinks|monthlyTrend|dailyWordHeatmap|wordGrowth/u,
     );
+  });
+
+  it("selects an existing Review Board leaf before opening a normal workspace leaf", () => {
+    const existingLeaf = { id: "existing" };
+    const fallbackLeaf = { id: "fallback" };
+    const workspace = {
+      getLeavesOfType: vi.fn(() => [existingLeaf]),
+      getLeaf: vi.fn(() => fallbackLeaf),
+    };
+
+    expect(getAnnualReviewDashboardLeaf(workspace, "annual-review-dashboard")).toEqual({
+      leaf: existingLeaf,
+      isExistingView: true,
+    });
+    expect(workspace.getLeavesOfType).toHaveBeenCalledWith("annual-review-dashboard");
+    expect(workspace.getLeaf).not.toHaveBeenCalled();
+  });
+
+  it("opens a new Review Board in a normal workspace leaf when none exists", () => {
+    const fallbackLeaf = { id: "fallback" };
+    const workspace = {
+      getLeavesOfType: vi.fn(() => []),
+      getLeaf: vi.fn(() => fallbackLeaf),
+    };
+
+    expect(getAnnualReviewDashboardLeaf(workspace, "annual-review-dashboard")).toEqual({
+      leaf: fallbackLeaf,
+      isExistingView: false,
+    });
+    expect(workspace.getLeaf).toHaveBeenCalledWith(false);
+
+    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+    expect(pluginSource).not.toContain("getRightLeaf");
+  });
+
+  it("keeps core Review Board actions available in the compact audit view", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+
+    for (const actionText of [
+      "text.accept",
+      "text.ignore",
+      "text.renameTopic",
+      "text.mergeTopic",
+      "text.addHighlight",
+      "text.addAction",
+      "text.openSourceNote",
+    ]) {
+      expect(source).toContain(actionText);
+    }
+
+    for (const actionType of [
+      '"accept"',
+      '"ignore"',
+      '"rename-topic"',
+      '"merge-topic"',
+      '"add-to-annual-highlights"',
+      '"add-to-actions"',
+    ]) {
+      expect(source).toContain(actionType);
+    }
+
+    expect(source).toContain("this.controller.openSourceNote(candidate.id)");
   });
 });
 
