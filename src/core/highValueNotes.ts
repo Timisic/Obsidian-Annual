@@ -1,4 +1,6 @@
+import { buildExplanationReasons, summarizeExplanationReasons } from "./explain";
 import type {
+  CandidateSuggestionLabel,
   HighValueNote,
   HighValueNoteFeedback,
   HighValueNoteKind,
@@ -70,16 +72,18 @@ export function buildHighValueNoteInsights(
     .sort(sortProfiles);
 
   return {
-    highValueNotes: highValueProfiles.map(toHighValueNote),
+    highValueNotes: highValueProfiles.map((profile) =>
+      toHighValueNote(profile, sortedNotes, year, generatedAt),
+    ),
     outputReadyNotes: outputReadyProfiles
       .slice(0, MAX_NOTES_PER_SECTION)
-      .map(toHighValueNote),
+      .map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
     maintenanceNotes: maintenanceProfiles
       .slice(0, MAX_NOTES_PER_SECTION)
-      .map(toHighValueNote),
+      .map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
     isolatedPotentialNotes: isolatedProfiles
       .slice(0, MAX_NOTES_PER_SECTION)
-      .map(toHighValueNote),
+      .map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
     highValueFeedback: {
       priorityNoteTitles: highValueProfiles.slice(0, 3).map((profile) => profile.title),
       outputReadyCount: outputReadyProfiles.length,
@@ -195,12 +199,31 @@ function hasHighValueSignal(profile: NoteProfile): boolean {
   );
 }
 
-function toHighValueNote(profile: NoteProfile): HighValueNote {
+function toHighValueNote(
+  profile: NoteProfile,
+  allNotes: NoteStats[],
+  year: number,
+  generatedAt: string,
+): HighValueNote {
+  const reasons = buildExplanationReasons({
+    note: profile.note,
+    allNotes,
+    year,
+    generatedAt,
+    topics: profile.topics,
+    inboundLinks: profile.inboundLinks,
+    outboundLinks: profile.outboundLinks,
+    periodWordCount: profile.periodWordCount,
+    connectedTopicCount: profile.connectedTopicCount,
+    daysSinceUpdate: profile.daysSinceUpdate,
+  });
   return {
     path: profile.note.path,
     title: profile.title,
     kind: noteKind(profile),
-    reason: noteReason(profile),
+    suggestionLabel: suggestionLabel(profile),
+    reason: summarizeExplanationReasons(reasons),
+    reasons,
     suggestedAction: suggestedAction(profile),
     inboundLinks: profile.inboundLinks,
     outboundLinks: profile.outboundLinks,
@@ -208,6 +231,12 @@ function toHighValueNote(profile: NoteProfile): HighValueNote {
     lastUpdated: profile.lastUpdated,
     periodWordCount: profile.periodWordCount,
   };
+}
+
+function suggestionLabel(profile: NoteProfile): CandidateSuggestionLabel {
+  if (profile.isBridge) return "possible-bridge";
+  if (profile.isStaleCore || profile.isIsolatedPotential) return "needs-review";
+  return "suggested";
 }
 
 function noteKind(profile: NoteProfile): HighValueNoteKind {
@@ -231,34 +260,6 @@ function suggestedAction(profile: NoteProfile): SuggestedNoteAction {
   if (profile.isOutputReady || profile.isGrowthLong) return "整理成文章草稿并补充结论";
   if (profile.isRecent) return "延续最新问题，追加一个可执行小结";
   return "判断是否归档";
-}
-
-function noteReason(profile: NoteProfile): string {
-  if (profile.isStaleCore) {
-    return `核心笔记已有 ${profile.inboundLinks} 个入口，但 ${profile.daysSinceUpdate} 天未回看`;
-  }
-  if (profile.isIsolatedPotential) {
-    return `内容已到 ${profile.note.wordCount} 字词，但还没有进入链接网络`;
-  }
-  if (profile.isBridge) {
-    return `连接 ${profile.connectedTopicCount} 个主题，适合沉淀关系和入口`;
-  }
-  if (profile.isCore && profile.isOutputReady) {
-    return `入链 ${profile.inboundLinks} 次且内容完整，已经具备主题入口价值`;
-  }
-  if (profile.isCore) {
-    return `被多处引用，说明它正在承担知识库入口角色`;
-  }
-  if (profile.isGrowthLong) {
-    return `本期新增内容充足，能代表一个正在展开的方向`;
-  }
-  if (profile.isOutputReady) {
-    return `篇幅和链接证据足够，适合进入输出整理阶段`;
-  }
-  if (profile.isRecent) {
-    return `最近仍在更新，适合趁上下文未冷却继续推进`;
-  }
-  return "本期有明确活动记录";
 }
 
 function inboundLinkCount(

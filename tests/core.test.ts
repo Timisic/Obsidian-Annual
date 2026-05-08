@@ -12,6 +12,7 @@ import {
   renderAiReportSection,
 } from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
+import { buildExplanationReasons } from "../src/core/explain";
 import {
   extractNoteStats,
   parseFrontmatter,
@@ -650,6 +651,17 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
     expect(markdown).toContain("#### [[");
     expect(markdown).toContain("Recommendation rationale:");
+    expect(markdown).toContain("Suggestion label:");
+    expect(markdown).toContain("Auditable reasons:");
+    expect(markdown).toContain("Evidence:");
+    expect(markdown).toContain("Source note:");
+    expect(markdown).toContain("Stat field:");
+    expect(markdown).toMatch(
+      /Suggestion label: (suggested|needs-review|possible-bridge)/u,
+    );
+    expect(markdown).not.toContain("Type: 核心笔记");
+    expect(markdown).not.toContain("Type: 输出候选");
+    expect(markdown).not.toContain("Type: 桥接笔记");
     expect(markdown).toContain(
       "Manual confirmation: Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.",
     );
@@ -851,6 +863,29 @@ describe("aggregation and rendering", () => {
 
     expect(insights.highValueNotes).toHaveLength(6);
     expect(insights.highValueNotes.every((note) => note.reason.length > 0)).toBe(true);
+    expect(insights.highValueNotes.every((note) => note.reasons.length > 0)).toBe(true);
+    expect(
+      insights.highValueNotes.every((note) =>
+        note.reasons.every((reason) =>
+          Boolean(
+            reason.sourcePath ||
+            reason.statField ||
+            (reason.relatedPaths && reason.relatedPaths.length > 0),
+          ),
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      insights.highValueNotes.every((note) =>
+        ["suggested", "needs-review", "possible-bridge"].includes(note.suggestionLabel),
+      ),
+    ).toBe(true);
+    expect(insights.highValueNotes.map((note) => note.suggestionLabel)).toContain(
+      "needs-review",
+    );
+    expect(insights.highValueNotes.map((note) => note.suggestionLabel)).toContain(
+      "possible-bridge",
+    );
     expect(
       insights.highValueNotes.every((note) => typeof note.suggestedAction === "string"),
     ).toBe(true);
@@ -880,6 +915,96 @@ describe("aggregation and rendering", () => {
       "建立 MOC",
     );
     expect(insights.highValueFeedback.staleCoreCount).toBe(1);
+  });
+
+  it("generates deterministic traceable explanation reasons from local signals", () => {
+    const notes = [
+      noteFrom({
+        path: "Hub/Research.md",
+        ctime: "2026-01-01T08:00:00.000Z",
+        mtime: "2026-04-25T08:00:00.000Z",
+        content:
+          "# Research\n#strategy\n- [x] Ship baseline\n[[Daily/2026-01-02]]\n" +
+          repeatedWords(320),
+      }),
+      noteFrom({
+        path: "Daily/2026-01-02.md",
+        ctime: "2026-01-02T08:00:00.000Z",
+        mtime: "2026-01-02T08:00:00.000Z",
+        content: "# Daily\n#journal\n[[Hub/Research]]",
+      }),
+      noteFrom({
+        path: "Projects/Launch.md",
+        ctime: "2026-02-02T08:00:00.000Z",
+        mtime: "2026-02-02T08:00:00.000Z",
+        content: "# Launch\n#project\n[[Research]]",
+      }),
+    ];
+
+    const reasons = buildExplanationReasons({
+      note: notes[0],
+      allNotes: notes,
+      year: 2026,
+      generatedAt: "2026-05-03T00:00:00.000Z",
+    });
+
+    expect(reasons.map((reason) => reason.type)).toEqual([
+      "backlink",
+      "outlink",
+      "topic-bridge",
+      "word-count",
+      "task",
+      "tag",
+      "updated-at",
+    ]);
+    expect(reasons[0]).toMatchObject({
+      type: "backlink",
+      statField: "inboundLinks",
+      relatedPaths: ["Daily/2026-01-02.md", "Projects/Launch.md"],
+    });
+    expect(reasons.every((reason) => reason.evidenceId.length > 0)).toBe(true);
+    expect(
+      reasons.every((reason) =>
+        Boolean(
+          reason.sourcePath ||
+          reason.statField ||
+          (reason.relatedPaths && reason.relatedPaths.length > 0),
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it("renders no-evidence candidates without a strong recommendation", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const firstCandidate = aggregate.highValueNotes[0];
+    if (!firstCandidate) {
+      throw new Error("Fixture aggregate should include a review candidate.");
+    }
+    const markdown = renderAnnualReview({
+      ...aggregate,
+      highValueNotes: [
+        {
+          ...firstCandidate,
+          reason: "Unsupported strong claim",
+          reasons: [],
+        },
+      ],
+    });
+
+    expect(markdown).toContain("No auditable evidence was generated for this candidate");
+    expect(markdown).not.toContain("Unsupported strong claim");
+    expect(markdown).not.toContain("Suggested action:");
+  });
+
+  it("keeps the scoring method documentation present and bounded", () => {
+    const method = readFileSync("docs/scoring-method.md", "utf8");
+
+    expect(method).toContain("统计口径");
+    expect(method).toContain("阈值");
+    expect(method).toContain("排序");
+    expect(method).toContain("过滤边界");
+    expect(method).toContain("隐私");
+    expect(method).toContain("已知限制");
   });
 
   it("limits review candidates to a 10-note result set", () => {

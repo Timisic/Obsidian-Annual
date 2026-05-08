@@ -130,12 +130,54 @@ export type HighValueNoteKind =
   | "输出候选"
   | "需维护"
   | "孤立潜力";
+export type CandidateSuggestionLabel = "suggested" | "needs-review" | "possible-bridge";
+
+export type ExplanationStatField =
+  | "inboundLinks"
+  | "outboundLinks"
+  | "wordCount"
+  | "periodWordCount"
+  | "mtime"
+  | "tasks.total"
+  | "tasks.completed"
+  | "tags"
+  | "connectedTopicCount"
+  | "daysSinceUpdate";
+
+export interface ExplanationReasonBase {
+  label: string;
+  value?: string | number;
+  evidenceId: string;
+  statField?: ExplanationStatField;
+  sourcePath?: string;
+  relatedPaths?: string[];
+}
+
+export type ExplanationReason =
+  | (ExplanationReasonBase & { type: "backlink"; relatedPaths: string[] })
+  | (ExplanationReasonBase & {
+      type: "outlink";
+      sourcePath: string;
+      relatedPaths: string[];
+    })
+  | (ExplanationReasonBase & { type: "word-count"; sourcePath: string })
+  | (ExplanationReasonBase & { type: "updated-at"; sourcePath: string })
+  | (ExplanationReasonBase & { type: "task"; sourcePath: string })
+  | (ExplanationReasonBase & { type: "tag"; sourcePath: string })
+  | (ExplanationReasonBase & {
+      type: "topic-bridge";
+      sourcePath: string;
+      relatedPaths: string[];
+    })
+  | (ExplanationReasonBase & { type: "dormant"; sourcePath: string });
 
 export interface HighValueNote {
   path: string;
   title: string;
   kind: HighValueNoteKind;
+  suggestionLabel: CandidateSuggestionLabel;
   reason: string;
+  reasons: ExplanationReason[];
   suggestedAction: SuggestedNoteAction;
   inboundLinks: number;
   outboundLinks: number;

@@ -1,3 +1,5 @@
+import type { ExplanationReason } from "./types";
+
 export type ReviewCandidateType =
   | "topic"
   | "note"
@@ -58,6 +60,7 @@ export interface ReviewCandidate {
   type: ReviewCandidateType;
   title: string;
   reason: string;
+  reasons: ExplanationReason[];
   status: ReviewCandidateStatus;
   evidence: EvidenceSource[];
   sourcePaths: string[];
@@ -140,6 +143,22 @@ export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
     throw new Error(
       `Review candidate ${candidate.id} must include at least one evidence source.`,
     );
+  }
+  if (candidate.reasons.length === 0) {
+    throw new Error(
+      `Review candidate ${candidate.id} must include at least one explanation reason.`,
+    );
+  }
+  for (const reason of candidate.reasons) {
+    if (
+      !reason.sourcePath &&
+      !reason.statField &&
+      (!reason.relatedPaths || reason.relatedPaths.length === 0)
+    ) {
+      throw new Error(
+        `Review candidate ${candidate.id} has an explanation reason without traceable evidence.`,
+      );
+    }
   }
 }
 
