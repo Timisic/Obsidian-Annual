@@ -41,11 +41,7 @@ Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown repor
 4. **Decisions**: you decide whether accepted topics, notes, projects, tasks,
    dormant notes, and bridge notes become annual highlights or next actions.
 5. **Annual report**: the plugin writes accepted material, evidence links,
-   action decisions, chart assets, and method notes to
-   `Annual Reviews/YYYY Annual Review.md`.
-
-> Screenshot placeholder: Review Board candidate list, evidence links, action
-> decisions, and the generated Markdown annual report.
+   action decisions, and method notes to `Annual Reviews/YYYY Annual Review.md`.
 
 ## Review Board Decision Loop
 
@@ -116,7 +112,17 @@ or candidates that were merged into another source.
   capture timing, limitations, imports, batch modifications, and excluded
   directory behavior.
 
-## Installation
+## Installation And Path Boundaries
+
+Documentation uses three distinct vault paths:
+
+- **Normal user vault**: the user's own Obsidian vault. Community installation
+  and manual release-package installation target this path.
+- **Repo-local fixture vault**: `tests/fixtures/vault`, used only for unit tests
+  and deterministic Markdown samples. It is not a real Obsidian smoke vault.
+- **Real smoke vault**: the local Obsidian CLI validation vault used by agents
+  and release reviewers for end-to-end checks. It is not the ordinary-user
+  install path and is not exposed as the public package-script main path.
 
 ### Install From Obsidian Community Plugins
 
@@ -179,7 +185,7 @@ npm run lint
 
 Manual validation:
 
-1. Enable the plugin in a test vault.
+1. Enable the plugin in your temporary test vault or the agent smoke vault.
 2. Run `Annual Review: Rebuild index`.
 3. Run `Annual Review: Open Review Board` and confirm the candidate queue,
    rationale, evidence sources, and progress are visible.
@@ -202,6 +208,5 @@ Manual validation:
 - [Feature Inventory](docs/feature-inventory.md)
 - [Roadmap](docs/roadmap.md)
 - [Docs index](docs/README.md)
-- [AI report design](docs/ai-report-design.md)
 - [Data Methodology](docs/data-methodology.md)
 - [Release checklist](docs/release-checklist.md)
