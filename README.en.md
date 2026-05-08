@@ -142,8 +142,8 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 - `npm run lint`: run ESLint.
 - `npm run release:plugin`: create `dist/annual-review/` release assets.
 - `npm run dev`: start esbuild watch mode for local plugin development.
-- `npm run deploy:plugin`: build and copy to an explicitly supplied vault
-  `.obsidian` folder; it does not guess private vault paths.
+- `npm run dev:deploy-plugin`: development/agent smoke validation only; deploy
+  to an explicit test vault `.obsidian` folder, not the ordinary install path.
 
 ## Validation
 

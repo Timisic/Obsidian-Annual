@@ -95,15 +95,15 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 
 ## 开发命令
 
-| 命令                     | 用途                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `npm run test`           | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。 |
-| `npm run typecheck`      | 运行 TypeScript 类型检查，不生成构建文件。                                    |
-| `npm run build`          | 生成可安装到 Obsidian 的插件 bundle。                                         |
-| `npm run lint`           | 运行 ESLint。                                                                 |
-| `npm run release:plugin` | 生成 `dist/annual-review/` 发布资产。                                         |
-| `npm run dev`            | 启动 esbuild watch，适合本地插件开发。                                        |
-| `npm run deploy:plugin`  | 构建插件并复制到显式传入的 vault `.obsidian` 目录；不猜测私人 vault 路径。    |
+| 命令                        | 用途                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `npm run test`              | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。          |
+| `npm run typecheck`         | 运行 TypeScript 类型检查，不生成构建文件。                                             |
+| `npm run build`             | 生成可安装到 Obsidian 的插件 bundle。                                                  |
+| `npm run lint`              | 运行 ESLint。                                                                          |
+| `npm run release:plugin`    | 生成 `dist/annual-review/` 发布资产。                                                  |
+| `npm run dev`               | 启动 esbuild watch，适合本地插件开发。                                                 |
+| `npm run dev:deploy-plugin` | 开发/agent smoke 验证用：显式传入测试 vault 后部署到 `.obsidian`，不作为普通安装路径。 |
 
 ## 验证建议
 

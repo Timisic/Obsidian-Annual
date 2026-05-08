@@ -26,13 +26,13 @@ substitute for Obsidian CLI validation.
 
    ```bash
    cd /path/to/this/repo
-   npm run deploy:smoke
+   npm run dev:deploy-smoke
    ```
 
    Override the default smoke vault path when needed:
 
    ```bash
-   SMOKE_VAULT_PATH=/path/to/install-smoke-vault npm run deploy:smoke
+   SMOKE_VAULT_PATH=/path/to/install-smoke-vault npm run dev:deploy-smoke
    ```
 
 2. Reload the plugin and rebuild its index:
@@ -50,7 +50,7 @@ substitute for Obsidian CLI validation.
    "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:generate-annual-review-2026
    ```
 
-   `npm run deploy:smoke` enables this hidden command by writing
+   `npm run dev:deploy-smoke` enables this hidden command by writing
    `enableSmokeCommands: true` into the smoke vault plugin `data.json`. The
    command is for agent/developer smoke validation only; it is not part of the
    ordinary user-facing command path.
@@ -115,7 +115,7 @@ OBSIDIAN_CLI=/Applications/Obsidian.app/Contents/MacOS/obsidian-cli
 The preferred autonomous loop is:
 
 ```bash
-npm run deploy:smoke
+npm run dev:deploy-smoke
 "$OBSIDIAN_CLI" vault=install-smoke-vault plugin:reload id=annual-review
 "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:rebuild-annual-review-index
 "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:generate-annual-review-2026
@@ -139,7 +139,7 @@ If `.codex/` is missing, do not treat the ticket as wrong. Fall back to the comm
 - `.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh`
 - `.codex/skills/annual-review-smoke-vault/agents/openai.yaml`
 - any required deploy script such as `scripts/deploy-plugin.mjs`
-- package scripts such as `deploy:smoke`
+- package scripts such as `dev:deploy-smoke`
 
 ### `gh auth status` reports an invalid keyring token
 

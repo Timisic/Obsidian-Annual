@@ -17,7 +17,7 @@
 - [Agent 安装指南](agent-installation.md)：开发和自动化附录，不作为普通用户安装主路径。
 - [AI 报告生成设计](ai-report-design.md)：可选增强设计记录；不作为当前普通用户主路径或默认能力承诺。
 - [Data Methodology](data-methodology.md)：解释 vault snapshot、当前 vault 推断、历史 snapshot 统计、扫描范围和增长限制。
-- [项目调研](research/project-research.md)：早期调研资料，记录 Obsidian 年度报告插件方向、竞品启发和技术建议。
+- [项目调研](research/project-research.md)：早期调研资料，已由 Feature Inventory/Review Board 决策裁剪；其中 dashboard、导出、分享和 agent 安装设想不代表当前 MVP surface。
 - [中文 README](../README.md)：仓库默认入口，面向首次使用和本地开发。
 - [English README](../README.en.md)：英文入口，内容与中文 README 对齐。
 

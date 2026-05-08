@@ -36,11 +36,11 @@ npm run release:check
 fixture，不能证明 Obsidian CLI reload、command palette 或报告读取闭环。
 
 ```bash
-npm run deploy:smoke
+npm run dev:deploy-smoke
 .codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate
 ```
 
-`deploy:smoke` 会将当前构建部署到显式配置的 smoke vault，并仅在该 vault
+`dev:deploy-smoke` 会将当前构建部署到显式配置的 smoke vault，并仅在该 vault
 的插件 `data.json` 中启用隐藏 smoke 命令；用 `SMOKE_VAULT_PATH` 指定本机
 smoke vault 路径。普通用户安装验证仍走下面的手动路径。
 

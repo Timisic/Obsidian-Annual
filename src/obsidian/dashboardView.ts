@@ -116,11 +116,6 @@ export class AnnualReviewDashboardView extends ItemView {
     renderInfoCard(scopeGrid, text.privacy, settings.privacyMode);
     renderInfoCard(
       scopeGrid,
-      text.aiProvider,
-      settings.aiProvider === "chatgpt" ? text.chatGpt : text.none,
-    );
-    renderInfoCard(
-      scopeGrid,
       text.index,
       index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet,
     );
@@ -148,45 +143,29 @@ export class AnnualReviewDashboardView extends ItemView {
       return;
     }
 
-    const summary = container.createDiv({ cls: "annual-review-dashboard-summary" });
-    renderMetric(summary, text.created, String(aggregate.createdCount));
-    renderMetric(summary, text.modified, String(aggregate.modifiedCount));
-    renderMetric(summary, text.activeDays, String(aggregate.activeDays));
-    renderMetric(summary, text.words, String(aggregate.totalWords));
-
-    renderSectionTitle(container, text.monthlyTrend);
-    renderTrend(container, aggregate);
-
-    renderSectionTitle(container, text.dailyWordHeatmap);
-    renderHeatmap(container, aggregate, language);
-
-    renderSectionTitle(container, text.wordGrowth);
-    renderGrowth(container, aggregate, language);
-
-    renderSectionTitle(container, text.topTags);
+    renderSectionTitle(container, text.candidateThemes);
     renderList(
       container,
-      aggregate.topTags.map((item) => `${item.name}: ${item.count}`),
-      language,
-    );
-    renderSectionTitle(container, text.topFolders);
-    renderList(
-      container,
-      aggregate.topFolders.map((item) => `${item.name}: ${item.count}`),
-      language,
-    );
-    renderSectionTitle(container, text.topLinks);
-    renderList(
-      container,
-      aggregate.topLinks.map((item) => `${item.name}: ${item.count}`),
-      language,
-    );
-    renderSectionTitle(container, text.representativeNotes);
-    renderList(
-      container,
-      aggregate.representativeNotes.map(
-        (note) => `${note.path} (${text.noteWords(note.words)})`,
+      aggregate.topicEvolution.topTopics.map((topic) =>
+        topic.representativeNotes.length > 0
+          ? `${topic.name}: ${topic.representativeNotes.slice(0, 3).join(", ")}`
+          : topic.name,
       ),
+      language,
+    );
+    renderSectionTitle(container, text.suggestedReviewCandidates);
+    renderList(
+      container,
+      aggregate.highValueNotes.map(
+        (note) =>
+          `${note.title}: ${note.reason} (${text.evidenceCount(note.reasons.length)})`,
+      ),
+      language,
+    );
+    renderSectionTitle(container, text.candidateActions);
+    renderList(
+      container,
+      aggregate.outputReadyNotes.map((note) => `${note.title}: ${note.suggestedAction}`),
       language,
     );
   }
@@ -216,102 +195,6 @@ function renderInfoCard(parent: Element, label: string, value: string): void {
   const item = parent.createDiv({ cls: "annual-review-dashboard-info-card" });
   item.createEl("span", { text: label });
   item.createEl("strong", { text: value });
-}
-
-function renderMetric(parent: HTMLElement, label: string, value: string): void {
-  const item = parent.createDiv({ cls: "annual-review-dashboard-metric" });
-  item.createEl("div", { text: label });
-  item.createEl("strong", { text: value });
-}
-
-function renderTrend(parent: Element, aggregate: YearAggregate): void {
-  const months = aggregate.monthBuckets.filter(
-    (bucket) =>
-      bucket.created > 0 ||
-      bucket.modified > 0 ||
-      bucket.words > 0 ||
-      bucket.characters > 0,
-  );
-  const maxWords = Math.max(1, ...months.map((bucket) => bucket.words));
-  const chart = parent.createEl("div", { cls: "annual-review-dashboard-bars" });
-  for (const bucket of months) {
-    const row = chart.createDiv({ cls: "annual-review-dashboard-bar-row" });
-    row.createEl("span", { text: bucket.month.slice(5) });
-    const bar = row.createDiv({ cls: "annual-review-dashboard-bar" });
-    bar.style.width = `${Math.max(4, Math.round((bucket.words / maxWords) * 100))}%`;
-    row.createEl("span", { text: String(bucket.words) });
-  }
-}
-
-function renderHeatmap(
-  parent: Element,
-  aggregate: YearAggregate,
-  language: ResolvedAnnualReviewLanguage,
-): void {
-  const text = UI_TEXT[language];
-  const maxWords = Math.max(1, ...aggregate.dayBuckets.map((bucket) => bucket.words));
-  const maxWeek = Math.max(0, ...aggregate.dayBuckets.map((bucket) => bucket.week));
-  const grid = parent.createEl("div", { cls: "annual-review-dashboard-heatmap" });
-  grid.style.display = "grid";
-  grid.style.gridTemplateColumns = `repeat(${maxWeek + 1}, 10px)`;
-  grid.style.gridTemplateRows = "repeat(7, 10px)";
-  grid.style.gridAutoFlow = "column";
-  grid.style.gap = "3px";
-  grid.style.alignItems = "center";
-
-  for (const bucket of aggregate.dayBuckets) {
-    const cell = grid.createDiv({ cls: "annual-review-dashboard-heatmap-cell" });
-    cell.ariaLabel = text.dayWords(bucket.date, bucket.words);
-    cell.title = text.dayWordsWithActivity(
-      bucket.date,
-      bucket.words,
-      bucket.created,
-      bucket.modified,
-    );
-    cell.style.width = "10px";
-    cell.style.height = "10px";
-    cell.style.borderRadius = "2px";
-    cell.style.gridColumn = String(bucket.week + 1);
-    cell.style.gridRow = String(bucket.weekday + 1);
-    cell.style.backgroundColor = heatColor(bucket.words, maxWords);
-  }
-}
-
-function renderGrowth(
-  parent: Element,
-  aggregate: YearAggregate,
-  language: ResolvedAnnualReviewLanguage,
-): void {
-  const text = UI_TEXT[language];
-  const maxGrowth = Math.max(
-    1,
-    ...aggregate.wordGrowthBuckets.map((bucket) => bucket.wordsGained),
-  );
-  const chart = parent.createEl("div", { cls: "annual-review-dashboard-growth" });
-  for (const bucket of aggregate.wordGrowthBuckets) {
-    const row = chart.createDiv({ cls: "annual-review-dashboard-bar-row" });
-    row.createEl("span", { text: bucket.month.slice(5) });
-    const bar = row.createDiv({ cls: "annual-review-dashboard-bar" });
-    bar.style.width = `${Math.max(4, Math.round((bucket.wordsGained / maxGrowth) * 100))}%`;
-    bar.title = text.monthGrowth(
-      bucket.month,
-      bucket.wordsGained,
-      bucket.cumulativeWords,
-    );
-    row.createEl("span", {
-      text: text.growthSummary(bucket.wordsGained, bucket.cumulativeWords),
-    });
-  }
-}
-
-function heatColor(words: number, maxWords: number): string {
-  if (words <= 0) return "var(--background-modifier-border)";
-  const colors = ["#c7e9c0", "#74c476", "#238b45", "#00441b"];
-  const index = Math.min(
-    colors.length - 1,
-    Math.ceil((words / maxWords) * colors.length) - 1,
-  );
-  return colors[index] ?? colors[0];
 }
 
 function renderList(
