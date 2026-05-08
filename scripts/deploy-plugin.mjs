@@ -116,9 +116,7 @@ function enableCommunityPlugin(obsidianDir, pluginId) {
 
 function enableSmokeCommands(pluginDir) {
   const path = join(pluginDir, "data.json");
-  const settings = existsSync(path)
-    ? (JSON.parse(readFileSync(path, "utf8")) ?? {})
-    : {};
+  const settings = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) ?? {}) : {};
   if (typeof settings !== "object" || Array.isArray(settings)) {
     throw new Error(`${path} must contain a JSON object`);
   }
