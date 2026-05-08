@@ -17,6 +17,7 @@ export interface AnnualReviewSettings {
   localCodexCommand: string;
   reportLanguage: AnnualReviewLanguage;
   generatorLanguage: AnnualReviewLanguage;
+  enableSmokeCommands?: boolean;
 }
 
 export interface ReportScope {
