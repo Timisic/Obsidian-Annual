@@ -82,6 +82,16 @@ export default class AnnualReviewPlugin extends Plugin {
       },
     });
 
+    if (this.settings.enableSmokeCommands) {
+      this.addCommand({
+        id: COMMAND_IDS.generateSmoke2026,
+        name: COMMAND_NAMES.generateSmoke2026,
+        callback: async () => {
+          await this.generateReport({ year: 2026, settings: this.settings });
+        },
+      });
+    }
+
     this.addSettingTab(new AnnualReviewSettingTab(this.app, this));
   }
 
