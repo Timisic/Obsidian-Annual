@@ -1,13 +1,19 @@
 import type { AnnualReviewLanguage, ResolvedAnnualReviewLanguage } from "./types";
 
-export function resolveAnnualReviewLanguage(language: AnnualReviewLanguage, appLanguage: string): ResolvedAnnualReviewLanguage {
+export function resolveAnnualReviewLanguage(
+  language: AnnualReviewLanguage,
+  appLanguage: string,
+): ResolvedAnnualReviewLanguage {
   if (language === "zh" || language === "en") {
     return language;
   }
   return appLanguage.toLowerCase().startsWith("zh") ? "zh" : "en";
 }
 
-export function languageName(language: AnnualReviewLanguage, appLanguage: string): string {
+export function languageName(
+  language: AnnualReviewLanguage,
+  appLanguage: string,
+): string {
   const resolved = resolveAnnualReviewLanguage(language, appLanguage);
   if (language === "system") {
     return resolved === "zh" ? "跟随 Obsidian" : "Follow Obsidian";
@@ -22,17 +28,21 @@ export const UI_TEXT = {
     openDashboardCommand: "Open Review Board",
     rebuildIndexCommand: "Rebuild index",
     reportFolder: "Report folder",
-    reportFolderDesc: "Generated annual review notes are written here and excluded from future scans.",
+    reportFolderDesc:
+      "Generated annual review notes are written here and excluded from future scans.",
     includeFolders: "Include folders",
-    includeFoldersDesc: "Comma-separated folder list. Leave empty to scan all Markdown files.",
+    includeFoldersDesc:
+      "Comma-separated folder list. Leave empty to scan all Markdown files.",
     excludeFolders: "Exclude folders",
     excludeFoldersDesc: "Comma-separated folder list excluded from scans.",
     reportLanguage: "Report language",
     reportLanguageDesc: "Language used in generated annual review notes.",
     generatorLanguage: "Generator language",
-    generatorLanguageDesc: "Language used by Annual Review settings and generation controls.",
+    generatorLanguageDesc:
+      "Language used by Annual Review settings and generation controls.",
     privacyMode: "Privacy mode",
-    privacyModeDesc: "Private mode labels generated reports as privacy-sensitive without changing local-only behavior.",
+    privacyModeDesc:
+      "Private mode labels generated reports as privacy-sensitive without changing local-only behavior.",
     standard: "Standard",
     private: "Private",
     chinese: "中文",
@@ -44,7 +54,8 @@ export const UI_TEXT = {
     generateTitle: "Generate Annual Review",
     year: "Year",
     yearDesc: "The calendar year to scan by note created/modified timestamps.",
-    runIncludeFoldersDesc: "Comma-separated folders for this run. Empty scans all Markdown files.",
+    runIncludeFoldersDesc:
+      "Comma-separated folders for this run. Empty scans all Markdown files.",
     runExcludeFoldersDesc: "Comma-separated folders skipped for this run.",
     generate: "Generate",
     cancel: "Cancel",
@@ -91,8 +102,14 @@ export const UI_TEXT = {
     noDataFound: "No data found.",
     noteWords: (words: number) => `${words} words`,
     dayWords: (date: string, words: number) => `${date}: ${words} words`,
-    dayWordsWithActivity: (date: string, words: number, created: number, modified: number) => `${date}: ${words} words, ${created} created, ${modified} modified`,
-    monthGrowth: (month: string, gained: number, cumulative: number) => `${month}: +${gained} words, ${cumulative} cumulative`,
+    dayWordsWithActivity: (
+      date: string,
+      words: number,
+      created: number,
+      modified: number,
+    ) => `${date}: ${words} words, ${created} created, ${modified} modified`,
+    monthGrowth: (month: string, gained: number, cumulative: number) =>
+      `${month}: +${gained} words, ${cumulative} cumulative`,
     growthSummary: (gained: number, cumulative: number) => `+${gained} (${cumulative})`,
   },
   zh: {
@@ -123,7 +140,8 @@ export const UI_TEXT = {
     generateTitle: "生成年度回顾",
     year: "年份",
     yearDesc: "按笔记创建/修改时间扫描的日历年份。",
-    runIncludeFoldersDesc: "本次运行包含的文件夹，用英文逗号分隔。留空则扫描全部 Markdown 文件。",
+    runIncludeFoldersDesc:
+      "本次运行包含的文件夹，用英文逗号分隔。留空则扫描全部 Markdown 文件。",
     runExcludeFoldersDesc: "本次运行跳过的文件夹，用英文逗号分隔。",
     generate: "生成",
     cancel: "取消",
@@ -170,8 +188,14 @@ export const UI_TEXT = {
     noDataFound: "未找到数据。",
     noteWords: (words: number) => `${words} 字词`,
     dayWords: (date: string, words: number) => `${date}: ${words} 字词`,
-    dayWordsWithActivity: (date: string, words: number, created: number, modified: number) => `${date}: ${words} 字词，${created} 新建，${modified} 修改`,
-    monthGrowth: (month: string, gained: number, cumulative: number) => `${month}: +${gained} 字词，累计 ${cumulative}`,
+    dayWordsWithActivity: (
+      date: string,
+      words: number,
+      created: number,
+      modified: number,
+    ) => `${date}: ${words} 字词，${created} 新建，${modified} 修改`,
+    monthGrowth: (month: string, gained: number, cumulative: number) =>
+      `${month}: +${gained} 字词，累计 ${cumulative}`,
     growthSummary: (gained: number, cumulative: number) => `+${gained}（${cumulative}）`,
   },
 } as const;

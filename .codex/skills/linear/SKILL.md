@@ -263,12 +263,7 @@ Use the GitHub-specific attachment mutation when linking a PR:
 
 ```graphql
 mutation AttachGitHubPR($issueId: String!, $url: String!, $title: String) {
-  attachmentLinkGitHubPR(
-    issueId: $issueId
-    url: $url
-    title: $title
-    linkKind: links
-  ) {
+  attachmentLinkGitHubPR(issueId: $issueId, url: $url, title: $title, linkKind: links) {
     success
     attachment {
       id

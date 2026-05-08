@@ -123,7 +123,13 @@ export interface RankedNote {
 
 export type SuggestedNoteAction = string;
 
-export type HighValueNoteKind = "核心笔记" | "活跃笔记" | "桥接笔记" | "输出候选" | "需维护" | "孤立潜力";
+export type HighValueNoteKind =
+  | "核心笔记"
+  | "活跃笔记"
+  | "桥接笔记"
+  | "输出候选"
+  | "需维护"
+  | "孤立潜力";
 export type CandidateSuggestionLabel = "suggested" | "needs-review" | "possible-bridge";
 
 export type ExplanationStatField =
@@ -149,12 +155,20 @@ export interface ExplanationReasonBase {
 
 export type ExplanationReason =
   | (ExplanationReasonBase & { type: "backlink"; relatedPaths: string[] })
-  | (ExplanationReasonBase & { type: "outlink"; sourcePath: string; relatedPaths: string[] })
+  | (ExplanationReasonBase & {
+      type: "outlink";
+      sourcePath: string;
+      relatedPaths: string[];
+    })
   | (ExplanationReasonBase & { type: "word-count"; sourcePath: string })
   | (ExplanationReasonBase & { type: "updated-at"; sourcePath: string })
   | (ExplanationReasonBase & { type: "task"; sourcePath: string })
   | (ExplanationReasonBase & { type: "tag"; sourcePath: string })
-  | (ExplanationReasonBase & { type: "topic-bridge"; sourcePath: string; relatedPaths: string[] })
+  | (ExplanationReasonBase & {
+      type: "topic-bridge";
+      sourcePath: string;
+      relatedPaths: string[];
+    })
   | (ExplanationReasonBase & { type: "dormant"; sourcePath: string });
 
 export interface HighValueNote {

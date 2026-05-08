@@ -3,19 +3,38 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildAiPrompt, buildCodexPrompt, buildLocalCodexEnv, formatLocalCodexFailure, renderAiReportEnhancements, renderAiReportSection } from "../src/core/ai";
+import {
+  buildAiPrompt,
+  buildCodexPrompt,
+  buildLocalCodexEnv,
+  formatLocalCodexFailure,
+  renderAiReportEnhancements,
+  renderAiReportSection,
+} from "../src/core/ai";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { buildExplanationReasons } from "../src/core/explain";
-import { extractNoteStats, parseFrontmatter, parseObsidianWikilinks } from "../src/core/extract";
+import {
+  extractNoteStats,
+  parseFrontmatter,
+  parseObsidianWikilinks,
+} from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
 import { buildHighValueNoteInsights } from "../src/core/highValueNotes";
-import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "../src/core/render";
+import {
+  buildAnnualReviewChartAssets,
+  buildAnnualReviewChartPaths,
+  renderAnnualReview,
+} from "../src/core/render";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import { countText } from "../src/core/tokenizer";
 import { toTopicEvolutionJson } from "../src/core/topics";
 import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
 import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
-import { ANNUAL_REVIEW_END_MARKER, ANNUAL_REVIEW_START_MARKER, writeAnnualReviewOutput } from "../src/obsidian/reportWriter";
+import {
+  ANNUAL_REVIEW_END_MARKER,
+  ANNUAL_REVIEW_START_MARKER,
+  writeAnnualReviewOutput,
+} from "../src/obsidian/reportWriter";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
@@ -100,9 +119,17 @@ describe("writing growth", () => {
       added_words: 120,
       main_files: ["Projects/B.md", "Daily/A.md"],
     });
-    expect(report.daily.find((day) => day.date === "2026-01-02")?.cumulativeWords).toBe(80);
-    expect(report.monthly.find((month) => month.month === "2026-02")?.addedWords).toBe(110);
-    expect(report.chartAssets.map((asset) => asset.kind)).toEqual(["word-growth", "monthly-word-growth", "writing-heatmap"]);
+    expect(report.daily.find((day) => day.date === "2026-01-02")?.cumulativeWords).toBe(
+      80,
+    );
+    expect(report.monthly.find((month) => month.month === "2026-02")?.addedWords).toBe(
+      110,
+    );
+    expect(report.chartAssets.map((asset) => asset.kind)).toEqual([
+      "word-growth",
+      "monthly-word-growth",
+      "writing-heatmap",
+    ]);
     expect(report.markdown).toContain("## 写作增长");
     expect(report.markdown).toContain("![[2026-word-growth.svg]]");
     expect(report.markdown).toContain("### 反馈信号");
@@ -125,7 +152,9 @@ describe("writing growth", () => {
     );
 
     expect(report.summary.baseline_only).toBe(true);
-    expect(report.summary.baseline_message).toBe("从本次开始记录，下一次运行后将开始计算准确增长。");
+    expect(report.summary.baseline_message).toBe(
+      "从本次开始记录，下一次运行后将开始计算准确增长。",
+    );
     expect(report.markdown).toContain("从本次开始记录");
   });
 
@@ -134,7 +163,17 @@ describe("writing growth", () => {
     try {
       const output = execFileSync(
         "node",
-        ["scripts/writing-growth-report.mjs", "--vault", "tests/fixtures/vault", "--year", "2026", "--history", "none", "--out", outDir],
+        [
+          "scripts/writing-growth-report.mjs",
+          "--vault",
+          "tests/fixtures/vault",
+          "--year",
+          "2026",
+          "--history",
+          "none",
+          "--out",
+          outDir,
+        ],
         { encoding: "utf8" },
       );
       const [jsonPath, markdownPath] = output.trim().split(/\r?\n/u);
@@ -151,8 +190,12 @@ describe("writing growth", () => {
 describe("filters", () => {
   it("excludes generated reports, templates, archive folders, and non-markdown files", () => {
     expect(shouldIncludePath("Daily/2026-01-01.md", DEFAULT_SETTINGS)).toBe(true);
-    expect(shouldIncludePath("Annual Reviews/2026 Annual Review.md", DEFAULT_SETTINGS)).toBe(false);
-    expect(shouldIncludePath("Templates/Daily Template.md", DEFAULT_SETTINGS)).toBe(false);
+    expect(
+      shouldIncludePath("Annual Reviews/2026 Annual Review.md", DEFAULT_SETTINGS),
+    ).toBe(false);
+    expect(shouldIncludePath("Templates/Daily Template.md", DEFAULT_SETTINGS)).toBe(
+      false,
+    );
     expect(shouldIncludePath("Archive/Old.md", DEFAULT_SETTINGS)).toBe(false);
     expect(shouldIncludePath("Assets/photo.png", DEFAULT_SETTINGS)).toBe(false);
   });
@@ -160,7 +203,9 @@ describe("filters", () => {
 
 describe("extraction", () => {
   it("parses common Obsidian wiki-link forms", () => {
-    expect(parseObsidianWikilinks("[[笔记]] [[笔记|别名]] [[笔记#标题]] ![[图片#区域|预览]]")).toEqual([
+    expect(
+      parseObsidianWikilinks("[[笔记]] [[笔记|别名]] [[笔记#标题]] ![[图片#区域|预览]]"),
+    ).toEqual([
       {
         raw: "[[笔记]]",
         target: "笔记",
@@ -226,7 +271,11 @@ describe("extraction", () => {
       "Projects/Research.md": 4,
       "Shared/Collision.md": 4,
     });
-    expect(note.links).toEqual(["Missing Note", "Projects/Research.md", "Shared/Collision.md"]);
+    expect(note.links).toEqual([
+      "Missing Note",
+      "Projects/Research.md",
+      "Shared/Collision.md",
+    ]);
   });
 
   it("falls back to counting raw wiki-link targets outside Obsidian metadata", () => {
@@ -235,7 +284,11 @@ describe("extraction", () => {
         path: "Daily/2026-01-04.md",
         ctime: Date.parse("2026-01-04T08:00:00.000Z"),
         mtime: Date.parse("2026-01-04T08:00:00.000Z"),
-        content: ["[[Research|alias]]", "[[Projects/Research#Plan]]", "![[Research]]"].join("\n"),
+        content: [
+          "[[Research|alias]]",
+          "[[Projects/Research#Plan]]",
+          "![[Research]]",
+        ].join("\n"),
       },
       DEFAULT_SETTINGS,
     );
@@ -268,7 +321,11 @@ describe("extraction", () => {
   });
 
   it("parses a small YAML frontmatter subset", () => {
-    expect(parseFrontmatter("---\ntags: [a, b]\ncategory:\n  - work\n  - personal\n主题: [AI工作流]\ndraft: true\n---\nBody").frontmatter).toEqual({
+    expect(
+      parseFrontmatter(
+        "---\ntags: [a, b]\ncategory:\n  - work\n  - personal\n主题: [AI工作流]\ndraft: true\n---\nBody",
+      ).frontmatter,
+    ).toEqual({
       tags: ["a", "b"],
       category: ["work", "personal"],
       主题: ["AI工作流"],
@@ -277,16 +334,30 @@ describe("extraction", () => {
   });
 
   it("extracts multiline Obsidian frontmatter tags", async () => {
-    const note = extractNoteStats(await fixtureFile("Projects/Legacy.md", "2025-12-20T08:00:00.000Z", "2026-04-05T10:00:00.000Z"), DEFAULT_SETTINGS);
+    const note = extractNoteStats(
+      await fixtureFile(
+        "Projects/Legacy.md",
+        "2025-12-20T08:00:00.000Z",
+        "2026-04-05T10:00:00.000Z",
+      ),
+      DEFAULT_SETTINGS,
+    );
     expect(note.frontmatter.tags).toEqual(["legacy", "research"]);
     expect(note.tags).toEqual(["legacy", "research"]);
   });
 
   it("removes frontmatter-derived tags when frontmatter metrics are disabled", async () => {
-    const note = extractNoteStats(await fixtureFile("Projects/Legacy.md", "2025-12-20T08:00:00.000Z", "2026-04-05T10:00:00.000Z"), {
-      ...DEFAULT_SETTINGS,
-      includeFrontmatter: false,
-    });
+    const note = extractNoteStats(
+      await fixtureFile(
+        "Projects/Legacy.md",
+        "2025-12-20T08:00:00.000Z",
+        "2026-04-05T10:00:00.000Z",
+      ),
+      {
+        ...DEFAULT_SETTINGS,
+        includeFrontmatter: false,
+      },
+    );
     expect(note.frontmatter).toEqual({});
     expect(note.tags).toEqual([]);
   });
@@ -302,19 +373,28 @@ describe("aggregation and rendering", () => {
     expect(aggregate.topTags[0]).toEqual({ name: "journal", count: 2 });
     expect(aggregate.topFolders).toContainEqual({ name: "Daily", count: 2 });
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research", count: 2 });
-    expect(aggregate.highValueNotes.some((note) => note.path === "Projects/Research.md")).toBe(true);
+    expect(
+      aggregate.highValueNotes.some((note) => note.path === "Projects/Research.md"),
+    ).toBe(true);
     expect(aggregate.representativeNotes.map((note) => note.path)).toEqual([
       "Daily/2026-01-01.md",
       "Projects/Legacy.md",
       "Projects/Research.md",
     ]);
     expect(aggregate.dayBuckets).toHaveLength(365);
-    expect(aggregate.dayBuckets.find((day) => day.date === "2026-01-01")?.words).toBeGreaterThan(0);
+    expect(
+      aggregate.dayBuckets.find((day) => day.date === "2026-01-01")?.words,
+    ).toBeGreaterThan(0);
     expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.words).toBe(0);
-    expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.modified).toBe(1);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-04-05")?.modified).toBe(
+      1,
+    );
     expect(aggregate.wordGrowthBuckets).toHaveLength(12);
     expect(aggregate.wordGrowthBuckets[0]?.wordsGained).toBeGreaterThan(0);
-    expect(aggregate.wordGrowthBuckets[aggregate.wordGrowthBuckets.length - 1]?.cumulativeWords).toBe(aggregate.totalWords);
+    expect(
+      aggregate.wordGrowthBuckets[aggregate.wordGrowthBuckets.length - 1]
+        ?.cumulativeWords,
+    ).toBe(aggregate.totalWords);
     expect(aggregate.monthBuckets[3]?.modified).toBe(1);
     expect(aggregate.monthBuckets[3]?.words).toBe(0);
     expect(aggregate.topicEvolution.topTopics.length).toBeGreaterThan(0);
@@ -329,9 +409,15 @@ describe("aggregation and rendering", () => {
           ctime: Date.parse("2026-01-10T08:00:00.000Z"),
           mtime: Date.parse("2026-01-12T08:00:00.000Z"),
           frontmatter: {
-            topics: ["AI Workflow", "Writing System", "Obsidian Automation", "Overflow Topic"],
+            topics: [
+              "AI Workflow",
+              "Writing System",
+              "Obsidian Automation",
+              "Overflow Topic",
+            ],
           },
-          content: "# AI Workflow\n\nCreated words for a durable artificial intelligence workflow note.",
+          content:
+            "# AI Workflow\n\nCreated words for a durable artificial intelligence workflow note.",
         },
         {
           path: "Projects/Obsidian Report.md",
@@ -343,7 +429,8 @@ describe("aggregation and rendering", () => {
           path: "Reading Methods.md",
           ctime: Date.parse("2026-02-01T08:00:00.000Z"),
           mtime: Date.parse("2026-02-01T08:00:00.000Z"),
-          content: "# Reading Methods\n\nUnlabeled note that relies on report-only fallback clustering.",
+          content:
+            "# Reading Methods\n\nUnlabeled note that relies on report-only fallback clustering.",
         },
         {
           path: "Maintenance/March.md",
@@ -365,8 +452,14 @@ describe("aggregation and rendering", () => {
     );
 
     const assignments = aggregate.topicEvolution.noteAssignments;
-    const frontmatterAssignment = assignments.find((assignment) => assignment.path === "Writing/AI Workflow.md");
-    expect(frontmatterAssignment?.topics).toEqual(["AI Workflow", "Writing System", "Obsidian Automation"]);
+    const frontmatterAssignment = assignments.find(
+      (assignment) => assignment.path === "Writing/AI Workflow.md",
+    );
+    expect(frontmatterAssignment?.topics).toEqual([
+      "AI Workflow",
+      "Writing System",
+      "Obsidian Automation",
+    ]);
     expect(frontmatterAssignment?.sources).toEqual({
       "AI Workflow": "frontmatter",
       "Writing System": "frontmatter",
@@ -374,18 +467,25 @@ describe("aggregation and rendering", () => {
     });
     expect(frontmatterAssignment?.topics).toHaveLength(3);
 
-    const tagAssignment = assignments.find((assignment) => assignment.path === "Projects/Obsidian Report.md");
+    const tagAssignment = assignments.find(
+      (assignment) => assignment.path === "Projects/Obsidian Report.md",
+    );
     expect(tagAssignment?.topics).toContain("Obsidian Data Report");
     expect(tagAssignment?.sources["Obsidian Data Report"]).toBe("tag");
     expect(tagAssignment?.topics).not.toContain("Projects");
 
-    const fallbackAssignment = assignments.find((assignment) => assignment.path === "Reading Methods.md");
+    const fallbackAssignment = assignments.find(
+      (assignment) => assignment.path === "Reading Methods.md",
+    );
     expect(fallbackAssignment?.topics).toEqual(["Reading Methods"]);
     expect(fallbackAssignment?.sources["Reading Methods"]).toBe("ai-cluster");
 
     expect(aggregate.topicEvolution.emergingTopics).toContain("Obsidian Data Report");
     expect(aggregate.topicEvolution.decliningTopics).toContain("Reading Methods");
-    expect(aggregate.topicEvolution.monthlyBuckets.find((bucket) => bucket.month === "2026-11")?.topics["Obsidian Data Report"]).toBeGreaterThan(0);
+    expect(
+      aggregate.topicEvolution.monthlyBuckets.find((bucket) => bucket.month === "2026-11")
+        ?.topics["Obsidian Data Report"],
+    ).toBeGreaterThan(0);
 
     const json = toTopicEvolutionJson(aggregate.topicEvolution);
     expect(json).toMatchObject({
@@ -431,8 +531,12 @@ describe("aggregation and rendering", () => {
     );
 
     const topicNames = aggregate.topicEvolution.topTopics.map((topic) => topic.name);
-    expect(topicNames).toEqual(expect.arrayContaining(["AI 焦虑", "财务压力", "亲密关系", "夜半散步"]));
-    expect(topicNames).not.toEqual(expect.arrayContaining(["1月", "4月", "2026 02", "2026 04 24 夜半散步", "2026-02"]));
+    expect(topicNames).toEqual(
+      expect.arrayContaining(["AI 焦虑", "财务压力", "亲密关系", "夜半散步"]),
+    );
+    expect(topicNames).not.toEqual(
+      expect.arrayContaining(["1月", "4月", "2026 02", "2026 04 24 夜半散步", "2026-02"]),
+    );
 
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
     expect(markdown).toContain("AI 焦虑");
@@ -471,7 +575,10 @@ describe("aggregation and rendering", () => {
 
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research.md", count: 4 });
     expect(aggregate.topLinks).not.toContainEqual({ name: "Research", count: 1 });
-    expect(aggregate.topLinks).not.toContainEqual({ name: "Projects/Research", count: 1 });
+    expect(aggregate.topLinks).not.toContainEqual({
+      name: "Projects/Research",
+      count: 1,
+    });
     expect(aggregate.highValueNotes[0]?.inboundLinks).toBe(4);
 
     const markdown = renderAnnualReview(aggregate);
@@ -483,7 +590,9 @@ describe("aggregation and rendering", () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# 2026 Annual Review");
-    expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u);
+    expect(markdown).toMatch(
+      /^---\ngenerated: ".+"\nyear: 2026\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
+    );
     expect(markdown).not.toContain("Generated:");
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
@@ -498,23 +607,31 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("| Writing days |");
     expect(markdown).toContain("| Longest writing streak |");
     expect(markdown).toContain("### Cumulative Growth");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(markdown).toContain(
+      'class="annual-review-chart annual-review-daily-cumulative"',
+    );
     expect(markdown).toContain("### Monthly New Notes");
     expect(markdown).toContain("### Heatmap");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
-    expect(markdown).toContain("xmlns=\"http://www.w3.org/2000/svg\"");
+    expect(markdown).toContain('class="annual-review-chart annual-review-heatmap"');
+    expect(markdown).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(markdown).toContain("<rect");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("Legend: . = 0 words");
     expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).not.toContain("## Word Growth Trend");
     expect(markdown).toContain("Notes created in each active month");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
     expect(markdown).toContain("## Topic Evolution");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(markdown).toContain("content-thread synthesis is generated only when summarization is enabled");
-    expect(markdown).not.toContain("| Topic | Added words | New notes | Representative Notes |");
+    expect(markdown).toContain(
+      'class="annual-review-chart annual-review-topic-evolution"',
+    );
+    expect(markdown).toContain(
+      "content-thread synthesis is generated only when summarization is enabled",
+    );
+    expect(markdown).not.toContain(
+      "| Topic | Added words | New notes | Representative Notes |",
+    );
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
     expect(markdown).not.toContain("### Feedback Signals");
     expect(markdown).toContain("### Activity Reading");
@@ -539,11 +656,15 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Evidence:");
     expect(markdown).toContain("Source note:");
     expect(markdown).toContain("Stat field:");
-    expect(markdown).toMatch(/Suggestion label: (suggested|needs-review|possible-bridge)/u);
+    expect(markdown).toMatch(
+      /Suggestion label: (suggested|needs-review|possible-bridge)/u,
+    );
     expect(markdown).not.toContain("Type: 核心笔记");
     expect(markdown).not.toContain("Type: 输出候选");
     expect(markdown).not.toContain("Type: 桥接笔记");
-    expect(markdown).toContain("Manual confirmation: Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.");
+    expect(markdown).toContain(
+      "Manual confirmation: Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.",
+    );
     for (const line of markdown.split(/\r?\n/u).filter((line) => line.startsWith("| "))) {
       expect(line).not.toMatch(/\[\[[^\]]+\|[^\]]+\]\]/u);
     }
@@ -573,7 +694,7 @@ describe("aggregation and rendering", () => {
       DEFAULT_SETTINGS,
     );
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
-    expect(markdown).toContain("report_language: \"zh\"");
+    expect(markdown).toContain('report_language: "zh"');
     expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
       "## 年度总览",
@@ -583,11 +704,13 @@ describe("aggregation and rendering", () => {
       "## 下期行动",
     ]);
     expect(markdown).toContain("### 累计增长");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
+    expect(markdown).toContain(
+      'class="annual-review-chart annual-review-daily-cumulative"',
+    );
     expect(markdown).toContain("### 每月新增笔记");
     expect(markdown).toContain("### 热力图");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-heatmap\"");
-    expect(markdown).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(markdown).toContain('class="annual-review-chart annual-review-heatmap"');
+    expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
     expect(markdown).toContain("## 候选回看笔记");
@@ -605,7 +728,8 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, {
       aiEnabled: true,
       aiEnhancements: {
-        periodJudgment: "The year centers on turning daily writing into a research review loop.",
+        periodJudgment:
+          "The year centers on turning daily writing into a research review loop.",
         themeInsights: [
           {
             title: "Research review loop",
@@ -618,7 +742,8 @@ describe("aggregation and rendering", () => {
         highValueNotes: [
           {
             path: "Projects/Research.md",
-            reason: "This note links source evidence back to the project synthesis and can become the review hub.",
+            reason:
+              "This note links source evidence back to the project synthesis and can become the review hub.",
             suggestedAction: "Turn it into a compact Obsidian index with evidence notes.",
           },
         ],
@@ -631,9 +756,13 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Research review loop");
     expect(markdown).toContain("[[Daily/2026-01-01]]");
     expect(markdown).not.toContain("| Theme |");
-    expect(markdown).not.toContain("| Note | Type | AI value reason | Suggested action |");
+    expect(markdown).not.toContain(
+      "| Note | Type | AI value reason | Suggested action |",
+    );
     expect(markdown).toContain("#### [[Projects/Research|Research]]");
-    expect(markdown).toContain("This note links source evidence back to the project synthesis");
+    expect(markdown).toContain(
+      "This note links source evidence back to the project synthesis",
+    );
     expect(markdown).toContain("1. Create a review hub from [[Projects/Research]].");
     expect(markdown).not.toContain("### Feedback Signals");
   });
@@ -644,10 +773,18 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { chartPaths });
     const chartAssets = buildAnnualReviewChartAssets(aggregate, { chartPaths });
 
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Cumulative Growth|900]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap|900]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Monthly New Notes|900]]");
-    expect(markdown).toContain("![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]");
+    expect(markdown).toContain(
+      "![[Annual Reviews/2026 Annual Review Assets/daily-cumulative-words.svg|Cumulative Growth|900]]",
+    );
+    expect(markdown).toContain(
+      "![[Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg|Daily Word Heatmap|900]]",
+    );
+    expect(markdown).toContain(
+      "![[Annual Reviews/2026 Annual Review Assets/word-growth-trend.svg|Monthly New Notes|900]]",
+    );
+    expect(markdown).toContain(
+      "![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]",
+    );
     expect(markdown).not.toContain("<svg");
     expect(markdown).toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
@@ -660,15 +797,23 @@ describe("aggregation and rendering", () => {
       "Annual Reviews/2026 Annual Review Assets/topic-evolution.svg",
       "Annual Reviews/2026 Annual Review Assets/topic-evolution.json",
     ]);
-    expect(chartAssets[0]?.content).toContain("class=\"annual-review-chart annual-review-daily-cumulative\"");
-    expect(chartAssets[1]?.content).toContain("class=\"annual-review-chart annual-review-heatmap\"");
-    expect(chartAssets[2]?.content).toContain("class=\"annual-review-chart annual-review-growth\"");
+    expect(chartAssets[0]?.content).toContain(
+      'class="annual-review-chart annual-review-daily-cumulative"',
+    );
+    expect(chartAssets[1]?.content).toContain(
+      'class="annual-review-chart annual-review-heatmap"',
+    );
+    expect(chartAssets[2]?.content).toContain(
+      'class="annual-review-chart annual-review-growth"',
+    );
     expect(chartAssets[2]?.content).toContain("<rect");
-    expect(chartAssets[2]?.content).not.toContain("class=\"chart-line\"");
-    expect(chartAssets[3]?.content).toContain("class=\"annual-review-chart annual-review-topic-evolution\"");
-    expect(chartAssets[4]?.content).toContain("\"top_topics\"");
-    expect(chartAssets[4]?.content).toContain("\"emerging_topics\"");
-    expect(chartAssets[4]?.content).toContain("\"declining_topics\"");
+    expect(chartAssets[2]?.content).not.toContain('class="chart-line"');
+    expect(chartAssets[3]?.content).toContain(
+      'class="annual-review-chart annual-review-topic-evolution"',
+    );
+    expect(chartAssets[4]?.content).toContain('"top_topics"');
+    expect(chartAssets[4]?.content).toContain('"emerging_topics"');
+    expect(chartAssets[4]?.content).toContain('"declining_topics"');
   });
 
   it("identifies review candidates, maintenance, output-ready, and isolated potential notes", () => {
@@ -683,13 +828,16 @@ describe("aggregation and rendering", () => {
         path: "Obsidian数据报告.md",
         ctime: "2026-02-01T08:00:00.000Z",
         mtime: "2026-04-25T08:00:00.000Z",
-        content: "# Obsidian数据报告\n#obsidian\n[[AI工作流]]\n[[写作系统]]\n[[读书方法]]\n" + repeatedWords(330),
+        content:
+          "# Obsidian数据报告\n#obsidian\n[[AI工作流]]\n[[写作系统]]\n[[读书方法]]\n" +
+          repeatedWords(330),
       }),
       noteFrom({
         path: "写作系统.md",
         ctime: "2026-03-01T08:00:00.000Z",
         mtime: "2026-04-22T08:00:00.000Z",
-        content: "# 写作系统\n#writing\n[[AI工作流]]\n[[读书方法]]\n" + repeatedWords(340),
+        content:
+          "# 写作系统\n#writing\n[[AI工作流]]\n[[读书方法]]\n" + repeatedWords(340),
       }),
       noteFrom({
         path: "读书方法.md",
@@ -718,15 +866,35 @@ describe("aggregation and rendering", () => {
     expect(insights.highValueNotes.every((note) => note.reasons.length > 0)).toBe(true);
     expect(
       insights.highValueNotes.every((note) =>
-        note.reasons.every((reason) => Boolean(reason.sourcePath || reason.statField || (reason.relatedPaths && reason.relatedPaths.length > 0))),
+        note.reasons.every((reason) =>
+          Boolean(
+            reason.sourcePath ||
+            reason.statField ||
+            (reason.relatedPaths && reason.relatedPaths.length > 0),
+          ),
+        ),
       ),
     ).toBe(true);
-    expect(insights.highValueNotes.every((note) => ["suggested", "needs-review", "possible-bridge"].includes(note.suggestionLabel))).toBe(true);
-    expect(insights.highValueNotes.map((note) => note.suggestionLabel)).toContain("needs-review");
-    expect(insights.highValueNotes.map((note) => note.suggestionLabel)).toContain("possible-bridge");
-    expect(insights.highValueNotes.every((note) => typeof note.suggestedAction === "string")).toBe(true);
-    expect(insights.highValueNotes.find((note) => note.path === "AI工作流.md")?.inboundLinks).toBe(3);
-    expect(insights.highValueNotes.find((note) => note.path === "AI工作流.md")?.outboundLinks).toBe(1);
+    expect(
+      insights.highValueNotes.every((note) =>
+        ["suggested", "needs-review", "possible-bridge"].includes(note.suggestionLabel),
+      ),
+    ).toBe(true);
+    expect(insights.highValueNotes.map((note) => note.suggestionLabel)).toContain(
+      "needs-review",
+    );
+    expect(insights.highValueNotes.map((note) => note.suggestionLabel)).toContain(
+      "possible-bridge",
+    );
+    expect(
+      insights.highValueNotes.every((note) => typeof note.suggestedAction === "string"),
+    ).toBe(true);
+    expect(
+      insights.highValueNotes.find((note) => note.path === "AI工作流.md")?.inboundLinks,
+    ).toBe(3);
+    expect(
+      insights.highValueNotes.find((note) => note.path === "AI工作流.md")?.outboundLinks,
+    ).toBe(1);
     expect(insights.maintenanceNotes).toContainEqual(
       expect.objectContaining({
         path: "读书方法.md",
@@ -740,8 +908,12 @@ describe("aggregation and rendering", () => {
         suggestedAction: "补 2-3 个上下文链接后整理成输出草稿",
       }),
     );
-    expect(new Set(insights.highValueNotes.map((note) => note.suggestedAction)).size).toBeGreaterThan(1);
-    expect(insights.highValueNotes.map((note) => note.suggestedAction)).not.toContain("建立 MOC");
+    expect(
+      new Set(insights.highValueNotes.map((note) => note.suggestedAction)).size,
+    ).toBeGreaterThan(1);
+    expect(insights.highValueNotes.map((note) => note.suggestedAction)).not.toContain(
+      "建立 MOC",
+    );
     expect(insights.highValueFeedback.staleCoreCount).toBe(1);
   });
 
@@ -751,7 +923,9 @@ describe("aggregation and rendering", () => {
         path: "Hub/Research.md",
         ctime: "2026-01-01T08:00:00.000Z",
         mtime: "2026-04-25T08:00:00.000Z",
-        content: "# Research\n#strategy\n- [x] Ship baseline\n[[Daily/2026-01-02]]\n" + repeatedWords(320),
+        content:
+          "# Research\n#strategy\n- [x] Ship baseline\n[[Daily/2026-01-02]]\n" +
+          repeatedWords(320),
       }),
       noteFrom({
         path: "Daily/2026-01-02.md",
@@ -789,7 +963,15 @@ describe("aggregation and rendering", () => {
       relatedPaths: ["Daily/2026-01-02.md", "Projects/Launch.md"],
     });
     expect(reasons.every((reason) => reason.evidenceId.length > 0)).toBe(true);
-    expect(reasons.every((reason) => Boolean(reason.sourcePath || reason.statField || (reason.relatedPaths && reason.relatedPaths.length > 0)))).toBe(true);
+    expect(
+      reasons.every((reason) =>
+        Boolean(
+          reason.sourcePath ||
+          reason.statField ||
+          (reason.relatedPaths && reason.relatedPaths.length > 0),
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("renders no-evidence candidates without a strong recommendation", async () => {
@@ -858,12 +1040,15 @@ describe("AI provider", () => {
       },
       codexExecutor: async (prompt) => {
         prompts.push(prompt);
-        return { ok: true, content: "### Local draft\n\nUse [[Daily/2026-01-01]] as evidence." };
+        return {
+          ok: true,
+          content: "### Local draft\n\nUse [[Daily/2026-01-01]] as evidence.",
+        };
       },
     });
 
     expect(prompts).toHaveLength(1);
-    expect(prompts[0]).toContain("\"topLinks\"");
+    expect(prompts[0]).toContain('"topLinks"');
     expect(section).toBe("Use [[Daily/2026-01-01]] as evidence.");
     expect(section).toContain("[[Daily/2026-01-01]]");
     expect(section).not.toContain("Provider:");
@@ -912,7 +1097,10 @@ describe("AI provider", () => {
   });
 
   it("builds a local Codex environment with common macOS CLI install paths", () => {
-    const env = buildLocalCodexEnv({ PATH: "/usr/bin:/bin" }, "/tmp/annual-review-output.md");
+    const env = buildLocalCodexEnv(
+      { PATH: "/usr/bin:/bin" },
+      "/tmp/annual-review-output.md",
+    );
 
     expect(env.CODEX_ANNUAL_REVIEW_OUTPUT).toBe("/tmp/annual-review-output.md");
     expect(env.PATH?.split(":").slice(0, 4)).toEqual([
@@ -950,10 +1138,10 @@ describe("AI provider", () => {
     expect(prompt).toContain("obsidian-cli");
     expect(prompt).toContain("obsidian-markdown");
     expect(prompt).not.toContain("obsidian-bases");
-    expect(prompt).toContain("\"highValueNotes\"");
-    expect(prompt).toContain("\"topLinks\"");
-    expect(prompt).toContain("\"contextNotes\"");
-    expect(prompt).toContain("\"backlinks\"");
+    expect(prompt).toContain('"highValueNotes"');
+    expect(prompt).toContain('"topLinks"');
+    expect(prompt).toContain('"contextNotes"');
+    expect(prompt).toContain('"backlinks"');
     expect(prompt.length).toBeLessThan(24_000);
   });
 
@@ -971,15 +1159,23 @@ describe("AI provider", () => {
       },
       fetcher: async (url, init) => {
         calls.push({ url: String(url), init: init ?? {} });
-        return new Response(JSON.stringify({ output_text: "### Personalized draft\n\nUse [[Daily/2026-01-01]] as evidence." }), { status: 200 });
+        return new Response(
+          JSON.stringify({
+            output_text:
+              "### Personalized draft\n\nUse [[Daily/2026-01-01]] as evidence.",
+          }),
+          { status: 200 },
+        );
       },
     });
 
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe("https://api.openai.com/v1/responses");
     expect(calls[0]?.init.method).toBe("POST");
-    expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe("Bearer test-key");
-    expect(String(calls[0]?.init.body)).toContain("\"model\":\"gpt-test\"");
+    expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe(
+      "Bearer test-key",
+    );
+    expect(String(calls[0]?.init.body)).toContain('"model":"gpt-test"');
     expect(section).toBe("Use [[Daily/2026-01-01]] as evidence.");
     expect(section).toContain("[[Daily/2026-01-01]]");
     expect(section).not.toContain("Provider:");
@@ -1036,10 +1232,10 @@ describe("AI provider", () => {
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
 
-    expect(prompt).toContain("\"topLinks\"");
+    expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research");
-    expect(prompt).toContain("\"linkGraph\"");
-    expect(prompt).toContain("\"contextNotes\"");
+    expect(prompt).toContain('"linkGraph"');
+    expect(prompt).toContain('"contextNotes"');
     expect(prompt).toContain("Daily/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
@@ -1058,9 +1254,12 @@ describe("AI provider", () => {
     ];
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
-    const context = JSON.parse(prompt) as { linkGraph: Array<{ links: string[] }>; contextNotes: Array<{ links: string[] }> };
+    const context = JSON.parse(prompt) as {
+      linkGraph: Array<{ links: string[] }>;
+      contextNotes: Array<{ links: string[] }>;
+    };
 
-    expect(prompt).toContain("\"topLinks\"");
+    expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research.md");
     expect(context.linkGraph[0]?.links).toEqual(["Projects/Research.md"]);
     expect(context.contextNotes[0]?.links).toEqual(["Projects/Research.md"]);
@@ -1097,7 +1296,10 @@ describe("Obsidian vault adapter", () => {
       },
     };
 
-    const files = await readVaultMarkdownFiles(app as unknown as Parameters<typeof readVaultMarkdownFiles>[0], DEFAULT_SETTINGS);
+    const files = await readVaultMarkdownFiles(
+      app as unknown as Parameters<typeof readVaultMarkdownFiles>[0],
+      DEFAULT_SETTINGS,
+    );
 
     expect(files).toEqual([
       {
@@ -1137,12 +1339,15 @@ describe("Obsidian vault adapter", () => {
       "Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg",
       "Annual Reviews/2026 Annual Review.md",
     ]);
-    expect(files.get("Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg")?.content).toBe("<svg />");
-    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe([
-      ANNUAL_REVIEW_START_MARKER,
-      "# 2026 Annual Review",
-      ANNUAL_REVIEW_END_MARKER,
-    ].join("\n"));
+    expect(
+      files.get("Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg")
+        ?.content,
+    ).toBe("<svg />");
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe(
+      [ANNUAL_REVIEW_START_MARKER, "# 2026 Annual Review", ANNUAL_REVIEW_END_MARKER].join(
+        "\n",
+      ),
+    );
   });
 
   it("preserves user-authored content outside annual review markers when regenerating", async () => {
@@ -1170,20 +1375,26 @@ describe("Obsidian vault adapter", () => {
 
     expect(processCalls).toEqual(["Annual Reviews/2026 Annual Review.md"]);
     expect(modifyCalls).not.toContain("Annual Reviews/2026 Annual Review.md");
-    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe([
-      "User preface stays exactly.",
-      "",
-      ANNUAL_REVIEW_START_MARKER,
-      "# 2026 Annual Review",
-      "New machine section.",
-      ANNUAL_REVIEW_END_MARKER,
-      "",
-      "- [ ] User action item stays exactly.",
-    ].join("\n"));
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe(
+      [
+        "User preface stays exactly.",
+        "",
+        ANNUAL_REVIEW_START_MARKER,
+        "# 2026 Annual Review",
+        "New machine section.",
+        ANNUAL_REVIEW_END_MARKER,
+        "",
+        "- [ ] User action item stays exactly.",
+      ].join("\n"),
+    );
   });
 
   it("creates a full backup before converting a legacy annual report without markers", async () => {
-    const legacyReport = ["# 2026 Annual Review", "", "User summary that must be recoverable."].join("\n");
+    const legacyReport = [
+      "# 2026 Annual Review",
+      "",
+      "User summary that must be recoverable.",
+    ].join("\n");
     const { app, files, writes, processCalls } = createReportWriterMockApp([
       ["Annual Reviews/2026 Annual Review.md", legacyReport],
     ]);
@@ -1196,17 +1407,23 @@ describe("Obsidian vault adapter", () => {
       [],
     );
 
-    const backupPath = writes.find((path) => /^Annual Reviews\/2026 Annual Review Backup .+\.md$/u.test(path));
+    const backupPath = writes.find((path) =>
+      /^Annual Reviews\/2026 Annual Review Backup .+\.md$/u.test(path),
+    );
     expect(backupPath).toBeDefined();
-    expect(writes.indexOf(backupPath ?? "")).toBeLessThan(writes.indexOf("Annual Reviews/2026 Annual Review.md"));
+    expect(writes.indexOf(backupPath ?? "")).toBeLessThan(
+      writes.indexOf("Annual Reviews/2026 Annual Review.md"),
+    );
     expect(files.get(backupPath ?? "")?.content).toBe(legacyReport);
     expect(processCalls).toEqual(["Annual Reviews/2026 Annual Review.md"]);
-    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe([
-      ANNUAL_REVIEW_START_MARKER,
-      "# 2026 Annual Review",
-      "Regenerated machine section.",
-      ANNUAL_REVIEW_END_MARKER,
-    ].join("\n"));
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe(
+      [
+        ANNUAL_REVIEW_START_MARKER,
+        "# 2026 Annual Review",
+        "Regenerated machine section.",
+        ANNUAL_REVIEW_END_MARKER,
+      ].join("\n"),
+    );
   });
 });
 
@@ -1221,7 +1438,10 @@ function createReportWriterMockApp(initialFiles: Array<[string, string]> = []): 
       create: (path: string, content: string) => Promise<ReportWriterMockFile>;
       modify: (file: ReportWriterMockFile, content: string) => Promise<void>;
       read: (file: ReportWriterMockFile) => Promise<string>;
-      process: (file: ReportWriterMockFile, fn: (content: string) => string) => Promise<string>;
+      process: (
+        file: ReportWriterMockFile,
+        fn: (content: string) => string,
+      ) => Promise<string>;
     };
   };
   files: Map<string, ReportWriterMockFile>;
@@ -1246,7 +1466,7 @@ function createReportWriterMockApp(initialFiles: Array<[string, string]> = []): 
   return {
     app: {
       vault: {
-        getFolderByPath: (path: string) => folders.has(path) ? { path } : null,
+        getFolderByPath: (path: string) => (folders.has(path) ? { path } : null),
         createFolder: async (path: string) => {
           folders.add(path);
         },
@@ -1299,7 +1519,12 @@ function sectionBetween(markdown: string, start: string, end: string): string {
   return markdown.slice(startIndex, endIndex);
 }
 
-function noteFrom(input: { path: string; ctime: string; mtime: string; content: string }) {
+function noteFrom(input: {
+  path: string;
+  ctime: string;
+  mtime: string;
+  content: string;
+}) {
   return extractNoteStats(
     {
       path: input.path,

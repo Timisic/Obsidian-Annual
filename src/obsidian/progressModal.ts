@@ -4,7 +4,10 @@ export class AnnualReviewProgressModal extends Modal {
   private progressEl: HTMLProgressElement | null = null;
   private statusEl: HTMLElement | null = null;
 
-  constructor(app: App, private title: string) {
+  constructor(
+    app: App,
+    private title: string,
+  ) {
     super(app);
   }
 
@@ -12,7 +15,9 @@ export class AnnualReviewProgressModal extends Modal {
     this.contentEl.empty();
     this.contentEl.addClass("annual-review-progress-modal");
     this.contentEl.createEl("h2", { text: this.title });
-    this.statusEl = this.contentEl.createEl("p", { cls: "annual-review-progress-status" });
+    this.statusEl = this.contentEl.createEl("p", {
+      cls: "annual-review-progress-status",
+    });
     this.progressEl = this.contentEl.createEl("progress", {
       cls: "annual-review-progress-bar",
       attr: { max: "100", value: "0" },

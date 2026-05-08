@@ -1,10 +1,30 @@
 import type { ExplanationReason } from "./types";
 
-export type ReviewCandidateType = "topic" | "note" | "project" | "task" | "dormant-note" | "bridge-note";
+export type ReviewCandidateType =
+  | "topic"
+  | "note"
+  | "project"
+  | "task"
+  | "dormant-note"
+  | "bridge-note";
 
-export type ReviewCandidateStatus = "candidate" | "accepted" | "renamed" | "merged" | "ignored" | "archived" | "next-action";
+export type ReviewCandidateStatus =
+  | "candidate"
+  | "accepted"
+  | "renamed"
+  | "merged"
+  | "ignored"
+  | "archived"
+  | "next-action";
 
-export type EvidenceSourceKind = "note" | "tag" | "link" | "task" | "timeline" | "folder" | "excerpt";
+export type EvidenceSourceKind =
+  | "note"
+  | "tag"
+  | "link"
+  | "task"
+  | "timeline"
+  | "folder"
+  | "excerpt";
 
 export interface EvidenceSource {
   id: string;
@@ -20,7 +40,14 @@ export interface EvidenceSource {
 export interface ReviewDecision {
   id: string;
   candidateId: string;
-  action: "continue" | "merge" | "archive" | "drop" | "convert-to-project" | "revisit" | "custom";
+  action:
+    | "continue"
+    | "merge"
+    | "archive"
+    | "drop"
+    | "convert-to-project"
+    | "revisit"
+    | "custom";
   label: string;
   note?: string;
   evidence: EvidenceSource[];
@@ -79,34 +106,75 @@ export type ReviewAction =
   | { type: "accept"; candidateId: string; at: string }
   | { type: "ignore"; candidateId: string; at: string; note?: string }
   | { type: "archive"; candidateId: string; at: string; note?: string }
-  | { type: "merge-topic"; sourceCandidateId: string; targetCandidateId: string; at: string; note?: string }
-  | { type: "rename-topic"; candidateId: string; title: string; at: string; note?: string }
+  | {
+      type: "merge-topic";
+      sourceCandidateId: string;
+      targetCandidateId: string;
+      at: string;
+      note?: string;
+    }
+  | {
+      type: "rename-topic";
+      candidateId: string;
+      title: string;
+      at: string;
+      note?: string;
+    }
   | { type: "add-to-annual-highlights"; candidateId: string; at: string }
-  | { type: "add-to-actions"; candidateId: string; decision: Omit<ReviewDecision, "candidateId" | "evidence" | "createdAt">; at: string }
+  | {
+      type: "add-to-actions";
+      candidateId: string;
+      decision: Omit<ReviewDecision, "candidateId" | "evidence" | "createdAt">;
+      at: string;
+    }
   | { type: "open-source-note"; candidateId: string; evidenceId?: string };
 
-const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>(["accepted", "renamed", "merged", "ignored", "archived", "next-action"]);
+const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>([
+  "accepted",
+  "renamed",
+  "merged",
+  "ignored",
+  "archived",
+  "next-action",
+]);
 
 export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
   if (candidate.evidence.length === 0) {
-    throw new Error(`Review candidate ${candidate.id} must include at least one evidence source.`);
+    throw new Error(
+      `Review candidate ${candidate.id} must include at least one evidence source.`,
+    );
   }
   if (candidate.reasons.length === 0) {
-    throw new Error(`Review candidate ${candidate.id} must include at least one explanation reason.`);
+    throw new Error(
+      `Review candidate ${candidate.id} must include at least one explanation reason.`,
+    );
   }
   for (const reason of candidate.reasons) {
-    if (!reason.sourcePath && !reason.statField && (!reason.relatedPaths || reason.relatedPaths.length === 0)) {
-      throw new Error(`Review candidate ${candidate.id} has an explanation reason without traceable evidence.`);
+    if (
+      !reason.sourcePath &&
+      !reason.statField &&
+      (!reason.relatedPaths || reason.relatedPaths.length === 0)
+    ) {
+      throw new Error(
+        `Review candidate ${candidate.id} has an explanation reason without traceable evidence.`,
+      );
     }
   }
 }
 
-export function applyReviewAction(session: ReviewSessionState, action: ReviewAction): ReviewSessionState {
+export function applyReviewAction(
+  session: ReviewSessionState,
+  action: ReviewAction,
+): ReviewSessionState {
   if (action.type === "open-source-note") {
     return session;
   }
 
-  const candidates = session.candidates.map((candidate) => ({ ...candidate, evidence: [...candidate.evidence], decisionIds: [...candidate.decisionIds] }));
+  const candidates = session.candidates.map((candidate) => ({
+    ...candidate,
+    evidence: [...candidate.evidence],
+    decisionIds: [...candidate.decisionIds],
+  }));
   const decisions = [...session.decisions];
   const findCandidate = (id: string) => {
     const candidate = candidates.find((item) => item.id === id);
@@ -120,7 +188,9 @@ export function applyReviewAction(session: ReviewSessionState, action: ReviewAct
     const source = findCandidate(action.sourceCandidateId);
     const target = findCandidate(action.targetCandidateId);
     if (source.type !== "topic" || target.type !== "topic") {
-      throw new Error("merge-topic requires both source and target candidates to be topics.");
+      throw new Error(
+        "merge-topic requires both source and target candidates to be topics.",
+      );
     }
     source.status = "merged";
     source.mergedIntoId = target.id;
@@ -183,7 +253,12 @@ export function applyReviewAction(session: ReviewSessionState, action: ReviewAct
     }
   }
 
-  return refreshSession({ ...session, candidates, decisions, updatedAt: "at" in action ? action.at : session.updatedAt });
+  return refreshSession({
+    ...session,
+    candidates,
+    decisions,
+    updatedAt: "at" in action ? action.at : session.updatedAt,
+  });
 }
 
 export function mergeScannedCandidates(
@@ -192,12 +267,16 @@ export function mergeScannedCandidates(
   scanId: string,
   updatedAt: string,
 ): ReviewSessionState {
-  const scannedById = new Map(scannedCandidates.map((candidate) => [candidate.id, candidate]));
+  const scannedById = new Map(
+    scannedCandidates.map((candidate) => [candidate.id, candidate]),
+  );
   const candidates = stored.candidates
     .map((storedCandidate) => {
       const scanned = scannedById.get(storedCandidate.id);
       if (!scanned) {
-        return storedCandidate.status === "candidate" ? undefined : markMissingEvidence(storedCandidate, updatedAt);
+        return storedCandidate.status === "candidate"
+          ? undefined
+          : markMissingEvidence(storedCandidate, updatedAt);
       }
       scannedById.delete(storedCandidate.id);
       assertCandidateHasEvidence(scanned);
@@ -289,7 +368,10 @@ function refreshSession(session: ReviewSessionState): ReviewSessionState {
   };
 }
 
-function mergeEvidence(targetEvidence: EvidenceSource[], sourceEvidence: EvidenceSource[]): EvidenceSource[] {
+function mergeEvidence(
+  targetEvidence: EvidenceSource[],
+  sourceEvidence: EvidenceSource[],
+): EvidenceSource[] {
   const merged = new Map(targetEvidence.map((evidence) => [evidence.id, evidence]));
   for (const evidence of sourceEvidence) {
     if (!merged.has(evidence.id)) {
@@ -299,7 +381,10 @@ function mergeEvidence(targetEvidence: EvidenceSource[], sourceEvidence: Evidenc
   return [...merged.values()];
 }
 
-function markMissingEvidence(candidate: ReviewCandidate, updatedAt: string): ReviewCandidate {
+function markMissingEvidence(
+  candidate: ReviewCandidate,
+  updatedAt: string,
+): ReviewCandidate {
   return {
     ...candidate,
     evidence: candidate.evidence.map((evidence) => ({ ...evidence, missing: true })),

@@ -1,7 +1,12 @@
 import { Modal, Setting, type App } from "obsidian";
 import { UI_TEXT } from "../core/language";
 import { joinFolderList, splitFolderList } from "../core/settings";
-import type { AnnualReviewLanguage, AnnualReviewSettings, GenerateReportOptions, ResolvedAnnualReviewLanguage } from "../core/types";
+import type {
+  AnnualReviewLanguage,
+  AnnualReviewSettings,
+  GenerateReportOptions,
+  ResolvedAnnualReviewLanguage,
+} from "../core/types";
 
 export class YearModal extends Modal {
   private selectedYear = new Date().getFullYear();
@@ -9,9 +14,17 @@ export class YearModal extends Modal {
 
   onChoose: (options: GenerateReportOptions) => void = () => undefined;
 
-  constructor(app: App, settings: AnnualReviewSettings, private language: ResolvedAnnualReviewLanguage) {
+  constructor(
+    app: App,
+    settings: AnnualReviewSettings,
+    private language: ResolvedAnnualReviewLanguage,
+  ) {
     super(app);
-    this.runSettings = { ...settings, includeFolders: [...settings.includeFolders], excludeFolders: [...settings.excludeFolders] };
+    this.runSettings = {
+      ...settings,
+      includeFolders: [...settings.includeFolders],
+      excludeFolders: [...settings.excludeFolders],
+    };
   }
 
   onOpen(): void {
@@ -91,7 +104,9 @@ export class YearModal extends Modal {
 
     new Setting(contentEl)
       .setName("AI provider")
-      .setDesc("None keeps this run local. ChatGPT uses the configured OpenAI API key or falls back to local Codex CLI auth.")
+      .setDesc(
+        "None keeps this run local. ChatGPT uses the configured OpenAI API key or falls back to local Codex CLI auth.",
+      )
       .addDropdown((dropdown) => {
         dropdown
           .addOption("none", "None")
@@ -113,9 +128,7 @@ export class YearModal extends Modal {
           });
       })
       .addButton((button) => {
-        button
-          .setButtonText(text.cancel)
-          .onClick(() => this.close());
+        button.setButtonText(text.cancel).onClick(() => this.close());
       });
   }
 
@@ -123,13 +136,14 @@ export class YearModal extends Modal {
     this.contentEl.empty();
   }
 
-  private addMetricToggle(name: string, key: "includeLinks" | "includeFrontmatter" | "includeHeadings"): void {
-    new Setting(this.contentEl)
-      .setName(name)
-      .addToggle((toggle) => {
-        toggle.setValue(this.runSettings[key]).onChange((value) => {
-          this.runSettings[key] = value;
-        });
+  private addMetricToggle(
+    name: string,
+    key: "includeLinks" | "includeFrontmatter" | "includeHeadings",
+  ): void {
+    new Setting(this.contentEl).setName(name).addToggle((toggle) => {
+      toggle.setValue(this.runSettings[key]).onChange((value) => {
+        this.runSettings[key] = value;
       });
+    });
   }
 }

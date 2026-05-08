@@ -1,5 +1,12 @@
 import { buildExplanationReasons, summarizeExplanationReasons } from "./explain";
-import type { CandidateSuggestionLabel, HighValueNote, HighValueNoteFeedback, HighValueNoteKind, NoteStats, SuggestedNoteAction } from "./types";
+import type {
+  CandidateSuggestionLabel,
+  HighValueNote,
+  HighValueNoteFeedback,
+  HighValueNoteKind,
+  NoteStats,
+  SuggestedNoteAction,
+} from "./types";
 
 const RECENT_UPDATE_DAYS = 30;
 const STALE_CORE_DAYS = 90;
@@ -37,12 +44,18 @@ interface NoteProfile {
   score: number;
 }
 
-export function buildHighValueNoteInsights(notes: NoteStats[], year: number, generatedAt: string): HighValueNoteInsights {
+export function buildHighValueNoteInsights(
+  notes: NoteStats[],
+  year: number,
+  generatedAt: string,
+): HighValueNoteInsights {
   const sortedNotes = [...notes].sort((a, b) => a.path.localeCompare(b.path));
   const pathAliases = buildPathAliasMap(sortedNotes);
   const growthTopics = buildGrowthTopics(sortedNotes, year);
   const referenceTime = Date.parse(generatedAt);
-  const profiles = sortedNotes.map((note) => buildProfile(note, sortedNotes, pathAliases, growthTopics, year, referenceTime));
+  const profiles = sortedNotes.map((note) =>
+    buildProfile(note, sortedNotes, pathAliases, growthTopics, year, referenceTime),
+  );
 
   const highValueProfiles = profiles
     .filter(hasHighValueSignal)
@@ -59,10 +72,18 @@ export function buildHighValueNoteInsights(notes: NoteStats[], year: number, gen
     .sort(sortProfiles);
 
   return {
-    highValueNotes: highValueProfiles.map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
-    outputReadyNotes: outputReadyProfiles.slice(0, MAX_NOTES_PER_SECTION).map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
-    maintenanceNotes: maintenanceProfiles.slice(0, MAX_NOTES_PER_SECTION).map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
-    isolatedPotentialNotes: isolatedProfiles.slice(0, MAX_NOTES_PER_SECTION).map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
+    highValueNotes: highValueProfiles.map((profile) =>
+      toHighValueNote(profile, sortedNotes, year, generatedAt),
+    ),
+    outputReadyNotes: outputReadyProfiles
+      .slice(0, MAX_NOTES_PER_SECTION)
+      .map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
+    maintenanceNotes: maintenanceProfiles
+      .slice(0, MAX_NOTES_PER_SECTION)
+      .map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
+    isolatedPotentialNotes: isolatedProfiles
+      .slice(0, MAX_NOTES_PER_SECTION)
+      .map((profile) => toHighValueNote(profile, sortedNotes, year, generatedAt)),
     highValueFeedback: {
       priorityNoteTitles: highValueProfiles.slice(0, 3).map((profile) => profile.title),
       outputReadyCount: outputReadyProfiles.length,
@@ -82,18 +103,27 @@ function buildProfile(
   const title = titleFromPath(note.path);
   const topics = topicsFor(note);
   const inboundLinks = inboundLinkCount(note.path, allNotes, pathAliases);
-  const outboundLinks = Object.values(note.linkCounts).reduce((sum, count) => sum + count, 0);
-  const periodWordCount = new Date(note.ctime).getFullYear() === year ? note.wordCount : 0;
+  const outboundLinks = Object.values(note.linkCounts).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  const periodWordCount =
+    new Date(note.ctime).getFullYear() === year ? note.wordCount : 0;
   const daysSinceUpdate = daysBetween(note.mtime, referenceTime);
   const connectedTopicCount = connectedTopics(note, allNotes, pathAliases).size;
   const belongsToGrowthTopic = topics.some((topic) => growthTopics.has(topic));
   const isCore = inboundLinks >= CORE_INBOUND_LINKS;
-  const isRecent = daysSinceUpdate <= RECENT_UPDATE_DAYS && (periodWordCount > 0 || new Date(note.mtime).getFullYear() === year);
+  const isRecent =
+    daysSinceUpdate <= RECENT_UPDATE_DAYS &&
+    (periodWordCount > 0 || new Date(note.mtime).getFullYear() === year);
   const isBridge = connectedTopicCount >= TOPIC_BRIDGE_COUNT && outboundLinks > 0;
   const isGrowthLong = belongsToGrowthTopic && periodWordCount >= LONG_NOTE_WORDS;
-  const isOutputReady = note.wordCount >= LONG_NOTE_WORDS && (isCore || isBridge || isGrowthLong || outboundLinks >= CORE_INBOUND_LINKS);
+  const isOutputReady =
+    note.wordCount >= LONG_NOTE_WORDS &&
+    (isCore || isBridge || isGrowthLong || outboundLinks >= CORE_INBOUND_LINKS);
   const isStaleCore = isCore && daysSinceUpdate > STALE_CORE_DAYS;
-  const isIsolatedPotential = note.wordCount >= LONG_NOTE_WORDS && inboundLinks === 0 && outboundLinks === 0;
+  const isIsolatedPotential =
+    note.wordCount >= LONG_NOTE_WORDS && inboundLinks === 0 && outboundLinks === 0;
 
   return {
     note,
@@ -158,10 +188,23 @@ function scoreProfile(profile: {
 }
 
 function hasHighValueSignal(profile: NoteProfile): boolean {
-  return profile.isCore || profile.isRecent || profile.isBridge || profile.isGrowthLong || profile.isOutputReady || profile.isStaleCore || profile.isIsolatedPotential;
+  return (
+    profile.isCore ||
+    profile.isRecent ||
+    profile.isBridge ||
+    profile.isGrowthLong ||
+    profile.isOutputReady ||
+    profile.isStaleCore ||
+    profile.isIsolatedPotential
+  );
 }
 
-function toHighValueNote(profile: NoteProfile, allNotes: NoteStats[], year: number, generatedAt: string): HighValueNote {
+function toHighValueNote(
+  profile: NoteProfile,
+  allNotes: NoteStats[],
+  year: number,
+  generatedAt: string,
+): HighValueNote {
   const reasons = buildExplanationReasons({
     note: profile.note,
     allNotes,
@@ -208,7 +251,8 @@ function noteKind(profile: NoteProfile): HighValueNoteKind {
 function suggestedAction(profile: NoteProfile): SuggestedNoteAction {
   if (profile.isStaleCore && profile.isOutputReady) return "更新关键结论并补一段现状评估";
   if (profile.isStaleCore) return "复核过期段落并标注是否继续维护";
-  if (profile.isIsolatedPotential && profile.isOutputReady) return "补 2-3 个上下文链接后整理成输出草稿";
+  if (profile.isIsolatedPotential && profile.isOutputReady)
+    return "补 2-3 个上下文链接后整理成输出草稿";
   if (profile.isIsolatedPotential) return "补充入口链接并决定归档或孵化";
   if (profile.isBridge) return "补一张主题关系图或索引段落";
   if (profile.isCore && profile.isOutputReady) return "提炼成主题索引并列出后续问题";
@@ -218,7 +262,11 @@ function suggestedAction(profile: NoteProfile): SuggestedNoteAction {
   return "判断是否归档";
 }
 
-function inboundLinkCount(path: string, notes: NoteStats[], pathAliases: Map<string, string>): number {
+function inboundLinkCount(
+  path: string,
+  notes: NoteStats[],
+  pathAliases: Map<string, string>,
+): number {
   let count = 0;
   for (const note of notes) {
     if (note.path === path) {
@@ -233,7 +281,11 @@ function inboundLinkCount(path: string, notes: NoteStats[], pathAliases: Map<str
   return count;
 }
 
-function connectedTopics(note: NoteStats, notes: NoteStats[], pathAliases: Map<string, string>): Set<string> {
+function connectedTopics(
+  note: NoteStats,
+  notes: NoteStats[],
+  pathAliases: Map<string, string>,
+): Set<string> {
   const topics = new Set(topicsFor(note));
   const noteByPath = new Map(notes.map((entry) => [entry.path, entry]));
   for (const link of Object.keys(note.linkCounts)) {
@@ -267,7 +319,13 @@ function buildGrowthTopics(notes: NoteStats[], year: number): Set<string> {
 }
 
 function topicsFor(note: NoteStats): string[] {
-  return [...new Set([note.folder, ...note.tags].map(normalizeTopic).filter((topic) => topic && !isTimeContainerTopic(topic)))].sort();
+  return [
+    ...new Set(
+      [note.folder, ...note.tags]
+        .map(normalizeTopic)
+        .filter((topic) => topic && !isTimeContainerTopic(topic)),
+    ),
+  ].sort();
 }
 
 function normalizeTopic(topic: string): string {
@@ -286,7 +344,9 @@ function isTimeContainerTopic(topic: string): boolean {
   return (
     /^(?:19|20)\d{2}$/u.test(lower) ||
     /^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])月?$/u.test(lower) ||
-    /^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])[-_/日.](?:0?[1-9]|[12]\d|3[01])日?$/u.test(lower) ||
+    /^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])[-_/日.](?:0?[1-9]|[12]\d|3[01])日?$/u.test(
+      lower,
+    ) ||
     /^(?:0?[1-9]|1[0-2])月$/u.test(lower) ||
     /^(?:[一二三四五六七八九]|十|十一|十二)月$/u.test(lower) ||
     /^(?:0?[1-9]|1[0-2])$/u.test(lower) ||
@@ -297,7 +357,11 @@ function isTimeContainerTopic(topic: string): boolean {
 function buildPathAliasMap(notes: NoteStats[]): Map<string, string> {
   const aliases = new Map<string, string>();
   for (const note of notes) {
-    const aliasesForPath = [note.path, removeMarkdownExtension(note.path), titleFromPath(note.path)];
+    const aliasesForPath = [
+      note.path,
+      removeMarkdownExtension(note.path),
+      titleFromPath(note.path),
+    ];
     for (const alias of aliasesForPath) {
       const key = normalizeLinkIdentity(alias);
       if (key && !aliases.has(key)) {
@@ -308,7 +372,10 @@ function buildPathAliasMap(notes: NoteStats[]): Map<string, string> {
   return aliases;
 }
 
-function resolveLinkPath(link: string, pathAliases: Map<string, string>): string | undefined {
+function resolveLinkPath(
+  link: string,
+  pathAliases: Map<string, string>,
+): string | undefined {
   return pathAliases.get(normalizeLinkIdentity(link));
 }
 
@@ -325,7 +392,12 @@ function titleFromPath(path: string): string {
 }
 
 function sortProfiles(a: NoteProfile, b: NoteProfile): number {
-  return b.score - a.score || b.inboundLinks - a.inboundLinks || b.note.wordCount - a.note.wordCount || a.note.path.localeCompare(b.note.path);
+  return (
+    b.score - a.score ||
+    b.inboundLinks - a.inboundLinks ||
+    b.note.wordCount - a.note.wordCount ||
+    a.note.path.localeCompare(b.note.path)
+  );
 }
 
 function daysBetween(from: number, to: number): number {

@@ -33,13 +33,13 @@ Obsidian 自带的能力已经能覆盖部分「统计/看板/年度回顾」的
 
 ### 相关社区插件
 
-| 类别 | 插件/能力 | 对年度报告的启发 | 局限 |
-| --- | --- | --- | --- |
-| 字数/写作统计 | Novel Word Count | 在文件树旁展示每个文件、文件夹、vault 的字数、页数、阅读时间等，说明「局部统计贴近原生 UI」是用户可接受的。来源：[GitHub](https://github.com/isaaclyman/novel-word-count-obsidian)、[Obsidian Stats](https://www.moritzjung.dev/obsidian-stats/plugins/novel-word-count/) | 偏实时统计，不负责年度叙事。 |
-| 字数/写作统计 | Daily Stats / Daily Statistics / Keep the Rhythm | 日字数、历史日志、贡献热力图、周目标等适合借鉴为年度活跃度模块。来源：[Daily Stats GitHub](https://github.com/dhruvik7/obsidian-daily-stats)、[Daily Statistics](https://www.obsidianstats.com/plugins/daily-statistics)、[Keep the Rhythm](https://github.com/benjaminezequiel/keep-the-rhythm) | 数据通常保存在插件私有 JSON，跨设备/跨插件联动可能不稳定。 |
-| 数据查询 | Dataview | 从 frontmatter 和 inline fields 建立查询层，是 Obsidian 用户做自定义 dashboard 的事实标准之一。来源：[Dataview GitHub](https://github.com/blacksmithgu/obsidian-dataview) | Dataview 结果不是所有场景都能作为稳定数据源；年度报告插件应能独立扫描 vault。 |
-| 项目/看板 | Kanban、Projects、Base Board | Kanban 提供 Markdown-backed board；Projects 提供 table/board/calendar/gallery；Base Board 展示了基于 Bases/属性的看板方向。来源：[Kanban](https://github.com/mgmeyers/obsidian-kanban)、[Projects](https://github.com/obsmd-projects/obsidian-projects)、[Base Board 论坛帖](https://forum.obsidian.md/t/new-plugin-base-board-a-property-driven-kanban-board-powered-by-obsidian-bases/111507) | 这些是项目管理视图，不负责个人内容总结。 |
-| 图表 | ChartsView / Tracker | 可借鉴图表、时间序列、每日笔记追踪能力。来源：[ChartsView](https://github.com/caronchen/obsidian-chartsview-plugin)、[Tracker](https://github.com/pyrochlore/obsidian-tracker) | 图表插件偏表达层，缺少年度故事结构。 |
+| 类别          | 插件/能力                                        | 对年度报告的启发                                                                                                                                                                                                                                                                                                                                                                                | 局限                                                                          |
+| ------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 字数/写作统计 | Novel Word Count                                 | 在文件树旁展示每个文件、文件夹、vault 的字数、页数、阅读时间等，说明「局部统计贴近原生 UI」是用户可接受的。来源：[GitHub](https://github.com/isaaclyman/novel-word-count-obsidian)、[Obsidian Stats](https://www.moritzjung.dev/obsidian-stats/plugins/novel-word-count/)                                                                                                                       | 偏实时统计，不负责年度叙事。                                                  |
+| 字数/写作统计 | Daily Stats / Daily Statistics / Keep the Rhythm | 日字数、历史日志、贡献热力图、周目标等适合借鉴为年度活跃度模块。来源：[Daily Stats GitHub](https://github.com/dhruvik7/obsidian-daily-stats)、[Daily Statistics](https://www.obsidianstats.com/plugins/daily-statistics)、[Keep the Rhythm](https://github.com/benjaminezequiel/keep-the-rhythm)                                                                                                | 数据通常保存在插件私有 JSON，跨设备/跨插件联动可能不稳定。                    |
+| 数据查询      | Dataview                                         | 从 frontmatter 和 inline fields 建立查询层，是 Obsidian 用户做自定义 dashboard 的事实标准之一。来源：[Dataview GitHub](https://github.com/blacksmithgu/obsidian-dataview)                                                                                                                                                                                                                       | Dataview 结果不是所有场景都能作为稳定数据源；年度报告插件应能独立扫描 vault。 |
+| 项目/看板     | Kanban、Projects、Base Board                     | Kanban 提供 Markdown-backed board；Projects 提供 table/board/calendar/gallery；Base Board 展示了基于 Bases/属性的看板方向。来源：[Kanban](https://github.com/mgmeyers/obsidian-kanban)、[Projects](https://github.com/obsmd-projects/obsidian-projects)、[Base Board 论坛帖](https://forum.obsidian.md/t/new-plugin-base-board-a-property-driven-kanban-board-powered-by-obsidian-bases/111507) | 这些是项目管理视图，不负责个人内容总结。                                      |
+| 图表          | ChartsView / Tracker                             | 可借鉴图表、时间序列、每日笔记追踪能力。来源：[ChartsView](https://github.com/caronchen/obsidian-chartsview-plugin)、[Tracker](https://github.com/pyrochlore/obsidian-tracker)                                                                                                                                                                                                                  | 图表插件偏表达层，缺少年度故事结构。                                          |
 
 ### 是否已有年度报告插件
 
@@ -125,14 +125,14 @@ Obsidian 年度报告的故事模块可以设计为：
 
 ### 技术选择
 
-| 层级 | 推荐 | 理由 |
-| --- | --- | --- |
-| 插件语言 | TypeScript + Obsidian API | 官方插件路径，类型和生态最匹配。来源：[Obsidian Developer Docs](https://docs.obsidian.md/Home)。 |
-| 模板/构建 | 官方 `obsidian-sample-plugin` + esbuild | 官方模板依赖最新 `obsidian.d.ts`，并提供 TypeScript、manifest、styles、构建发布基础。来源：[obsidian-sample-plugin](https://github.com/obsidianmd/obsidian-sample-plugin)。 |
-| 数据读取 | `app.vault.getMarkdownFiles()`、`vault.cachedRead()`、`metadataCache`、文件事件 | 官方 Vault 文档示例即用 `Vault` 读取 Markdown 文件并计算内容长度。来源：[Obsidian Developer Docs: Vault](https://docs.obsidian.md/Plugins/Vault)。 |
-| UI | 原生 DOM + `ItemView`；图表可用轻量 SVG/Canvas | 避免引入重型前端框架；Obsidian 主题/CSS 兼容性更好。 |
-| 持久化 | `loadData()`/`saveData()` 保存索引缓存与设置；报告内容写入 Markdown 文件 | 私有缓存和用户可见成果分离，便于同步和迁移。 |
-| AI/主题分析 | MVP 先做规则/统计；AI 摘要作为可选 provider | 用户 vault 隐私敏感；AI 需要明确 opt-in、脱敏和数据预览。 |
+| 层级        | 推荐                                                                            | 理由                                                                                                                                                                        |
+| ----------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 插件语言    | TypeScript + Obsidian API                                                       | 官方插件路径，类型和生态最匹配。来源：[Obsidian Developer Docs](https://docs.obsidian.md/Home)。                                                                            |
+| 模板/构建   | 官方 `obsidian-sample-plugin` + esbuild                                         | 官方模板依赖最新 `obsidian.d.ts`，并提供 TypeScript、manifest、styles、构建发布基础。来源：[obsidian-sample-plugin](https://github.com/obsidianmd/obsidian-sample-plugin)。 |
+| 数据读取    | `app.vault.getMarkdownFiles()`、`vault.cachedRead()`、`metadataCache`、文件事件 | 官方 Vault 文档示例即用 `Vault` 读取 Markdown 文件并计算内容长度。来源：[Obsidian Developer Docs: Vault](https://docs.obsidian.md/Plugins/Vault)。                          |
+| UI          | 原生 DOM + `ItemView`；图表可用轻量 SVG/Canvas                                  | 避免引入重型前端框架；Obsidian 主题/CSS 兼容性更好。                                                                                                                        |
+| 持久化      | `loadData()`/`saveData()` 保存索引缓存与设置；报告内容写入 Markdown 文件        | 私有缓存和用户可见成果分离，便于同步和迁移。                                                                                                                                |
+| AI/主题分析 | MVP 先做规则/统计；AI 摘要作为可选 provider                                     | 用户 vault 隐私敏感；AI 需要明确 opt-in、脱敏和数据预览。                                                                                                                   |
 
 ### 推荐数据模型
 

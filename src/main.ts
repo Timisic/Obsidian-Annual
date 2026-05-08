@@ -1,12 +1,33 @@
-import { getLanguage, Notice, Plugin, PluginSettingTab, Setting, type App } from "obsidian";
+import {
+  getLanguage,
+  Notice,
+  Plugin,
+  PluginSettingTab,
+  Setting,
+  type App,
+} from "obsidian";
 import { renderAiReportEnhancements } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS, COMMAND_NAMES } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
-import { buildAnnualReviewChartAssets, buildAnnualReviewChartPaths, renderAnnualReview } from "./core/render";
+import {
+  buildAnnualReviewChartAssets,
+  buildAnnualReviewChartPaths,
+  renderAnnualReview,
+} from "./core/render";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
-import type { AnnualReviewLanguage, AnnualReviewSettings, GenerateReportOptions, ResolvedAnnualReviewLanguage, SourceFile, YearAggregate } from "./core/types";
-import { AnnualReviewDashboardView, VIEW_TYPE_ANNUAL_REVIEW } from "./obsidian/dashboardView";
+import type {
+  AnnualReviewLanguage,
+  AnnualReviewSettings,
+  GenerateReportOptions,
+  ResolvedAnnualReviewLanguage,
+  SourceFile,
+  YearAggregate,
+} from "./core/types";
+import {
+  AnnualReviewDashboardView,
+  VIEW_TYPE_ANNUAL_REVIEW,
+} from "./obsidian/dashboardView";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
 import { AnnualReviewProgressModal } from "./obsidian/progressModal";
 import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
@@ -23,7 +44,10 @@ export default class AnnualReviewPlugin extends Plugin {
   async onload(): Promise<void> {
     await this.loadSettings();
 
-    this.registerView(VIEW_TYPE_ANNUAL_REVIEW, (leaf) => new AnnualReviewDashboardView(leaf, this));
+    this.registerView(
+      VIEW_TYPE_ANNUAL_REVIEW,
+      (leaf) => new AnnualReviewDashboardView(leaf, this),
+    );
 
     this.addCommand({
       id: COMMAND_IDS.generate,
@@ -128,14 +152,35 @@ export default class AnnualReviewPlugin extends Plugin {
       const files = await this.getIndexedFiles(settings);
       progress?.update(text.progressAiSummary, 35);
       const aggregate = buildYearAggregate(files, year, settings);
-      const aiEnhancements = await renderAiReportEnhancements({ aggregate, files, settings });
-      const reportLanguage = resolveAnnualReviewLanguage(settings.reportLanguage, getLanguage());
+      const aiEnhancements = await renderAiReportEnhancements({
+        aggregate,
+        files,
+        settings,
+      });
+      const reportLanguage = resolveAnnualReviewLanguage(
+        settings.reportLanguage,
+        getLanguage(),
+      );
       const chartPaths = buildAnnualReviewChartPaths(settings.reportFolder, year);
       progress?.update(text.progressRendering, 78);
-      const chartAssets = buildAnnualReviewChartAssets(aggregate, { language: reportLanguage, chartPaths });
-      const markdown = renderAnnualReview(aggregate, { language: reportLanguage, chartPaths, aiEnhancements, aiEnabled: settings.aiProvider !== "none" });
+      const chartAssets = buildAnnualReviewChartAssets(aggregate, {
+        language: reportLanguage,
+        chartPaths,
+      });
+      const markdown = renderAnnualReview(aggregate, {
+        language: reportLanguage,
+        chartPaths,
+        aiEnhancements,
+        aiEnabled: settings.aiProvider !== "none",
+      });
       progress?.update(text.progressWriting, 92);
-      const report = await writeAnnualReviewOutput(this.app, settings.reportFolder, year, markdown, chartAssets);
+      const report = await writeAnnualReviewOutput(
+        this.app,
+        settings.reportFolder,
+        year,
+        markdown,
+        chartAssets,
+      );
       this.lastAggregate = aggregate;
       this.lastReportPath = report.path;
       await this.app.workspace.getLeaf(false).openFile(report);
@@ -144,7 +189,9 @@ export default class AnnualReviewPlugin extends Plugin {
       new Notice(text.generated(report.path));
     } catch (error) {
       console.error("Annual Review generation failed", error);
-      new Notice(this.text().failed(error instanceof Error ? error.message : String(error)));
+      new Notice(
+        this.text().failed(error instanceof Error ? error.message : String(error)),
+      );
       progress?.close();
     }
   }
@@ -169,11 +216,15 @@ export default class AnnualReviewPlugin extends Plugin {
     this.app.workspace.revealLeaf(leaf);
   }
 
-  private generatorLanguage(language = this.settings.generatorLanguage): ResolvedAnnualReviewLanguage {
+  private generatorLanguage(
+    language = this.settings.generatorLanguage,
+  ): ResolvedAnnualReviewLanguage {
     return resolveAnnualReviewLanguage(language, getLanguage());
   }
 
-  private text(language = this.settings.generatorLanguage): (typeof UI_TEXT)[ResolvedAnnualReviewLanguage] {
+  private text(
+    language = this.settings.generatorLanguage,
+  ): (typeof UI_TEXT)[ResolvedAnnualReviewLanguage] {
     return UI_TEXT[this.generatorLanguage(language)];
   }
 }
@@ -188,13 +239,19 @@ function settingsKey(settings: AnnualReviewSettings): string {
 }
 
 class AnnualReviewSettingTab extends PluginSettingTab {
-  constructor(app: App, private plugin: AnnualReviewPlugin) {
+  constructor(
+    app: App,
+    private plugin: AnnualReviewPlugin,
+  ) {
     super(app, plugin);
   }
 
   display(): void {
     const { containerEl } = this;
-    const language = resolveAnnualReviewLanguage(this.plugin.settings.generatorLanguage, getLanguage());
+    const language = resolveAnnualReviewLanguage(
+      this.plugin.settings.generatorLanguage,
+      getLanguage(),
+    );
     const text = UI_TEXT[language];
     containerEl.empty();
     containerEl.createEl("h2", { text: text.annualReview });
@@ -207,7 +264,8 @@ class AnnualReviewSettingTab extends PluginSettingTab {
           .setPlaceholder(DEFAULT_SETTINGS.reportFolder)
           .setValue(this.plugin.settings.reportFolder)
           .onChange(async (value) => {
-            this.plugin.settings.reportFolder = value.trim() || DEFAULT_SETTINGS.reportFolder;
+            this.plugin.settings.reportFolder =
+              value.trim() || DEFAULT_SETTINGS.reportFolder;
             await this.plugin.saveSettings();
           });
       });
@@ -238,8 +296,16 @@ class AnnualReviewSettingTab extends PluginSettingTab {
           });
       });
 
-    this.addLanguageDropdown(text.reportLanguage, text.reportLanguageDesc, "reportLanguage");
-    this.addLanguageDropdown(text.generatorLanguage, text.generatorLanguageDesc, "generatorLanguage");
+    this.addLanguageDropdown(
+      text.reportLanguage,
+      text.reportLanguageDesc,
+      "reportLanguage",
+    );
+    this.addLanguageDropdown(
+      text.generatorLanguage,
+      text.generatorLanguageDesc,
+      "generatorLanguage",
+    );
     this.addMetricToggle(text.includeLinkMetrics, "includeLinks");
     this.addMetricToggle(text.includeFrontmatterMetrics, "includeFrontmatter");
     this.addMetricToggle(text.includeHeadingMetrics, "includeHeadings");
@@ -253,14 +319,17 @@ class AnnualReviewSettingTab extends PluginSettingTab {
           .addOption("private", text.private)
           .setValue(this.plugin.settings.privacyMode)
           .onChange(async (value) => {
-            this.plugin.settings.privacyMode = value as AnnualReviewSettings["privacyMode"];
+            this.plugin.settings.privacyMode =
+              value as AnnualReviewSettings["privacyMode"];
             await this.plugin.saveSettings();
           });
       });
 
     new Setting(containerEl)
       .setName("AI provider")
-      .setDesc("Default report generation provider. None keeps generation local; ChatGPT uses an OpenAI API key when present, otherwise it tries the local Codex CLI/auth environment.")
+      .setDesc(
+        "Default report generation provider. None keeps generation local; ChatGPT uses an OpenAI API key when present, otherwise it tries the local Codex CLI/auth environment.",
+      )
       .addDropdown((dropdown) => {
         dropdown
           .addOption("none", "None")
@@ -280,14 +349,17 @@ class AnnualReviewSettingTab extends PluginSettingTab {
           .setPlaceholder(DEFAULT_SETTINGS.chatGptModel)
           .setValue(this.plugin.settings.chatGptModel)
           .onChange(async (value) => {
-            this.plugin.settings.chatGptModel = value.trim() || DEFAULT_SETTINGS.chatGptModel;
+            this.plugin.settings.chatGptModel =
+              value.trim() || DEFAULT_SETTINGS.chatGptModel;
             await this.plugin.saveSettings();
           });
       });
 
     new Setting(containerEl)
       .setName("OpenAI API key")
-      .setDesc("Optional. When empty and ChatGPT is selected, Annual Review tries local Codex CLI auth instead of sending a direct OpenAI API request.")
+      .setDesc(
+        "Optional. When empty and ChatGPT is selected, Annual Review tries local Codex CLI auth instead of sending a direct OpenAI API request.",
+      )
       .addText((text) => {
         text.inputEl.type = "password";
         text
@@ -301,20 +373,30 @@ class AnnualReviewSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Local Codex command")
-      .setDesc("One-shot Codex fallback command used when ChatGPT has no API key. Use an absolute Codex path if Obsidian's macOS GUI PATH cannot find codex; long-session app-server support is intentionally out of scope for this fallback.")
+      .setDesc(
+        "One-shot Codex fallback command used when ChatGPT has no API key. Use an absolute Codex path if Obsidian's macOS GUI PATH cannot find codex; long-session app-server support is intentionally out of scope for this fallback.",
+      )
       .addText((text) => {
         text
           .setPlaceholder(DEFAULT_SETTINGS.localCodexCommand)
           .setValue(this.plugin.settings.localCodexCommand)
           .onChange(async (value) => {
-            this.plugin.settings.localCodexCommand = value.trim() || DEFAULT_SETTINGS.localCodexCommand;
+            this.plugin.settings.localCodexCommand =
+              value.trim() || DEFAULT_SETTINGS.localCodexCommand;
             await this.plugin.saveSettings();
           });
       });
   }
 
-  private addLanguageDropdown(name: string, description: string, key: "reportLanguage" | "generatorLanguage"): void {
-    const text = UI_TEXT[resolveAnnualReviewLanguage(this.plugin.settings.generatorLanguage, getLanguage())];
+  private addLanguageDropdown(
+    name: string,
+    description: string,
+    key: "reportLanguage" | "generatorLanguage",
+  ): void {
+    const text =
+      UI_TEXT[
+        resolveAnnualReviewLanguage(this.plugin.settings.generatorLanguage, getLanguage())
+      ];
     new Setting(this.containerEl)
       .setName(name)
       .setDesc(description)
@@ -334,16 +416,15 @@ class AnnualReviewSettingTab extends PluginSettingTab {
       });
   }
 
-  private addMetricToggle(name: string, key: "includeLinks" | "includeFrontmatter" | "includeHeadings"): void {
-    new Setting(this.containerEl)
-      .setName(name)
-      .addToggle((toggle) => {
-        toggle
-          .setValue(this.plugin.settings[key])
-          .onChange(async (value) => {
-            this.plugin.settings[key] = value;
-            await this.plugin.saveSettings();
-          });
+  private addMetricToggle(
+    name: string,
+    key: "includeLinks" | "includeFrontmatter" | "includeHeadings",
+  ): void {
+    new Setting(this.containerEl).setName(name).addToggle((toggle) => {
+      toggle.setValue(this.plugin.settings[key]).onChange(async (value) => {
+        this.plugin.settings[key] = value;
+        await this.plugin.saveSettings();
       });
+    });
   }
 }

@@ -4,7 +4,12 @@ import type { AnnualReviewChartAsset } from "../core/render";
 export const ANNUAL_REVIEW_START_MARKER = "<!-- annual-review:start -->";
 export const ANNUAL_REVIEW_END_MARKER = "<!-- annual-review:end -->";
 
-export async function writeReport(app: App, reportFolder: string, year: number, content: string): Promise<TFile> {
+export async function writeReport(
+  app: App,
+  reportFolder: string,
+  year: number,
+  content: string,
+): Promise<TFile> {
   const folder = normalizePath(reportFolder || "Annual Reviews");
   await ensureFolder(app, folder);
 
@@ -15,13 +20,21 @@ export async function writeReport(app: App, reportFolder: string, year: number, 
     if (!hasMachineSection(previousContent)) {
       await createLegacyBackup(app, path, previousContent);
     }
-    await app.vault.process(existing, (currentContent) => mergeAnnualReviewContent(currentContent, content));
+    await app.vault.process(existing, (currentContent) =>
+      mergeAnnualReviewContent(currentContent, content),
+    );
     return existing;
   }
   return app.vault.create(path, formatMachineSection(content));
 }
 
-export async function writeAnnualReviewOutput(app: App, reportFolder: string, year: number, content: string, chartAssets: AnnualReviewChartAsset[]): Promise<TFile> {
+export async function writeAnnualReviewOutput(
+  app: App,
+  reportFolder: string,
+  year: number,
+  content: string,
+  chartAssets: AnnualReviewChartAsset[],
+): Promise<TFile> {
   for (const asset of chartAssets) {
     await writeTextFile(app, asset.path, asset.content);
   }
@@ -57,10 +70,16 @@ async function ensureFolder(app: App, folder: string): Promise<void> {
 }
 
 function normalizePath(path: string): string {
-  return path.replace(/\\/gu, "/").replace(/\/{2,}/gu, "/").replace(/^\/+|\/+$/gu, "");
+  return path
+    .replace(/\\/gu, "/")
+    .replace(/\/{2,}/gu, "/")
+    .replace(/^\/+|\/+$/gu, "");
 }
 
-function mergeAnnualReviewContent(existingContent: string, nextMachineContent: string): string {
+function mergeAnnualReviewContent(
+  existingContent: string,
+  nextMachineContent: string,
+): string {
   const section = findMachineSection(existingContent);
   if (!section) {
     return formatMachineSection(nextMachineContent);
@@ -82,13 +101,18 @@ function hasMachineSection(content: string): boolean {
   return Boolean(findMachineSection(content));
 }
 
-function findMachineSection(content: string): { startIndex: number; endIndex: number } | null {
+function findMachineSection(
+  content: string,
+): { startIndex: number; endIndex: number } | null {
   const startIndex = content.indexOf(ANNUAL_REVIEW_START_MARKER);
   if (startIndex === -1) {
     return null;
   }
 
-  const endMarkerIndex = content.indexOf(ANNUAL_REVIEW_END_MARKER, startIndex + ANNUAL_REVIEW_START_MARKER.length);
+  const endMarkerIndex = content.indexOf(
+    ANNUAL_REVIEW_END_MARKER,
+    startIndex + ANNUAL_REVIEW_START_MARKER.length,
+  );
   if (endMarkerIndex === -1) {
     return null;
   }
@@ -99,7 +123,11 @@ function findMachineSection(content: string): { startIndex: number; endIndex: nu
   };
 }
 
-async function createLegacyBackup(app: App, reportPath: string, content: string): Promise<TFile> {
+async function createLegacyBackup(
+  app: App,
+  reportPath: string,
+  content: string,
+): Promise<TFile> {
   const backupPath = nextBackupPath(app, reportPath);
   return app.vault.create(backupPath, content);
 }
@@ -117,7 +145,9 @@ function nextBackupPath(app: App, reportPath: string): string {
   }
 
   for (let suffix = 2; ; suffix += 1) {
-    const candidate = normalizePath(`${folder}/${basename} Backup ${timestamp}-${suffix}.md`);
+    const candidate = normalizePath(
+      `${folder}/${basename} Backup ${timestamp}-${suffix}.md`,
+    );
     if (!app.vault.getFileByPath(candidate)) {
       return candidate;
     }

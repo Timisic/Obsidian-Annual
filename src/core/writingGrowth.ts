@@ -19,7 +19,10 @@ export interface WritingGrowthOptions {
   chartPaths?: Partial<Record<WritingGrowthChartKind, string>>;
 }
 
-export type WritingGrowthChartKind = "word-growth" | "monthly-word-growth" | "writing-heatmap";
+export type WritingGrowthChartKind =
+  | "word-growth"
+  | "monthly-word-growth"
+  | "writing-heatmap";
 
 export interface WritingGrowthDaily {
   date: string;
@@ -96,7 +99,11 @@ export function countWritingWords(markdown: string): number {
   });
 
   for (const char of withoutLatin) {
-    if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(char)) {
+    if (
+      /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
+        char,
+      )
+    ) {
       words += 1;
     }
   }
@@ -122,15 +129,27 @@ export function cleanMarkdownForWritingCount(markdown: string): string {
     .replace(/[*_~=#>|()[\]{}]/gu, " ");
 }
 
-export function buildWritingGrowthReport(snapshots: WritingGrowthSnapshot[], options: WritingGrowthOptions): WritingGrowthReport {
+export function buildWritingGrowthReport(
+  snapshots: WritingGrowthSnapshot[],
+  options: WritingGrowthOptions,
+): WritingGrowthReport {
   const period = resolvePeriod(options);
   const threshold = options.writingDayThreshold ?? DEFAULT_THRESHOLD;
-  const normalized = normalizeSnapshots(snapshots).filter((snapshot) => snapshot.date <= period.endDate);
+  const normalized = normalizeSnapshots(snapshots).filter(
+    (snapshot) => snapshot.date <= period.endDate,
+  );
   const days = enumerateDates(period.startDate, period.endDate);
-  const snapshotsByDate = new Map(normalized.map((snapshot) => [snapshot.date, snapshot]));
-  const previousSnapshot = [...normalized].reverse().find((snapshot) => snapshot.date < period.startDate);
-  const inPeriodSnapshots = normalized.filter((snapshot) => snapshot.date >= period.startDate && snapshot.date <= period.endDate);
-  const baselineOnly = normalized.length <= 1 || (inPeriodSnapshots.length <= 1 && !previousSnapshot);
+  const snapshotsByDate = new Map(
+    normalized.map((snapshot) => [snapshot.date, snapshot]),
+  );
+  const previousSnapshot = [...normalized]
+    .reverse()
+    .find((snapshot) => snapshot.date < period.startDate);
+  const inPeriodSnapshots = normalized.filter(
+    (snapshot) => snapshot.date >= period.startDate && snapshot.date <= period.endDate,
+  );
+  const baselineOnly =
+    normalized.length <= 1 || (inPeriodSnapshots.length <= 1 && !previousSnapshot);
 
   let previous = previousSnapshot ?? inPeriodSnapshots[0];
   let cumulativeWords = 0;
@@ -161,12 +180,21 @@ export function buildWritingGrowthReport(snapshots: WritingGrowthSnapshot[], opt
     writing_days: writingDays,
     longest_streak: longestWritingStreak(daily, threshold),
     current_streak: currentWritingStreak(daily, threshold),
-    peak_month: activeMonths.length > 0 ? [...activeMonths].sort((a, b) => b.addedWords - a.addedWords || a.month.localeCompare(b.month))[0]?.month ?? null : null,
+    peak_month:
+      activeMonths.length > 0
+        ? ([...activeMonths].sort(
+            (a, b) => b.addedWords - a.addedWords || a.month.localeCompare(b.month),
+          )[0]?.month ?? null)
+        : null,
     top_days: daily
       .filter((day) => day.addedWords > 0)
       .sort((a, b) => b.addedWords - a.addedWords || a.date.localeCompare(b.date))
       .slice(0, 5)
-      .map((day) => ({ date: day.date, added_words: day.addedWords, main_files: day.mainFiles })),
+      .map((day) => ({
+        date: day.date,
+        added_words: day.addedWords,
+        main_files: day.mainFiles,
+      })),
     baseline_only: baselineOnly,
     ...(baselineOnly ? { baseline_message: BASELINE_MESSAGE } : {}),
   };
@@ -186,8 +214,12 @@ export function buildWritingGrowthReport(snapshots: WritingGrowthSnapshot[], opt
   };
 }
 
-export function buildWritingGrowthChartPaths(periodStartDate: string): Record<WritingGrowthChartKind, string> {
-  const prefix = periodStartDate.slice(0, 7).endsWith("-01") ? periodStartDate.slice(0, 4) : periodStartDate.slice(0, 7);
+export function buildWritingGrowthChartPaths(
+  periodStartDate: string,
+): Record<WritingGrowthChartKind, string> {
+  const prefix = periodStartDate.slice(0, 7).endsWith("-01")
+    ? periodStartDate.slice(0, 4)
+    : periodStartDate.slice(0, 7);
   return {
     "word-growth": `${prefix}-word-growth.svg`,
     "monthly-word-growth": `${prefix}-monthly-word-growth.svg`,
@@ -202,15 +234,29 @@ export function buildWritingGrowthChartAssets(
 ): WritingGrowthReport["chartAssets"] {
   return [
     chartPaths["word-growth"]
-      ? { kind: "word-growth" as const, path: chartPaths["word-growth"], content: renderDailyCumulativeSvg(daily) }
+      ? {
+          kind: "word-growth" as const,
+          path: chartPaths["word-growth"],
+          content: renderDailyCumulativeSvg(daily),
+        }
       : undefined,
     chartPaths["monthly-word-growth"]
-      ? { kind: "monthly-word-growth" as const, path: chartPaths["monthly-word-growth"], content: renderMonthlyAddedSvg(monthly) }
+      ? {
+          kind: "monthly-word-growth" as const,
+          path: chartPaths["monthly-word-growth"],
+          content: renderMonthlyAddedSvg(monthly),
+        }
       : undefined,
     chartPaths["writing-heatmap"]
-      ? { kind: "writing-heatmap" as const, path: chartPaths["writing-heatmap"], content: renderWritingHeatmapSvg(daily) }
+      ? {
+          kind: "writing-heatmap" as const,
+          path: chartPaths["writing-heatmap"],
+          content: renderWritingHeatmapSvg(daily),
+        }
       : undefined,
-  ].filter((asset): asset is WritingGrowthReport["chartAssets"][number] => Boolean(asset));
+  ].filter((asset): asset is WritingGrowthReport["chartAssets"][number] =>
+    Boolean(asset),
+  );
 }
 
 export function renderWritingGrowthMarkdown(
@@ -254,7 +300,10 @@ function normalizeSnapshots(snapshots: WritingGrowthSnapshot[]): NormalizedSnaps
     }
     const files = Object.fromEntries(
       Object.entries(snapshot.files)
-        .map(([path, value]) => [path, typeof value === "number" ? value : value.words] as const)
+        .map(
+          ([path, value]) =>
+            [path, typeof value === "number" ? value : value.words] as const,
+        )
         .filter(([, words]) => Number.isFinite(words) && words >= 0)
         .sort(([a], [b]) => a.localeCompare(b)),
     );
@@ -284,18 +333,34 @@ function resolvePeriod(options: WritingGrowthOptions): WritingGrowthReport["peri
     const year = Number(yearPart);
     const monthIndex = Number(monthPart) - 1;
     const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-    return { type: "month", startDate: `${month}-01`, endDate: `${month}-${String(lastDay).padStart(2, "0")}` };
+    return {
+      type: "month",
+      startDate: `${month}-01`,
+      endDate: `${month}-${String(lastDay).padStart(2, "0")}`,
+    };
   }
-  if (!options.startDate || !options.endDate || !isDateKey(options.startDate) || !isDateKey(options.endDate) || options.startDate > options.endDate) {
+  if (
+    !options.startDate ||
+    !options.endDate ||
+    !isDateKey(options.startDate) ||
+    !isDateKey(options.endDate) ||
+    options.startDate > options.endDate
+  ) {
     throw new Error("Custom period requires valid startDate and endDate.");
   }
   return { type: "custom", startDate: options.startDate, endDate: options.endDate };
 }
 
-function calculateFileGrowth(previous: NormalizedSnapshot, current: NormalizedSnapshot): Array<{ path: string; addedWords: number }> {
+function calculateFileGrowth(
+  previous: NormalizedSnapshot,
+  current: NormalizedSnapshot,
+): Array<{ path: string; addedWords: number }> {
   const paths = new Set([...Object.keys(previous.files), ...Object.keys(current.files)]);
   return [...paths]
-    .map((path) => ({ path, addedWords: Math.max(0, (current.files[path] ?? 0) - (previous.files[path] ?? 0)) }))
+    .map((path) => ({
+      path,
+      addedWords: Math.max(0, (current.files[path] ?? 0) - (previous.files[path] ?? 0)),
+    }))
     .filter((file) => file.addedWords > 0)
     .sort((a, b) => b.addedWords - a.addedWords || a.path.localeCompare(b.path));
 }
@@ -316,7 +381,10 @@ function buildMonthlyGrowth(daily: WritingGrowthDaily[]): WritingGrowthMonth[] {
   });
 }
 
-function buildWritingGrowthFeedback(summary: WritingGrowthSummary, periodDays: number): WritingGrowthFeedback {
+function buildWritingGrowthFeedback(
+  summary: WritingGrowthSummary,
+  periodDays: number,
+): WritingGrowthFeedback {
   if (summary.baseline_only) {
     return {
       strength: "已建立当前字数基线。",
@@ -326,14 +394,24 @@ function buildWritingGrowthFeedback(summary: WritingGrowthSummary, periodDays: n
   }
 
   const writingRatio = periodDays > 0 ? summary.writing_days / periodDays : 0;
-  const topShare = summary.total_added_words > 0 ? summary.top_days.reduce((sum, day) => sum + day.added_words, 0) / summary.total_added_words : 0;
+  const topShare =
+    summary.total_added_words > 0
+      ? summary.top_days.reduce((sum, day) => sum + day.added_words, 0) /
+        summary.total_added_words
+      : 0;
   return {
     strength:
       writingRatio >= 0.45 || summary.longest_streak >= 14
         ? `本期写作天数较多，最长连续写作达到 ${summary.longest_streak} 天，说明记录习惯较稳定。`
         : `本期已经形成 ${summary.writing_days} 个写作日，最长连续写作 ${summary.longest_streak} 天。`,
-    risk: topShare >= 0.45 ? "新增字数主要集中在少数几天，说明写作节奏仍有波动。" : "整体没有明显依赖少数高产日，但仍需要关注低产间隔。",
-    suggestion: summary.current_streak > 0 ? "下期优先延续当前连续写作节奏，减少长时间中断。" : "下期优先保持每周稳定写作，而不是追求单日高产。",
+    risk:
+      topShare >= 0.45
+        ? "新增字数主要集中在少数几天，说明写作节奏仍有波动。"
+        : "整体没有明显依赖少数高产日，但仍需要关注低产间隔。",
+    suggestion:
+      summary.current_streak > 0
+        ? "下期优先延续当前连续写作节奏，减少长时间中断。"
+        : "下期优先保持每周稳定写作，而不是追求单日高产。",
   };
 }
 
@@ -360,7 +438,11 @@ function currentWritingStreak(daily: WritingGrowthDaily[], threshold: number): n
 
 function enumerateDates(startDate: string, endDate: string): string[] {
   const dates: string[] = [];
-  for (let current = localDate(startDate); current <= localDate(endDate); current = addDays(current, 1)) {
+  for (
+    let current = localDate(startDate);
+    current <= localDate(endDate);
+    current = addDays(current, 1)
+  ) {
     dates.push(dateKey(current));
   }
   return dates;
@@ -386,7 +468,9 @@ function isDateKey(value: string): boolean {
 }
 
 function containsCjk(value: string): boolean {
-  return Array.from(value).some((char) => /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(char));
+  return Array.from(value).some((char) =>
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(char),
+  );
 }
 
 function renderDailyCumulativeSvg(daily: WritingGrowthDaily[]): string {
@@ -399,9 +483,15 @@ function renderDailyCumulativeSvg(daily: WritingGrowthDaily[]): string {
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const maxValue = niceMax(Math.max(1, ...daily.map((day) => day.cumulativeWords)));
-  const xScale = (index: number) => left + (plotWidth * index) / Math.max(1, daily.length - 1);
+  const xScale = (index: number) =>
+    left + (plotWidth * index) / Math.max(1, daily.length - 1);
   const yScale = (value: number) => top + plotHeight - (value / maxValue) * plotHeight;
-  const path = daily.map((day, index) => `${index === 0 ? "M" : "L"} ${formatNumber(xScale(index))} ${formatNumber(yScale(day.cumulativeWords))}`).join(" ");
+  const path = daily
+    .map(
+      (day, index) =>
+        `${index === 0 ? "M" : "L"} ${formatNumber(xScale(index))} ${formatNumber(yScale(day.cumulativeWords))}`,
+    )
+    .join(" ");
   const ticks = [0, maxValue / 2, maxValue].map((tick) => {
     const y = yScale(tick);
     return `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d8dee4"/><text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end">${Math.round(tick)}</text>`;
@@ -433,7 +523,10 @@ function renderMonthlyAddedSvg(monthly: WritingGrowthMonth[]): string {
   const plotHeight = height - top - bottom;
   const maxValue = niceMax(Math.max(1, ...monthly.map((month) => month.addedWords)));
   const barGap = 8;
-  const barWidth = Math.max(10, (plotWidth - barGap * Math.max(0, monthly.length - 1)) / Math.max(1, monthly.length));
+  const barWidth = Math.max(
+    10,
+    (plotWidth - barGap * Math.max(0, monthly.length - 1)) / Math.max(1, monthly.length),
+  );
   const bars = monthly.map((month, index) => {
     const heightValue = (month.addedWords / maxValue) * plotHeight;
     const x = left + index * (barWidth + barGap);
@@ -460,7 +553,10 @@ function renderWritingHeatmapSvg(daily: WritingGrowthDaily[]): string {
   const left = 34;
   const top = 26;
   const startWeekday = daily[0] ? localDate(daily[0].date).getDay() : 0;
-  const maxWeek = Math.max(0, ...daily.map((_, index) => Math.floor((index + startWeekday) / 7)));
+  const maxWeek = Math.max(
+    0,
+    ...daily.map((_, index) => Math.floor((index + startWeekday) / 7)),
+  );
   const width = left + (maxWeek + 1) * (cell + gap) + 24;
   const height = top + 7 * (cell + gap) + 30;
   const maxWords = Math.max(1, ...daily.map((day) => day.addedWords));
@@ -481,7 +577,9 @@ function renderWritingHeatmapSvg(daily: WritingGrowthDaily[]): string {
   ].join("\n");
 }
 
-function pickDateLabels(daily: WritingGrowthDaily[]): Array<{ day: WritingGrowthDaily; index: number }> {
+function pickDateLabels(
+  daily: WritingGrowthDaily[],
+): Array<{ day: WritingGrowthDaily; index: number }> {
   if (daily.length <= 2) {
     return daily.map((day, index) => ({ day, index }));
   }
@@ -498,7 +596,10 @@ function pickDateLabels(daily: WritingGrowthDaily[]): Array<{ day: WritingGrowth
 function heatColor(words: number, maxWords: number): string {
   if (words <= 0) return "#ebedf0";
   const colors = ["#b7e4c7", "#74c69d", "#2d6a4f", "#1b4332"];
-  const index = Math.min(colors.length - 1, Math.ceil((words / maxWords) * colors.length) - 1);
+  const index = Math.min(
+    colors.length - 1,
+    Math.ceil((words / maxWords) * colors.length) - 1,
+  );
   return colors[index] ?? colors[0];
 }
 
@@ -518,5 +619,9 @@ function formatInteger(value: number): string {
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

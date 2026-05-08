@@ -91,14 +91,14 @@ Annual Review 是 Obsidian 的年度复盘工作流插件。它从用户一年�
 
 候选类型：
 
-| 类型 | 用途 | 证据 |
-| --- | --- | --- |
-| `topic` | 贯穿全年的主题或方向 | 标签、文件夹、标题、链接、月度分布、代表笔记 |
-| `note` | 值得回看的代表笔记 | 字数、链接、任务、修改时间、主题归属、上下文摘录 |
-| `project` | 可能需要继续推进的项目线 | 文件夹、任务、双链、时间跨度 |
-| `task` | 需要年度层面判断或下一步行动的任务/任务簇 | Markdown 任务、任务状态、上下文标题、源笔记 |
-| `dormant-note` | 很久未动但可能有价值的笔记 | 历史链接、主题归属、最后修改时间 |
-| `bridge-note` | 连接多个主题或项目区域的桥接笔记 | 反链、出链、跨文件夹连接、主题跨度 |
+| 类型           | 用途                                      | 证据                                             |
+| -------------- | ----------------------------------------- | ------------------------------------------------ |
+| `topic`        | 贯穿全年的主题或方向                      | 标签、文件夹、标题、链接、月度分布、代表笔记     |
+| `note`         | 值得回看的代表笔记                        | 字数、链接、任务、修改时间、主题归属、上下文摘录 |
+| `project`      | 可能需要继续推进的项目线                  | 文件夹、任务、双链、时间跨度                     |
+| `task`         | 需要年度层面判断或下一步行动的任务/任务簇 | Markdown 任务、任务状态、上下文标题、源笔记      |
+| `dormant-note` | 很久未动但可能有价值的笔记                | 历史链接、主题归属、最后修改时间                 |
+| `bridge-note`  | 连接多个主题或项目区域的桥接笔记          | 反链、出链、跨文件夹连接、主题跨度               |
 
 `Anomaly` 不作为 Review Board v1 候选类型；它是候选生成阶段的扫描信号，可用于解释 `topic`、`note`、`project`、`task`、`dormant-note` 或 `bridge-note` 为什么出现。
 
@@ -139,15 +139,15 @@ Review Board 是复盘主界面。用户逐项处理候选，而不是直接接�
 
 行动是年报的核心输出之一。候选被接受后，Review Board v1 的按钮只使用 DEC-40 操作集；行动记录可以保留更具体的结果标签，方便年报表达。
 
-| Review Board 操作 | 含义 |
-| --- | --- |
-| Accept | 接受候选作为年度复盘结果。 |
-| Ignore | 本次复盘不采用，但保留状态。 |
-| Merge topic | 将重复主题合并到目标主题。 |
-| Rename topic | 使用用户命名替代机器建议标题。 |
-| Add to annual highlights | 将主题、笔记或桥接笔记加入年度精选。 |
-| Add to actions | 将候选转为下一步行动，可附带 continue、archive、drop、convert-to-project 或 revisit 等结果标签。 |
-| Open source note | 打开候选或证据来源，不改变状态。 |
+| Review Board 操作        | 含义                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| Accept                   | 接受候选作为年度复盘结果。                                                                       |
+| Ignore                   | 本次复盘不采用，但保留状态。                                                                     |
+| Merge topic              | 将重复主题合并到目标主题。                                                                       |
+| Rename topic             | 使用用户命名替代机器建议标题。                                                                   |
+| Add to annual highlights | 将主题、笔记或桥接笔记加入年度精选。                                                             |
+| Add to actions           | 将候选转为下一步行动，可附带 continue、archive、drop、convert-to-project 或 revisit 等结果标签。 |
+| Open source note         | 打开候选或证据来源，不改变状态。                                                                 |
 
 行动记录应包含：
 
@@ -249,7 +249,14 @@ type EvidenceRef = {
 type ReviewDecision = {
   id: string;
   candidateId: string;
-  action: "continue" | "merge" | "archive" | "drop" | "convert-to-project" | "revisit" | "custom";
+  action:
+    | "continue"
+    | "merge"
+    | "archive"
+    | "drop"
+    | "convert-to-project"
+    | "revisit"
+    | "custom";
   label: string;
   note: string;
   evidence: EvidenceRef[];
@@ -331,11 +338,15 @@ candidate
 
 ```md
 <!-- annual-review:generated:start section=\"themes\" -->
+
 ...
+
 <!-- annual-review:generated:end section=\"themes\" -->
 
 <!-- annual-review:user:start section=\"reflection\" -->
+
 用户写作区
+
 <!-- annual-review:user:end section=\"reflection\" -->
 ```
 
@@ -370,17 +381,17 @@ AI opt-in 模式：
 
 ## 9. 失败场景
 
-| 场景 | 风险 | 处理 |
-| --- | --- | --- |
-| vault 很大导致扫描慢 | 用户以为卡死 | 展示进度、允许取消、保留已扫描结果 |
-| include/exclude 配置错误 | 候选不可信 | 在年报方法说明中列出扫描范围和排除范围 |
-| metadata cache 不完整 | 链接/标签证据缺失 | 标注证据来源，允许重建索引 |
-| 候选质量差 | 用户失去信任 | 每项展示理由、分数来源和忽略操作 |
-| 重复主题过多 | 审核成本高 | 支持合并、重命名和批量忽略 |
-| AI 输出失败或不可解析 | 年报中断 | 回退确定性模板，保留用户已接受内容 |
-| 重新生成遇到用户编辑 | 内容丢失 | 只替换 generated 区块，必要时写副本 |
-| 目标文件被外部同步修改 | 覆盖冲突 | 比较 mtime/hash，提示 diff 或新副本 |
-| 源笔记被删除或移动 | 证据链接失效 | 标注 missing evidence，允许重新扫描 |
+| 场景                     | 风险              | 处理                                   |
+| ------------------------ | ----------------- | -------------------------------------- |
+| vault 很大导致扫描慢     | 用户以为卡死      | 展示进度、允许取消、保留已扫描结果     |
+| include/exclude 配置错误 | 候选不可信        | 在年报方法说明中列出扫描范围和排除范围 |
+| metadata cache 不完整    | 链接/标签证据缺失 | 标注证据来源，允许重建索引             |
+| 候选质量差               | 用户失去信任      | 每项展示理由、分数来源和忽略操作       |
+| 重复主题过多             | 审核成本高        | 支持合并、重命名和批量忽略             |
+| AI 输出失败或不可解析    | 年报中断          | 回退确定性模板，保留用户已接受内容     |
+| 重新生成遇到用户编辑     | 内容丢失          | 只替换 generated 区块，必要时写副本    |
+| 目标文件被外部同步修改   | 覆盖冲突          | 比较 mtime/hash，提示 diff 或新副本    |
+| 源笔记被删除或移动       | 证据链接失效      | 标注 missing evidence，允许重新扫描    |
 
 ## 10. 成功标准
 

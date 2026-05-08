@@ -108,6 +108,7 @@ npm run deploy:smoke
 "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:generate-annual-review-2026
 .codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --no-deploy
 ```
+
 ## Troubleshooting agent handoffs
 
 ### Ticket references this skill but the checkout has no `.codex/`
@@ -152,4 +153,3 @@ After repair, verify:
 gh auth status
 gh repo view --json nameWithOwner,url
 ```
-

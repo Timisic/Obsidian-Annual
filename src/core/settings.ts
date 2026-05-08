@@ -1,6 +1,7 @@
 import type { AnnualReviewSettings } from "./types";
 
-export const DEFAULT_LOCAL_CODEX_COMMAND = 'codex exec --color never --sandbox read-only --skip-git-repo-check -c \'features.codex_hooks=false\' --output-last-message "$CODEX_ANNUAL_REVIEW_OUTPUT" -';
+export const DEFAULT_LOCAL_CODEX_COMMAND =
+  "codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
 
 export const DEFAULT_SETTINGS: AnnualReviewSettings = {
   reportFolder: "Annual Reviews",
@@ -25,10 +26,7 @@ export function normalizeFolder(folder: string): string {
 }
 
 export function splitFolderList(value: string): string[] {
-  return value
-    .split(",")
-    .map(normalizeFolder)
-    .filter(Boolean);
+  return value.split(",").map(normalizeFolder).filter(Boolean);
 }
 
 export function joinFolderList(value: string[]): string {

@@ -20,14 +20,14 @@ These references support four MVP rules:
 
 ## Candidate Types
 
-| Type | Meaning | Primary evidence | Default user question |
-| --- | --- | --- | --- |
-| `topic` | A theme, direction, or cluster that appears across the year. | Tags, folders, headings, link clusters, representative notes, month distribution. | Is this a real annual theme? |
-| `note` | A specific note worth rereading or including as a representative note. | Word count, link count, recent activity, topic membership, excerpt. | Should this note be part of the annual review? |
-| `project` | A project thread that spans notes, tasks, folders, or links. | Project folder, task trail, linked notes, first/last activity. | Should this project continue, close, or become a report item? |
-| `task` | A task or task cluster that needs annual-level decision. | Markdown task source, completion state, nearby heading, linked note. | Does this task need a next action, archive decision, or omission? |
-| `dormant-note` | A note that was important before but has not been touched recently. | Last modified time, inbound links, old activity, topic membership. | Is this still worth maintaining or should it be archived? |
-| `bridge-note` | A note connecting multiple topics or project areas. | Distinct linked topics, inbound/outbound links, folder span. | Does this note deserve to become an index, summary, or annual highlight? |
+| Type           | Meaning                                                                | Primary evidence                                                                  | Default user question                                                    |
+| -------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `topic`        | A theme, direction, or cluster that appears across the year.           | Tags, folders, headings, link clusters, representative notes, month distribution. | Is this a real annual theme?                                             |
+| `note`         | A specific note worth rereading or including as a representative note. | Word count, link count, recent activity, topic membership, excerpt.               | Should this note be part of the annual review?                           |
+| `project`      | A project thread that spans notes, tasks, folders, or links.           | Project folder, task trail, linked notes, first/last activity.                    | Should this project continue, close, or become a report item?            |
+| `task`         | A task or task cluster that needs annual-level decision.               | Markdown task source, completion state, nearby heading, linked note.              | Does this task need a next action, archive decision, or omission?        |
+| `dormant-note` | A note that was important before but has not been touched recently.    | Last modified time, inbound links, old activity, topic membership.                | Is this still worth maintaining or should it be archived?                |
+| `bridge-note`  | A note connecting multiple topics or project areas.                    | Distinct linked topics, inbound/outbound links, folder span.                      | Does this note deserve to become an index, summary, or annual highlight? |
 
 Each candidate must have:
 
@@ -44,62 +44,62 @@ Each candidate must have:
 
 The required statuses are:
 
-| Status | Meaning | Report impact |
-| --- | --- | --- |
-| `candidate` | Newly scanned or still undecided. | Not included by default. |
-| `accepted` | User accepts the candidate as review-worthy. | Eligible for the annual report. |
-| `renamed` | User accepts the candidate with a user-facing title override. | Eligible for the annual report using `userTitle`. |
-| `merged` | User merged this candidate into another candidate. | Source candidate is not shown as standalone; target carries merged evidence. |
-| `ignored` | User intentionally skips it for this review. | Not included, but preserved in state. |
-| `archived` | User decides the item should be closed or archived. | Eligible for the decisions section if `includeInReport` is true. |
-| `next-action` | User turns the item into a follow-up action. | Eligible for the actions section. |
+| Status        | Meaning                                                       | Report impact                                                                |
+| ------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `candidate`   | Newly scanned or still undecided.                             | Not included by default.                                                     |
+| `accepted`    | User accepts the candidate as review-worthy.                  | Eligible for the annual report.                                              |
+| `renamed`     | User accepts the candidate with a user-facing title override. | Eligible for the annual report using `userTitle`.                            |
+| `merged`      | User merged this candidate into another candidate.            | Source candidate is not shown as standalone; target carries merged evidence. |
+| `ignored`     | User intentionally skips it for this review.                  | Not included, but preserved in state.                                        |
+| `archived`    | User decides the item should be closed or archived.           | Eligible for the decisions section if `includeInReport` is true.             |
+| `next-action` | User turns the item into a follow-up action.                  | Eligible for the actions section.                                            |
 
 Allowed transitions:
 
-| From | To | Trigger |
-| --- | --- | --- |
-| `candidate` | `accepted` | Accept. |
-| `candidate`, `accepted` | `renamed` | Rename topic or candidate. |
-| `candidate`, `accepted`, `renamed` | `merged` | Merge topic into another topic. |
-| `candidate`, `accepted`, `renamed`, `next-action` | `ignored` | Ignore. |
-| `candidate`, `accepted`, `renamed`, `next-action` | `archived` | Archive or mark as archive decision. |
-| `candidate`, `accepted`, `renamed` | `next-action` | Add action. |
-| `ignored`, `archived`, `merged` | `candidate` | Only by explicit reset, not by repeated scan. |
+| From                                              | To            | Trigger                                       |
+| ------------------------------------------------- | ------------- | --------------------------------------------- |
+| `candidate`                                       | `accepted`    | Accept.                                       |
+| `candidate`, `accepted`                           | `renamed`     | Rename topic or candidate.                    |
+| `candidate`, `accepted`, `renamed`                | `merged`      | Merge topic into another topic.               |
+| `candidate`, `accepted`, `renamed`, `next-action` | `ignored`     | Ignore.                                       |
+| `candidate`, `accepted`, `renamed`, `next-action` | `archived`    | Archive or mark as archive decision.          |
+| `candidate`, `accepted`, `renamed`                | `next-action` | Add action.                                   |
+| `ignored`, `archived`, `merged`                   | `candidate`   | Only by explicit reset, not by repeated scan. |
 
 Repeated scans may update reason, score, sort rank, and evidence on undecided candidates. They must not overwrite `accepted`, `renamed`, `merged`, `ignored`, `archived`, or `next-action` decisions.
 
 ## Actions
 
-| Action | Applies to | State effect | Required payload |
-| --- | --- | --- | --- |
-| Accept | All candidate types. | `candidate` -> `accepted`. | Candidate id. |
-| Ignore | All candidate types. | Any active status -> `ignored`. | Candidate id, optional note. |
-| Merge topic | `topic`; later may support similar `note` merge. | Source -> `merged`; target receives merged source id/evidence. | Source id, target id. |
-| Rename topic | `topic`; optional for other candidates. | Active status -> `renamed`. | Candidate id, non-empty user title. |
-| Add to annual highlights | `topic`, `note`, `bridge-note`. | Keeps current accepted/renamed status or accepts candidate first; sets `includeInAnnualHighlights`. | Candidate id. |
-| Add to actions | All candidate types, especially project/task/dormant-note. | Active status -> `next-action`; creates decision. | Candidate id, action label, optional note. |
-| Archive | All candidate types. | Active status -> `archived`. | Candidate id, optional note. |
-| Open source note | All candidates with note evidence. | No state change. | Candidate id, evidence id or source path. |
+| Action                   | Applies to                                                 | State effect                                                                                        | Required payload                           |
+| ------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Accept                   | All candidate types.                                       | `candidate` -> `accepted`.                                                                          | Candidate id.                              |
+| Ignore                   | All candidate types.                                       | Any active status -> `ignored`.                                                                     | Candidate id, optional note.               |
+| Merge topic              | `topic`; later may support similar `note` merge.           | Source -> `merged`; target receives merged source id/evidence.                                      | Source id, target id.                      |
+| Rename topic             | `topic`; optional for other candidates.                    | Active status -> `renamed`.                                                                         | Candidate id, non-empty user title.        |
+| Add to annual highlights | `topic`, `note`, `bridge-note`.                            | Keeps current accepted/renamed status or accepts candidate first; sets `includeInAnnualHighlights`. | Candidate id.                              |
+| Add to actions           | All candidate types, especially project/task/dormant-note. | Active status -> `next-action`; creates decision.                                                   | Candidate id, action label, optional note. |
+| Archive                  | All candidate types.                                       | Active status -> `archived`.                                                                        | Candidate id, optional note.               |
+| Open source note         | All candidates with note evidence.                         | No state change.                                                                                    | Candidate id, evidence id or source path.  |
 
 ## Minimal UI
 
-| Region | Contents | Required behavior |
-| --- | --- | --- |
-| Left candidate list | Queue grouped by status/type, with title, type badge, evidence count, and current status. | Selecting a row loads the candidate detail without changing state. Filters: To review, Accepted, Actions, Archived/Ignored. |
-| Right evidence and actions | Candidate title, reason, source notes, evidence snippets, rank explanation, and action buttons. | Evidence rows open source notes. Primary action is Accept for `candidate`, Add action for accepted project/task/dormant candidates, and Review target for `merged`. |
-| Bottom progress | Counts for total candidates, reviewed items, accepted/highlighted items, next actions, ignored/archived items. | Progress is based on non-`candidate` statuses and updates after every state change. |
+| Region                     | Contents                                                                                                       | Required behavior                                                                                                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Left candidate list        | Queue grouped by status/type, with title, type badge, evidence count, and current status.                      | Selecting a row loads the candidate detail without changing state. Filters: To review, Accepted, Actions, Archived/Ignored.                                         |
+| Right evidence and actions | Candidate title, reason, source notes, evidence snippets, rank explanation, and action buttons.                | Evidence rows open source notes. Primary action is Accept for `candidate`, Add action for accepted project/task/dormant candidates, and Review target for `merged`. |
+| Bottom progress            | Counts for total candidates, reviewed items, accepted/highlighted items, next actions, ignored/archived items. | Progress is based on non-`candidate` statuses and updates after every state change.                                                                                 |
 
 Markdown wireframe:
 
-| Candidate queue | Evidence and actions |
-| --- | --- |
+| Candidate queue                                                                                                                                                      | Evidence and actions                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `To review (11)`<br>`[topic] Writing Systems`<br>`[note] Projects/Research.md`<br>`[bridge-note] Index/MOCs.md`<br><br>`Accepted (4)`<br>`[topic] Local-first tools` | `Writing Systems`<br>Reason: Appears in 8 notes across 6 months; links project notes and daily reflections.<br><br>Evidence:<br>`Daily/2026-01-02.md#Reflection` - tag `#writing`<br>`Projects/Research.md` - 4 inbound links<br>`Topics/Writing.md` - representative note<br><br>Actions:<br>`Accept` `Rename` `Merge topic` `Add to annual highlights` `Add to actions` `Ignore` `Archive` `Open source note` |
 
 Bottom bar:
 
 | Reviewed | Accepted | Next actions | Ignored | Archived |
-| --- | --- | --- | --- | --- |
-| `7 / 18` | `4` | `3` | `2` | `1` |
+| -------- | -------- | ------------ | ------- | -------- |
+| `7 / 18` | `4`      | `3`          | `2`     | `1`      |
 
 ## Persistence
 
@@ -148,16 +148,16 @@ Merge rule for repeated scans:
 
 Every candidate must include at least one `EvidenceSource`:
 
-| Field | Meaning |
-| --- | --- |
-| `id` | Stable within candidate. |
-| `kind` | `note`, `tag`, `link`, `task`, `timeline`, `folder`, or `excerpt`. |
-| `sourcePath` | Vault-relative note path when applicable. |
-| `target` | Tag, link target, task line, folder path, or timeline bucket. |
-| `label` | Human-readable evidence label. |
-| `excerpt` | Optional short source text. |
-| `reason` | Why this evidence supports the candidate. |
-| `missing` | True when evidence for a previously accepted or otherwise user-decided candidate cannot be found after rescan. |
+| Field        | Meaning                                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `id`         | Stable within candidate.                                                                                       |
+| `kind`       | `note`, `tag`, `link`, `task`, `timeline`, `folder`, or `excerpt`.                                             |
+| `sourcePath` | Vault-relative note path when applicable.                                                                      |
+| `target`     | Tag, link target, task line, folder path, or timeline bucket.                                                  |
+| `label`      | Human-readable evidence label.                                                                                 |
+| `excerpt`    | Optional short source text.                                                                                    |
+| `reason`     | Why this evidence supports the candidate.                                                                      |
+| `missing`    | True when evidence for a previously accepted or otherwise user-decided candidate cannot be found after rescan. |
 
 The UI must never show an accepted candidate without evidence. If all evidence is missing after rescan, keep the user decision and show a "missing evidence" warning.
 
