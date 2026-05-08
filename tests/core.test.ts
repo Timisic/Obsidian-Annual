@@ -35,7 +35,7 @@ import {
 import { countText } from "../src/core/tokenizer";
 import { toTopicEvolutionJson } from "../src/core/topics";
 import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
-import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
+import { COMMAND_IDS, COMMAND_NAMES, COMMAND_SURFACE } from "../src/core/commands";
 import {
   ANNUAL_REVIEW_END_MARKER,
   ANNUAL_REVIEW_START_MARKER,
@@ -1676,14 +1676,56 @@ describe("plugin command ids", () => {
   it("exposes stable command ids and English command palette labels", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
+      generateSmoke2026: "generate-annual-review-2026",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
+      generateSmoke2026: "Smoke: Generate 2026 report",
       openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });
+    expect(COMMAND_SURFACE).toEqual([
+      { id: "generate-annual-review", name: "Generate report" },
+      { id: "open-annual-review-dashboard", name: "Open Review Board" },
+      { id: "rebuild-annual-review-index", name: "Rebuild index" },
+    ]);
+    expect(COMMAND_SURFACE.map((command) => command.id)).not.toContain(
+      "generate-smoke-report",
+    );
+  });
+});
+
+describe("MVP public surface", () => {
+  it("keeps package scripts on release and dev-only deploy surfaces", () => {
+    const scripts = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"))
+      .scripts as Record<string, string>;
+
+    expect(scripts["release:plugin"]).toBe("node scripts/deploy-plugin.mjs --no-deploy");
+    expect(scripts["release:check"]).toContain("release:plugin");
+    expect(scripts["dev:deploy-plugin"]).toBe("node scripts/deploy-plugin.mjs");
+    expect(scripts["dev:deploy-smoke"]).toBe("node scripts/deploy-smoke.mjs");
+    expect(scripts).not.toHaveProperty("deploy:plugin");
+    expect(scripts).not.toHaveProperty("deploy:smoke");
+    expect(scripts).not.toHaveProperty("ai:context-placeholder");
+    expect(scripts).not.toHaveProperty("writing-growth");
+    expect(JSON.stringify(scripts)).not.toMatch(
+      /install-smoke|smoke-vault|validation vault|\/Users\/hong/u,
+    );
+  });
+
+  it("keeps the Review Board view off broad dashboard analytics", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+
+    expect(source).toContain("reviewQueue");
+    expect(source).toContain("applyReviewAction");
+    expect(source).not.toMatch(
+      /renderTrend|renderHeatmap|renderGrowth|topTags|topFolders|topLinks|monthlyTrend|dailyWordHeatmap|wordGrowth/u,
+    );
   });
 });
 

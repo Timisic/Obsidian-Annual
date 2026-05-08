@@ -9,20 +9,30 @@ Use this skill to close the loop between code changes and the real Obsidian smok
 
 ## Fixed context
 
-- Repo: `/Users/hong/code/Obsidian-Annual`
+- Repo: current repository checkout
 - Smoke vault path: `/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault`
 - Vault name for CLI: `install-smoke-vault`
 - Obsidian CLI: `/Applications/Obsidian.app/Contents/MacOS/obsidian-cli`
 - Plugin id: `annual-review`
 - Current report: `Annual Reviews/2026 Annual Review.md`
 
+This skill targets the real Obsidian smoke vault above. The repo-local
+`tests/fixtures/vault/` directory is only a unit-test fixture and is not a
+substitute for Obsidian CLI validation.
+
 ## Workflow
 
 1. Deploy the latest plugin build:
 
    ```bash
-   cd /Users/hong/code/Obsidian-Annual
-   npm run deploy:smoke
+   cd /path/to/this/repo
+   npm run dev:deploy-smoke
+   ```
+
+   Override the default smoke vault path when needed:
+
+   ```bash
+   SMOKE_VAULT_PATH=/path/to/install-smoke-vault npm run dev:deploy-smoke
    ```
 
 2. Reload the plugin and rebuild its index:
@@ -34,13 +44,16 @@ Use this skill to close the loop between code changes and the real Obsidian smok
    "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:rebuild-annual-review-index
    ```
 
-3. Generate the report when possible:
+3. Generate the report headlessly through the smoke-only command:
 
    ```bash
-   "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:generate-annual-review
+   "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:generate-annual-review-2026
    ```
 
-   Current caveat: this command opens the year modal, so it is not fully headless. If the task requires autonomous iteration, add or request a non-interactive dev command such as `annual-review:generate-annual-review-2026`, then use that in the loop.
+   `npm run dev:deploy-smoke` enables this hidden command by writing
+   `enableSmokeCommands: true` into the smoke vault plugin `data.json`. The
+   command is for agent/developer smoke validation only; it is not part of the
+   ordinary user-facing command path.
 
 4. Read and audit the generated report:
 
@@ -58,7 +71,7 @@ Run the bundled helper for deployment, plugin reload, index rebuild, and report 
 .codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh
 ```
 
-Use `--generate` only when interactive generation is acceptable:
+Use `--generate` to run the smoke-only headless 2026 generation path:
 
 ```bash
 .codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate
@@ -99,10 +112,10 @@ OBSIDIAN_CLI=/Applications/Obsidian.app/Contents/MacOS/obsidian-cli
 
 ## Preferred follow-up improvement
 
-If autonomous report generation is blocked by the year modal, implement a dev/smoke-only non-interactive command or script first. The desired loop is:
+The preferred autonomous loop is:
 
 ```bash
-npm run deploy:smoke
+npm run dev:deploy-smoke
 "$OBSIDIAN_CLI" vault=install-smoke-vault plugin:reload id=annual-review
 "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:rebuild-annual-review-index
 "$OBSIDIAN_CLI" vault=install-smoke-vault command id=annual-review:generate-annual-review-2026
@@ -126,7 +139,7 @@ If `.codex/` is missing, do not treat the ticket as wrong. Fall back to the comm
 - `.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh`
 - `.codex/skills/annual-review-smoke-vault/agents/openai.yaml`
 - any required deploy script such as `scripts/deploy-plugin.mjs`
-- package scripts such as `deploy:smoke`
+- package scripts such as `dev:deploy-smoke`
 
 ### `gh auth status` reports an invalid keyring token
 

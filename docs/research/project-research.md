@@ -2,6 +2,12 @@
 
 调研日期：2026-05-03
 
+> 状态：历史调研资料。当前 MVP surface 以
+> [`docs/feature-inventory.md`](../feature-inventory.md) 和
+> [`docs/review-board-alignment-decisions.md`](../review-board-alignment-decisions.md)
+> 为准；本文中关于泛用 dashboard、分享卡、Canvas/Bases/HTML 导出和普通 agent
+> 安装路径的设想都已降级为 Backlog，不是当前主能力。
+
 ## 结论摘要
 
 适配 Obsidian 的年度报告不应该先做成一个独立的「大屏营销页」。更合适的第一版是本地优先的 Obsidian 插件：扫描 vault 中的 Markdown、属性、标签、链接和日记文件，生成一份可编辑的年度回顾笔记，并提供一个轻量 dashboard/view 用于预览、筛选、重新生成和导出分享图。
@@ -12,7 +18,7 @@
 - 现有插件覆盖了字数、写作热力图、看板、数据查询、图表等单点需求，但没有成熟的「面向个人知识库内容理解 + 年度叙事 + 可分享导出」的一体化插件。
 - 年度报告类产品的核心价值在于把数据组织成故事：全年节奏、峰值月份、主题迁移、代表性内容、惊喜洞察、可分享卡片。
 
-推荐 MVP：
+历史推荐 MVP（已由 DEC-54 裁剪）：
 
 1. `Generate Annual Review` 命令：选择年份、范围、隐私选项，生成 `Annual Reviews/YYYY.md`。
 2. 自定义 `ItemView`：提供年度统计总览、主题/标签/链接趋势、月份时间线、代表性笔记、导出按钮。
