@@ -251,6 +251,8 @@ const REPORT_TEXT = {
     staleCoreSignal: (count: number) =>
       `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
     noHighValueNotes: "No review-candidate signals found.",
+    noReviewedCandidates:
+      "No reviewed Review Board decisions are ready for the report yet. Accept, highlight, or turn candidates into actions before they are included here.",
     nextPeriodActions: "Next-Period Actions",
     aiNextActions: "Next Actions",
     mocAction: (topic: string) =>
@@ -411,6 +413,8 @@ const REPORT_TEXT = {
     staleCoreSignal: (count: number) =>
       `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
     noHighValueNotes: "未找到候选回看笔记信号。",
+    noReviewedCandidates:
+      "还没有可写入年报的 Review Board 审核决策。请先接受候选、加入年度精选或转成行动，再让它们进入这里。",
     nextPeriodActions: "下期行动",
     aiNextActions: "下期行动",
     mocAction: (topic: string) =>
@@ -632,29 +636,30 @@ function renderDataMethodology(
   const text = REPORT_TEXT[language];
   const comparison = aggregate.snapshotComparison;
   const methodology =
-    comparison.source === "historical-snapshot" && comparison.baselineCapturedAt
-      ? text.methodologyHistorical(
-          comparison.baselineCapturedAt,
-          comparison.currentCapturedAt,
-        )
-      : comparison.source === "scope-mismatch" && comparison.baselineCapturedAt
-        ? text.methodologyScopeMismatch(comparison.baselineCapturedAt)
+    comparison.source === "historical-snapshot"
+      ? language === "zh"
+        ? "增长数据来自插件自有 snapshot 的字数差异；只统计字数实际变化，避免把批量 mtime 变化写成年增长。"
+        : "Growth data comes from word-count differences in plugin-owned snapshots; only real word-count changes are counted, avoiding mtime-only batch edits."
+      : comparison.source === "scope-mismatch"
+        ? language === "zh"
+          ? "本次扫描范围与历史 snapshot 不一致，因此只展示当前 vault 推断，避免跨范围比较。"
+          : "The scan scope differs from the historical snapshot, so this report uses current-vault inference instead of mixing incompatible ranges."
         : text.methodologyFallback;
 
+  const scopeLabel = language === "zh" ? "范围" : "Scope";
+  const excludedLabel = language === "zh" ? "排除" : "excluded";
+  const patternsLabel = language === "zh" ? "排除模式" : "patterns";
+  const reportFolderLabel = language === "zh" ? "报告目录" : "report folder";
+
   return [
-    methodology,
-    "",
-    `| ${text.metric} | ${text.value} |`,
-    "| --- | --- |",
-    `| ${text.growthDataSource} | ${growthDataSourceLabel(aggregate, language)} |`,
-    `| ${text.scanScope} | ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)} |`,
-    `| ${text.excludedScope} | ${formatScope(aggregate.scope.excludeFolders, text.none)} |`,
-    `| ${text.excludePatterns} | ${formatScope(aggregate.scope.excludePatterns, text.none)} |`,
-    `| ${text.reportFolder} | ${aggregate.scope.reportFolder} |`,
-    ...(comparison.baselineCapturedAt
-      ? [`| ${text.snapshotBaseline} | ${comparison.baselineCapturedAt} |`]
+    `- ${text.growthDataSource}: ${growthDataSourceLabel(aggregate, language)}`,
+    ...(comparison.source === "historical-snapshot"
+      ? [
+          `- ${text.snapshotWordDelta}: ${formatSignedInteger(comparison.wordDelta)}`,
+        ]
       : []),
-    `| ${text.currentSnapshot} | ${comparison.currentCapturedAt} |`,
+    `- ${scopeLabel}: ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)}; ${excludedLabel}: ${formatScope(aggregate.scope.excludeFolders, text.none)}; ${patternsLabel}: ${formatScope(aggregate.scope.excludePatterns, text.none)}; ${reportFolderLabel}: ${aggregate.scope.reportFolder}`,
+    `- ${methodology}`,
   ].join("\n");
 }
 
@@ -1274,6 +1279,9 @@ function renderHighValueNotes(
   if (reviewSession) {
     return renderReviewedCandidates(reviewSession, language);
   }
+  if (!aiEnabled) {
+    return `- ${text.noReviewedCandidates}`;
+  }
   const aiNoteMap = new Map(aiNotes.map((note) => [normalizeNotePath(note.path), note]));
   const topNotes =
     aggregate.highValueNotes.length > 0
@@ -1308,14 +1316,12 @@ function renderReviewedCandidates(
   const text = REPORT_TEXT[language];
   const candidates = reportIncludedCandidates(reviewSession);
   if (candidates.length === 0) {
-    return `- ${text.noHighValueNotes}`;
+    return `- ${text.noReviewedCandidates}`;
   }
   const highlighted = candidates.filter(
     (candidate) => candidate.includeInAnnualHighlights,
   );
   return [
-    reviewedCandidateSummary(candidates.length, language),
-    "",
     `### ${text.topHighValueNotes}`,
     "",
     ...candidates.flatMap((candidate) => renderReviewedCandidate(candidate, language)),
@@ -1325,43 +1331,38 @@ function renderReviewedCandidates(
           "",
           ...highlighted.map(
             (candidate) =>
-              `- ${reviewCandidateLink(candidate)}: ${sanitizeInlineMarkdown(candidate.reason)}`,
+              `- ${reviewCandidateLink(candidate)}${reviewCandidateEvidenceSuffix(candidate, language)}`,
           ),
         ]
       : []),
   ].join("\n");
 }
 
-function reviewedCandidateSummary(
-  count: number,
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  return language === "zh"
-    ? `下面 ${count} 个已审核候选将进入年度回顾，因为用户已接受、加入精选或转成行动。`
-    : `These ${count} reviewed candidates are included because they were accepted, highlighted, or turned into actions.`;
-}
-
 function renderReviewedCandidate(
   candidate: ReviewCandidate,
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
-  const text = REPORT_TEXT[language];
   const title = reviewCandidateLink(candidate);
+  return [
+    `- ${title} (${candidate.status})${reviewCandidateEvidenceSuffix(candidate, language)}`,
+  ];
+}
+
+function reviewCandidateEvidenceSuffix(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
   const evidence = candidate.evidence
     .filter((item) => !item.missing)
     .slice(0, 4)
     .map((item) => item.sourcePath || item.target)
     .filter(Boolean);
-  return [
-    `#### ${title}`,
-    "",
-    `${text.highValueType}: ${candidate.status}。${text.highValueReason}: ${sanitizeParagraphMarkdown(candidate.reason)}`,
-    "",
-    evidence.length > 0
-      ? `${text.highValueEvidence}: ${evidence.map(wikiLinkPlain).join(", ")}`
-      : text.highValueNoAuditableEvidence,
-    "",
-  ];
+
+  if (evidence.length === 0) {
+    return "";
+  }
+
+  return ` - ${REPORT_TEXT[language].highValueEvidence}: ${evidence.map(wikiLinkPlain).join(", ")}`;
 }
 
 function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCandidate[] {
@@ -1399,8 +1400,6 @@ function renderHighValueNoteSection(
       "",
       `${labels.highValueType}: ${note.suggestionLabel}。${labels.highValueNoAuditableEvidence}`,
       "",
-      `${labels.manualConfirmation}: ${labels.manualConfirmationInstruction}`,
-      "",
     ];
   }
   return [
@@ -1414,8 +1413,6 @@ function renderHighValueNoteSection(
     ),
     "",
     `${labels.suggestedAction}: ${action}`,
-    "",
-    `${labels.manualConfirmation}: ${labels.manualConfirmationInstruction}`,
     "",
   ];
 }
@@ -1494,7 +1491,7 @@ function renderNextPeriodActions(
     (language === "zh" ? "增长最快主题" : "the fastest-growing topic");
   const highValueFocus = reviewSession
     ? reportIncludedCandidates(reviewSession).slice(0, 2).map(reviewCandidateLink)
-    : aggregate.highValueNotes.slice(0, 2).map((note) => wikiLink(note.path, note.title));
+    : [];
   return [
     `1. ${text.mocAction(topTopic)}`,
     `2. ${aggregate.isolatedPotentialNotes.length > 0 ? text.isolatedNotesAction(aggregate.isolatedPotentialNotes.length) : text.noIsolatedNotesAction}`,
