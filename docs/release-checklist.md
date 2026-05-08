@@ -26,6 +26,22 @@ npm run release:check
 - `main.js`
 - `styles.css`
 
+## Agent smoke-vault 验证
+
+开发/agent 验证真实 Obsidian 行为时，使用 repo-local smoke skill 指向的
+`/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault`，而不是
+`tests/fixtures/vault/`。后者只用于单元测试 fixture，不能证明 Obsidian CLI
+reload、command palette 或报告读取闭环。
+
+```bash
+npm run deploy:smoke
+.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate
+```
+
+`deploy:smoke` 会将当前构建部署到 smoke vault 并仅在该 vault 的插件
+`data.json` 中启用隐藏 smoke 命令；可用 `SMOKE_VAULT_PATH` 覆盖默认 smoke
+vault 路径。普通用户安装验证仍走下面的手动路径。
+
 ## DEC-55 MVP readiness record (2026-05-08)
 
 Verdict: `Not ready`.
@@ -46,7 +62,7 @@ Evidence summary:
 | `npm run build` | Pass | production esbuild completed. |
 | `npm run lint` | Pass | `eslint .` completed. |
 | `npm run release:check` | Pass | `dist/annual-review` contains `manifest.json`, `main.js`, `styles.css`. |
-| Smoke deploy/reload/rebuild/generate/read | Pass | `.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate` deployed to `install-smoke-vault`, reloaded the plugin, rebuilt index, executed `annual-review:generate-annual-review-2026`, and read `Annual Reviews/2026 Annual Review.md` (14,712 bytes). |
+| Smoke deploy/reload/rebuild/generate/read | Pass | `.codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate` deployed to `install-smoke-vault`, reloaded the plugin, rebuilt index, executed `annual-review:generate-annual-review-2026`, and read `Annual Reviews/2026 Annual Review.md` (3,277 bytes). |
 | Report sanity checks | Pass | No quoted month topics, no deprecated `更新笔记`, no table-row wikilink alias pipes, no SVG embeds without explicit width, no `AI summary unavailable`, no `codex: command not found`; `建立 MOC` count was 0. |
 | Release artifact/version consistency | Pass | `manifest.json`, `package.json`, `versions.json`, and `dist/annual-review/manifest.json` all agree on version `0.1.0`; minimum Obsidian version is `1.7.2`. |
 

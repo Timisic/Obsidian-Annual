@@ -67,14 +67,6 @@ export default class AnnualReviewPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: COMMAND_IDS.generate2026,
-      name: COMMAND_NAMES.generate2026,
-      callback: () => {
-        void this.generateReport({ year: 2026, settings: this.settings });
-      },
-    });
-
-    this.addCommand({
       id: COMMAND_IDS.openDashboard,
       name: COMMAND_NAMES.openDashboard,
       callback: () => {
@@ -89,6 +81,16 @@ export default class AnnualReviewPlugin extends Plugin {
         await this.rebuildIndex();
       },
     });
+
+    if (this.settings.enableSmokeCommands) {
+      this.addCommand({
+        id: COMMAND_IDS.generateSmoke2026,
+        name: COMMAND_NAMES.generateSmoke2026,
+        callback: async () => {
+          await this.generateReport({ year: 2026, settings: this.settings });
+        },
+      });
+    }
 
     this.addSettingTab(new AnnualReviewSettingTab(this.app, this));
   }

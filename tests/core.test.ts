@@ -1676,13 +1676,13 @@ describe("plugin command ids", () => {
   it("exposes stable command ids and English command palette labels", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
-      generate2026: "generate-annual-review-2026",
+      generateSmoke2026: "generate-annual-review-2026",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
-      generate2026: "Generate 2026 report",
+      generateSmoke2026: "Smoke: Generate 2026 report",
       openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });
