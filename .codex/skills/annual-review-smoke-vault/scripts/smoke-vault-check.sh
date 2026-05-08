@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/Users/hong/code/Obsidian-Annual}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-$(cd "$SCRIPT_DIR/../../../.." && pwd)}"
 VAULT_NAME="${VAULT_NAME:-install-smoke-vault}"
 VAULT_PATH="${VAULT_PATH:-/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault}"
 OBSIDIAN_CLI="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cli}"

@@ -8,6 +8,7 @@
     "dev": "node esbuild.config.mjs",
     "ai:context-placeholder": "node scripts/obsidian-ai-context-placeholder.mjs",
     "deploy:plugin": "node scripts/deploy-plugin.mjs",
+    "deploy:smoke": "node scripts/deploy-plugin.mjs --target /Users/hong/code/obsidian-annual-workspaces/install-smoke-vault",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
