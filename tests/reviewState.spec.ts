@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { buildYearAggregate } from "../src/core/aggregate";
+import { buildReviewSession } from "../src/core/reviewCandidates";
+import { renderAnnualReview } from "../src/core/render";
 import {
   applyReviewAction,
   calculateReviewProgress,
@@ -8,7 +11,9 @@ import {
   type ReviewCandidateType,
   type ReviewSessionState,
 } from "../src/core/reviewState";
+import { DEFAULT_SETTINGS } from "../src/core/settings";
 import type { ExplanationReason } from "../src/core/types";
+import { fixtureVault } from "./fixtures";
 
 const at = "2026-05-04T15:00:00.000Z";
 
@@ -221,6 +226,70 @@ describe("review state", () => {
       ignored: 1,
     });
   });
+
+  it("builds stable review sessions from aggregate signals and preserves decisions on rescan", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const session = buildReviewSession(aggregate);
+    const topic = session.candidates.find((item) => item.type === "topic");
+    const note = session.candidates.find((item) => item.type !== "topic");
+
+    expect(session.candidates.length).toBeGreaterThan(0);
+    expect(topic?.evidence.length).toBeGreaterThan(0);
+    expect(note?.sourcePaths[0]).toMatch(/\.md$/u);
+
+    const accepted = applyReviewAction(session, {
+      type: "accept",
+      candidateId: note?.id ?? session.candidates[0]?.id ?? "",
+      at,
+    });
+    const rescanned = buildReviewSession(
+      buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS),
+      accepted,
+    );
+
+    expect(
+      rescanned.candidates.find((item) => item.id === (note?.id ?? ""))?.status,
+    ).toBe("accepted");
+  });
+
+  it("renders accepted review decisions and action decisions while excluding ignored candidates", () => {
+    const session = sessionWith([
+      candidate("accepted-note", "note"),
+      candidate("ignored-note", "note"),
+      candidate("action-note", "task"),
+    ]);
+    const accepted = applyReviewAction(session, {
+      type: "accept",
+      candidateId: "accepted-note",
+      at,
+    });
+    const ignored = applyReviewAction(accepted, {
+      type: "ignore",
+      candidateId: "ignored-note",
+      at,
+    });
+    const actioned = applyReviewAction(ignored, {
+      type: "add-to-actions",
+      candidateId: "action-note",
+      at,
+      decision: {
+        id: "decision-1",
+        action: "continue",
+        label: "Turn accepted evidence into a follow-up review",
+        includeInReport: true,
+      },
+    });
+    const aggregate = aggregateForReport();
+    const markdown = renderAnnualReview(aggregate, {
+      language: "en",
+      reviewSession: actioned,
+    });
+
+    expect(markdown).toContain("[[accepted-note|accepted-note]]");
+    expect(markdown).not.toContain("[[ignored-note|ignored-note]]");
+    expect(markdown).toContain("Turn accepted evidence into a follow-up review");
+    expect(markdown).not.toContain("Confirm, rename, ignore, or archive");
+  });
 });
 
 function sessionWith(candidates: ReviewCandidate[]): ReviewSessionState {
@@ -276,4 +345,31 @@ function evidenceFor(id: string): EvidenceSource {
     sourcePath: `${id}.md`,
     reason: "Source note supports the candidate.",
   };
+}
+
+function aggregateForReport() {
+  return buildYearAggregate(
+    [
+      {
+        path: "accepted-note.md",
+        ctime: Date.parse("2026-01-01T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-01T08:00:00.000Z"),
+        content: "accepted note has enough review words ".repeat(80),
+      },
+      {
+        path: "ignored-note.md",
+        ctime: Date.parse("2026-01-02T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-02T08:00:00.000Z"),
+        content: "ignored note has enough review words ".repeat(80),
+      },
+      {
+        path: "action-note.md",
+        ctime: Date.parse("2026-01-03T08:00:00.000Z"),
+        mtime: Date.parse("2026-01-03T08:00:00.000Z"),
+        content: "action note has enough review words ".repeat(80),
+      },
+    ],
+    2026,
+    DEFAULT_SETTINGS,
+  );
 }

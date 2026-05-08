@@ -130,6 +130,119 @@
   color: var(--interactive-accent);
 }
 
+.annual-review-board {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1.4fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.annual-review-board-queue,
+.annual-review-board-detail {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.annual-review-board-progress {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.annual-review-board-progress .annual-review-dashboard-metric {
+  min-height: 58px;
+  padding: 8px 10px;
+  background: var(--background-primary);
+}
+
+.annual-review-board-queue-group {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.annual-review-board-queue-group h4,
+.annual-review-board-detail h4 {
+  margin: 0 0 6px;
+  font-size: var(--font-ui-medium);
+}
+
+.annual-review-board-queue-group button {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.annual-review-board-queue-group button.is-active {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.annual-review-board-queue-group button span {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.annual-review-board-reason,
+.annual-review-board-rank {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+}
+
+.annual-review-board-evidence {
+  padding-left: 0;
+  list-style: none;
+}
+
+.annual-review-board-evidence li {
+  margin-bottom: 8px;
+}
+
+.annual-review-board-evidence button {
+  margin-right: 6px;
+}
+
+.annual-review-board-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.annual-review-board-actions .setting-item {
+  padding: 8px 0;
+}
+
+.annual-review-board-actions .setting-item-control {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.annual-review-board-merge {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.annual-review-board-merge select {
+  min-width: 180px;
+}
+
+@media (max-width: 760px) {
+  .annual-review-board {
+    grid-template-columns: 1fr;
+  }
+}
+
 .annual-review-dashboard-empty {
   color: var(--text-muted);
 }
