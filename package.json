@@ -7,6 +7,7 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
     "dev:deploy-plugin": "node scripts/deploy-plugin.mjs",
+    "dev:deploy-smoke": "node scripts/deploy-smoke.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",

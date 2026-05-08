@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/Users/hong/code/Obsidian-Annual}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_REPO_ROOT="$(cd -- "$SCRIPT_DIR/../../../.." && pwd)"
+REPO_ROOT="${REPO_ROOT:-$DEFAULT_REPO_ROOT}"
 VAULT_NAME="${VAULT_NAME:-install-smoke-vault}"
 VAULT_PATH="${VAULT_PATH:-/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault}"
 OBSIDIAN_CLI="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cli}"
@@ -27,8 +29,7 @@ Environment overrides:
   REPORT_PATH    default: $REPORT_PATH
 
 Options:
-  --generate     Run the current interactive generate command. It may open a modal
-                 until a headless/dev annual-review command exists.
+  --generate     Run the smoke-only headless command for YEAR.
   --no-deploy    Skip npm deploy; only use current vault/plugin state.
 USAGE
 }
@@ -45,6 +46,21 @@ done
 
 REPORT_FILE="$VAULT_PATH/$REPORT_PATH"
 
+if [[ ! -d "$REPO_ROOT" ]]; then
+  echo "ERROR: Repo root not found: $REPO_ROOT" >&2
+  exit 1
+fi
+
+if [[ ! -d "$VAULT_PATH" ]]; then
+  echo "ERROR: Smoke vault not found: $VAULT_PATH" >&2
+  exit 1
+fi
+
+if [[ ! -d "$VAULT_PATH/.obsidian" ]]; then
+  echo "ERROR: Smoke vault is missing .obsidian directory: $VAULT_PATH/.obsidian" >&2
+  exit 1
+fi
+
 if [[ ! -x "$OBSIDIAN_CLI" ]]; then
   echo "ERROR: Obsidian CLI not executable: $OBSIDIAN_CLI" >&2
   exit 1
@@ -52,25 +68,25 @@ fi
 
 if [[ "$DEPLOY" == 1 ]]; then
   echo "==> Deploy plugin to smoke vault"
-  (cd "$REPO_ROOT" && npm run deploy:smoke)
+  (cd "$REPO_ROOT" && npm run dev:deploy-smoke)
 fi
 
 echo "==> Enable/reload plugin and rebuild index"
-"$OBSIDIAN_CLI" vault="$VAULT_NAME" plugin:enable id="$PLUGIN_ID" filter=community >/dev/null || true
-"$OBSIDIAN_CLI" vault="$VAULT_NAME" plugin:reload id="$PLUGIN_ID" >/dev/null || true
-"$OBSIDIAN_CLI" vault="$VAULT_NAME" command id=annual-review:rebuild-annual-review-index >/dev/null || true
+"$OBSIDIAN_CLI" vault="$VAULT_NAME" plugin:enable id="$PLUGIN_ID" filter=community >/dev/null
+"$OBSIDIAN_CLI" vault="$VAULT_NAME" plugin:reload id="$PLUGIN_ID" >/dev/null
+"$OBSIDIAN_CLI" vault="$VAULT_NAME" command id=annual-review:rebuild-annual-review-index >/dev/null
 
 if [[ "$GENERATE" == 1 ]]; then
-  echo "==> Run headless 2026 generate command"
-  "$OBSIDIAN_CLI" vault="$VAULT_NAME" command id=annual-review:generate-annual-review-2026
+  echo "==> Run smoke-only headless ${YEAR} generate command"
+  "$OBSIDIAN_CLI" vault="$VAULT_NAME" command id="annual-review:generate-annual-review-${YEAR}"
 fi
 
 echo "==> Available annual-review commands"
-"$OBSIDIAN_CLI" vault="$VAULT_NAME" commands filter=annual || true
+"$OBSIDIAN_CLI" vault="$VAULT_NAME" commands filter=annual
 
 if [[ ! -f "$REPORT_FILE" ]]; then
   echo "ERROR: Report not found: $REPORT_FILE" >&2
-  echo "If generation opened a modal, generate ${YEAR} manually or add a headless dev command." >&2
+  echo "Run with --generate after deploying smoke commands, or inspect Obsidian CLI command failures above." >&2
   exit 1
 fi
 

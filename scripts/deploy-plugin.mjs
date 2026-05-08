@@ -54,12 +54,19 @@ function main() {
 
   deployArtifact(artifactDir, pluginDir);
 
+  if (args.smoke) {
+    enableSmokeCommands(pluginDir);
+  }
+
   if (!args.noEnable) {
     enableCommunityPlugin(obsidianDir, pluginId);
   }
 
   console.log(`Deployed ${pluginId} to: ${pluginDir}`);
   console.log("Settings/data.json was preserved if it already existed.");
+  if (args.smoke) {
+    console.log("Smoke-only command gate enabled in plugin data.json.");
+  }
 }
 
 function run(command, argv, cwd) {
@@ -105,6 +112,21 @@ function enableCommunityPlugin(obsidianDir, pluginId) {
     plugins.push(pluginId);
     writeFileSync(path, `${JSON.stringify(plugins, null, 2)}\n`, "utf8");
   }
+}
+
+function enableSmokeCommands(pluginDir) {
+  const path = join(pluginDir, "data.json");
+  const settings = existsSync(path)
+    ? (JSON.parse(readFileSync(path, "utf8")) ?? {})
+    : {};
+  if (typeof settings !== "object" || Array.isArray(settings)) {
+    throw new Error(`${path} must contain a JSON object`);
+  }
+  writeFileSync(
+    path,
+    `${JSON.stringify({ ...settings, enableSmokeCommands: true }, null, 2)}\n`,
+    "utf8",
+  );
 }
 
 function readJsonArray(path) {
@@ -158,12 +180,14 @@ Options:
                           Default: ${DEFAULT_ARTIFACT_DIR}
   --plugin-id <id>        Override manifest.json id.
   --skip-build            Reuse the existing main.js instead of running npm run build.
+  --smoke                 Enable hidden smoke-only commands in plugin data.json.
   --no-deploy             Only generate the artifact directory; do not copy to a vault.
   --no-enable             Do not update community-plugins.json.
   -h, --help              Show this help.
 
 Examples:
   npm run dev:deploy-plugin -- --target /path/to/Vault/.obsidian
+  npm run dev:deploy-smoke
   npm run dev:deploy-plugin -- --no-deploy
   npm run release:plugin
 `);

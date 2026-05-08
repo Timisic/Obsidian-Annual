@@ -1676,11 +1676,13 @@ describe("plugin command ids", () => {
   it("exposes stable command ids and English command palette labels", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
+      generateSmoke2026: "generate-annual-review-2026",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
+      generateSmoke2026: "Smoke: Generate 2026 report",
       openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });
@@ -1704,7 +1706,9 @@ describe("MVP public surface", () => {
     expect(scripts["release:plugin"]).toBe("node scripts/deploy-plugin.mjs --no-deploy");
     expect(scripts["release:check"]).toContain("release:plugin");
     expect(scripts["dev:deploy-plugin"]).toBe("node scripts/deploy-plugin.mjs");
+    expect(scripts["dev:deploy-smoke"]).toBe("node scripts/deploy-smoke.mjs");
     expect(scripts).not.toHaveProperty("deploy:plugin");
+    expect(scripts).not.toHaveProperty("deploy:smoke");
     expect(scripts).not.toHaveProperty("ai:context-placeholder");
     expect(scripts).not.toHaveProperty("writing-growth");
     expect(JSON.stringify(scripts)).not.toMatch(
