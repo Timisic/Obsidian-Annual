@@ -9,3 +9,9 @@ export const COMMAND_NAMES = {
   openDashboard: "Open Review Board",
   rebuildIndex: "Rebuild index",
 } as const;
+
+export const COMMAND_SURFACE = [
+  { id: COMMAND_IDS.generate, name: COMMAND_NAMES.generate },
+  { id: COMMAND_IDS.openDashboard, name: COMMAND_NAMES.openDashboard },
+  { id: COMMAND_IDS.rebuildIndex, name: COMMAND_NAMES.rebuildIndex },
+] as const;

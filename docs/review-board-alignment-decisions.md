@@ -41,3 +41,12 @@
 - 将 `Action Candidate` 视为 `task`，或视为已接受后移入 `next-action` 的候选项。
 - 将插件数据作为规范状态存储；仅在需要可迁移性时添加 `.annual-review/YYYY.review-state.json`。
 - MVP 中不要将 Review Board 状态写入源笔记 frontmatter。
+
+## DEC-54 MVP 表面裁剪决策
+
+| 领域 | 决策 | 理由 |
+| --- | --- | --- |
+| Review Board view | 保留 `Annual Review: Open Review Board` 命令和内部 `open-annual-review-dashboard` ID，但界面只展示范围、索引、报告动作、候选主题、建议复核候选和候选行动。 | Review Board 是 Core；宽泛 dashboard 指标是 Backlog，不能作为主路径能力出现。 |
+| Dashboard analytics | 从 Review Board 视图移除月度趋势、每日热力图、字词增长、高频标签/文件夹/链接和代表笔记列表。 | 这些指标可作为报告方法或候选证据的内部输入，但不应替代审核/决策工作流。 |
+| Package scripts | `release:*` 保留为发布资产生成；显式 vault 部署改名为 `dev:deploy-plugin`；AI placeholder 和 writing-growth helper 不再暴露为 package scripts。 | 发布和开发验证是 Support；placeholder/backlog helper 不能污染普通开发者看到的 MVP surface。 |
+| Optional AI settings | 设置页只在 provider 显式切到 ChatGPT 后显示模型、API key 和本地 Codex fallback 配置。 | AI 是 Support，默认必须保持本地优先；provider 细节不应成为默认设置表面。 |

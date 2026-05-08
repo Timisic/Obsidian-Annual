@@ -8,7 +8,7 @@ import {
 } from "obsidian";
 import { renderAiReportEnhancements } from "./core/ai";
 import { buildYearAggregate } from "./core/aggregate";
-import { COMMAND_IDS, COMMAND_NAMES } from "./core/commands";
+import { COMMAND_IDS, COMMAND_SURFACE } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
 import {
   buildAnnualReviewChartAssets,
@@ -60,27 +60,22 @@ export default class AnnualReviewPlugin extends Plugin {
       (leaf) => new AnnualReviewDashboardView(leaf, this),
     );
 
-    this.addCommand({
-      id: COMMAND_IDS.generate,
-      name: COMMAND_NAMES.generate,
-      callback: () => this.openGenerateModal(),
-    });
-
-    this.addCommand({
-      id: COMMAND_IDS.openDashboard,
-      name: COMMAND_NAMES.openDashboard,
-      callback: () => {
+    const commandCallbacks = {
+      [COMMAND_IDS.generate]: () => this.openGenerateModal(),
+      [COMMAND_IDS.openDashboard]: () => {
         void this.openDashboard();
       },
-    });
-
-    this.addCommand({
-      id: COMMAND_IDS.rebuildIndex,
-      name: COMMAND_NAMES.rebuildIndex,
-      callback: async () => {
+      [COMMAND_IDS.rebuildIndex]: async () => {
         await this.rebuildIndex();
       },
-    });
+    };
+
+    for (const command of COMMAND_SURFACE) {
+      this.addCommand({
+        ...command,
+        callback: commandCallbacks[command.id],
+      });
+    }
 
     this.addSettingTab(new AnnualReviewSettingTab(this.app, this));
   }
@@ -409,9 +404,9 @@ class AnnualReviewSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("AI provider")
+      .setName(text.aiProvider)
       .setDesc(
-        "Default report generation provider. None keeps generation local; ChatGPT uses an OpenAI API key when present, otherwise it tries the local Codex CLI/auth environment.",
+        "Advanced opt-in enrichment. None keeps the MVP review path fully local; ChatGPT requires explicit provider setup and can only supplement review rationale.",
       )
       .addDropdown((dropdown) => {
         dropdown
@@ -423,6 +418,10 @@ class AnnualReviewSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
       });
+
+    if (this.plugin.settings.aiProvider !== "chatgpt") {
+      return;
+    }
 
     new Setting(containerEl)
       .setName("ChatGPT model")

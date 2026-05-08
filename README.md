@@ -99,7 +99,7 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 | `npm run lint`           | 运行 ESLint。                                                                 |
 | `npm run release:plugin` | 生成 `dist/annual-review/` 发布资产。                                         |
 | `npm run dev`            | 启动 esbuild watch，适合本地插件开发。                                        |
-| `npm run deploy:plugin`  | 构建插件并可部署到任意 vault 的 `.obsidian`。                                 |
+| `npm run dev:deploy-plugin` | 开发/agent smoke 验证用：显式传入测试 vault 后部署到 `.obsidian`，不作为普通安装路径。 |
 
 ## 验证建议
 

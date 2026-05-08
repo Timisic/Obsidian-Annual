@@ -103,9 +103,9 @@ export class YearModal extends Modal {
     this.addMetricToggle(text.includeHeadingMetrics, "includeHeadings");
 
     new Setting(contentEl)
-      .setName("AI provider")
+      .setName("Optional AI enrichment")
       .setDesc(
-        "None keeps this run local. ChatGPT uses the configured OpenAI API key or falls back to local Codex CLI auth.",
+        "None keeps this MVP run local. ChatGPT is an explicit enrichment pass that can only supplement candidate rationale and report draft text.",
       )
       .addDropdown((dropdown) => {
         dropdown

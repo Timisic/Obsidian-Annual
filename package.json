@@ -6,14 +6,12 @@
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
-    "ai:context-placeholder": "node scripts/obsidian-ai-context-placeholder.mjs",
-    "deploy:plugin": "node scripts/deploy-plugin.mjs",
+    "dev:deploy-plugin": "node scripts/deploy-plugin.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "release:check": "npm run release:plugin -- --skip-build && node scripts/check-release-artifact.mjs",
     "release:plugin": "node scripts/deploy-plugin.mjs --no-deploy",
-    "writing-growth": "node scripts/writing-growth-report.mjs",
     "test": "vitest run",
     "typecheck": "tsc -noEmit -skipLibCheck"
   },
