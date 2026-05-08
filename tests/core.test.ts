@@ -14,7 +14,7 @@ import { countText } from "../src/core/tokenizer";
 import { toTopicEvolutionJson } from "../src/core/topics";
 import { buildWritingGrowthReport, countWritingWords } from "../src/core/writingGrowth";
 import { COMMAND_IDS, COMMAND_NAMES } from "../src/core/commands";
-import { writeAnnualReviewOutput } from "../src/obsidian/reportWriter";
+import { ANNUAL_REVIEW_END_MARKER, ANNUAL_REVIEW_START_MARKER, writeAnnualReviewOutput } from "../src/obsidian/reportWriter";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
@@ -1018,28 +1018,7 @@ describe("Obsidian vault adapter", () => {
   });
 
   it("writes chart SVG artifacts before writing the annual report note", async () => {
-    const writes: string[] = [];
-    const files = new Map<string, { path: string; content: string }>();
-    const folders = new Set<string>();
-    const app = {
-      vault: {
-        getFolderByPath: (path: string) => folders.has(path) ? { path } : null,
-        createFolder: async (path: string) => {
-          folders.add(path);
-        },
-        getFileByPath: (path: string) => files.get(path) ?? null,
-        create: async (path: string, content: string) => {
-          writes.push(path);
-          const file = { path, content };
-          files.set(path, file);
-          return file;
-        },
-        modify: async (file: { path: string; content: string }, content: string) => {
-          writes.push(file.path);
-          file.content = content;
-        },
-      },
-    };
+    const { app, files, writes } = createReportWriterMockApp();
 
     await writeAnnualReviewOutput(
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
@@ -1060,9 +1039,145 @@ describe("Obsidian vault adapter", () => {
       "Annual Reviews/2026 Annual Review.md",
     ]);
     expect(files.get("Annual Reviews/2026 Annual Review Assets/daily-word-heatmap.svg")?.content).toBe("<svg />");
-    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe("# 2026 Annual Review");
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe([
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      ANNUAL_REVIEW_END_MARKER,
+    ].join("\n"));
+  });
+
+  it("preserves user-authored content outside annual review markers when regenerating", async () => {
+    const existingReport = [
+      "User preface stays exactly.",
+      "",
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      "Old machine section.",
+      ANNUAL_REVIEW_END_MARKER,
+      "",
+      "- [ ] User action item stays exactly.",
+    ].join("\n");
+    const { app, files, modifyCalls, processCalls } = createReportWriterMockApp([
+      ["Annual Reviews/2026 Annual Review.md", existingReport],
+    ]);
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      ["# 2026 Annual Review", "New machine section."].join("\n"),
+      [],
+    );
+
+    expect(processCalls).toEqual(["Annual Reviews/2026 Annual Review.md"]);
+    expect(modifyCalls).not.toContain("Annual Reviews/2026 Annual Review.md");
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe([
+      "User preface stays exactly.",
+      "",
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      "New machine section.",
+      ANNUAL_REVIEW_END_MARKER,
+      "",
+      "- [ ] User action item stays exactly.",
+    ].join("\n"));
+  });
+
+  it("creates a full backup before converting a legacy annual report without markers", async () => {
+    const legacyReport = ["# 2026 Annual Review", "", "User summary that must be recoverable."].join("\n");
+    const { app, files, writes, processCalls } = createReportWriterMockApp([
+      ["Annual Reviews/2026 Annual Review.md", legacyReport],
+    ]);
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      "# 2026 Annual Review\nRegenerated machine section.",
+      [],
+    );
+
+    const backupPath = writes.find((path) => /^Annual Reviews\/2026 Annual Review Backup .+\.md$/u.test(path));
+    expect(backupPath).toBeDefined();
+    expect(writes.indexOf(backupPath ?? "")).toBeLessThan(writes.indexOf("Annual Reviews/2026 Annual Review.md"));
+    expect(files.get(backupPath ?? "")?.content).toBe(legacyReport);
+    expect(processCalls).toEqual(["Annual Reviews/2026 Annual Review.md"]);
+    expect(files.get("Annual Reviews/2026 Annual Review.md")?.content).toBe([
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      "Regenerated machine section.",
+      ANNUAL_REVIEW_END_MARKER,
+    ].join("\n"));
   });
 });
+
+type ReportWriterMockFile = { path: string; content: string };
+
+function createReportWriterMockApp(initialFiles: Array<[string, string]> = []): {
+  app: {
+    vault: {
+      getFolderByPath: (path: string) => { path: string } | null;
+      createFolder: (path: string) => Promise<void>;
+      getFileByPath: (path: string) => ReportWriterMockFile | null;
+      create: (path: string, content: string) => Promise<ReportWriterMockFile>;
+      modify: (file: ReportWriterMockFile, content: string) => Promise<void>;
+      read: (file: ReportWriterMockFile) => Promise<string>;
+      process: (file: ReportWriterMockFile, fn: (content: string) => string) => Promise<string>;
+    };
+  };
+  files: Map<string, ReportWriterMockFile>;
+  writes: string[];
+  modifyCalls: string[];
+  processCalls: string[];
+} {
+  const writes: string[] = [];
+  const modifyCalls: string[] = [];
+  const processCalls: string[] = [];
+  const files = new Map<string, ReportWriterMockFile>();
+  const folders = new Set<string>();
+
+  for (const [path, content] of initialFiles) {
+    files.set(path, { path, content });
+    const folder = path.split("/").slice(0, -1).join("/");
+    if (folder) {
+      folders.add(folder);
+    }
+  }
+
+  return {
+    app: {
+      vault: {
+        getFolderByPath: (path: string) => folders.has(path) ? { path } : null,
+        createFolder: async (path: string) => {
+          folders.add(path);
+        },
+        getFileByPath: (path: string) => files.get(path) ?? null,
+        create: async (path: string, content: string) => {
+          writes.push(path);
+          const file = { path, content };
+          files.set(path, file);
+          return file;
+        },
+        modify: async (file: ReportWriterMockFile, content: string) => {
+          writes.push(file.path);
+          modifyCalls.push(file.path);
+          file.content = content;
+        },
+        read: async (file: ReportWriterMockFile) => file.content,
+        process: async (file: ReportWriterMockFile, fn: (content: string) => string) => {
+          writes.push(file.path);
+          processCalls.push(file.path);
+          file.content = fn(file.content);
+          return file.content;
+        },
+      },
+    },
+    files,
+    writes,
+    modifyCalls,
+    processCalls,
+  };
+}
 
 describe("plugin command ids", () => {
   it("exposes stable command ids and English command palette labels", () => {
