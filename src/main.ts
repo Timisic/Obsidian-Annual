@@ -45,6 +45,7 @@ import {
   AnnualReviewDashboardView,
   VIEW_TYPE_ANNUAL_REVIEW,
 } from "./obsidian/dashboardView";
+import { getAnnualReviewDashboardLeaf } from "./obsidian/dashboardLeaf";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
 import { AnnualReviewProgressModal } from "./obsidian/progressModal";
 import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
@@ -349,12 +350,20 @@ export default class AnnualReviewPlugin extends Plugin {
   }
 
   private async openDashboard(): Promise<void> {
-    const leaf = this.app.workspace.getRightLeaf(false);
-    if (!leaf) {
+    const selection = getAnnualReviewDashboardLeaf(
+      this.app.workspace,
+      VIEW_TYPE_ANNUAL_REVIEW,
+    );
+    if (!selection) {
       return;
     }
-    await leaf.setViewState({ type: VIEW_TYPE_ANNUAL_REVIEW, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    if (!selection.isExistingView) {
+      await selection.leaf.setViewState({
+        type: VIEW_TYPE_ANNUAL_REVIEW,
+        active: true,
+      });
+    }
+    this.app.workspace.revealLeaf(selection.leaf);
   }
 
   private generatorLanguage(

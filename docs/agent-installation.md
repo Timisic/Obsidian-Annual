@@ -5,8 +5,8 @@
 路径边界：
 
 - 用户 vault：用户明确提供的 Obsidian vault，本指南只能写入这个路径。
-- repo-local fixture vault：`tests/fixtures/vault`，只用于自动化测试样本，不要当作用户 vault。
-- agent smoke vault：release/agent 验证用的真实 Obsidian vault；用于端到端证据，不是普通用户安装目标。
+- repo-local validation vault：`tests/fixtures/obsidian-smoke-vault`，同时用于自动化测试样本和本仓库内 Review Board 端到端验证，不是普通用户安装目标。
+- 自定义 agent smoke vault：release/agent 可通过 `SMOKE_VAULT_PATH` 显式传入；用于端到端证据，不是普通用户安装目标。
 
 默认仓库地址：`https://github.com/Timisic/Obsidian-Annual.git`
 

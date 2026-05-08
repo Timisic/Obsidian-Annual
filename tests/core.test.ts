@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildAiPrompt,
   buildCodexPrompt,
@@ -42,6 +42,11 @@ import {
   ANNUAL_REVIEW_START_MARKER,
   writeAnnualReviewOutput,
 } from "../src/obsidian/reportWriter";
+import { getAnnualReviewDashboardLeaf } from "../src/obsidian/dashboardLeaf";
+import {
+  getActionCandidateId,
+  getNextReviewSelection,
+} from "../src/obsidian/reviewSelection";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
 
@@ -173,7 +178,7 @@ describe("writing growth", () => {
         [
           "scripts/writing-growth-report.mjs",
           "--vault",
-          "tests/fixtures/vault",
+          "tests/fixtures/obsidian-smoke-vault",
           "--year",
           "2026",
           "--history",
@@ -1163,7 +1168,9 @@ describe("aggregation and rendering", () => {
     });
 
     expect(markdown).toContain("No reviewed Review Board decisions are ready");
-    expect(markdown).not.toContain("No auditable evidence was generated for this candidate");
+    expect(markdown).not.toContain(
+      "No auditable evidence was generated for this candidate",
+    );
     expect(markdown).not.toContain("Unsupported strong claim");
     expect(markdown).not.toContain("Suggested action:");
     expect(markdown).not.toContain("Manual confirmation:");
@@ -1687,7 +1694,8 @@ describe("Obsidian vault adapter", () => {
       [],
     );
 
-    const reportContent = files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
+    const reportContent =
+      files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
     expect(reportContent.split(/\r?\n/u)[0]).toBe("---");
     expect(reportContent.match(/^---$/gmu)).toHaveLength(2);
     expect(reportContent).not.toContain("old: true");
@@ -1812,6 +1820,20 @@ describe("MVP public surface", () => {
     );
   });
 
+  it("keeps the smoke deploy default on a repo-local Obsidian validation vault", () => {
+    const source = readFileSync(join(process.cwd(), "scripts/deploy-smoke.mjs"), "utf8");
+
+    expect(source).toContain("tests/fixtures/obsidian-smoke-vault");
+    expect(source).not.toMatch(/\/Users\/hong|install-smoke-vault/u);
+  });
+
+  it("uses the repo-local Obsidian validation vault as the only fixture vault", () => {
+    const fixtureSource = readFileSync(join(process.cwd(), "tests/fixtures.ts"), "utf8");
+
+    expect(fixtureSource).toContain('fixtures", "obsidian-smoke-vault');
+    expect(existsSync(join(process.cwd(), "tests", "fixtures", "vault"))).toBe(false);
+  });
+
   it("keeps the Review Board view off broad dashboard analytics", () => {
     const source = readFileSync(
       join(process.cwd(), "src/obsidian/dashboardView.ts"),
@@ -1823,6 +1845,91 @@ describe("MVP public surface", () => {
     expect(source).not.toMatch(
       /renderTrend|renderHeatmap|renderGrowth|topTags|topFolders|topLinks|monthlyTrend|dailyWordHeatmap|wordGrowth/u,
     );
+    expect(source).toContain(
+      "this.renderReviewBoard(container, reviewSession);\n    renderControls();",
+    );
+  });
+
+  it("selects an existing Review Board leaf before opening a normal workspace leaf", () => {
+    const existingLeaf = { id: "existing" };
+    const fallbackLeaf = { id: "fallback" };
+    const workspace = {
+      getLeavesOfType: vi.fn(() => [existingLeaf]),
+      getLeaf: vi.fn(() => fallbackLeaf),
+    };
+
+    expect(getAnnualReviewDashboardLeaf(workspace, "annual-review-dashboard")).toEqual({
+      leaf: existingLeaf,
+      isExistingView: true,
+    });
+    expect(workspace.getLeavesOfType).toHaveBeenCalledWith("annual-review-dashboard");
+    expect(workspace.getLeaf).not.toHaveBeenCalled();
+  });
+
+  it("opens a new Review Board in a normal workspace leaf when none exists", () => {
+    const fallbackLeaf = { id: "fallback" };
+    const workspace = {
+      getLeavesOfType: vi.fn(() => []),
+      getLeaf: vi.fn(() => fallbackLeaf),
+    };
+
+    expect(getAnnualReviewDashboardLeaf(workspace, "annual-review-dashboard")).toEqual({
+      leaf: fallbackLeaf,
+      isExistingView: false,
+    });
+    expect(workspace.getLeaf).toHaveBeenCalledWith(false);
+
+    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+    expect(pluginSource).not.toContain("getRightLeaf");
+  });
+
+  it("keeps core Review Board actions available in the compact audit view", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+
+    for (const actionText of [
+      "text.accept",
+      "text.ignore",
+      "text.renameTopic",
+      "text.mergeTopic",
+      "text.addHighlight",
+      "text.addAction",
+      "text.openSourceNote",
+    ]) {
+      expect(source).toContain(actionText);
+    }
+
+    for (const actionType of [
+      '"accept"',
+      '"ignore"',
+      '"rename-topic"',
+      '"merge-topic"',
+      '"add-to-annual-highlights"',
+      '"add-to-actions"',
+    ]) {
+      expect(source).toContain(actionType);
+    }
+
+    expect(source).toContain("this.controller.openSourceNote(candidate.id)");
+  });
+
+  it("advances Review Board selection to the next pending candidate after a decision", () => {
+    const candidates = [
+      reviewCandidateFixture("current", "Current Topic", "accepted"),
+      reviewCandidateFixture("next", "Next Topic", "candidate"),
+      reviewCandidateFixture("closed", "Closed Topic", "ignored"),
+    ];
+
+    expect(
+      getActionCandidateId({
+        type: "accept",
+        candidateId: "current",
+        at: "2026-05-08T00:00:00.000Z",
+      }),
+    ).toBe("current");
+    expect(getNextReviewSelection(candidates, "current")).toBe("next");
   });
 });
 

@@ -3,10 +3,8 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
-const DEFAULT_SMOKE_VAULT_PATH =
-  "/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault";
-
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+const DEFAULT_SMOKE_VAULT_PATH = join(repoRoot, "tests/fixtures/obsidian-smoke-vault");
 const smokeVaultPath = process.env.SMOKE_VAULT_PATH ?? DEFAULT_SMOKE_VAULT_PATH;
 
 execFileSync(

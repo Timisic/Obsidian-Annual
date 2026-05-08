@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { SourceFile } from "../src/core/types";
 
-const fixtureRoot = join(import.meta.dirname, "fixtures", "vault");
+const fixtureRoot = join(import.meta.dirname, "fixtures", "obsidian-smoke-vault");
 
 export async function fixtureFile(
   path: string,
