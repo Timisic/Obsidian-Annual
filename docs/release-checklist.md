@@ -31,18 +31,19 @@ npm run release:check
 
 ## Agent smoke-vault 验证
 
-开发/agent 验证真实 Obsidian 行为时，使用 smoke skill 配置的真实
-`install-smoke-vault`，而不是 `tests/fixtures/vault/`。后者只用于单元测试
-fixture，不能证明 Obsidian CLI reload、command palette 或报告读取闭环。
+开发/agent 验证真实 Obsidian 行为时，默认使用仓库内的
+`tests/fixtures/obsidian-smoke-vault`，而不是 `tests/fixtures/vault/`。后者只用于
+单元测试 fixture，不能证明 Obsidian CLI reload、command palette 或报告读取闭环。
+如需使用外部测试 vault，显式设置 `SMOKE_VAULT_PATH`。
 
 ```bash
 npm run dev:deploy-smoke
 .codex/skills/annual-review-smoke-vault/scripts/smoke-vault-check.sh --generate
 ```
 
-`dev:deploy-smoke` 会将当前构建部署到显式配置的 smoke vault，并仅在该 vault
-的插件 `data.json` 中启用隐藏 smoke 命令；用 `SMOKE_VAULT_PATH` 指定本机
-smoke vault 路径。普通用户安装验证仍走下面的手动路径。
+`dev:deploy-smoke` 会将当前构建部署到 repo-local smoke vault，并仅在该 vault
+的插件 `data.json` 中启用隐藏 smoke 命令；用 `SMOKE_VAULT_PATH` 可改为显式
+提供的本机 smoke vault 路径。普通用户安装验证仍走下面的手动路径。
 
 ## DEC-55 MVP readiness record (2026-05-08)
 
@@ -98,8 +99,9 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 ## 验证路径边界
 
 - repo-local fixture vault：`tests/fixtures/vault` 只用于自动化测试样本和确定性 fixture，不证明真实 Obsidian 安装可用。
+- repo-local smoke vault：`tests/fixtures/obsidian-smoke-vault` 用于本仓库内的 Obsidian 部署/打开 Review Board 验证。
 - 普通用户 vault：手动安装验证必须使用显式传入的临时或用户提供 vault 路径，不猜测私人 vault。
-- agent smoke vault：真实 Obsidian smoke-vault 验证由 agent/release reviewer 的 Obsidian CLI 工作流执行；它提供端到端证据，但不是公开 package script 或普通用户路径。
+- 自定义 agent smoke vault：真实 Obsidian smoke-vault 验证可由 agent/release reviewer 通过 `SMOKE_VAULT_PATH` 显式传入；它提供端到端证据，但不是普通用户路径。
 
 ## GitHub release
 

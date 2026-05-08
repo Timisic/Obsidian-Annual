@@ -654,9 +654,7 @@ function renderDataMethodology(
   return [
     `- ${text.growthDataSource}: ${growthDataSourceLabel(aggregate, language)}`,
     ...(comparison.source === "historical-snapshot"
-      ? [
-          `- ${text.snapshotWordDelta}: ${formatSignedInteger(comparison.wordDelta)}`,
-        ]
+      ? [`- ${text.snapshotWordDelta}: ${formatSignedInteger(comparison.wordDelta)}`]
       : []),
     `- ${scopeLabel}: ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)}; ${excludedLabel}: ${formatScope(aggregate.scope.excludeFolders, text.none)}; ${patternsLabel}: ${formatScope(aggregate.scope.excludePatterns, text.none)}; ${reportFolderLabel}: ${aggregate.scope.reportFolder}`,
     `- ${methodology}`,

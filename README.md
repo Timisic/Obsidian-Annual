@@ -73,7 +73,8 @@ MVP 决策动作包括：
 
 - **普通用户 vault**：用户自己的 Obsidian vault。社区插件安装和手动安装都以这个路径为目标。
 - **repo-local fixture vault**：`tests/fixtures/vault`，只用于单元测试和确定性 Markdown 样本，不是一个需要 Obsidian 打开的真实用户 vault。
-- **真实 smoke vault**：自动化 agent/release reviewer 用来通过 Obsidian CLI 做端到端验证的本地测试 vault，不是普通用户安装路径，也不是公开 package script 的主入口。
+- **repo-local smoke vault**：`tests/fixtures/obsidian-smoke-vault`，用于在本仓库内部署当前构建并用 Obsidian 打开 Review Board 做验证。
+- **自定义 smoke vault**：自动化 agent/release reviewer 可通过 `SMOKE_VAULT_PATH` 指向显式提供的本地测试 vault；它不是普通用户安装路径。
 
 ### 从 Obsidian 社区插件安装
 
@@ -134,7 +135,7 @@ npm run lint
 
 手动验证：
 
-1. 在你的临时测试 vault 或 agent smoke vault 中启用插件。
+1. 在你的临时测试 vault、`tests/fixtures/obsidian-smoke-vault` 或显式提供的 agent smoke vault 中启用插件。
 2. 运行 `Annual Review: Rebuild index`。
 3. 运行 `Annual Review: Open Review Board`，确认候选队列、推荐理由、证据来源和进度可见。
 4. 对至少一个候选执行接受、忽略、重命名、合并、加入年度精选或加入行动，并确认打开源笔记可用。

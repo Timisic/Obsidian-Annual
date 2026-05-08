@@ -1164,7 +1164,9 @@ describe("aggregation and rendering", () => {
     });
 
     expect(markdown).toContain("No reviewed Review Board decisions are ready");
-    expect(markdown).not.toContain("No auditable evidence was generated for this candidate");
+    expect(markdown).not.toContain(
+      "No auditable evidence was generated for this candidate",
+    );
     expect(markdown).not.toContain("Unsupported strong claim");
     expect(markdown).not.toContain("Suggested action:");
     expect(markdown).not.toContain("Manual confirmation:");
@@ -1688,7 +1690,8 @@ describe("Obsidian vault adapter", () => {
       [],
     );
 
-    const reportContent = files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
+    const reportContent =
+      files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
     expect(reportContent.split(/\r?\n/u)[0]).toBe("---");
     expect(reportContent.match(/^---$/gmu)).toHaveLength(2);
     expect(reportContent).not.toContain("old: true");
@@ -1813,6 +1816,13 @@ describe("MVP public surface", () => {
     );
   });
 
+  it("keeps the smoke deploy default on a repo-local Obsidian validation vault", () => {
+    const source = readFileSync(join(process.cwd(), "scripts/deploy-smoke.mjs"), "utf8");
+
+    expect(source).toContain("tests/fixtures/obsidian-smoke-vault");
+    expect(source).not.toMatch(/\/Users\/hong|install-smoke-vault/u);
+  });
+
   it("keeps the Review Board view off broad dashboard analytics", () => {
     const source = readFileSync(
       join(process.cwd(), "src/obsidian/dashboardView.ts"),
@@ -1823,6 +1833,9 @@ describe("MVP public surface", () => {
     expect(source).toContain("applyReviewAction");
     expect(source).not.toMatch(
       /renderTrend|renderHeatmap|renderGrowth|topTags|topFolders|topLinks|monthlyTrend|dailyWordHeatmap|wordGrowth/u,
+    );
+    expect(source).toContain(
+      "this.renderReviewBoard(container, reviewSession);\n    renderControls();",
     );
   });
 

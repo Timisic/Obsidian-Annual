@@ -3,6 +3,7 @@ coverage/
 dist/
 main.js
 node_modules/
+tests/fixtures/obsidian-smoke-vault/.obsidian/plugins/annual-review/
 
 # Lockfile churn is managed by npm, not Prettier.
 package-lock.json

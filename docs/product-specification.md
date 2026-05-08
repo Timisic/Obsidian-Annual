@@ -443,7 +443,8 @@ npm run release:check
 
 - 普通用户或 reviewer 的临时 Obsidian vault：验证安装、启用、命令面板和报告输出。
 - repo-local fixture vault：`tests/fixtures/vault`，只用于自动化测试样本，不作为真实 Obsidian 验证。
-- agent smoke vault：由本仓库的 smoke-vault skill/Obsidian CLI 工作流驱动，用于 release reviewer 的端到端证据，不作为公开用户路径。
+- repo-local smoke vault：`tests/fixtures/obsidian-smoke-vault`，用于在本仓库内部署当前构建并打开 Review Board 验证。
+- 自定义 agent smoke vault：由本仓库的 smoke-vault skill/Obsidian CLI 工作流驱动，用于 release reviewer 的端到端证据，不作为普通用户路径。
 
 1. 在测试 vault 中选择年份和扫描范围。
 2. 运行重建索引。

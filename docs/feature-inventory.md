@@ -31,11 +31,12 @@ Canonical MVP flow: local scan -> candidates -> Review Board decisions -> protec
 
 ## Validation Path Boundaries
 
-| Path                     | Purpose                                                   | Main-path rule                                                                  |
-| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Normal user vault        | User-owned Obsidian vault for community or manual install | Never guessed by scripts or docs; users or agents must supply the path.         |
-| Repo-local fixture vault | `tests/fixtures/vault` samples for deterministic tests    | Test input only; not a real Obsidian smoke vault and not a public install path. |
-| Real smoke vault         | Obsidian CLI validation vault for release/agent evidence  | Internal validation path; keep separate from ordinary user instructions.        |
+| Path                     | Purpose                                                          | Main-path rule                                                                         |
+| ------------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Normal user vault        | User-owned Obsidian vault for community or manual install        | Never guessed by scripts or docs; users or agents must supply the path.                |
+| Repo-local fixture vault | `tests/fixtures/vault` samples for deterministic tests           | Test input only; not a real Obsidian smoke vault and not a public install path.        |
+| Repo-local smoke vault   | `tests/fixtures/obsidian-smoke-vault` for deploy/open validation | Repo-contained validation target; plugin build artifacts are generated, not committed. |
+| Custom smoke vault       | Explicit `SMOKE_VAULT_PATH` target for release/agent evidence    | Optional internal validation path; keep separate from ordinary user instructions.      |
 
 ## Backlog
 

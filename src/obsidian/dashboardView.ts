@@ -69,61 +69,66 @@ export class AnnualReviewDashboardView extends ItemView {
     this.selectedYear = aggregate?.year ?? this.selectedYear;
     let year = this.selectedYear;
 
-    const controls = container.createDiv({ cls: "annual-review-dashboard-toolbar" });
-    new Setting(controls)
-      .setName(text.year)
-      .addText((text) => {
-        text.setValue(String(this.selectedYear)).onChange((value) => {
-          const parsed = Number.parseInt(value, 10);
-          if (Number.isFinite(parsed)) {
-            year = parsed;
-          }
-        });
-      })
-      .addButton((button) => {
-        button
-          .setButtonText(text.preview)
-          .setCta()
-          .onClick(async () => {
-            this.selectedYear = year;
+    const renderControls = () => {
+      const controls = container.createDiv({ cls: "annual-review-dashboard-toolbar" });
+      new Setting(controls)
+        .setName(text.year)
+        .addText((text) => {
+          text.setValue(String(this.selectedYear)).onChange((value) => {
+            const parsed = Number.parseInt(value, 10);
+            if (Number.isFinite(parsed)) {
+              year = parsed;
+            }
+          });
+        })
+        .addButton((button) => {
+          button
+            .setButtonText(text.preview)
+            .setCta()
+            .onClick(async () => {
+              this.selectedYear = year;
+              this.renderLoading(text.refreshingPreview);
+              await this.controller.previewYear(year);
+              this.render();
+            });
+        })
+        .addButton((button) => {
+          button.setButtonText(text.generateReport).onClick(() => {
+            this.controller.openGenerateModal();
+          });
+        })
+        .addButton((button) => {
+          button.setButtonText(text.rebuild).onClick(async () => {
             this.renderLoading(text.refreshingPreview);
+            await this.controller.rebuildIndex();
             await this.controller.previewYear(year);
             this.render();
           });
-      })
-      .addButton((button) => {
-        button.setButtonText(text.generateReport).onClick(() => {
-          this.controller.openGenerateModal();
+        })
+        .addButton((button) => {
+          button
+            .setButtonText(text.openReport)
+            .setDisabled(!reportPath)
+            .onClick(async () => {
+              await this.controller.openLastReport();
+            });
         });
-      })
-      .addButton((button) => {
-        button.setButtonText(text.rebuild).onClick(async () => {
-          this.renderLoading(text.refreshingPreview);
-          await this.controller.rebuildIndex();
-          await this.controller.previewYear(year);
-          this.render();
-        });
-      })
-      .addButton((button) => {
-        button
-          .setButtonText(text.openReport)
-          .setDisabled(!reportPath)
-          .onClick(async () => {
-            await this.controller.openLastReport();
-          });
-      });
 
-    const status = controls.createDiv({ cls: "annual-review-dashboard-toolbar-status" });
-    status.createSpan({
-      text: index.builtAt
-        ? text.rebuiltAt(index.fileCount, index.builtAt)
-        : text.notBuiltYet,
-    });
-    status.createSpan({
-      text: reportPath ? text.report(reportPath) : text.noReportGenerated,
-    });
+      const status = controls.createDiv({
+        cls: "annual-review-dashboard-toolbar-status",
+      });
+      status.createSpan({
+        text: index.builtAt
+          ? text.rebuiltAt(index.fileCount, index.builtAt)
+          : text.notBuiltYet,
+      });
+      status.createSpan({
+        text: reportPath ? text.report(reportPath) : text.noReportGenerated,
+      });
+    };
 
     if (!aggregate) {
+      renderControls();
       container.createEl("p", {
         cls: "annual-review-dashboard-empty",
         text: text.noPreviewData,
@@ -132,6 +137,7 @@ export class AnnualReviewDashboardView extends ItemView {
     }
 
     this.renderReviewBoard(container, reviewSession);
+    renderControls();
 
     const secondary = container.createEl("details", {
       cls: "annual-review-dashboard-secondary",

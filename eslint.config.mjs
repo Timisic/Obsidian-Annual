@@ -4,7 +4,13 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ["coverage/**", "dist/**", "main.js", "node_modules/**"],
+    ignores: [
+      "coverage/**",
+      "dist/**",
+      "main.js",
+      "node_modules/**",
+      "tests/fixtures/obsidian-smoke-vault/.obsidian/plugins/annual-review/**",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
