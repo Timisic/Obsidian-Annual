@@ -2,11 +2,13 @@
 
 const contract = {
   status: "placeholder",
-  purpose: "Reserve the future handoff point for Obsidian skill or CLI enrichment before AI report generation.",
+  purpose:
+    "Reserve the future handoff point for Obsidian skill or CLI enrichment before AI report generation.",
   currentBehavior: "No vault data is read and no network request is made by this script.",
   expectedInput: {
     year: "number",
-    aggregatePath: "path to a generated annual aggregate JSON export when that export exists",
+    aggregatePath:
+      "path to a generated annual aggregate JSON export when that export exists",
     vaultRoot: "Obsidian vault root, supplied by the plugin or a trusted local CLI",
   },
   expectedOutput: {

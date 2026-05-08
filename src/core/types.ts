@@ -123,7 +123,13 @@ export interface RankedNote {
 
 export type SuggestedNoteAction = string;
 
-export type HighValueNoteKind = "核心笔记" | "活跃笔记" | "桥接笔记" | "输出候选" | "需维护" | "孤立潜力";
+export type HighValueNoteKind =
+  | "核心笔记"
+  | "活跃笔记"
+  | "桥接笔记"
+  | "输出候选"
+  | "需维护"
+  | "孤立潜力";
 
 export interface HighValueNote {
   path: string;

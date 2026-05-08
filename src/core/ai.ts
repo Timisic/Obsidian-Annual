@@ -116,15 +116,10 @@ export async function renderAiReportEnhancements(
   const data = (await response.json()) as OpenAiResponse;
   const content = extractResponseText(data).trim();
   if (!content) {
-    return unavailableAiEnhancements(
-      "ChatGPT provider returned an empty response.",
-    );
+    return unavailableAiEnhancements("ChatGPT provider returned an empty response.");
   }
 
-  return withFallbackHighValueEnhancements(
-    parseAiEnhancements(content),
-    options,
-  );
+  return withFallbackHighValueEnhancements(parseAiEnhancements(content), options);
 }
 
 async function renderCodexReportSection(
@@ -143,10 +138,7 @@ async function renderCodexReportSection(
     );
   }
 
-  return withFallbackHighValueEnhancements(
-    parseAiEnhancements(result.content),
-    options,
-  );
+  return withFallbackHighValueEnhancements(parseAiEnhancements(result.content), options);
 }
 
 export function buildAiPrompt(
@@ -155,9 +147,7 @@ export function buildAiPrompt(
   settings: AnnualReviewSettings,
 ): string {
   const activeNotes = activeNoteEntries(aggregate, files, settings);
-  const noteByPath = new Map(
-    activeNotes.map((entry) => [entry.note.path, entry]),
-  );
+  const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
 
   const contextNotes = activeNotes
     .slice(0, MAX_AI_CONTEXT_NOTES)
@@ -171,11 +161,7 @@ export function buildAiPrompt(
       tags: note.tags,
       links: note.links,
       headings: note.headings,
-      backlinks: backlinkContext(
-        note.path,
-        activeNotes,
-        MAX_LINKED_NOTE_CONTEXT,
-      ),
+      backlinks: backlinkContext(note.path, activeNotes, MAX_LINKED_NOTE_CONTEXT),
       linkedNotes: linkedNoteContext(note, noteByPath, MAX_LINKED_NOTE_CONTEXT),
       excerpt: excerpt(file.content),
     }));
@@ -185,16 +171,14 @@ export function buildAiPrompt(
     links: note.links,
   }));
 
-  const omittedNoteCount = Math.max(
-    0,
-    activeNotes.length - contextNotes.length,
-  );
+  const omittedNoteCount = Math.max(0, activeNotes.length - contextNotes.length);
 
   return JSON.stringify(
     {
       task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer review-candidate reasons, and concrete next actions.",
       outputSchema: {
-        periodJudgment: "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
+        periodJudgment:
+          "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
         themeInsights: [
           {
             title:
@@ -241,9 +225,8 @@ export function buildAiPrompt(
         modified: month.modified,
         words: month.words,
         cumulativeWords:
-          aggregate.wordGrowthBuckets.find(
-            (growth) => growth.month === month.month,
-          )?.cumulativeWords ?? 0,
+          aggregate.wordGrowthBuckets.find((growth) => growth.month === month.month)
+            ?.cumulativeWords ?? 0,
       })),
       topTags: aggregate.topTags,
       topFolders: aggregate.topFolders,
@@ -285,9 +268,7 @@ function buildCodexContext(
   settings: AnnualReviewSettings,
 ): unknown {
   const activeNotes = activeNoteEntries(aggregate, files, settings);
-  const noteByPath = new Map(
-    activeNotes.map((entry) => [entry.note.path, entry]),
-  );
+  const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
   const contextNotes = activeNotes
     .slice(0, MAX_CODEX_CONTEXT_NOTES)
     .map(({ file, note }) => ({
@@ -327,9 +308,7 @@ function buildCodexContext(
       totalCharacters: aggregate.totalCharacters,
     },
     monthlyWords: aggregate.monthBuckets
-      .filter(
-        (month) => month.words > 0 || month.created > 0 || month.modified > 0,
-      )
+      .filter((month) => month.words > 0 || month.created > 0 || month.modified > 0)
       .map((month) => ({
         month: month.month,
         created: month.created,
@@ -358,12 +337,8 @@ function buildCodexContext(
     })),
     highValueEvidence: highValueEvidence(aggregate, activeNotes, noteByPath),
     contextNotes,
-    outputReadyNotes: aggregate.outputReadyNotes
-      .slice(0, 3)
-      .map((note) => note.path),
-    maintenanceNotes: aggregate.maintenanceNotes
-      .slice(0, 3)
-      .map((note) => note.path),
+    outputReadyNotes: aggregate.outputReadyNotes.slice(0, 3).map((note) => note.path),
+    maintenanceNotes: aggregate.maintenanceNotes.slice(0, 3).map((note) => note.path),
     isolatedPotentialNotes: aggregate.isolatedPotentialNotes
       .slice(0, 3)
       .map((note) => note.path),
@@ -397,8 +372,7 @@ function backlinkContext(
         return [];
       }
       const count = Object.entries(note.linkCounts).reduce(
-        (sum, [link, amount]) =>
-          sum + (linkTargetMatches(link, path) ? amount : 0),
+        (sum, [link, amount]) => sum + (linkTargetMatches(link, path) ? amount : 0),
         0,
       );
       return count > 0
@@ -425,9 +399,8 @@ function linkedNoteContext(
           }
         : null;
     })
-    .filter(
-      (entry): entry is { path: string; count: number; excerpt: string } =>
-        Boolean(entry),
+    .filter((entry): entry is { path: string; count: number; excerpt: string } =>
+      Boolean(entry),
     )
     .sort((a, b) => b.count - a.count || a.path.localeCompare(b.path))
     .slice(0, limit);
@@ -452,11 +425,7 @@ function highValueEvidence(
       periodWordCount: item.periodWordCount,
       headings: entry?.note.headings ?? [],
       excerpt: entry ? excerpt(entry.file.content) : "",
-      backlinks: backlinkContext(
-        item.path,
-        activeNotes,
-        MAX_LINKED_NOTE_CONTEXT,
-      ),
+      backlinks: backlinkContext(item.path, activeNotes, MAX_LINKED_NOTE_CONTEXT),
       linkedNotes: entry
         ? linkedNoteContext(entry.note, noteByPath, MAX_LINKED_NOTE_CONTEXT)
         : [],
@@ -479,18 +448,13 @@ function withFallbackHighValueEnhancements(
   );
   if (enhancements.highValueNotes.length > 0) {
     const aiByPath = new Map(
-      enhancements.highValueNotes.map((note) => [
-        normalizeLinkIdentity(note.path),
-        note,
-      ]),
+      enhancements.highValueNotes.map((note) => [normalizeLinkIdentity(note.path), note]),
     );
     return {
       ...enhancements,
       highValueNotes: fallbackNotes.map((fallback) => {
         const aiNote = aiByPath.get(normalizeLinkIdentity(fallback.path));
-        return aiNote && !isGenericHighValueReason(aiNote)
-          ? aiNote
-          : fallback;
+        return aiNote && !isGenericHighValueReason(aiNote) ? aiNote : fallback;
       }),
     };
   }
@@ -513,9 +477,7 @@ function fallbackHighValueNotes(
   themes: AiThemeInsight[],
 ): AiHighValueNoteInsight[] {
   const activeNotes = activeNoteEntries(aggregate, files, settings);
-  const noteByPath = new Map(
-    activeNotes.map((entry) => [entry.note.path, entry]),
-  );
+  const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
   const language = settings.reportLanguage === "en" ? "en" : "zh";
   return aggregate.highValueNotes.slice(0, 10).map((note, index) => {
     const entry = noteByPath.get(note.path);
@@ -641,8 +603,7 @@ function relatedTheme(
   const noteTitle = titleFromPath(note.path);
   const evidenceMatch = themes.find((theme) =>
     theme.evidenceNotes.some(
-      (path) =>
-        normalizeLinkIdentity(path) === normalizeLinkIdentity(note.path),
+      (path) => normalizeLinkIdentity(path) === normalizeLinkIdentity(note.path),
     ),
   );
   if (evidenceMatch) {
@@ -659,8 +620,7 @@ function relatedTheme(
     topicMatch?.title ||
     themes.find(
       (theme) =>
-        theme.synthesis.includes(noteTitle) ||
-        theme.connections.includes(noteTitle),
+        theme.synthesis.includes(noteTitle) || theme.connections.includes(noteTitle),
     )?.title ||
     ""
   );
@@ -673,8 +633,7 @@ function titleFromPath(path: string): string {
 function linkTargetMatches(link: string, path: string): boolean {
   return (
     normalizeLinkIdentity(link) === normalizeLinkIdentity(path) ||
-    normalizeLinkIdentity(link) ===
-      normalizeLinkIdentity(path.replace(/\.md$/iu, ""))
+    normalizeLinkIdentity(link) === normalizeLinkIdentity(path.replace(/\.md$/iu, ""))
   );
 }
 
@@ -687,9 +646,8 @@ function resolveLinkTarget(
     if (
       normalizeLinkIdentity(path) === normalized ||
       normalizeLinkIdentity(path.replace(/\.md$/iu, "")) === normalized ||
-      normalizeLinkIdentity(
-        path.split("/").pop()?.replace(/\.md$/iu, "") ?? path,
-      ) === normalized
+      normalizeLinkIdentity(path.split("/").pop()?.replace(/\.md$/iu, "") ?? path) ===
+        normalized
     ) {
       return path;
     }
@@ -698,11 +656,7 @@ function resolveLinkTarget(
 }
 
 function normalizeLinkIdentity(value: string): string {
-  return value
-    .trim()
-    .replace(/\.md$/iu, "")
-    .replace(/\\/gu, "/")
-    .toLocaleLowerCase();
+  return value.trim().replace(/\.md$/iu, "").replace(/\\/gu, "/").toLocaleLowerCase();
 }
 
 function obsidianSkillHandoff(): Record<string, unknown> {
@@ -763,8 +717,7 @@ export async function runLocalCodex(
       const errorOutput = Buffer.concat(stderr).toString("utf8").trim();
       const lastMessage = await readCodexLastMessage(outputPath);
       const streamMessage =
-        extractCodexStreamMessage(output) ||
-        extractCodexStreamMessage(errorOutput);
+        extractCodexStreamMessage(output) || extractCodexStreamMessage(errorOutput);
       if (code === 0 && (lastMessage || streamMessage || output)) {
         finish({ ok: true, content: lastMessage || streamMessage || output });
         return;
@@ -790,9 +743,7 @@ export function buildLocalCodexEnv(
 ): NodeJS.ProcessEnv {
   return {
     ...baseEnv,
-    PATH: [...LOCAL_CODEX_PATH_ENTRIES, baseEnv.PATH ?? ""]
-      .filter(Boolean)
-      .join(":"),
+    PATH: [...LOCAL_CODEX_PATH_ENTRIES, baseEnv.PATH ?? ""].filter(Boolean).join(":"),
     CODEX_ANNUAL_REVIEW_OUTPUT: outputPath,
   };
 }
@@ -813,10 +764,7 @@ export function formatLocalCodexFailure(
 }
 
 function extractCommandNotFound(output: string): string {
-  return (
-    output.match(/(?:bash: (?:line \d+: )?)?codex: command not found/u)?.[0] ??
-    ""
-  );
+  return output.match(/(?:bash: (?:line \d+: )?)?codex: command not found/u)?.[0] ?? "";
 }
 
 function extractCodexStreamMessage(output: string): string {
@@ -832,9 +780,7 @@ function extractCodexStreamMessage(output: string): string {
     .slice(markerIndex + 1)
     .filter(
       (line) =>
-        line !== "tokens used" &&
-        !/^\d[\d,]*$/u.test(line) &&
-        !line.startsWith("hook:"),
+        line !== "tokens used" && !/^\d[\d,]*$/u.test(line) && !line.startsWith("hook:"),
     )
     .join(" ")
     .trim();
@@ -867,10 +813,7 @@ function toOneSentenceSummary(markdown: string, maxLength = 240): string {
   const body = markdown
     .split(/\r?\n/u)
     .map((line) => line.trim())
-    .filter(
-      (line) =>
-        line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line),
-    )
+    .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
     .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
     .join(" ")
     .replace(/\s+/gu, " ")
@@ -908,8 +851,7 @@ function parseAiEnhancements(content: string): AiReportEnhancements {
   }
 
   return {
-    periodJudgment:
-      stringValue(parsed.periodJudgment) || toOneSentenceSummary(content),
+    periodJudgment: stringValue(parsed.periodJudgment) || toOneSentenceSummary(content),
     themeInsights: arrayValue(parsed.themeInsights)
       .map(toThemeInsight)
       .filter((theme): theme is AiThemeInsight => Boolean(theme))
@@ -996,9 +938,7 @@ function stringValue(value: unknown): string {
 
 function notePathValue(value: unknown): string {
   const text = stringValue(value);
-  const wikilink = text.match(
-    /^\[\[([^\]|#\]]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]$/u,
-  )?.[1];
+  const wikilink = text.match(/^\[\[([^\]|#\]]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]$/u)?.[1];
   return (wikilink || text).replace(/\.md$/iu, "").trim();
 }
 

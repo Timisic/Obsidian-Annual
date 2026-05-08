@@ -69,13 +69,13 @@ AI 上下文由插件和本地适配层共同准备。核心原则是“插件�
 
 双链不只是 `[[A]] -> [[B]]` 的边，还应该形成可解释的上下文结构：
 
-| 上下文 | 来源 | 用途 |
-| --- | --- | --- |
-| outgoing links | `metadataCache.resolvedLinks[file.path]` / `unresolvedLinks` | 说明某篇笔记主动引用了哪些主题或项目。 |
-| incoming links | 由所有 outgoing links 反向聚合 | 找出被频繁引用的中心笔记和年度主题。 |
-| co-links | 同一篇笔记中共同出现的链接 | 识别主题组合，例如“项目 A + 读书 B”。 |
-| path clusters | 文件夹、日记路径、项目路径 | 区分 daily、project、reading、archive 等写作场景。 |
-| headings and excerpts | Markdown 标题和受限摘录 | 给 AI 最小必要语义证据。 |
+| 上下文                | 来源                                                         | 用途                                               |
+| --------------------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| outgoing links        | `metadataCache.resolvedLinks[file.path]` / `unresolvedLinks` | 说明某篇笔记主动引用了哪些主题或项目。             |
+| incoming links        | 由所有 outgoing links 反向聚合                               | 找出被频繁引用的中心笔记和年度主题。               |
+| co-links              | 同一篇笔记中共同出现的链接                                   | 识别主题组合，例如“项目 A + 读书 B”。              |
+| path clusters         | 文件夹、日记路径、项目路径                                   | 区分 daily、project、reading、archive 等写作场景。 |
+| headings and excerpts | Markdown 标题和受限摘录                                      | 给 AI 最小必要语义证据。                           |
 
 AI 输出必须优先引用规范化后的目标路径，例如 `[[Projects/Research.md]]`，避免把别名、标题锚点或未解析文本当成不同对象重复解释。
 

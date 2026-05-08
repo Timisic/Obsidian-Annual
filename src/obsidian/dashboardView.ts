@@ -1,7 +1,11 @@
 import { ItemView, Setting, type WorkspaceLeaf } from "obsidian";
 import { UI_TEXT } from "../core/language";
 import { joinFolderList } from "../core/settings";
-import type { AnnualReviewSettings, ResolvedAnnualReviewLanguage, YearAggregate } from "../core/types";
+import type {
+  AnnualReviewSettings,
+  ResolvedAnnualReviewLanguage,
+  YearAggregate,
+} from "../core/types";
 
 export const VIEW_TYPE_ANNUAL_REVIEW = "annual-review-dashboard";
 
@@ -20,7 +24,10 @@ export interface AnnualReviewDashboardController {
 export class AnnualReviewDashboardView extends ItemView {
   private selectedYear = new Date().getFullYear();
 
-  constructor(leaf: WorkspaceLeaf, private controller: AnnualReviewDashboardController) {
+  constructor(
+    leaf: WorkspaceLeaf,
+    private controller: AnnualReviewDashboardController,
+  ) {
     super(leaf);
   }
 
@@ -56,14 +63,12 @@ export class AnnualReviewDashboardView extends ItemView {
     new Setting(controls)
       .setName(text.year)
       .addText((text) => {
-        text
-          .setValue(String(this.selectedYear))
-          .onChange((value) => {
-            const parsed = Number.parseInt(value, 10);
-            if (Number.isFinite(parsed)) {
-              year = parsed;
-            }
-          });
+        text.setValue(String(this.selectedYear)).onChange((value) => {
+          const parsed = Number.parseInt(value, 10);
+          if (Number.isFinite(parsed)) {
+            year = parsed;
+          }
+        });
       })
       .addButton((button) => {
         button
@@ -85,25 +90,45 @@ export class AnnualReviewDashboardView extends ItemView {
           });
       })
       .addButton((button) => {
-        button
-          .setButtonText(text.rebuild)
-          .onClick(async () => {
-            this.renderLoading(text.refreshingPreview);
-            await this.controller.rebuildIndex();
-            await this.controller.previewYear(year);
-            this.render();
-          });
+        button.setButtonText(text.rebuild).onClick(async () => {
+          this.renderLoading(text.refreshingPreview);
+          await this.controller.rebuildIndex();
+          await this.controller.previewYear(year);
+          this.render();
+        });
       });
 
     const scopeGrid = container.createDiv({ cls: "annual-review-dashboard-info-grid" });
-    renderInfoCard(scopeGrid, text.include, settings.includeFolders.length > 0 ? joinFolderList(settings.includeFolders) : text.allMarkdownFiles);
-    renderInfoCard(scopeGrid, text.exclude, settings.excludeFolders.length > 0 ? joinFolderList(settings.excludeFolders) : text.none);
+    renderInfoCard(
+      scopeGrid,
+      text.include,
+      settings.includeFolders.length > 0
+        ? joinFolderList(settings.includeFolders)
+        : text.allMarkdownFiles,
+    );
+    renderInfoCard(
+      scopeGrid,
+      text.exclude,
+      settings.excludeFolders.length > 0
+        ? joinFolderList(settings.excludeFolders)
+        : text.none,
+    );
     renderInfoCard(scopeGrid, text.privacy, settings.privacyMode);
-    renderInfoCard(scopeGrid, text.aiProvider, settings.aiProvider === "chatgpt" ? text.chatGpt : text.none);
-    renderInfoCard(scopeGrid, text.index, index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet);
+    renderInfoCard(
+      scopeGrid,
+      text.aiProvider,
+      settings.aiProvider === "chatgpt" ? text.chatGpt : text.none,
+    );
+    renderInfoCard(
+      scopeGrid,
+      text.index,
+      index.builtAt ? text.rebuiltAt(index.fileCount, index.builtAt) : text.notBuiltYet,
+    );
 
     const reportPath = this.controller.getLastReportPath();
-    const reportActions = container.createDiv({ cls: "annual-review-dashboard-report-actions" });
+    const reportActions = container.createDiv({
+      cls: "annual-review-dashboard-report-actions",
+    });
     new Setting(reportActions)
       .setName(reportPath ? text.report(reportPath) : text.noReportGenerated)
       .addButton((button) => {
@@ -116,7 +141,10 @@ export class AnnualReviewDashboardView extends ItemView {
       });
 
     if (!aggregate) {
-      container.createEl("p", { cls: "annual-review-dashboard-empty", text: text.noPreviewData });
+      container.createEl("p", {
+        cls: "annual-review-dashboard-empty",
+        text: text.noPreviewData,
+      });
       return;
     }
 
@@ -136,13 +164,31 @@ export class AnnualReviewDashboardView extends ItemView {
     renderGrowth(container, aggregate, language);
 
     renderSectionTitle(container, text.topTags);
-    renderList(container, aggregate.topTags.map((item) => `${item.name}: ${item.count}`), language);
+    renderList(
+      container,
+      aggregate.topTags.map((item) => `${item.name}: ${item.count}`),
+      language,
+    );
     renderSectionTitle(container, text.topFolders);
-    renderList(container, aggregate.topFolders.map((item) => `${item.name}: ${item.count}`), language);
+    renderList(
+      container,
+      aggregate.topFolders.map((item) => `${item.name}: ${item.count}`),
+      language,
+    );
     renderSectionTitle(container, text.topLinks);
-    renderList(container, aggregate.topLinks.map((item) => `${item.name}: ${item.count}`), language);
+    renderList(
+      container,
+      aggregate.topLinks.map((item) => `${item.name}: ${item.count}`),
+      language,
+    );
     renderSectionTitle(container, text.representativeNotes);
-    renderList(container, aggregate.representativeNotes.map((note) => `${note.path} (${text.noteWords(note.words)})`), language);
+    renderList(
+      container,
+      aggregate.representativeNotes.map(
+        (note) => `${note.path} (${text.noteWords(note.words)})`,
+      ),
+      language,
+    );
   }
 
   private renderLoading(message: string): void {
@@ -179,7 +225,13 @@ function renderMetric(parent: HTMLElement, label: string, value: string): void {
 }
 
 function renderTrend(parent: Element, aggregate: YearAggregate): void {
-  const months = aggregate.monthBuckets.filter((bucket) => bucket.created > 0 || bucket.modified > 0 || bucket.words > 0 || bucket.characters > 0);
+  const months = aggregate.monthBuckets.filter(
+    (bucket) =>
+      bucket.created > 0 ||
+      bucket.modified > 0 ||
+      bucket.words > 0 ||
+      bucket.characters > 0,
+  );
   const maxWords = Math.max(1, ...months.map((bucket) => bucket.words));
   const chart = parent.createEl("div", { cls: "annual-review-dashboard-bars" });
   for (const bucket of months) {
@@ -191,7 +243,11 @@ function renderTrend(parent: Element, aggregate: YearAggregate): void {
   }
 }
 
-function renderHeatmap(parent: Element, aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): void {
+function renderHeatmap(
+  parent: Element,
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): void {
   const text = UI_TEXT[language];
   const maxWords = Math.max(1, ...aggregate.dayBuckets.map((bucket) => bucket.words));
   const maxWeek = Math.max(0, ...aggregate.dayBuckets.map((bucket) => bucket.week));
@@ -206,7 +262,12 @@ function renderHeatmap(parent: Element, aggregate: YearAggregate, language: Reso
   for (const bucket of aggregate.dayBuckets) {
     const cell = grid.createDiv({ cls: "annual-review-dashboard-heatmap-cell" });
     cell.ariaLabel = text.dayWords(bucket.date, bucket.words);
-    cell.title = text.dayWordsWithActivity(bucket.date, bucket.words, bucket.created, bucket.modified);
+    cell.title = text.dayWordsWithActivity(
+      bucket.date,
+      bucket.words,
+      bucket.created,
+      bucket.modified,
+    );
     cell.style.width = "10px";
     cell.style.height = "10px";
     cell.style.borderRadius = "2px";
@@ -216,28 +277,48 @@ function renderHeatmap(parent: Element, aggregate: YearAggregate, language: Reso
   }
 }
 
-function renderGrowth(parent: Element, aggregate: YearAggregate, language: ResolvedAnnualReviewLanguage): void {
+function renderGrowth(
+  parent: Element,
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): void {
   const text = UI_TEXT[language];
-  const maxGrowth = Math.max(1, ...aggregate.wordGrowthBuckets.map((bucket) => bucket.wordsGained));
+  const maxGrowth = Math.max(
+    1,
+    ...aggregate.wordGrowthBuckets.map((bucket) => bucket.wordsGained),
+  );
   const chart = parent.createEl("div", { cls: "annual-review-dashboard-growth" });
   for (const bucket of aggregate.wordGrowthBuckets) {
     const row = chart.createDiv({ cls: "annual-review-dashboard-bar-row" });
     row.createEl("span", { text: bucket.month.slice(5) });
     const bar = row.createDiv({ cls: "annual-review-dashboard-bar" });
     bar.style.width = `${Math.max(4, Math.round((bucket.wordsGained / maxGrowth) * 100))}%`;
-    bar.title = text.monthGrowth(bucket.month, bucket.wordsGained, bucket.cumulativeWords);
-    row.createEl("span", { text: text.growthSummary(bucket.wordsGained, bucket.cumulativeWords) });
+    bar.title = text.monthGrowth(
+      bucket.month,
+      bucket.wordsGained,
+      bucket.cumulativeWords,
+    );
+    row.createEl("span", {
+      text: text.growthSummary(bucket.wordsGained, bucket.cumulativeWords),
+    });
   }
 }
 
 function heatColor(words: number, maxWords: number): string {
   if (words <= 0) return "var(--background-modifier-border)";
   const colors = ["#c7e9c0", "#74c476", "#238b45", "#00441b"];
-  const index = Math.min(colors.length - 1, Math.ceil((words / maxWords) * colors.length) - 1);
+  const index = Math.min(
+    colors.length - 1,
+    Math.ceil((words / maxWords) * colors.length) - 1,
+  );
   return colors[index] ?? colors[0];
 }
 
-function renderList(parent: Element, items: string[], language: ResolvedAnnualReviewLanguage): void {
+function renderList(
+  parent: Element,
+  items: string[],
+  language: ResolvedAnnualReviewLanguage,
+): void {
   const list = parent.createEl("ul");
   for (const item of items.length > 0 ? items : [UI_TEXT[language].noDataFound]) {
     list.createEl("li", { text: item });

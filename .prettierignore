@@ -1,5 +1,8 @@
+# Generated or bulky artifacts are intentionally outside project formatting.
 coverage/
 dist/
 main.js
 node_modules/
+
+# Lockfile churn is managed by npm, not Prettier.
 package-lock.json

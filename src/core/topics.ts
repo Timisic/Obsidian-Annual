@@ -1,4 +1,11 @@
-import type { NoteStats, NoteTopicAssignment, TopicEvolutionData, TopicMonthlyBucket, TopicSource, TopTopic } from "./types";
+import type {
+  NoteStats,
+  NoteTopicAssignment,
+  TopicEvolutionData,
+  TopicMonthlyBucket,
+  TopicSource,
+  TopTopic,
+} from "./types";
 
 const MAX_TOPICS_PER_NOTE = 3;
 const MAX_REPORTED_TOPICS = 8;
@@ -29,7 +36,17 @@ const FRONTMATTER_TOPIC_KEYS = [
   "领域",
 ];
 
-const FOLDER_STOPWORDS = new Set(["", "/", "daily", "dailies", "journal", "journals", "notes", "note", "inbox"]);
+const FOLDER_STOPWORDS = new Set([
+  "",
+  "/",
+  "daily",
+  "dailies",
+  "journal",
+  "journals",
+  "notes",
+  "note",
+  "inbox",
+]);
 const TAG_PREFIXES = new Set(["topic", "topics", "theme", "themes", "主题", "领域"]);
 
 interface TopicAccumulator {
@@ -41,7 +58,10 @@ interface TopicAccumulator {
   monthlyWords: Map<string, number>;
 }
 
-export function buildTopicEvolution(notes: NoteStats[], year: number): TopicEvolutionData {
+export function buildTopicEvolution(
+  notes: NoteStats[],
+  year: number,
+): TopicEvolutionData {
   const months = createMonthKeys(year);
   const assignments = notes.map(assignTopics);
   const accumulators = new Map<string, TopicAccumulator>();
@@ -70,8 +90,16 @@ export function buildTopicEvolution(notes: NoteStats[], year: number): TopicEvol
 
   const rankedTopics = [...accumulators.values()].map(toTopTopic).sort(sortTopTopics);
   const topTopics = rankedTopics.slice(0, MAX_REPORTED_TOPICS);
-  const monthlyBuckets = buildMonthlyBuckets(months, accumulators, topTopics.map((topic) => topic.name));
-  const { emergingTopics, decliningTopics } = detectSignals(months, accumulators, rankedTopics.map((topic) => topic.name));
+  const monthlyBuckets = buildMonthlyBuckets(
+    months,
+    accumulators,
+    topTopics.map((topic) => topic.name),
+  );
+  const { emergingTopics, decliningTopics } = detectSignals(
+    months,
+    accumulators,
+    rankedTopics.map((topic) => topic.name),
+  );
 
   return {
     topTopics,
@@ -110,7 +138,12 @@ function assignTopics(note: NoteStats): NoteTopicAssignment {
   const sources: Record<string, TopicSource> = {};
   const add = (topic: string, source: TopicSource) => {
     const normalized = normalizeTopic(topic);
-    if (!normalized || isTimeContainerTopic(normalized) || topics.includes(normalized) || topics.length >= MAX_TOPICS_PER_NOTE) {
+    if (
+      !normalized ||
+      isTimeContainerTopic(normalized) ||
+      topics.includes(normalized) ||
+      topics.length >= MAX_TOPICS_PER_NOTE
+    ) {
       return;
     }
     topics.push(normalized);
@@ -166,7 +199,10 @@ function topicFromTag(tag: string): string {
 }
 
 function topicFromFolder(folder: string): string {
-  const parts = folder.split("/").map((part) => part.trim()).filter(Boolean);
+  const parts = folder
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean);
   const leaf = parts[parts.length - 1] ?? "";
   return FOLDER_STOPWORDS.has(leaf.toLowerCase()) ? "" : leaf;
 }
@@ -186,7 +222,10 @@ function normalizeTopic(topic: string): string {
     .replace(/\.md$/u, "")
     .replace(/[_-]+/gu, " ")
     .replace(/^(?:19|20)\d{2}\s+(?:0?[1-9]|1[0-2])\s+(?:0?[1-9]|[12]\d|3[01])\s+/u, "")
-    .replace(/^(?:19|20)\d{2}年\s*(?:0?[1-9]|1[0-2])月\s*(?:0?[1-9]|[12]\d|3[01])日?\s*/u, "")
+    .replace(
+      /^(?:19|20)\d{2}年\s*(?:0?[1-9]|1[0-2])月\s*(?:0?[1-9]|[12]\d|3[01])日?\s*/u,
+      "",
+    )
     .replace(/\s+/gu, " ");
 }
 
@@ -204,7 +243,11 @@ function isTimeContainerTopic(topic: string): boolean {
   if (/^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])月?$/u.test(lower)) {
     return true;
   }
-  if (/^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])[-_/日.](?:0?[1-9]|[12]\d|3[01])日?$/u.test(lower)) {
+  if (
+    /^(?:19|20)\d{2}[-_/年.](?:0?[1-9]|1[0-2])[-_/日.](?:0?[1-9]|[12]\d|3[01])日?$/u.test(
+      lower,
+    )
+  ) {
     return true;
   }
   if (/^(?:0?[1-9]|1[0-2])月$/u.test(lower)) {
@@ -219,13 +262,20 @@ function isTimeContainerTopic(topic: string): boolean {
   if (/^(?:q[1-4]|第[一二三四1234]季度)$/u.test(lower)) {
     return true;
   }
-  if (/^(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)$/u.test(lower)) {
+  if (
+    /^(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)$/u.test(
+      lower,
+    )
+  ) {
     return true;
   }
   return false;
 }
 
-function getAccumulator(accumulators: Map<string, TopicAccumulator>, topic: string): TopicAccumulator {
+function getAccumulator(
+  accumulators: Map<string, TopicAccumulator>,
+  topic: string,
+): TopicAccumulator {
   const existing = accumulators.get(topic);
   if (existing) {
     return existing;
@@ -248,7 +298,11 @@ function incrementMonth(months: Map<string, number>, month: string, words: numbe
 
 function updateRepresentative(accumulator: TopicAccumulator, note: NoteStats): void {
   const existing = accumulator.representativeNotes.get(note.path);
-  if (!existing || note.wordCount > existing.words || (note.wordCount === existing.words && note.charCount > existing.characters)) {
+  if (
+    !existing ||
+    note.wordCount > existing.words ||
+    (note.wordCount === existing.words && note.charCount > existing.characters)
+  ) {
     accumulator.representativeNotes.set(note.path, {
       path: note.path,
       words: note.wordCount,
@@ -259,7 +313,10 @@ function updateRepresentative(accumulator: TopicAccumulator, note: NoteStats): v
 
 function toTopTopic(accumulator: TopicAccumulator): TopTopic {
   const representativeNotes = [...accumulator.representativeNotes.values()]
-    .sort((a, b) => b.words - a.words || b.characters - a.characters || a.path.localeCompare(b.path))
+    .sort(
+      (a, b) =>
+        b.words - a.words || b.characters - a.characters || a.path.localeCompare(b.path),
+    )
     .slice(0, REPRESENTATIVE_NOTE_LIMIT)
     .map((note) => note.path);
 
@@ -273,10 +330,19 @@ function toTopTopic(accumulator: TopicAccumulator): TopTopic {
 }
 
 function sortTopTopics(a: TopTopic, b: TopTopic): number {
-  return b.addedWords - a.addedWords || b.newNotes - a.newNotes || b.updatedNotes - a.updatedNotes || a.name.localeCompare(b.name);
+  return (
+    b.addedWords - a.addedWords ||
+    b.newNotes - a.newNotes ||
+    b.updatedNotes - a.updatedNotes ||
+    a.name.localeCompare(b.name)
+  );
 }
 
-function buildMonthlyBuckets(months: string[], accumulators: Map<string, TopicAccumulator>, topTopics: string[]): TopicMonthlyBucket[] {
+function buildMonthlyBuckets(
+  months: string[],
+  accumulators: Map<string, TopicAccumulator>,
+  topTopics: string[],
+): TopicMonthlyBucket[] {
   const topTopicSet = new Set(topTopics);
   return months.map((month) => {
     const topics: Record<string, number> = {};
@@ -304,8 +370,13 @@ function detectSignals(
   accumulators: Map<string, TopicAccumulator>,
   rankedTopicNames: string[],
 ): { emergingTopics: string[]; decliningTopics: string[] } {
-  const activeMonths = months.filter((month) => [...accumulators.values()].some((topic) => (topic.monthlyWords.get(month) ?? 0) > 0));
-  const recentMonths = activeMonths.length > 0 ? activeMonths.slice(-RECENT_MONTH_WINDOW) : months.slice(-RECENT_MONTH_WINDOW);
+  const activeMonths = months.filter((month) =>
+    [...accumulators.values()].some((topic) => (topic.monthlyWords.get(month) ?? 0) > 0),
+  );
+  const recentMonths =
+    activeMonths.length > 0
+      ? activeMonths.slice(-RECENT_MONTH_WINDOW)
+      : months.slice(-RECENT_MONTH_WINDOW);
   const recentSet = new Set(recentMonths);
   const earlierMonths = months.filter((month) => !recentSet.has(month));
   const rank = new Map(rankedTopicNames.map((name, index) => [name, index]));
@@ -319,12 +390,22 @@ function detectSignals(
   return {
     emergingTopics: scored
       .filter((topic) => topic.recentWords > 0 && topic.earlierWords === 0)
-      .sort((a, b) => b.recentWords - a.recentWords || (rank.get(a.name) ?? 0) - (rank.get(b.name) ?? 0) || a.name.localeCompare(b.name))
+      .sort(
+        (a, b) =>
+          b.recentWords - a.recentWords ||
+          (rank.get(a.name) ?? 0) - (rank.get(b.name) ?? 0) ||
+          a.name.localeCompare(b.name),
+      )
       .slice(0, 3)
       .map((topic) => topic.name),
     decliningTopics: scored
       .filter((topic) => topic.earlierWords > 0 && topic.recentWords === 0)
-      .sort((a, b) => b.earlierWords - a.earlierWords || (rank.get(a.name) ?? 0) - (rank.get(b.name) ?? 0) || a.name.localeCompare(b.name))
+      .sort(
+        (a, b) =>
+          b.earlierWords - a.earlierWords ||
+          (rank.get(a.name) ?? 0) - (rank.get(b.name) ?? 0) ||
+          a.name.localeCompare(b.name),
+      )
       .slice(0, 3)
       .map((topic) => topic.name),
   };
@@ -335,7 +416,10 @@ function sumMonths(words: Map<string, number>, months: string[]): number {
 }
 
 function createMonthKeys(year: number): string[] {
-  return Array.from({ length: 12 }, (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`);
+  return Array.from(
+    { length: 12 },
+    (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`,
+  );
 }
 
 function getYear(timestamp: number): number {

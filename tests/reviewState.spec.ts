@@ -15,9 +15,9 @@ describe("review state", () => {
   it("requires every candidate to carry evidence", () => {
     const session = sessionWith([candidate("topic-1", "topic", [])]);
 
-    expect(() => applyReviewAction(session, { type: "accept", candidateId: "topic-1", at })).toThrow(
-      "Review candidate topic-1 must include at least one evidence source.",
-    );
+    expect(() =>
+      applyReviewAction(session, { type: "accept", candidateId: "topic-1", at }),
+    ).toThrow("Review candidate topic-1 must include at least one evidence source.");
   });
 
   it("applies MVP review actions and updates progress", () => {
@@ -29,9 +29,22 @@ describe("review state", () => {
       candidate("dormant-1", "dormant-note"),
     ]);
 
-    const accepted = applyReviewAction(session, { type: "accept", candidateId: "topic-1", at });
-    const renamed = applyReviewAction(accepted, { type: "rename-topic", candidateId: "topic-1", title: "Writing Systems", at });
-    const highlighted = applyReviewAction(renamed, { type: "add-to-annual-highlights", candidateId: "note-1", at });
+    const accepted = applyReviewAction(session, {
+      type: "accept",
+      candidateId: "topic-1",
+      at,
+    });
+    const renamed = applyReviewAction(accepted, {
+      type: "rename-topic",
+      candidateId: "topic-1",
+      title: "Writing Systems",
+      at,
+    });
+    const highlighted = applyReviewAction(renamed, {
+      type: "add-to-annual-highlights",
+      candidateId: "note-1",
+      at,
+    });
     const actioned = applyReviewAction(highlighted, {
       type: "add-to-actions",
       candidateId: "task-1",
@@ -43,8 +56,18 @@ describe("review state", () => {
         includeInReport: true,
       },
     });
-    const archived = applyReviewAction(actioned, { type: "archive", candidateId: "dormant-1", at, note: "No longer active." });
-    const merged = applyReviewAction(archived, { type: "merge-topic", sourceCandidateId: "topic-2", targetCandidateId: "topic-1", at });
+    const archived = applyReviewAction(actioned, {
+      type: "archive",
+      candidateId: "dormant-1",
+      at,
+      note: "No longer active.",
+    });
+    const merged = applyReviewAction(archived, {
+      type: "merge-topic",
+      sourceCandidateId: "topic-2",
+      targetCandidateId: "topic-1",
+      at,
+    });
 
     expect(merged.candidates.find((item) => item.id === "topic-1")).toMatchObject({
       status: "renamed",
@@ -81,17 +104,27 @@ describe("review state", () => {
   });
 
   it("preserves user-decided choices when repeated scans refresh candidates", () => {
-    const stored = applyReviewAction(sessionWith([candidate("topic-1", "topic"), candidate("note-1", "note")]), {
-      type: "rename-topic",
-      candidateId: "topic-1",
-      title: "Local-first review",
-      at,
-    });
+    const stored = applyReviewAction(
+      sessionWith([candidate("topic-1", "topic"), candidate("note-1", "note")]),
+      {
+        type: "rename-topic",
+        candidateId: "topic-1",
+        title: "Local-first review",
+        at,
+      },
+    );
     const rescannedTopic = {
       ...candidate("topic-1", "topic"),
       title: "Machine title",
       reason: "Refreshed machine reason",
-      evidence: [{ id: "new-evidence", kind: "tag", label: "#review", target: "#review" } satisfies EvidenceSource],
+      evidence: [
+        {
+          id: "new-evidence",
+          kind: "tag",
+          label: "#review",
+          target: "#review",
+        } satisfies EvidenceSource,
+      ],
       score: 99,
     };
     const rescannedNote = {
@@ -100,7 +133,12 @@ describe("review state", () => {
       score: 20,
     };
 
-    const merged = mergeScannedCandidates(stored, [rescannedTopic, rescannedNote, candidate("project-1", "project")], "scan-2", at);
+    const merged = mergeScannedCandidates(
+      stored,
+      [rescannedTopic, rescannedNote, candidate("project-1", "project")],
+      "scan-2",
+      at,
+    );
 
     expect(merged.candidates.find((item) => item.id === "topic-1")).toMatchObject({
       status: "renamed",
@@ -119,16 +157,21 @@ describe("review state", () => {
   });
 
   it("keeps disappeared reviewed candidates with missing evidence but drops disappeared undecided candidates", () => {
-    const stored = applyReviewAction(sessionWith([candidate("topic-1", "topic"), candidate("note-1", "note")]), {
-      type: "accept",
-      candidateId: "topic-1",
-      at,
-    });
+    const stored = applyReviewAction(
+      sessionWith([candidate("topic-1", "topic"), candidate("note-1", "note")]),
+      {
+        type: "accept",
+        candidateId: "topic-1",
+        at,
+      },
+    );
 
     const merged = mergeScannedCandidates(stored, [], "scan-empty", at);
 
     expect(merged.candidates.map((item) => item.id)).toEqual(["topic-1"]);
-    expect(merged.candidates[0]?.evidence.every((evidence) => evidence.missing)).toBe(true);
+    expect(merged.candidates[0]?.evidence.every((evidence) => evidence.missing)).toBe(
+      true,
+    );
   });
 
   it("calculates progress from statuses without counting candidates as reviewed", () => {
@@ -162,7 +205,11 @@ function sessionWith(candidates: ReviewCandidate[]): ReviewSessionState {
   };
 }
 
-function candidate(id: string, type: ReviewCandidateType, evidence: EvidenceSource[] = [evidenceFor(id)]): ReviewCandidate {
+function candidate(
+  id: string,
+  type: ReviewCandidateType,
+  evidence: EvidenceSource[] = [evidenceFor(id)],
+): ReviewCandidate {
   return {
     id,
     type,

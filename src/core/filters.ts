@@ -12,7 +12,10 @@ export function shouldIncludePath(path: string, settings: AnnualReviewSettings):
     return false;
   }
 
-  if (settings.includeFolders.length > 0 && !settings.includeFolders.some((folder) => isInFolder(normalizedPath, folder))) {
+  if (
+    settings.includeFolders.length > 0 &&
+    !settings.includeFolders.some((folder) => isInFolder(normalizedPath, folder))
+  ) {
     return false;
   }
 
@@ -20,7 +23,9 @@ export function shouldIncludePath(path: string, settings: AnnualReviewSettings):
     return false;
   }
 
-  return !settings.excludePatterns.some((pattern) => pattern && normalizedPath.includes(pattern));
+  return !settings.excludePatterns.some(
+    (pattern) => pattern && normalizedPath.includes(pattern),
+  );
 }
 
 export function folderFromPath(path: string): string {
@@ -31,5 +36,7 @@ export function folderFromPath(path: string): string {
 
 function isInFolder(path: string, folder: string): boolean {
   const normalizedFolder = normalizeFolder(folder);
-  return normalizedFolder === "" ? true : path === normalizedFolder || path.startsWith(`${normalizedFolder}/`);
+  return normalizedFolder === ""
+    ? true
+    : path === normalizedFolder || path.startsWith(`${normalizedFolder}/`);
 }

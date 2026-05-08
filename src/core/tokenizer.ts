@@ -1,4 +1,5 @@
-const cjkPattern = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const cjkPattern =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 const latinPattern = /[\p{L}\p{N}]+(?:['-][\p{L}\p{N}]+)*/gu;
 
 export interface TextCounts {

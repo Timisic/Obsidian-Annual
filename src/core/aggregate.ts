@@ -15,7 +15,11 @@ import type {
   YearAggregate,
 } from "./types";
 
-export function buildYearAggregate(files: SourceFile[], year: number, settings: AnnualReviewSettings): YearAggregate {
+export function buildYearAggregate(
+  files: SourceFile[],
+  year: number,
+  settings: AnnualReviewSettings,
+): YearAggregate {
   const notes = files
     .filter((file) => shouldIncludePath(file.path, settings))
     .map((file) => extractNoteStats(file, settings))
@@ -97,7 +101,9 @@ export function buildYearAggregate(files: SourceFile[], year: number, settings: 
     topFolders: rankedMetrics(folderCounts),
     topLinks: rankedMetrics(linkCounts),
     topNotes: notes.map(toRankedNote).sort(sortRankedNotes).slice(0, 10),
-    representativeNotes: [...representativeByMonth.values()].sort((a, b) => a.path.localeCompare(b.path)),
+    representativeNotes: [...representativeByMonth.values()].sort((a, b) =>
+      a.path.localeCompare(b.path),
+    ),
     topicEvolution: buildTopicEvolution(notes, year),
     ...highValueInsights,
   };
@@ -125,7 +131,11 @@ function createDayBuckets(year: number): DayBucket[] {
   const firstWeekday = start.getDay();
   const days: DayBucket[] = [];
 
-  for (let current = new Date(start); current < end; current.setDate(current.getDate() + 1)) {
+  for (
+    let current = new Date(start);
+    current < end;
+    current.setDate(current.getDate() + 1)
+  ) {
     const index = days.length;
     days.push({
       date: dateKey(current.getTime()),
@@ -143,7 +153,13 @@ function createDayBuckets(year: number): DayBucket[] {
   return days;
 }
 
-function addToMonth(months: MonthBucket[], timestamp: number, field: "created" | "modified", note: NoteStats, includeContent: boolean): void {
+function addToMonth(
+  months: MonthBucket[],
+  timestamp: number,
+  field: "created" | "modified",
+  note: NoteStats,
+  includeContent: boolean,
+): void {
   const bucket = months[new Date(timestamp).getMonth()];
   if (!bucket) return;
   bucket[field] += 1;
@@ -155,7 +171,13 @@ function addToMonth(months: MonthBucket[], timestamp: number, field: "created" |
   }
 }
 
-function addToDay(days: DayBucket[], timestamp: number, field: "created" | "modified", note: NoteStats, includeContent: boolean): void {
+function addToDay(
+  days: DayBucket[],
+  timestamp: number,
+  field: "created" | "modified",
+  note: NoteStats,
+  includeContent: boolean,
+): void {
   const key = dateKey(timestamp);
   const bucket = days.find((day) => day.date === key);
   if (!bucket) return;
@@ -178,7 +200,11 @@ function buildWordGrowthBuckets(months: MonthBucket[]): WordGrowthBucket[] {
   });
 }
 
-function updateRepresentative(months: Map<string, RankedNote>, month: string, note: NoteStats): void {
+function updateRepresentative(
+  months: Map<string, RankedNote>,
+  month: string,
+  note: NoteStats,
+): void {
   const ranked = toRankedNote(note);
   const existing = months.get(month);
   if (!existing || sortRankedNotes(ranked, existing) < 0) {

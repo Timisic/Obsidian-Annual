@@ -2,8 +2,13 @@ import type { App, TFile } from "obsidian";
 import { shouldIncludePath } from "../core/filters";
 import type { AnnualReviewSettings, SourceFile } from "../core/types";
 
-export async function readVaultMarkdownFiles(app: App, settings: AnnualReviewSettings): Promise<SourceFile[]> {
-  const files = app.vault.getMarkdownFiles().filter((file) => shouldIncludePath(file.path, settings));
+export async function readVaultMarkdownFiles(
+  app: App,
+  settings: AnnualReviewSettings,
+): Promise<SourceFile[]> {
+  const files = app.vault
+    .getMarkdownFiles()
+    .filter((file) => shouldIncludePath(file.path, settings));
   return Promise.all(files.map((file) => readSourceFile(app, file)));
 }
 

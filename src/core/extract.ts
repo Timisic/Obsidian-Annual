@@ -1,8 +1,17 @@
 import { folderFromPath } from "./filters";
 import { countText } from "./tokenizer";
-import type { AnnualReviewSettings, LinkCounts, NoteStats, SourceFile, TaskStats } from "./types";
+import type {
+  AnnualReviewSettings,
+  LinkCounts,
+  NoteStats,
+  SourceFile,
+  TaskStats,
+} from "./types";
 
-export function extractNoteStats(file: SourceFile, settings: AnnualReviewSettings): NoteStats {
+export function extractNoteStats(
+  file: SourceFile,
+  settings: AnnualReviewSettings,
+): NoteStats {
   const parsed = parseFrontmatter(file.content);
   const frontmatter = file.frontmatter ?? parsed.frontmatter;
   const effectiveFrontmatter = settings.includeFrontmatter ? frontmatter : {};
@@ -27,7 +36,10 @@ export function extractNoteStats(file: SourceFile, settings: AnnualReviewSetting
   };
 }
 
-export function parseFrontmatter(content: string): { frontmatter: Record<string, unknown>; body: string } {
+export function parseFrontmatter(content: string): {
+  frontmatter: Record<string, unknown>;
+  body: string;
+} {
   const match = content.match(/^---\n([\s\S]*?)\n---\n?/u);
   if (!match) {
     return { frontmatter: {}, body: content };
@@ -74,11 +86,7 @@ function parseYamlSubset(yaml: string): Record<string, unknown> {
 function parseYamlValue(value: string): unknown {
   const trimmed = value.trim();
   if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-    return trimmed
-      .slice(1, -1)
-      .split(",")
-      .map(parseYamlScalar)
-      .filter(Boolean);
+    return trimmed.slice(1, -1).split(",").map(parseYamlScalar).filter(Boolean);
   }
   if (trimmed === "true") return true;
   if (trimmed === "false") return false;
