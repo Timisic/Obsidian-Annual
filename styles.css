@@ -121,6 +121,12 @@
   background: var(--background-secondary);
 }
 
+.annual-review-board-detail {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
 .annual-review-board-progress {
   display: grid;
   grid-column: 1 / -1;
@@ -181,7 +187,6 @@
   gap: 8px;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 6px;
 }
 
 .annual-review-board-detail-header h4 {
@@ -197,7 +202,7 @@
 
 .annual-review-board-reason,
 .annual-review-board-rank {
-  margin: 0 0 10px;
+  margin: 0;
   color: var(--text-muted);
   line-height: 1.45;
 }
@@ -229,11 +234,30 @@
 .annual-review-board-actions {
   display: grid;
   gap: 8px;
+  margin-bottom: 2px;
+  padding: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--interactive-accent);
+  border-radius: 6px;
+  background: var(--background-primary);
+}
+
+.annual-review-board-actions--accepted {
+  border-left-color: var(--color-green);
+}
+
+.annual-review-board-actions--action {
+  border-left-color: var(--color-orange);
+}
+
+.annual-review-board-actions--closed {
+  border-left-color: var(--text-muted);
 }
 
 .annual-review-board-actions .setting-item {
-  padding: 8px 0;
+  padding: 0;
   flex-wrap: wrap;
+  border: 0;
 }
 
 .annual-review-board-actions .setting-item-control {
