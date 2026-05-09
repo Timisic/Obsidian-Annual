@@ -5,6 +5,7 @@ import type {
   ReviewCandidate,
   ReviewSessionState,
 } from "../core/reviewState";
+import { buildReviewDetailModel } from "../core/reviewDetail";
 import { reviewCandidateDisplayTitle } from "../core/reviewTitle";
 import { joinFolderList } from "../core/settings";
 import type {
@@ -12,7 +13,13 @@ import type {
   ResolvedAnnualReviewLanguage,
   YearAggregate,
 } from "../core/types";
-import { getActionCandidateId, getNextReviewSelection } from "./reviewSelection";
+import { getReviewBoardActionState } from "./reviewActions";
+import {
+  getActionCandidateId,
+  getNextReviewSelection,
+  isPendingReviewQueueCandidate,
+  isReviewBoardQueueCandidate,
+} from "./reviewSelection";
 
 export const VIEW_TYPE_ANNUAL_REVIEW = "annual-review-dashboard";
 
@@ -189,9 +196,13 @@ export class AnnualReviewDashboardView extends ItemView {
     }
 
     const current =
-      session.candidates.find((candidate) => candidate.id === this.selectedCandidateId) ??
+      session.candidates.find(
+        (candidate) =>
+          candidate.id === this.selectedCandidateId &&
+          isReviewBoardQueueCandidate(candidate),
+      ) ??
       firstReviewableCandidate(session.candidates) ??
-      session.candidates[0];
+      firstVisibleQueueCandidate(session.candidates);
     this.selectedCandidateId = current?.id ?? null;
 
     const board = container.createDiv({ cls: "annual-review-board" });
@@ -206,9 +217,7 @@ export class AnnualReviewDashboardView extends ItemView {
     const groups = [
       {
         label: text.toReview,
-        candidates: session.candidates.filter(
-          (candidate) => candidate.status === "candidate",
-        ),
+        candidates: session.candidates.filter(isPendingReviewQueueCandidate),
       },
       {
         label: text.accepted,
@@ -261,35 +270,90 @@ export class AnnualReviewDashboardView extends ItemView {
       });
       return;
     }
+    const detailModel = buildReviewDetailModel(current);
     const detailHeader = detail.createDiv({ cls: "annual-review-board-detail-header" });
     detailHeader.createEl("h4", { text: displayCandidateTitle(current) });
-    detailHeader.createSpan({ text: `${current.type} / ${current.status}` });
-    detail.createEl("p", { cls: "annual-review-board-reason", text: current.reason });
-    if (current.rankReason) {
-      detail.createEl("p", { cls: "annual-review-board-rank", text: current.rankReason });
-    }
-
-    const evidenceList = detail.createEl("ul", { cls: "annual-review-board-evidence" });
-    for (const evidence of current.evidence) {
-      const item = evidenceList.createEl("li");
-      const button = item.createEl("button", {
-        text: evidence.missing
-          ? `${evidence.label} (${text.missingEvidence})`
-          : evidence.label,
-      });
-      button.type = "button";
-      button.onClickEvent(async () => {
-        await this.controller.openSourceNote(current.id, evidence.id);
-      });
-      if (evidence.reason) {
-        item.createSpan({
-          cls: "annual-review-board-evidence-reason",
-          text: evidence.reason,
-        });
-      }
-    }
-
+    detailHeader.createSpan({ text: detailModel.metadata[0] ?? current.status });
     this.renderDecisionControls(detail, session, current);
+
+    renderDetailSection(detail, text.currentNoteSummary, (section) => {
+      section.createEl("p", {
+        cls: "annual-review-board-summary",
+        text: detailModel.summary,
+      });
+    });
+
+    if (detailModel.metadata.length > 1) {
+      renderDetailSection(detail, text.essentialMetadata, (section) => {
+        section.createEl("p", {
+          cls: "annual-review-board-metadata",
+          text: detailModel.metadata.slice(1).join(" / "),
+        });
+      });
+    }
+
+    renderDetailSection(detail, text.selectedEvidence, (section) => {
+      const evidenceList = section.createEl("ul", {
+        cls: "annual-review-board-evidence",
+      });
+      for (const evidence of detailModel.evidence) {
+        const item = evidenceList.createEl("li");
+        const button = item.createEl("button", {
+          text: evidence.missing
+            ? `${evidence.label} (${text.missingEvidence})`
+            : evidence.label,
+        });
+        button.type = "button";
+        button.onClickEvent(async () => {
+          await this.controller.openSourceNote(current.id, evidence.id);
+        });
+        const note = evidence.excerpt ?? evidence.reason;
+        if (note) {
+          item.createSpan({
+            cls: "annual-review-board-evidence-reason",
+            text: note,
+          });
+        }
+      }
+    });
+
+    if (detailModel.linkedNotes.paths.length > 0) {
+      renderDetailSection(detail, text.linkedNotes, (section) => {
+        this.renderLinkedNotes(section, current, detailModel.linkedNotes.paths);
+      });
+    }
+  }
+
+  private renderLinkedNotes(
+    parent: HTMLElement,
+    candidate: ReviewCandidate,
+    paths: string[],
+  ): void {
+    const cls =
+      paths.length > 3
+        ? "annual-review-board-linked-notes"
+        : "annual-review-board-linked-notes is-inline";
+    const container =
+      paths.length > 3 ? parent.createEl("ul", { cls }) : parent.createEl("p", { cls });
+
+    paths.forEach((path, index) => {
+      const item = paths.length > 3 ? container.createEl("li") : container.createSpan();
+      const evidence = candidate.evidence.find(
+        (entry) => entry.sourcePath === path || entry.target === path,
+      );
+      if (evidence) {
+        const button = item.createEl("button", { text: path });
+        button.type = "button";
+        button.onClickEvent(async () => {
+          await this.controller.openSourceNote(candidate.id, evidence.id);
+        });
+      } else {
+        item.createSpan({ text: path });
+      }
+      if (paths.length <= 3 && index < paths.length - 1) {
+        item.createSpan({ text: ", " });
+      }
+    });
   }
 
   private renderDecisionControls(
@@ -298,7 +362,11 @@ export class AnnualReviewDashboardView extends ItemView {
     candidate: ReviewCandidate,
   ): void {
     const text = this.text();
-    const actions = parent.createDiv({ cls: "annual-review-board-actions" });
+    const actionState = getReviewBoardActionState(candidate);
+    const actionIds = new Set(actionState.actions);
+    const actions = parent.createDiv({
+      cls: `annual-review-board-actions annual-review-board-actions--${actionState.kind}`,
+    });
     const runAction = async (action: ReviewAction) => {
       await this.controller.applyReviewAction(action);
       const actedCandidateId = getActionCandidateId(action);
@@ -313,17 +381,23 @@ export class AnnualReviewDashboardView extends ItemView {
     };
     const at = () => new Date().toISOString();
 
-    new Setting(actions)
-      .setName(text.decisionActions)
-      .addButton((button) => {
+    const decision = new Setting(actions).setName(
+      actionPanelName(actionState.kind, text),
+    );
+
+    if (actionIds.has("accept")) {
+      decision.addButton((button) => {
         button
           .setButtonText(text.accept)
           .setCta()
           .onClick(async () => {
             await runAction({ type: "accept", candidateId: candidate.id, at: at() });
           });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("addHighlight")) {
+      decision.addButton((button) => {
         button.setButtonText(text.addHighlight).onClick(async () => {
           await runAction({
             type: "add-to-annual-highlights",
@@ -331,8 +405,11 @@ export class AnnualReviewDashboardView extends ItemView {
             at: at(),
           });
         });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("addAction")) {
+      decision.addButton((button) => {
         button.setButtonText(text.addAction).onClick(async () => {
           const label = window.prompt(
             text.actionPrompt,
@@ -353,19 +430,26 @@ export class AnnualReviewDashboardView extends ItemView {
             },
           });
         });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("ignore")) {
+      decision.addButton((button) => {
         button.setButtonText(text.ignore).onClick(async () => {
           await runAction({ type: "ignore", candidateId: candidate.id, at: at() });
         });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("openSourceNote")) {
+      decision.addButton((button) => {
         button.setButtonText(text.openSourceNote).onClick(async () => {
           await this.controller.openSourceNote(candidate.id);
         });
       });
+    }
 
-    if (candidate.type === "topic") {
+    if (actionIds.has("renameTopic")) {
       new Setting(actions).setName(text.topicActions).addButton((button) => {
         button.setButtonText(text.renameTopic).onClick(async () => {
           const title = window.prompt(
@@ -383,7 +467,9 @@ export class AnnualReviewDashboardView extends ItemView {
           });
         });
       });
+    }
 
+    if (actionIds.has("mergeTopic")) {
       const targets = session.candidates.filter(
         (item) =>
           item.type === "topic" && item.id !== candidate.id && item.status !== "merged",
@@ -412,14 +498,46 @@ export class AnnualReviewDashboardView extends ItemView {
   }
 }
 
+function actionPanelName(
+  kind: ReturnType<typeof getReviewBoardActionState>["kind"],
+  text: (typeof UI_TEXT)[ResolvedAnnualReviewLanguage],
+): string {
+  switch (kind) {
+    case "pending":
+      return text.pendingDecisionActions;
+    case "accepted":
+      return text.acceptedDecisionActions;
+    case "action":
+      return text.actionDecisionActions;
+    case "closed":
+      return text.closedDecisionActions;
+  }
+}
+
 function firstReviewableCandidate(
   candidates: ReviewCandidate[],
 ): ReviewCandidate | undefined {
-  return candidates.find((candidate) => candidate.status === "candidate");
+  return candidates.find(isPendingReviewQueueCandidate);
+}
+
+function firstVisibleQueueCandidate(
+  candidates: ReviewCandidate[],
+): ReviewCandidate | undefined {
+  return candidates.find(isReviewBoardQueueCandidate);
 }
 
 function displayCandidateTitle(candidate: ReviewCandidate): string {
   return reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
+}
+
+function renderDetailSection(
+  parent: HTMLElement,
+  title: string,
+  render: (section: HTMLElement) => void,
+): void {
+  const section = parent.createDiv({ cls: "annual-review-board-detail-section" });
+  section.createEl("h5", { text: title });
+  render(section);
 }
 
 function renderProgress(
