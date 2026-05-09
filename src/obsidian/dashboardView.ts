@@ -13,7 +13,12 @@ import type {
   ResolvedAnnualReviewLanguage,
   YearAggregate,
 } from "../core/types";
-import { getActionCandidateId, getNextReviewSelection } from "./reviewSelection";
+import {
+  getActionCandidateId,
+  getNextReviewSelection,
+  isPendingReviewQueueCandidate,
+  isReviewBoardQueueCandidate,
+} from "./reviewSelection";
 
 export const VIEW_TYPE_ANNUAL_REVIEW = "annual-review-dashboard";
 
@@ -190,9 +195,13 @@ export class AnnualReviewDashboardView extends ItemView {
     }
 
     const current =
-      session.candidates.find((candidate) => candidate.id === this.selectedCandidateId) ??
+      session.candidates.find(
+        (candidate) =>
+          candidate.id === this.selectedCandidateId &&
+          isReviewBoardQueueCandidate(candidate),
+      ) ??
       firstReviewableCandidate(session.candidates) ??
-      session.candidates[0];
+      firstVisibleQueueCandidate(session.candidates);
     this.selectedCandidateId = current?.id ?? null;
 
     const board = container.createDiv({ cls: "annual-review-board" });
@@ -207,9 +216,7 @@ export class AnnualReviewDashboardView extends ItemView {
     const groups = [
       {
         label: text.toReview,
-        candidates: session.candidates.filter(
-          (candidate) => candidate.status === "candidate",
-        ),
+        candidates: session.candidates.filter(isPendingReviewQueueCandidate),
       },
       {
         label: text.accepted,
@@ -472,7 +479,13 @@ export class AnnualReviewDashboardView extends ItemView {
 function firstReviewableCandidate(
   candidates: ReviewCandidate[],
 ): ReviewCandidate | undefined {
-  return candidates.find((candidate) => candidate.status === "candidate");
+  return candidates.find(isPendingReviewQueueCandidate);
+}
+
+function firstVisibleQueueCandidate(
+  candidates: ReviewCandidate[],
+): ReviewCandidate | undefined {
+  return candidates.find(isReviewBoardQueueCandidate);
 }
 
 function displayCandidateTitle(candidate: ReviewCandidate): string {
