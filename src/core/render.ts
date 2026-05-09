@@ -1,4 +1,5 @@
 import { toTopicEvolutionJson } from "./topics";
+import { reviewCandidateDisplayTitle } from "./reviewTitle";
 import type { ReviewCandidate, ReviewDecision, ReviewSessionState } from "./reviewState";
 import type {
   AiHighValueNoteInsight,
@@ -1428,7 +1429,7 @@ function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCand
 }
 
 function reviewCandidateLink(candidate: ReviewCandidate): string {
-  const title = candidate.userTitle || candidate.title;
+  const title = reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
   const path = candidate.sourcePaths[0];
   return path ? wikiLink(path, title) : sanitizeHeading(title);
 }

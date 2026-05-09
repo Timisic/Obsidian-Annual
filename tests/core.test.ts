@@ -25,6 +25,7 @@ import {
   buildAnnualReviewChartPaths,
   renderAnnualReview,
 } from "../src/core/render";
+import { buildReviewSession } from "../src/core/reviewCandidates";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import {
   createVaultSnapshot,
@@ -1290,6 +1291,80 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Merged Topic");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
+  });
+
+  it("renders wikilink-shaped Review Board topic titles as clean report aliases", async () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
+          ctime: "2026-01-01T08:00:00.000Z",
+          mtime: "2026-01-01T10:00:00.000Z",
+          content: "AI agent notes ".repeat(80),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("clippings", "[[Clippings]]", "accepted", {
+        sourcePaths: [
+          "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
+        ],
+      }),
+    ];
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const reviewSection = sectionBetween(markdown, "## 候选回看笔记", "## 数据口径");
+
+    expect(reviewSection).toContain(
+      "[[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]] (accepted)",
+    );
+    expect(reviewSection).not.toContain("|[[Clippings]]");
+    expect(reviewSection).not.toMatch(/\[\[[^\]|]+\|\[\[/u);
+    expect(
+      parseObsidianWikilinks(reviewSection).some((link) => link.target === "Clippings"),
+    ).toBe(false);
+  });
+
+  it("normalizes wikilink-shaped topic names before they enter Review Board state", async () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
+          ctime: "2026-01-01T08:00:00.000Z",
+          mtime: "2026-01-01T10:00:00.000Z",
+          content: "AI agent notes ".repeat(80),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    aggregate.topicEvolution.topTopics = [
+      {
+        name: "[[Clippings]]",
+        addedWords: 1200,
+        newNotes: 2,
+        updatedNotes: 1,
+        representativeNotes: [
+          "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
+        ],
+      },
+    ];
+
+    const reviewSession = buildReviewSession(aggregate);
+    const topicCandidate = reviewSession.candidates.find(
+      (candidate) => candidate.type === "topic",
+    );
+
+    expect(topicCandidate).toMatchObject({
+      title: "Clippings",
+      reason: expect.stringContaining("Clippings added"),
+    });
+    expect(topicCandidate?.reason).not.toContain("[[Clippings]]");
   });
 
   it("keeps the scoring method documentation present and bounded", () => {

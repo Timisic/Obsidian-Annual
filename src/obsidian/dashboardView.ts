@@ -5,6 +5,7 @@ import type {
   ReviewCandidate,
   ReviewSessionState,
 } from "../core/reviewState";
+import { reviewCandidateDisplayTitle } from "../core/reviewTitle";
 import { joinFolderList } from "../core/settings";
 import type {
   AnnualReviewSettings,
@@ -418,7 +419,7 @@ function firstReviewableCandidate(
 }
 
 function displayCandidateTitle(candidate: ReviewCandidate): string {
-  return candidate.userTitle || candidate.title;
+  return reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
 }
 
 function renderProgress(
