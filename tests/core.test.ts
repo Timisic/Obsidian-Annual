@@ -43,6 +43,10 @@ import {
   ANNUAL_REVIEW_START_MARKER,
   writeAnnualReviewOutput,
 } from "../src/obsidian/reportWriter";
+import {
+  AnnualReviewProgressIndicator,
+  clampProgress,
+} from "../src/obsidian/progressModal";
 import { getAnnualReviewDashboardLeaf } from "../src/obsidian/dashboardLeaf";
 import {
   getActionCandidateId,
@@ -2038,6 +2042,49 @@ describe("MVP public surface", () => {
     expect(pluginSource).not.toContain("getRightLeaf");
   });
 
+  it("uses a floating progress indicator instead of an Obsidian modal", () => {
+    const progressSource = readFileSync(
+      join(process.cwd(), "src/obsidian/progressModal.ts"),
+      "utf8",
+    );
+
+    expect(progressSource).not.toContain("extends Modal");
+    expect(progressSource).toContain("annual-review-progress-indicator");
+    expect(progressSource).toContain('container.setAttribute("role", "status")');
+  });
+
+  it("updates and closes the floating progress indicator lifecycle", () => {
+    withFakeDocument((root) => {
+      const indicator = new AnnualReviewProgressIndicator(
+        {} as ConstructorParameters<typeof AnnualReviewProgressIndicator>[0],
+        "Generating 2026 annual review",
+      );
+
+      indicator.open();
+      const container = root.querySelector(".annual-review-progress-indicator");
+      expect(container).not.toBeNull();
+      expect(container?.getAttribute("role")).toBe("status");
+
+      indicator.update("Reading vault notes", 8);
+      const status = root.querySelector(".annual-review-progress-status");
+      const progress = root.querySelector("progress");
+      expect(status?.textContent).toBe("Reading vault notes");
+      expect(progress?.value).toBe(8);
+
+      indicator.update("Writing annual review note", 150);
+      expect(progress?.value).toBe(100);
+
+      indicator.close();
+      expect(root.children).toHaveLength(0);
+    });
+  });
+
+  it("clamps progress percentages to the native progress range", () => {
+    expect(clampProgress(-5)).toBe(0);
+    expect(clampProgress(35)).toBe(35);
+    expect(clampProgress(105)).toBe(100);
+  });
+
   it("keeps core Review Board actions available in the compact audit view", () => {
     const source = readFileSync(
       join(process.cwd(), "src/obsidian/dashboardView.ts"),
@@ -2139,6 +2186,88 @@ function reviewSessionFixture(): ReviewSessionState {
     createdAt: "2026-05-08T00:00:00.000Z",
     updatedAt: "2026-05-08T00:00:00.000Z",
   };
+}
+
+class FakeDomElement {
+  readonly children: FakeDomElement[] = [];
+  className = "";
+  textContent = "";
+  max = 0;
+  value = 0;
+  private parent: FakeDomElement | null = null;
+  private readonly attributes = new Map<string, string>();
+
+  constructor(private readonly tagName: string) {}
+
+  appendChild(child: FakeDomElement): FakeDomElement {
+    child.parent = this;
+    this.children.push(child);
+    return child;
+  }
+
+  setAttribute(name: string, value: string): void {
+    this.attributes.set(name, value);
+  }
+
+  getAttribute(name: string): string | null {
+    return this.attributes.get(name) ?? null;
+  }
+
+  remove(): void {
+    const siblings = this.parent?.children;
+    const index = siblings?.indexOf(this) ?? -1;
+    if (siblings && index >= 0) {
+      siblings.splice(index, 1);
+    }
+    this.parent = null;
+  }
+
+  querySelector(selector: string): FakeDomElement | null {
+    for (const child of this.children) {
+      if (child.matches(selector)) {
+        return child;
+      }
+      const nested = child.querySelector(selector);
+      if (nested) {
+        return nested;
+      }
+    }
+    return null;
+  }
+
+  private matches(selector: string): boolean {
+    if (selector.startsWith(".")) {
+      return this.className.split(/\s+/u).includes(selector.slice(1));
+    }
+    return this.tagName === selector.toLowerCase();
+  }
+}
+
+function withFakeDocument(run: (root: FakeDomElement) => void): void {
+  const hadDocument = Object.prototype.hasOwnProperty.call(globalThis, "document");
+  const previousDocument = globalThis.document;
+  const root = new FakeDomElement("body");
+
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: {
+      body: root,
+      createElement: (tagName: string) => new FakeDomElement(tagName.toLowerCase()),
+    },
+  });
+
+  try {
+    run(root);
+  } finally {
+    if (hadDocument) {
+      Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    } else {
+      Reflect.deleteProperty(globalThis, "document");
+    }
+  }
 }
 
 function reviewCandidateFixture(

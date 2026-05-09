@@ -47,7 +47,7 @@ import {
 } from "./obsidian/dashboardView";
 import { getAnnualReviewDashboardLeaf } from "./obsidian/dashboardLeaf";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
-import { AnnualReviewProgressModal } from "./obsidian/progressModal";
+import { AnnualReviewProgressIndicator } from "./obsidian/progressModal";
 import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
 import { YearModal } from "./obsidian/yearModal";
 
@@ -206,16 +206,14 @@ export default class AnnualReviewPlugin extends Plugin {
   }
 
   private async generateReport(options: GenerateReportOptions): Promise<void> {
-    let progress: AnnualReviewProgressModal | null = null;
+    let progress: AnnualReviewProgressIndicator | null = null;
     try {
       const { year, settings } = options;
       const text = this.text(settings.generatorLanguage);
       new Notice(text.generating(year));
-      if (settings.aiProvider !== "none") {
-        progress = new AnnualReviewProgressModal(this.app, text.aiProgressTitle(year));
-        progress.open();
-        progress.update(text.progressReadingVault, 8);
-      }
+      progress = new AnnualReviewProgressIndicator(this.app, text.progressTitle(year));
+      progress.open();
+      progress.update(text.progressReadingVault, 8);
       const files = await this.getIndexedFiles(settings);
       const currentSnapshot = createVaultSnapshot(files, settings);
       const snapshotFile = await this.readVaultSnapshotFile();
