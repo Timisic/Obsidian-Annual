@@ -13,6 +13,7 @@ import type {
   ResolvedAnnualReviewLanguage,
   YearAggregate,
 } from "../core/types";
+import { getReviewBoardActionState } from "./reviewActions";
 import {
   getActionCandidateId,
   getNextReviewSelection,
@@ -273,6 +274,7 @@ export class AnnualReviewDashboardView extends ItemView {
     const detailHeader = detail.createDiv({ cls: "annual-review-board-detail-header" });
     detailHeader.createEl("h4", { text: displayCandidateTitle(current) });
     detailHeader.createSpan({ text: detailModel.metadata[0] ?? current.status });
+    this.renderDecisionControls(detail, session, current);
 
     renderDetailSection(detail, text.currentNoteSummary, (section) => {
       section.createEl("p", {
@@ -320,8 +322,6 @@ export class AnnualReviewDashboardView extends ItemView {
         this.renderLinkedNotes(section, current, detailModel.linkedNotes.paths);
       });
     }
-
-    this.renderDecisionControls(detail, session, current);
   }
 
   private renderLinkedNotes(
@@ -362,7 +362,11 @@ export class AnnualReviewDashboardView extends ItemView {
     candidate: ReviewCandidate,
   ): void {
     const text = this.text();
-    const actions = parent.createDiv({ cls: "annual-review-board-actions" });
+    const actionState = getReviewBoardActionState(candidate);
+    const actionIds = new Set(actionState.actions);
+    const actions = parent.createDiv({
+      cls: `annual-review-board-actions annual-review-board-actions--${actionState.kind}`,
+    });
     const runAction = async (action: ReviewAction) => {
       await this.controller.applyReviewAction(action);
       const actedCandidateId = getActionCandidateId(action);
@@ -377,17 +381,23 @@ export class AnnualReviewDashboardView extends ItemView {
     };
     const at = () => new Date().toISOString();
 
-    new Setting(actions)
-      .setName(text.decisionActions)
-      .addButton((button) => {
+    const decision = new Setting(actions).setName(
+      actionPanelName(actionState.kind, text),
+    );
+
+    if (actionIds.has("accept")) {
+      decision.addButton((button) => {
         button
           .setButtonText(text.accept)
           .setCta()
           .onClick(async () => {
             await runAction({ type: "accept", candidateId: candidate.id, at: at() });
           });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("addHighlight")) {
+      decision.addButton((button) => {
         button.setButtonText(text.addHighlight).onClick(async () => {
           await runAction({
             type: "add-to-annual-highlights",
@@ -395,8 +405,11 @@ export class AnnualReviewDashboardView extends ItemView {
             at: at(),
           });
         });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("addAction")) {
+      decision.addButton((button) => {
         button.setButtonText(text.addAction).onClick(async () => {
           const label = window.prompt(
             text.actionPrompt,
@@ -417,19 +430,26 @@ export class AnnualReviewDashboardView extends ItemView {
             },
           });
         });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("ignore")) {
+      decision.addButton((button) => {
         button.setButtonText(text.ignore).onClick(async () => {
           await runAction({ type: "ignore", candidateId: candidate.id, at: at() });
         });
-      })
-      .addButton((button) => {
+      });
+    }
+
+    if (actionIds.has("openSourceNote")) {
+      decision.addButton((button) => {
         button.setButtonText(text.openSourceNote).onClick(async () => {
           await this.controller.openSourceNote(candidate.id);
         });
       });
+    }
 
-    if (candidate.type === "topic") {
+    if (actionIds.has("renameTopic")) {
       new Setting(actions).setName(text.topicActions).addButton((button) => {
         button.setButtonText(text.renameTopic).onClick(async () => {
           const title = window.prompt(
@@ -447,7 +467,9 @@ export class AnnualReviewDashboardView extends ItemView {
           });
         });
       });
+    }
 
+    if (actionIds.has("mergeTopic")) {
       const targets = session.candidates.filter(
         (item) =>
           item.type === "topic" && item.id !== candidate.id && item.status !== "merged",
@@ -473,6 +495,22 @@ export class AnnualReviewDashboardView extends ItemView {
         });
       }
     }
+  }
+}
+
+function actionPanelName(
+  kind: ReturnType<typeof getReviewBoardActionState>["kind"],
+  text: (typeof UI_TEXT)[ResolvedAnnualReviewLanguage],
+): string {
+  switch (kind) {
+    case "pending":
+      return text.pendingDecisionActions;
+    case "accepted":
+      return text.acceptedDecisionActions;
+    case "action":
+      return text.actionDecisionActions;
+    case "closed":
+      return text.closedDecisionActions;
   }
 }
 
