@@ -4,8 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_REPO_ROOT="$(cd -- "$SCRIPT_DIR/../../../.." && pwd)"
 REPO_ROOT="${REPO_ROOT:-$DEFAULT_REPO_ROOT}"
-VAULT_NAME="${VAULT_NAME:-install-smoke-vault}"
-VAULT_PATH="${VAULT_PATH:-/Users/hong/code/obsidian-annual-workspaces/install-smoke-vault}"
+VAULT_NAME="${VAULT_NAME:-obsidian-smoke-vault}"
+VAULT_PATH="${VAULT_PATH:-$REPO_ROOT/tests/fixtures/obsidian-smoke-vault}"
 OBSIDIAN_CLI="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cli}"
 YEAR="${YEAR:-2026}"
 PLUGIN_ID="${PLUGIN_ID:-annual-review}"
@@ -66,9 +66,26 @@ if [[ ! -x "$OBSIDIAN_CLI" ]]; then
   exit 1
 fi
 
+registered_vault_path="$($OBSIDIAN_CLI vaults verbose 2>/dev/null | awk -F '\t' -v name="$VAULT_NAME" '$1 == name { print $2; exit }')"
+if [[ -z "$registered_vault_path" ]]; then
+  echo "ERROR: Obsidian CLI vault name not registered: $VAULT_NAME" >&2
+  echo "Open/register the vault first: $VAULT_PATH" >&2
+  exit 1
+fi
+
+canonical_vault_path="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$VAULT_PATH")"
+canonical_registered_path="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$registered_vault_path")"
+if [[ "$canonical_registered_path" != "$canonical_vault_path" ]]; then
+  echo "ERROR: Obsidian CLI vault '$VAULT_NAME' points at a different path:" >&2
+  echo "  registered: $registered_vault_path" >&2
+  echo "  expected:   $VAULT_PATH" >&2
+  echo "Fix the Obsidian vault registration or set VAULT_NAME to the correct registered vault." >&2
+  exit 1
+fi
+
 if [[ "$DEPLOY" == 1 ]]; then
   echo "==> Deploy plugin to smoke vault"
-  (cd "$REPO_ROOT" && npm run dev:deploy-smoke)
+  (cd "$REPO_ROOT" && SMOKE_VAULT_PATH="$VAULT_PATH" npm run dev:deploy-smoke)
 fi
 
 echo "==> Enable/reload plugin and rebuild index"
@@ -93,7 +110,7 @@ fi
 echo "==> Report: $REPORT_FILE"
 wc -c "$REPORT_FILE"
 
-printf "\n==> Issue checks\n"
+printf "\n==> Report sanity checks\n"
 
 echo "-- Local Codex availability from this runtime"
 command -v codex || true
