@@ -47,6 +47,7 @@ import { getAnnualReviewDashboardLeaf } from "../src/obsidian/dashboardLeaf";
 import {
   getActionCandidateId,
   getNextReviewSelection,
+  isPendingReviewQueueCandidate,
 } from "../src/obsidian/reviewSelection";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
@@ -2070,10 +2071,11 @@ describe("MVP public surface", () => {
     expect(source).toContain("this.controller.openSourceNote(candidate.id)");
   });
 
-  it("advances Review Board selection to the next pending candidate after a decision", () => {
+  it("advances Review Board selection to the next actionable pending candidate after a decision", () => {
     const candidates = [
       reviewCandidateFixture("current", "Current Topic", "accepted"),
-      reviewCandidateFixture("next", "Next Topic", "candidate"),
+      reviewCandidateFixture("topic", "Topic Signal", "candidate"),
+      reviewCandidateFixture("next", "Next Note", "candidate", { type: "note" }),
       reviewCandidateFixture("closed", "Closed Topic", "ignored"),
     ];
 
@@ -2084,7 +2086,19 @@ describe("MVP public surface", () => {
         at: "2026-05-08T00:00:00.000Z",
       }),
     ).toBe("current");
+    expect(isPendingReviewQueueCandidate(candidates[1] as ReviewCandidate)).toBe(false);
+    expect(isPendingReviewQueueCandidate(candidates[2] as ReviewCandidate)).toBe(true);
     expect(getNextReviewSelection(candidates, "current")).toBe("next");
+  });
+
+  it("keeps pending topic signals out of Review Board queue fallback selection", () => {
+    const candidates = [
+      reviewCandidateFixture("current", "Current Note", "accepted", { type: "note" }),
+      reviewCandidateFixture("topic", "Topic Signal", "candidate"),
+      reviewCandidateFixture("closed", "Closed Topic", "ignored"),
+    ];
+
+    expect(getNextReviewSelection(candidates, "current")).toBe("closed");
   });
 });
 
