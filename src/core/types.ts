@@ -38,6 +38,7 @@ export interface NoteStats {
   path: string;
   ctime: number;
   mtime: number;
+  noteDate?: NoteDateSignal;
   folder: string;
   month: string;
   frontmatter: Record<string, unknown>;
@@ -53,6 +54,14 @@ export interface NoteStats {
   tasks: TaskStats;
   wordCount: number;
   charCount: number;
+}
+
+export type NoteDateSource = "frontmatter" | "path";
+
+export interface NoteDateSignal {
+  timestamp: number;
+  source: NoteDateSource;
+  value: string;
 }
 
 export interface MonthBucket {
@@ -261,6 +270,7 @@ export interface YearAggregate {
   monthBuckets: MonthBucket[];
   dayBuckets: DayBucket[];
   wordGrowthBuckets: WordGrowthBucket[];
+  activityDateSources: Record<NoteDateSource | "filesystem", number>;
   topTags: RankedMetric[];
   topFolders: RankedMetric[];
   topLinks: RankedMetric[];
