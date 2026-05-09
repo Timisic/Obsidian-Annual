@@ -51,6 +51,15 @@ recommendation rationale, evidence count, and review progress. Selecting a
 candidate shows the source notes, tags, tasks, or excerpts that justify it, and
 source notes can be opened directly for verification.
 
+The `To review` queue has a narrow entry rule: the candidate must still be in
+the undecided `candidate` status, and it must be a note-level object the user can
+review directly: `note`, `project`, `task`, `dormant-note`, or `bridge-note`.
+Abstract taxonomy signals are intentionally excluded from the pending queue:
+`topic` candidates and tag/topic-derived taxonomy items remain scan and
+explanation signals, not items the user must clear one by one. Historical topic
+decisions that a user already accepted, renamed, merged, or turned into actions
+remain preserved in Review Board state and can still feed the annual report.
+
 MVP decision actions include:
 
 - `Accept`: include the candidate in annual-report input.
