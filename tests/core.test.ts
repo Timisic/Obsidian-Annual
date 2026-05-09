@@ -26,6 +26,7 @@ import {
   renderAnnualReview,
 } from "../src/core/render";
 import { buildReviewSession } from "../src/core/reviewCandidates";
+import { buildReviewDetailModel } from "../src/core/reviewDetail";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import {
   createVaultSnapshot,
@@ -2068,6 +2069,83 @@ describe("MVP public surface", () => {
     }
 
     expect(source).toContain("this.controller.openSourceNote(candidate.id)");
+  });
+
+  it("builds a concise selected-note detail model from local candidate data", () => {
+    const candidate = reviewCandidateFixture("detail", "Detail Topic", "candidate", {
+      reason: "Fallback reason that should not win when excerpt evidence exists.",
+      rank: 4,
+      rankReason: "Ranked because the note has review-worthy local evidence.",
+      evidence: [
+        {
+          id: "detail-excerpt",
+          kind: "excerpt",
+          label: "Projects/Detail.md",
+          target: "Projects/Detail.md",
+          sourcePath: "Projects/Detail.md",
+          excerpt:
+            "This note captures the main review decision and enough local context to summarize it.",
+          reason: "excerpt",
+        },
+      ],
+      sourcePaths: ["Projects/Detail.md"],
+    });
+
+    const detail = buildReviewDetailModel(candidate);
+
+    expect(detail.summary).toBe(
+      "This note captures the main review decision and enough local context to summarize it.",
+    );
+    expect(detail.metadata).toEqual([
+      "topic / candidate",
+      "rank 4",
+      "Ranked because the note has review-worthy local evidence.",
+    ]);
+    expect(detail.evidence).toHaveLength(1);
+    expect(detail.linkedNotes).toEqual({
+      paths: ["Projects/Detail.md"],
+      layout: "inline",
+    });
+  });
+
+  it("formats many selected-note linked notes as a list model", () => {
+    const candidate = reviewCandidateFixture("links", "Linked Topic", "candidate", {
+      sourcePaths: ["Projects/A.md", "Projects/B.md", "Projects/C.md", "Projects/D.md"],
+      evidence: [
+        {
+          id: "links-evidence",
+          kind: "note",
+          label: "Projects/A.md",
+          target: "Projects/A.md",
+          sourcePath: "Projects/A.md",
+        },
+      ],
+      reasons: [
+        {
+          type: "topic-bridge",
+          label: "Connects many project notes.",
+          evidenceId: "links-evidence",
+          sourcePath: "Projects/A.md",
+          relatedPaths: [
+            "Projects/B.md",
+            "Projects/C.md",
+            "Projects/D.md",
+            "Projects/E.md",
+          ],
+        },
+      ],
+    });
+
+    expect(buildReviewDetailModel(candidate).linkedNotes).toEqual({
+      paths: [
+        "Projects/A.md",
+        "Projects/B.md",
+        "Projects/C.md",
+        "Projects/D.md",
+        "Projects/E.md",
+      ],
+      layout: "list",
+    });
   });
 
   it("advances Review Board selection to the next pending candidate after a decision", () => {

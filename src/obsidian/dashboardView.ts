@@ -5,6 +5,7 @@ import type {
   ReviewCandidate,
   ReviewSessionState,
 } from "../core/reviewState";
+import { buildReviewDetailModel } from "../core/reviewDetail";
 import { reviewCandidateDisplayTitle } from "../core/reviewTitle";
 import { joinFolderList } from "../core/settings";
 import type {
@@ -261,35 +262,91 @@ export class AnnualReviewDashboardView extends ItemView {
       });
       return;
     }
+    const detailModel = buildReviewDetailModel(current);
     const detailHeader = detail.createDiv({ cls: "annual-review-board-detail-header" });
     detailHeader.createEl("h4", { text: displayCandidateTitle(current) });
-    detailHeader.createSpan({ text: `${current.type} / ${current.status}` });
-    detail.createEl("p", { cls: "annual-review-board-reason", text: current.reason });
-    if (current.rankReason) {
-      detail.createEl("p", { cls: "annual-review-board-rank", text: current.rankReason });
+    detailHeader.createSpan({ text: detailModel.metadata[0] ?? current.status });
+
+    renderDetailSection(detail, text.currentNoteSummary, (section) => {
+      section.createEl("p", {
+        cls: "annual-review-board-summary",
+        text: detailModel.summary,
+      });
+    });
+
+    if (detailModel.metadata.length > 1) {
+      renderDetailSection(detail, text.essentialMetadata, (section) => {
+        section.createEl("p", {
+          cls: "annual-review-board-metadata",
+          text: detailModel.metadata.slice(1).join(" / "),
+        });
+      });
     }
 
-    const evidenceList = detail.createEl("ul", { cls: "annual-review-board-evidence" });
-    for (const evidence of current.evidence) {
-      const item = evidenceList.createEl("li");
-      const button = item.createEl("button", {
-        text: evidence.missing
-          ? `${evidence.label} (${text.missingEvidence})`
-          : evidence.label,
+    renderDetailSection(detail, text.selectedEvidence, (section) => {
+      const evidenceList = section.createEl("ul", {
+        cls: "annual-review-board-evidence",
       });
-      button.type = "button";
-      button.onClickEvent(async () => {
-        await this.controller.openSourceNote(current.id, evidence.id);
-      });
-      if (evidence.reason) {
-        item.createSpan({
-          cls: "annual-review-board-evidence-reason",
-          text: evidence.reason,
+      for (const evidence of detailModel.evidence) {
+        const item = evidenceList.createEl("li");
+        const button = item.createEl("button", {
+          text: evidence.missing
+            ? `${evidence.label} (${text.missingEvidence})`
+            : evidence.label,
         });
+        button.type = "button";
+        button.onClickEvent(async () => {
+          await this.controller.openSourceNote(current.id, evidence.id);
+        });
+        const note = evidence.excerpt ?? evidence.reason;
+        if (note) {
+          item.createSpan({
+            cls: "annual-review-board-evidence-reason",
+            text: note,
+          });
+        }
       }
+    });
+
+    if (detailModel.linkedNotes.paths.length > 0) {
+      renderDetailSection(detail, text.linkedNotes, (section) => {
+        this.renderLinkedNotes(section, current, detailModel.linkedNotes.paths);
+      });
     }
 
     this.renderDecisionControls(detail, session, current);
+  }
+
+  private renderLinkedNotes(
+    parent: HTMLElement,
+    candidate: ReviewCandidate,
+    paths: string[],
+  ): void {
+    const cls =
+      paths.length > 3
+        ? "annual-review-board-linked-notes"
+        : "annual-review-board-linked-notes is-inline";
+    const container =
+      paths.length > 3 ? parent.createEl("ul", { cls }) : parent.createEl("p", { cls });
+
+    paths.forEach((path, index) => {
+      const item = paths.length > 3 ? container.createEl("li") : container.createSpan();
+      const evidence = candidate.evidence.find(
+        (entry) => entry.sourcePath === path || entry.target === path,
+      );
+      if (evidence) {
+        const button = item.createEl("button", { text: path });
+        button.type = "button";
+        button.onClickEvent(async () => {
+          await this.controller.openSourceNote(candidate.id, evidence.id);
+        });
+      } else {
+        item.createSpan({ text: path });
+      }
+      if (paths.length <= 3 && index < paths.length - 1) {
+        item.createSpan({ text: ", " });
+      }
+    });
   }
 
   private renderDecisionControls(
@@ -420,6 +477,16 @@ function firstReviewableCandidate(
 
 function displayCandidateTitle(candidate: ReviewCandidate): string {
   return reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
+}
+
+function renderDetailSection(
+  parent: HTMLElement,
+  title: string,
+  render: (section: HTMLElement) => void,
+): void {
+  const section = parent.createDiv({ cls: "annual-review-board-detail-section" });
+  section.createEl("h5", { text: title });
+  render(section);
 }
 
 function renderProgress(
