@@ -200,14 +200,29 @@
   font-size: var(--font-ui-smaller);
 }
 
-.annual-review-board-reason,
-.annual-review-board-rank {
+.annual-review-board-detail-section {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.annual-review-board-detail-section h5 {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+.annual-review-board-summary,
+.annual-review-board-metadata {
   margin: 0;
   color: var(--text-muted);
   line-height: 1.45;
 }
 
 .annual-review-board-evidence {
+  margin-bottom: 0;
   padding-left: 0;
   list-style: none;
 }
@@ -229,6 +244,22 @@
 .annual-review-board-evidence-reason {
   min-width: 0;
   color: var(--text-muted);
+}
+
+.annual-review-board-linked-notes {
+  margin-bottom: 0;
+}
+
+.annual-review-board-linked-notes.is-inline {
+  display: block;
+  padding-left: 0;
+  color: var(--text-normal);
+}
+
+.annual-review-board-linked-notes button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .annual-review-board-actions {

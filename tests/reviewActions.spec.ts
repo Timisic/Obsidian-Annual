@@ -15,7 +15,7 @@ describe("Review Board action rendering state", () => {
 
     expect(
       source.indexOf("this.renderDecisionControls(detail, session, current);"),
-    ).toBeLessThan(source.indexOf('cls: "annual-review-board-reason"'));
+    ).toBeLessThan(source.indexOf('cls: "annual-review-board-summary"'));
     expect(
       source.indexOf("this.renderDecisionControls(detail, session, current);"),
     ).toBeLessThan(source.indexOf('cls: "annual-review-board-evidence"'));
