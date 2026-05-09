@@ -4,6 +4,8 @@ import type { SourceFile } from "../src/core/types";
 
 const fixtureRoot = join(import.meta.dirname, "fixtures", "obsidian-smoke-vault");
 
+// Core tests load this small, deterministic subset by explicit path instead of
+// treating the whole smoke vault as the unit-test fixture.
 export async function fixtureFile(
   path: string,
   ctime: string,
