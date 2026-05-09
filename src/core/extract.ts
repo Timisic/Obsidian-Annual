@@ -3,6 +3,7 @@ import { countText } from "./tokenizer";
 import type {
   AnnualReviewSettings,
   LinkCounts,
+  NoteDateSignal,
   NoteStats,
   SourceFile,
   TaskStats,
@@ -18,11 +19,13 @@ export function extractNoteStats(
   const body = parsed.body;
   const counts = countText(body);
   const linkCounts = settings.includeLinks ? collectLinkCounts(file, body) : {};
+  const noteDate = resolveNoteDate(frontmatter, file.path);
 
   return {
     path: file.path,
     ctime: file.ctime,
     mtime: file.mtime,
+    ...(noteDate ? { noteDate } : {}),
     folder: folderFromPath(file.path),
     month: monthKey(file.ctime),
     frontmatter: effectiveFrontmatter,
@@ -34,6 +37,123 @@ export function extractNoteStats(
     wordCount: counts.words,
     charCount: counts.characters,
   };
+}
+
+const FRONTMATTER_DATE_KEYS = [
+  "date",
+  "created",
+  "created_at",
+  "createdAt",
+  "created_time",
+  "createdTime",
+  "ctime",
+  "day",
+  "日期",
+];
+
+function resolveNoteDate(
+  frontmatter: Record<string, unknown>,
+  path: string,
+): NoteDateSignal | undefined {
+  for (const key of FRONTMATTER_DATE_KEYS) {
+    const signal = parseNoteDateValue(frontmatter[key], "frontmatter");
+    if (signal) {
+      return signal;
+    }
+  }
+
+  const pathDate = path.match(/(?:^|[/\s_-])(\d{4})[-_.](\d{2})[-_.](\d{2})(?=$|[^\d])/u);
+  if (!pathDate) {
+    return undefined;
+  }
+
+  return buildNoteDateSignal(
+    Number(pathDate[1]),
+    Number(pathDate[2]),
+    Number(pathDate[3]),
+    "path",
+  );
+}
+
+function parseNoteDateValue(
+  value: unknown,
+  source: NoteDateSignal["source"],
+): NoteDateSignal | undefined {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const signal = parseNoteDateValue(item, source);
+      if (signal) {
+        return signal;
+      }
+    }
+    return undefined;
+  }
+  if (value instanceof Date) {
+    return buildNoteDateSignal(
+      value.getFullYear(),
+      value.getMonth() + 1,
+      value.getDate(),
+      source,
+    );
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return buildNoteDateSignal(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        date.getDate(),
+        source,
+      );
+    }
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  const date = trimmed.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:\b|T|\s)/u);
+  if (date) {
+    return buildNoteDateSignal(Number(date[1]), Number(date[2]), Number(date[3]), source);
+  }
+  const parsed = Date.parse(trimmed);
+  if (Number.isNaN(parsed)) {
+    return undefined;
+  }
+  const parsedDate = new Date(parsed);
+  return buildNoteDateSignal(
+    parsedDate.getFullYear(),
+    parsedDate.getMonth() + 1,
+    parsedDate.getDate(),
+    source,
+  );
+}
+
+function buildNoteDateSignal(
+  year: number,
+  month: number,
+  day: number,
+  source: NoteDateSignal["source"],
+): NoteDateSignal | undefined {
+  if (!isValidDateParts(year, month, day)) {
+    return undefined;
+  }
+  const value = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return {
+    timestamp: new Date(year, month - 1, day).getTime(),
+    source,
+    value,
+  };
+}
+
+function isValidDateParts(year: number, month: number, day: number): boolean {
+  if (year < 1900 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return false;
+  }
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+  );
 }
 
 export function parseFrontmatter(content: string): {

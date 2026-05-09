@@ -31,6 +31,11 @@ export function buildYearAggregate(
     .filter((file) => shouldIncludePath(file.path, settings))
     .map((file) => extractNoteStats(file, settings))
     .filter((note) => isActiveInYear(note, year));
+  const activityDateSources = {
+    frontmatter: 0,
+    path: 0,
+    filesystem: 0,
+  };
 
   const months = createMonthBuckets(year);
   const days = createDayBuckets(year);
@@ -48,22 +53,25 @@ export function buildYearAggregate(
   let completedTaskCount = 0;
 
   for (const note of notes) {
-    const createdInYear = getYear(note.ctime) === year;
-    const modifiedInYear = getYear(note.mtime) === year;
+    const createdTime = activityCreatedTime(note);
+    const modifiedTime = activityModifiedTime(note);
+    activityDateSources[note.noteDate?.source ?? "filesystem"] += 1;
+    const createdInYear = getYear(createdTime) === year;
+    const modifiedInYear = getYear(modifiedTime) === year;
     if (createdInYear) {
       createdCount += 1;
-      activeDates.add(dateKey(note.ctime));
-      addToMonth(months, note.ctime, "created", note, true);
-      addToDay(days, note.ctime, "created", note, true);
-      updateRepresentative(representativeByMonth, monthKey(note.ctime), note);
+      activeDates.add(dateKey(createdTime));
+      addToMonth(months, createdTime, "created", note, true);
+      addToDay(days, createdTime, "created", note, true);
+      updateRepresentative(representativeByMonth, monthKey(createdTime), note);
     }
     if (modifiedInYear) {
       modifiedCount += 1;
-      activeDates.add(dateKey(note.mtime));
-      addToMonth(months, note.mtime, "modified", note, false);
-      addToDay(days, note.mtime, "modified", note, false);
+      activeDates.add(dateKey(modifiedTime));
+      addToMonth(months, modifiedTime, "modified", note, false);
+      addToDay(days, modifiedTime, "modified", note, false);
       if (!createdInYear) {
-        updateRepresentative(representativeByMonth, monthKey(note.mtime), note);
+        updateRepresentative(representativeByMonth, monthKey(modifiedTime), note);
       }
     }
 
@@ -110,6 +118,7 @@ export function buildYearAggregate(
     monthBuckets: months,
     dayBuckets: days,
     wordGrowthBuckets: buildWordGrowthBuckets(months),
+    activityDateSources,
     topTags: rankedMetrics(tagCounts),
     topFolders: rankedMetrics(folderCounts),
     topLinks: rankedMetrics(linkCounts),
@@ -143,7 +152,18 @@ function buildCurrentVaultInference(
 }
 
 function isActiveInYear(note: NoteStats, year: number): boolean {
-  return getYear(note.ctime) === year || getYear(note.mtime) === year;
+  return (
+    getYear(activityCreatedTime(note)) === year ||
+    getYear(activityModifiedTime(note)) === year
+  );
+}
+
+function activityCreatedTime(note: NoteStats): number {
+  return note.noteDate?.timestamp ?? note.ctime;
+}
+
+function activityModifiedTime(note: NoteStats): number {
+  return note.noteDate?.timestamp ?? note.mtime;
 }
 
 function createMonthBuckets(year: number): MonthBucket[] {
