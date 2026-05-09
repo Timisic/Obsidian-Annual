@@ -131,6 +131,14 @@ const REPORT_TEXT = {
     growthDataSource: "Growth data source",
     reportFolder: "Report folder",
     excludePatterns: "Excluded patterns",
+    activityDateSources: "Activity date sources",
+    frontmatterDate: "frontmatter date",
+    pathDate: "path/filename date",
+    filesystemTimestamp: "filesystem timestamp",
+    filesystemDateWarning: (count: number, total: number) =>
+      count === total
+        ? "Only filesystem ctime/mtime was available for activity dates. If these files were copied, checked out, or batch deployed, the activity rhythm can reflect that operation time instead of the real writing dates."
+        : `${count} of ${total} active notes could only use filesystem ctime/mtime for activity dates. Copied, checked-out, or batch-deployed files may have flattened timestamps, so interpret those dates as a limited fallback.`,
     methodologyHistorical: (baseline: string, current: string) =>
       `Historical snapshot statistics compare the vault snapshot captured at ${baseline} with the current snapshot captured at ${current}. Mtime-only batch changes do not count as word growth unless note word counts changed.`,
     methodologyFallback:
@@ -295,6 +303,14 @@ const REPORT_TEXT = {
     growthDataSource: "增长数据来源",
     reportFolder: "报告目录",
     excludePatterns: "排除模式",
+    activityDateSources: "活动日期来源",
+    frontmatterDate: "frontmatter date",
+    pathDate: "路径/文件名日期",
+    filesystemTimestamp: "文件系统时间戳",
+    filesystemDateWarning: (count: number, total: number) =>
+      count === total
+        ? "本次活动日期只能使用文件系统 ctime/mtime。如果这些文件经过复制、checkout 或批量部署，活动节奏可能反映操作时间，而不是真实写作日期。"
+        : `${total} 篇活跃笔记中有 ${count} 篇只能使用文件系统 ctime/mtime 作为活动日期。复制、checkout 或批量部署可能压平这些时间戳，因此这些日期只能作为受限 fallback 解读。`,
     methodologyHistorical: (baseline: string, current: string) =>
       `增长数据使用历史 snapshot 统计：对比 ${baseline} 捕获的 vault snapshot 与 ${current} 捕获的当前 snapshot。仅 mtime 批量变化不会计入字数增长，除非笔记字数实际改变。`,
     methodologyFallback:
@@ -619,6 +635,7 @@ function renderMetadata(
     `generated: ${JSON.stringify(aggregate.generatedAt)}`,
     `year: ${aggregate.year}`,
     `growth_data_source: ${JSON.stringify(growthDataSourceLabel(aggregate, language))}`,
+    `activity_date_sources: ${JSON.stringify(activityDateSourceSummary(aggregate, language))}`,
     `included_scope: ${JSON.stringify(formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles))}`,
     `excluded_scope: ${JSON.stringify(formatScope(aggregate.scope.excludeFolders, text.none))}`,
     `excluded_patterns: ${JSON.stringify(formatScope(aggregate.scope.excludePatterns, text.none))}`,
@@ -653,12 +670,45 @@ function renderDataMethodology(
 
   return [
     `- ${text.growthDataSource}: ${growthDataSourceLabel(aggregate, language)}`,
+    `- ${text.activityDateSources}: ${activityDateSourceSummary(aggregate, language)}`,
+    ...renderFilesystemDateWarning(aggregate, language),
     ...(comparison.source === "historical-snapshot"
       ? [`- ${text.snapshotWordDelta}: ${formatSignedInteger(comparison.wordDelta)}`]
       : []),
     `- ${scopeLabel}: ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)}; ${excludedLabel}: ${formatScope(aggregate.scope.excludeFolders, text.none)}; ${patternsLabel}: ${formatScope(aggregate.scope.excludePatterns, text.none)}; ${reportFolderLabel}: ${aggregate.scope.reportFolder}`,
     `- ${methodology}`,
   ].join("\n");
+}
+
+function activityDateSourceSummary(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const text = REPORT_TEXT[language];
+  const sources = aggregate.activityDateSources;
+  return [
+    `${text.frontmatterDate}: ${sources.frontmatter}`,
+    `${text.pathDate}: ${sources.path}`,
+    `${text.filesystemTimestamp}: ${sources.filesystem}`,
+  ].join("; ");
+}
+
+function renderFilesystemDateWarning(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const filesystemCount = aggregate.activityDateSources.filesystem;
+  if (filesystemCount === 0) {
+    return [];
+  }
+  const total = Object.values(aggregate.activityDateSources).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  if (total === 0) {
+    return [];
+  }
+  return [`- ${REPORT_TEXT[language].filesystemDateWarning(filesystemCount, total)}`];
 }
 
 function growthDataSourceLabel(

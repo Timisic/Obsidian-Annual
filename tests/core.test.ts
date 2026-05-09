@@ -506,8 +506,8 @@ describe("aggregation and rendering", () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     expect(aggregate.createdCount).toBe(3);
     expect(aggregate.modifiedCount).toBe(4);
-    expect(aggregate.activeDays).toBe(6);
-    expect(aggregate.longestStreak).toBe(3);
+    expect(aggregate.activeDays).toBe(5);
+    expect(aggregate.longestStreak).toBe(2);
     expect(aggregate.topTags[0]).toEqual({ name: "journal", count: 2 });
     expect(aggregate.topFolders).toContainEqual({ name: "Daily", count: 2 });
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research", count: 2 });
@@ -537,6 +537,63 @@ describe("aggregation and rendering", () => {
     expect(aggregate.monthBuckets[3]?.words).toBe(0);
     expect(aggregate.topicEvolution.topTopics.length).toBeGreaterThan(0);
     expect(aggregate.topicEvolution.topTopics.length).toBeLessThanOrEqual(8);
+  });
+
+  it("uses explicit note dates to distribute flattened-mtime daily notes", async () => {
+    const flattenedTime = "2026-05-09T10:55:29.000Z";
+    const dailyPaths = [
+      "Daily/2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
+      "Daily/2026月复盘/2月/2026-02-05 环境促进想法转变.md",
+      "Daily/2026月复盘/3月/2026-03-01 Linya不去北京了.md",
+      "Daily/2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+      "Daily/2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
+    ];
+    const aggregate = buildYearAggregate(
+      await Promise.all(
+        dailyPaths.map((path) => fixtureFile(path, flattenedTime, flattenedTime)),
+      ),
+      2026,
+      DEFAULT_SETTINGS,
+    );
+
+    expect(aggregate.activityDateSources).toEqual({
+      frontmatter: 0,
+      path: 5,
+      filesystem: 0,
+    });
+    expect(aggregate.activeDays).toBe(5);
+    expect(aggregate.monthBuckets.slice(0, 5).every((month) => month.words > 0)).toBe(
+      true,
+    );
+    expect(aggregate.monthBuckets[4]?.words).toBeLessThan(aggregate.totalWords);
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-01-05")?.words).toBe(
+      aggregate.monthBuckets[0]?.words,
+    );
+    expect(aggregate.dayBuckets.find((day) => day.date === "2026-05-09")?.words).toBe(0);
+  });
+
+  it("prefers frontmatter date metadata before filesystem timestamps", () => {
+    const flattenedTime = Date.parse("2026-05-09T10:55:29.000Z");
+    const aggregate = buildYearAggregate(
+      [
+        {
+          path: "Inbox/Imported note.md",
+          ctime: flattenedTime,
+          mtime: flattenedTime,
+          content: "---\ndate: 2026-02-14\n---\n\nfrontmatter dated imported note",
+        },
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+
+    expect(aggregate.activityDateSources).toEqual({
+      frontmatter: 1,
+      path: 0,
+      filesystem: 0,
+    });
+    expect(aggregate.monthBuckets[1]?.words).toBeGreaterThan(0);
+    expect(aggregate.monthBuckets[4]?.words).toBe(0);
   });
 
   it("builds topic evolution from frontmatter, tags, folders, and report-only fallback clusters", () => {
@@ -729,7 +786,7 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# 2026 Annual Review");
     expect(markdown).toMatch(
-      /^---\ngenerated: ".+"\nyear: 2026\ngrowth_data_source: "current-vault inference"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
+      /^---\ngenerated: ".+"\nyear: 2026\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
     );
     expect(markdown).not.toContain("Generated:");
     expect(markdown).not.toContain("Included scope:");
@@ -811,6 +868,29 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("1. Create a compact index");
     expect(markdown).toContain("2. ");
     expect(markdown).toContain("3. No review-candidate push is available");
+  });
+
+  it("warns when annual activity dates are filesystem-only", () => {
+    const aggregate = buildYearAggregate(
+      [
+        {
+          path: "Inbox.md",
+          ctime: Date.parse("2026-05-09T08:00:00.000Z"),
+          mtime: Date.parse("2026-05-09T08:00:00.000Z"),
+          content: "filesystem only imported note",
+        },
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const markdown = renderAnnualReview(aggregate, { language: "zh" });
+
+    expect(markdown).toContain(
+      "- 活动日期来源: frontmatter date: 0; 路径/文件名日期: 0; 文件系统时间戳: 1",
+    );
+    expect(markdown).toContain(
+      "本次活动日期只能使用文件系统 ctime/mtime。如果这些文件经过复制、checkout 或批量部署",
+    );
   });
 
   it("labels fallback growth as current-vault inference when no historical snapshot is available", async () => {

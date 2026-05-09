@@ -72,14 +72,16 @@ export function buildTopicEvolution(
       continue;
     }
 
-    const createdInYear = getYear(note.ctime) === year;
-    const modifiedInYear = getYear(note.mtime) === year;
+    const createdTime = activityCreatedTime(note);
+    const modifiedTime = activityModifiedTime(note);
+    const createdInYear = getYear(createdTime) === year;
+    const modifiedInYear = getYear(modifiedTime) === year;
     for (const topic of assignment.topics) {
       const accumulator = getAccumulator(accumulators, topic);
       if (createdInYear) {
         accumulator.addedWords += note.wordCount;
         accumulator.newNotes.add(note.path);
-        incrementMonth(accumulator.monthlyWords, monthKey(note.ctime), note.wordCount);
+        incrementMonth(accumulator.monthlyWords, monthKey(createdTime), note.wordCount);
       }
       if (modifiedInYear) {
         accumulator.updatedNotes.add(note.path);
@@ -108,6 +110,14 @@ export function buildTopicEvolution(
     monthlyBuckets,
     noteAssignments: assignments.filter((assignment) => assignment.topics.length > 0),
   };
+}
+
+function activityCreatedTime(note: NoteStats): number {
+  return note.noteDate?.timestamp ?? note.ctime;
+}
+
+function activityModifiedTime(note: NoteStats): number {
+  return note.noteDate?.timestamp ?? note.mtime;
 }
 
 export function toTopicEvolutionJson(data: TopicEvolutionData): Record<string, unknown> {

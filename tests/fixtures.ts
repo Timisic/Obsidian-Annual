@@ -39,7 +39,6 @@ export async function fixtureVault(): Promise<SourceFile[]> {
       "2025-12-20T08:00:00.000Z",
       "2026-04-05T10:00:00.000Z",
     ),
-    await fixtureFile("Annual Reviews/2026 Annual Review.md", "2026-12-31T08:00:00.000Z"),
     await fixtureFile("Templates/Daily Template.md", "2026-01-01T08:00:00.000Z"),
     await fixtureFile("Archive/Old.md", "2026-01-01T08:00:00.000Z"),
   ];
