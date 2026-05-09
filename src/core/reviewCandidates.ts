@@ -7,6 +7,7 @@ import {
   type ReviewCandidateType,
   type ReviewSessionState,
 } from "./reviewState";
+import { normalizeReviewCandidateTitle } from "./reviewTitle";
 import type { ExplanationReason, HighValueNote, TopTopic, YearAggregate } from "./types";
 
 export function buildReviewSession(
@@ -75,6 +76,7 @@ function topicCandidate(
   if (sourcePaths.length === 0) {
     return [];
   }
+  const title = normalizeReviewCandidateTitle(topic.name);
   const id = candidateId(aggregate.year, "topic", topic.name);
   const evidence: EvidenceSource[] = sourcePaths.map((path, evidenceIndex) => ({
     id: `${id}:evidence:${evidenceIndex + 1}`,
@@ -82,17 +84,17 @@ function topicCandidate(
     label: path,
     target: path,
     sourcePath: path,
-    reason: `${topic.name} representative source note.`,
+    reason: `${title} representative source note.`,
   }));
   return [
     {
       id,
       type: "topic",
-      title: topic.name,
-      reason: `${topic.name} added ${topic.addedWords} words across ${topic.newNotes} new notes and ${topic.updatedNotes} updated notes.`,
+      title,
+      reason: `${title} added ${topic.addedWords} words across ${topic.newNotes} new notes and ${topic.updatedNotes} updated notes.`,
       reasons: evidence.map((item) => ({
         type: "word-count",
-        label: `${topic.name} evidence appears in ${item.sourcePath}.`,
+        label: `${title} evidence appears in ${item.sourcePath}.`,
         evidenceId: item.id,
         sourcePath: item.sourcePath ?? sourcePaths[0] ?? "",
         statField: "wordCount",
