@@ -1,105 +1,88 @@
-# Review Board v1 Specification
+# Review Board MVP Specification
 
-Status: DEC-40 MVP specification draft.
+Status: DEC-77 scope-converged MVP specification.
 
-Review Board is the review surface between vault scanning and annual report generation. It should make the scan output feel like a low-friction queue of evidence-backed choices, not an automatically accepted summary.
+Review Board is the review surface between vault scanning and report generation. It presents one card type only: **Theme Hypothesis**. Evidence Notes, Evidence Clusters, tags, links, tasks, folders, and timeline signals support that card, but they are not separate user-facing candidate queues.
 
-## Product References
+## MVP Rules
 
-- Vault Review: create a snapshot, review files one by one, and expose review progress.
-- The Queue: keep notes from sinking by showing one item at a time with lightweight controls.
-- Journal Bases: preserve yearly review context by rolling daily to weekly to monthly to quarterly to yearly material.
-- Spaced Everything: keep review context, record review outcomes, and let outcomes affect what appears next.
+1. A Review Session produces a stable set of Theme Hypotheses for one time range.
+2. The user reviews one Theme Hypothesis card at a time while retaining list context.
+3. Every Theme Hypothesis explains why it appeared and links back to Evidence Notes.
+4. Tags are weak signals only; they may help form evidence clusters but are not the primary theme path.
+5. Confirmed user decisions survive repeated scans.
+6. Review Board must not look or behave like a task manager.
 
-These references support four MVP rules:
+## Card Type
 
-1. Review Board opens with a stable candidate set for one annual review session.
-2. The user handles one candidate at a time while retaining list context.
-3. Every candidate explains why it appeared and links back to evidence.
-4. Confirmed user choices survive repeated scans.
+| Type               | Meaning                                                                                | Primary evidence                                                                                                       | Default user question                         |
+| ------------------ | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `theme-hypothesis` | A possible theme, direction, or evidence cluster that appears across the review range. | Evidence Notes, links, folders, headings, excerpts, timeline signals, weak tag/task signals, and representative notes. | Is this a real theme for this Review Session? |
 
-## Candidate Types
+Each Theme Hypothesis must have:
 
-| Type           | Meaning                                                                | Primary evidence                                                                  | Default user question                                                    |
-| -------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `topic`        | A theme, direction, or cluster that appears across the year.           | Tags, folders, headings, link clusters, representative notes, month distribution. | Is this a real annual theme?                                             |
-| `note`         | A specific note worth rereading or including as a representative note. | Word count, link count, recent activity, topic membership, excerpt.               | Should this note be part of the annual review?                           |
-| `project`      | A project thread that spans notes, tasks, folders, or links.           | Project folder, task trail, linked notes, first/last activity.                    | Should this project continue, close, or become a report item?            |
-| `task`         | A task or task cluster that needs annual-level decision.               | Markdown task source, completion state, nearby heading, linked note.              | Does this task need a next action, archive decision, or omission?        |
-| `dormant-note` | A note that was important before but has not been touched recently.    | Last modified time, inbound links, old activity, topic membership.                | Is this still worth maintaining or should it be archived?                |
-| `bridge-note`  | A note connecting multiple topics or project areas.                    | Distinct linked topics, inbound/outbound links, folder span.                      | Does this note deserve to become an index, summary, or annual highlight? |
-
-Each candidate must have:
-
-- Stable `id` derived from year, type, and source identity.
-- `type`.
-- Suggested `title`.
-- Short `reason`.
-- `status`.
-- At least one evidence source.
-- `sourcePaths` for Obsidian note opening and rescans.
-- Optional score and rank explanation.
+- stable `id` derived from year/range and theme identity;
+- `type: "theme-hypothesis"`;
+- suggested title;
+- short reason;
+- status;
+- at least one evidence source;
+- source paths for Obsidian note opening and rescans;
+- optional score/rank explanation for sorting only.
 
 ## Status Model
 
-The required statuses are:
-
-| Status        | Meaning                                                       | Report impact                                                                |
-| ------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `candidate`   | Newly scanned or still undecided.                             | Not included by default.                                                     |
-| `accepted`    | User accepts the candidate as review-worthy.                  | Eligible for the annual report.                                              |
-| `renamed`     | User accepts the candidate with a user-facing title override. | Eligible for the annual report using `userTitle`.                            |
-| `merged`      | User merged this candidate into another candidate.            | Source candidate is not shown as standalone; target carries merged evidence. |
-| `ignored`     | User intentionally skips it for this review.                  | Not included, but preserved in state.                                        |
-| `archived`    | User decides the item should be closed or archived.           | Eligible for the decisions section if `includeInReport` is true.             |
-| `next-action` | User turns the item into a follow-up action.                  | Eligible for the actions section.                                            |
+| Status      | Meaning                                                        | Report impact                                                                 |
+| ----------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `candidate` | Newly scanned or still undecided.                              | Not included by default.                                                      |
+| `accepted`  | User accepts the hypothesis as review-worthy.                  | Eligible for the Review Report.                                               |
+| `renamed`   | User accepts the hypothesis with a user-facing title override. | Eligible for the Review Report using `userTitle`.                             |
+| `merged`    | User merged this hypothesis into another hypothesis.           | Source hypothesis is not shown as standalone; target carries merged evidence. |
+| `ignored`   | User intentionally skips it for this review.                   | Not included, but preserved in state.                                         |
 
 Allowed transitions:
 
-| From                                              | To            | Trigger                                       |
-| ------------------------------------------------- | ------------- | --------------------------------------------- |
-| `candidate`                                       | `accepted`    | Accept.                                       |
-| `candidate`, `accepted`                           | `renamed`     | Rename topic or candidate.                    |
-| `candidate`, `accepted`, `renamed`                | `merged`      | Merge topic into another topic.               |
-| `candidate`, `accepted`, `renamed`, `next-action` | `ignored`     | Ignore.                                       |
-| `candidate`, `accepted`, `renamed`, `next-action` | `archived`    | Archive or mark as archive decision.          |
-| `candidate`, `accepted`, `renamed`                | `next-action` | Add action.                                   |
-| `ignored`, `archived`, `merged`                   | `candidate`   | Only by explicit reset, not by repeated scan. |
+| From                               | To          | Trigger                                       |
+| ---------------------------------- | ----------- | --------------------------------------------- |
+| `candidate`                        | `accepted`  | Accept.                                       |
+| `candidate`, `accepted`            | `renamed`   | Rename.                                       |
+| `candidate`, `accepted`, `renamed` | `merged`    | Merge into another Theme Hypothesis.          |
+| `candidate`, `accepted`, `renamed` | `ignored`   | Ignore.                                       |
+| `ignored`, `merged`                | `candidate` | Only by explicit reset, not by repeated scan. |
 
-Repeated scans may update reason, score, sort rank, and evidence on undecided candidates. They must not overwrite `accepted`, `renamed`, `merged`, `ignored`, `archived`, or `next-action` decisions.
+Repeated scans may update reason, score, sort rank, and evidence on undecided hypotheses. They must not overwrite `accepted`, `renamed`, `merged`, or `ignored` decisions.
 
 ## Actions
 
-| Action                   | Applies to                                                 | State effect                                                                                        | Required payload                           |
-| ------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Accept                   | All candidate types.                                       | `candidate` -> `accepted`.                                                                          | Candidate id.                              |
-| Ignore                   | All candidate types.                                       | Any active status -> `ignored`.                                                                     | Candidate id, optional note.               |
-| Merge topic              | `topic`; later may support similar `note` merge.           | Source -> `merged`; target receives merged source id/evidence.                                      | Source id, target id.                      |
-| Rename topic             | `topic`; optional for other candidates.                    | Active status -> `renamed`.                                                                         | Candidate id, non-empty user title.        |
-| Add to annual highlights | `topic`, `note`, `bridge-note`.                            | Keeps current accepted/renamed status or accepts candidate first; sets `includeInAnnualHighlights`. | Candidate id.                              |
-| Add to actions           | All candidate types, especially project/task/dormant-note. | Active status -> `next-action`; creates decision.                                                   | Candidate id, action label, optional note. |
-| Archive                  | All candidate types.                                       | Active status -> `archived`.                                                                        | Candidate id, optional note.               |
-| Open source note         | All candidates with note evidence.                         | No state change.                                                                                    | Candidate id, evidence id or source path.  |
+| Action           | Applies to                         | State effect                                                   | Required payload                          |
+| ---------------- | ---------------------------------- | -------------------------------------------------------------- | ----------------------------------------- |
+| Accept           | Theme Hypothesis.                  | `candidate` -> `accepted`.                                     | Candidate id.                             |
+| Rename           | Theme Hypothesis.                  | Active status -> `renamed`.                                    | Candidate id, non-empty user title.       |
+| Merge            | Theme Hypothesis.                  | Source -> `merged`; target receives merged source id/evidence. | Source id, target id.                     |
+| Ignore           | Theme Hypothesis.                  | Active status -> `ignored`.                                    | Candidate id, optional note.              |
+| Open Source Note | Any hypothesis with note evidence. | No state change.                                               | Candidate id, evidence id or source path. |
+
+Deferred actions: Add to actions, Archive, Add to annual highlights, and bulk actions.
 
 ## Minimal UI
 
-| Region                     | Contents                                                                                                       | Required behavior                                                                                                                                                   |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Left candidate list        | Queue grouped by status/type, with title, type badge, evidence count, and current status.                      | Selecting a row loads the candidate detail without changing state. Filters: To review, Accepted, Actions, Archived/Ignored.                                         |
-| Right evidence and actions | Candidate title, reason, source notes, evidence snippets, rank explanation, and action buttons.                | Evidence rows open source notes. Primary action is Accept for `candidate`, Add action for accepted project/task/dormant candidates, and Review target for `merged`. |
-| Bottom progress            | Counts for total candidates, reviewed items, accepted/highlighted items, next actions, ignored/archived items. | Progress is based on non-`candidate` statuses and updates after every state change.                                                                                 |
+| Region                       | Contents                                                                                           | Required behavior                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Left hypothesis list         | Queue grouped by To review, Confirmed, and Closed, with title, evidence count, and current status. | Selecting a row loads detail without changing state. No separate project/task/dormant/bridge queues. |
+| Right evidence and decisions | Hypothesis title, reason, source notes, evidence snippets, rank explanation, and decision buttons. | Evidence rows open source notes. Primary decision is Accept for undecided hypotheses.                |
+| Bottom progress              | Counts for total hypotheses, reviewed items, confirmed items, merged items, and ignored items.     | Progress is based on non-`candidate` statuses and updates after every state change.                  |
 
 Markdown wireframe:
 
-| Candidate queue                                                                                                                                                      | Evidence and actions                                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `To review (11)`<br>`[topic] Writing Systems`<br>`[note] Projects/Research.md`<br>`[bridge-note] Index/MOCs.md`<br><br>`Accepted (4)`<br>`[topic] Local-first tools` | `Writing Systems`<br>Reason: Appears in 8 notes across 6 months; links project notes and daily reflections.<br><br>Evidence:<br>`Daily/2026-01-02.md#Reflection` - tag `#writing`<br>`Projects/Research.md` - 4 inbound links<br>`Topics/Writing.md` - representative note<br><br>Actions:<br>`Accept` `Rename` `Merge topic` `Add to annual highlights` `Add to actions` `Ignore` `Archive` `Open source note` |
+| Theme Hypotheses                                                                                                                                             | Evidence and decisions                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `To review (3)`<br>`[theme-hypothesis] Writing Systems`<br>`[theme-hypothesis] Local-first tools`<br><br>`Confirmed (1)`<br>`[theme-hypothesis] AI judgment` | `Writing Systems`<br>Reason: Appears in notes across several months and connects daily reflections to project notes.<br><br>Evidence:<br>`Review Fixtures/2026-01-01.md` - representative note<br>`Projects/Research.md` - backlink evidence<br><br>Decisions:<br>`Accept` `Rename` `Merge` `Ignore` `Open Source Note` |
 
 Bottom bar:
 
-| Reviewed | Accepted | Next actions | Ignored | Archived |
-| -------- | -------- | ------------ | ------- | -------- |
-| `7 / 18` | `4`      | `3`          | `2`     | `1`      |
+| Reviewed | Confirmed | Merged | Ignored |
+| -------- | --------- | ------ | ------- |
+| `3 / 7`  | `2`       | `1`    | `0`     |
 
 ## Persistence
 
@@ -119,59 +102,39 @@ Optional vault state file:
 
 The state file must be JSON, plugin-owned, and excluded from scan input. Do not add frontmatter properties to source notes just to track Review Board decisions.
 
-Required persisted structure:
-
-```ts
-type ReviewSessionState = {
-  schemaVersion: 1;
-  year: number;
-  scopeHash: string;
-  scanId: string;
-  candidates: ReviewCandidate[];
-  decisions: ReviewDecision[];
-  progress: ReviewProgress;
-  createdAt: string;
-  updatedAt: string;
-};
-```
-
-Merge rule for repeated scans:
-
-1. Match scanned candidates by stable `id`.
-2. If the stored candidate has a user-decided status, preserve stored status, `userTitle`, decisions, highlight flag, merge target, and user note.
-3. Refresh machine-owned fields such as `reason`, `score`, `rank`, and evidence when the candidate is still `candidate`.
-4. Append newly scanned candidates as `candidate`.
-5. Keep stored candidates that disappeared from a new scan if they are not `candidate`; mark evidence as missing instead of dropping the decision.
-6. Drop disappeared undecided candidates only after the user explicitly starts a fresh review session.
-
 ## Evidence Source Contract
 
-Every candidate must include at least one `EvidenceSource`:
+Every Theme Hypothesis must include at least one `EvidenceSource`:
 
-| Field        | Meaning                                                                                                        |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `id`         | Stable within candidate.                                                                                       |
-| `kind`       | `note`, `tag`, `link`, `task`, `timeline`, `folder`, or `excerpt`.                                             |
-| `sourcePath` | Vault-relative note path when applicable.                                                                      |
-| `target`     | Tag, link target, task line, folder path, or timeline bucket.                                                  |
-| `label`      | Human-readable evidence label.                                                                                 |
-| `excerpt`    | Optional short source text.                                                                                    |
-| `reason`     | Why this evidence supports the candidate.                                                                      |
-| `missing`    | True when evidence for a previously accepted or otherwise user-decided candidate cannot be found after rescan. |
+| Field        | Meaning                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `id`         | Stable within candidate.                                                                  |
+| `kind`       | `note`, `tag`, `link`, `task`, `timeline`, `folder`, or `excerpt`.                        |
+| `sourcePath` | Vault-relative note path when applicable.                                                 |
+| `target`     | Tag, link target, task line, folder path, or timeline bucket.                             |
+| `label`      | Human-readable evidence label.                                                            |
+| `excerpt`    | Optional short source text.                                                               |
+| `reason`     | Why this evidence supports the hypothesis.                                                |
+| `missing`    | True when evidence for a previously user-decided hypothesis cannot be found after rescan. |
 
-The UI must never show an accepted candidate without evidence. If all evidence is missing after rescan, keep the user decision and show a "missing evidence" warning.
+The UI must never show an accepted hypothesis without evidence. If all evidence is missing after rescan, keep the user decision and show a missing-evidence warning.
 
 ## MVP Implementation Boundaries
 
 In scope:
 
-- State types and pure transition helpers.
+- Theme Hypothesis state types and pure transition helpers.
 - Session merge behavior for repeated scans.
-- Minimal Obsidian view with queue, evidence, actions, and progress.
-- Report generator reading accepted/highlight/action state.
+- Minimal Obsidian view with hypothesis list, evidence, decisions, and progress.
+- Report generator reading accepted/renamed Theme Hypotheses only.
 
-Out of scope for v1:
+Out of scope:
 
+- Project, task, dormant-note, or bridge-note as independent candidate types.
+- Add to actions / Action Item system.
+- Archive decision system.
+- Annual highlights.
+- Strong action section in the generated report.
 - Drag-and-drop sorting.
 - Bulk actions.
 - Bases/Dataview dependency.

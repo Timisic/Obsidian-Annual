@@ -226,15 +226,9 @@ export class AnnualReviewDashboardView extends ItemView {
         ),
       },
       {
-        label: text.actions,
-        candidates: session.candidates.filter(
-          (candidate) => candidate.status === "next-action",
-        ),
-      },
-      {
         label: text.closed,
         candidates: session.candidates.filter((candidate) =>
-          ["ignored", "archived", "merged"].includes(candidate.status),
+          ["ignored", "merged"].includes(candidate.status),
         ),
       },
     ];
@@ -396,43 +390,6 @@ export class AnnualReviewDashboardView extends ItemView {
       });
     }
 
-    if (actionIds.has("addHighlight")) {
-      decision.addButton((button) => {
-        button.setButtonText(text.addHighlight).onClick(async () => {
-          await runAction({
-            type: "add-to-annual-highlights",
-            candidateId: candidate.id,
-            at: at(),
-          });
-        });
-      });
-    }
-
-    if (actionIds.has("addAction")) {
-      decision.addButton((button) => {
-        button.setButtonText(text.addAction).onClick(async () => {
-          const label = window.prompt(
-            text.actionPrompt,
-            displayCandidateTitle(candidate),
-          );
-          if (!label?.trim()) {
-            return;
-          }
-          await runAction({
-            type: "add-to-actions",
-            candidateId: candidate.id,
-            at: at(),
-            decision: {
-              id: `${candidate.id}:decision:${Date.now()}`,
-              action: "continue",
-              label: label.trim(),
-              includeInReport: true,
-            },
-          });
-        });
-      });
-    }
-
     if (actionIds.has("ignore")) {
       decision.addButton((button) => {
         button.setButtonText(text.ignore).onClick(async () => {
@@ -472,7 +429,9 @@ export class AnnualReviewDashboardView extends ItemView {
     if (actionIds.has("mergeTopic")) {
       const targets = session.candidates.filter(
         (item) =>
-          item.type === "topic" && item.id !== candidate.id && item.status !== "merged",
+          item.type === "theme-hypothesis" &&
+          item.id !== candidate.id &&
+          item.status !== "merged",
       );
       if (targets.length > 0) {
         const merge = actions.createDiv({ cls: "annual-review-board-merge" });
@@ -507,8 +466,6 @@ function actionPanelName(
       return text.pendingDecisionActions;
     case "accepted":
       return text.acceptedDecisionActions;
-    case "action":
-      return text.actionDecisionActions;
     case "closed":
       return text.closedDecisionActions;
   }
@@ -549,8 +506,7 @@ function renderProgress(
   const bar = parent.createDiv({ cls: "annual-review-board-progress" });
   renderReviewMetric(bar, text.reviewed, `${progress.reviewed} / ${progress.total}`);
   renderReviewMetric(bar, text.accepted, String(progress.accepted + progress.renamed));
-  renderReviewMetric(bar, text.highlights, String(progress.annualHighlights));
-  renderReviewMetric(bar, text.nextActions, String(progress.nextAction));
+  renderReviewMetric(bar, text.mergeTopic, String(progress.merged));
   renderReviewMetric(bar, text.ignored, String(progress.ignored));
 }
 

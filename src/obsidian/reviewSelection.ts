@@ -1,11 +1,14 @@
 import type { ReviewAction, ReviewCandidate } from "../core/reviewState";
 
 export function isPendingReviewQueueCandidate(candidate: ReviewCandidate): boolean {
-  return candidate.status === "candidate" && candidate.type !== "topic";
+  return candidate.status === "candidate" && candidate.type === "theme-hypothesis";
 }
 
 export function isReviewBoardQueueCandidate(candidate: ReviewCandidate): boolean {
-  return candidate.status !== "candidate" || isPendingReviewQueueCandidate(candidate);
+  return (
+    candidate.status !== "merged" &&
+    (candidate.status !== "candidate" || isPendingReviewQueueCandidate(candidate))
+  );
 }
 
 export function getActionCandidateId(action: ReviewAction): string | null {

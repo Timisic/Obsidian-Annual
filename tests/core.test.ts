@@ -239,9 +239,9 @@ describe("vault snapshots", () => {
       reportFolder: "Annual Reviews",
     });
     expect(snapshot.notes.map((note) => note.path)).toEqual([
-      "Daily/2026-01-01.md",
       "Projects/Legacy.md",
       "Projects/Research.md",
+      "Review Fixtures/2026-01-01.md",
     ]);
     expect(snapshot.notes).not.toContainEqual(
       expect.objectContaining({ path: "Annual Reviews/2026 Annual Review.md" }),
@@ -249,8 +249,8 @@ describe("vault snapshots", () => {
     expect(snapshot.notes).not.toContainEqual(
       expect.objectContaining({ path: "Archive/Old.md" }),
     );
-    expect(snapshot.notes[0]).toMatchObject({
-      folder: "Daily",
+    expect(snapshot.notes[2]).toMatchObject({
+      folder: "Review Fixtures",
       modifiedTime: Date.parse("2026-01-01T10:00:00.000Z"),
       tags: ["journal", "writing", "中文"],
     });
@@ -516,15 +516,18 @@ describe("aggregation and rendering", () => {
     expect(aggregate.activeDays).toBe(5);
     expect(aggregate.longestStreak).toBe(2);
     expect(aggregate.topTags[0]).toEqual({ name: "journal", count: 2 });
-    expect(aggregate.topFolders).toContainEqual({ name: "Daily", count: 2 });
+    expect(aggregate.topFolders).toContainEqual({
+      name: "Review Fixtures",
+      count: 2,
+    });
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research", count: 2 });
     expect(
       aggregate.highValueNotes.some((note) => note.path === "Projects/Research.md"),
     ).toBe(true);
     expect(aggregate.representativeNotes.map((note) => note.path)).toEqual([
-      "Daily/2026-01-01.md",
       "Projects/Legacy.md",
       "Projects/Research.md",
+      "Review Fixtures/2026-01-01.md",
     ]);
     expect(aggregate.dayBuckets).toHaveLength(365);
     expect(
@@ -785,7 +788,7 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Review Candidates");
+    expect(markdown).toContain("## Theme Hypotheses");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
@@ -802,8 +805,8 @@ describe("aggregation and rendering", () => {
       "## Annual Overview",
       "## Writing Growth",
       "## Topic Evolution",
-      "## Review Candidates",
-      "## Next-Period Actions",
+      "## Theme Hypotheses",
+      "## Reflection Prompts",
       "## Data Methodology",
     ]);
     expect(markdown).toContain("| Total new words |");
@@ -847,9 +850,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Review Candidates");
-    expect(markdown).toContain("No reviewed Review Board decisions are ready");
-    expect(markdown).not.toContain("### Suggested review candidates");
+    expect(markdown).toContain("## Theme Hypotheses");
+    expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
+    expect(markdown).not.toContain("### Confirmed theme hypotheses");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
@@ -871,10 +874,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Representative notes are selected deterministically");
     expect(markdown).toContain("## Data Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
-    expect(markdown).toContain("## Next-Period Actions");
-    expect(markdown).toContain("1. Create a compact index");
-    expect(markdown).toContain("2. ");
-    expect(markdown).toContain("3. No review-candidate push is available");
+    expect(markdown).toContain("## Reflection Prompts");
+    expect(markdown).toContain("- Create a compact index");
+    expect(markdown).toContain("- No extra theme-hypothesis prompt is available");
   });
 
   it("warns when annual activity dates are filesystem-only", () => {
@@ -962,8 +964,8 @@ describe("aggregation and rendering", () => {
       "## 年度总览",
       "## 写作增长",
       "## 主题演化",
-      "## 候选回看笔记",
-      "## 下期行动",
+      "## 主题假设",
+      "## 复盘提示",
       "## 数据口径",
     ]);
     expect(markdown).toContain("### 累计增长");
@@ -976,11 +978,11 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 候选回看笔记");
-    expect(markdown).toContain("还没有可写入年报的 Review Board 审核决策");
+    expect(markdown).toContain("## 主题假设");
+    expect(markdown).toContain("还没有可写入年报的主题假设");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
-    expect(markdown).toContain("## 下期行动");
+    expect(markdown).toContain("## 复盘提示");
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
@@ -1026,7 +1028,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain(
       "This note links source evidence back to the project synthesis",
     );
-    expect(markdown).toContain("1. Create a review hub from [[Projects/Research]].");
+    expect(markdown).toContain("- Create a review hub from [[Projects/Research]].");
     expect(markdown).not.toContain("### Feedback Signals");
   });
 
@@ -1254,7 +1256,7 @@ describe("aggregation and rendering", () => {
       ],
     });
 
-    expect(markdown).toContain("No reviewed Review Board decisions are ready");
+    expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
     expect(markdown).not.toContain(
       "No auditable evidence was generated for this candidate",
     );
@@ -1268,19 +1270,16 @@ describe("aggregation and rendering", () => {
     const reviewSession = reviewSessionFixture();
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
-    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("### Confirmed theme hypotheses");
     expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
     expect(markdown).toContain("[[Projects/Renamed|Renamed Topic]] (renamed)");
-    expect(markdown).toContain("[[Projects/Action|Action Topic]] (next-action)");
-    expect(markdown).toContain("[[Projects/Highlight|Highlight Topic]] (candidate)");
-    expect(markdown).toContain("### Annual Highlights");
     expect(markdown).not.toContain("Ignored Topic");
     expect(markdown).not.toContain("Merged Topic");
     expect(markdown).not.toContain("Unreviewed Topic");
     expect(markdown).not.toContain("accepted unsupported reason");
     expect(markdown).not.toContain("These 4 reviewed candidates are included");
     expect(markdown).not.toContain("Manual confirmation:");
-    expect(markdown).toContain("1. Convert accepted topic into project");
+    expect(markdown).not.toContain("Convert accepted topic into project");
   });
 
   it("renders only reviewed Review Board decisions in the default Chinese report", async () => {
@@ -1290,9 +1289,8 @@ describe("aggregation and rendering", () => {
       reviewSession: reviewSessionFixture(),
     });
 
-    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("### 已确认主题假设");
     expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
-    expect(markdown).toContain("[[Projects/Highlight|Highlight Topic]] (candidate)");
     expect(markdown).not.toContain("Ignored Topic");
     expect(markdown).not.toContain("Merged Topic");
     expect(markdown).not.toContain("下面 4 个已审核候选");
@@ -1324,7 +1322,7 @@ describe("aggregation and rendering", () => {
       language: "zh",
       reviewSession,
     });
-    const reviewSection = sectionBetween(markdown, "## 候选回看笔记", "## 数据口径");
+    const reviewSection = sectionBetween(markdown, "## 主题假设", "## 数据口径");
 
     expect(reviewSection).toContain(
       "[[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]] (accepted)",
@@ -1363,7 +1361,7 @@ describe("aggregation and rendering", () => {
 
     const reviewSession = buildReviewSession(aggregate);
     const topicCandidate = reviewSession.candidates.find(
-      (candidate) => candidate.type === "topic",
+      (candidate) => candidate.type === "theme-hypothesis",
     );
 
     expect(topicCandidate).toMatchObject({
@@ -1613,7 +1611,7 @@ describe("AI provider", () => {
     expect(prompt).toContain("Projects/Research");
     expect(prompt).toContain('"linkGraph"');
     expect(prompt).toContain('"contextNotes"');
-    expect(prompt).toContain("Daily/2026-01-01.md");
+    expect(prompt).toContain("Review Fixtures/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
 
@@ -2098,8 +2096,6 @@ describe("MVP public surface", () => {
       "text.ignore",
       "text.renameTopic",
       "text.mergeTopic",
-      "text.addHighlight",
-      "text.addAction",
       "text.openSourceNote",
     ]) {
       expect(source).toContain(actionText);
@@ -2110,8 +2106,6 @@ describe("MVP public surface", () => {
       '"ignore"',
       '"rename-topic"',
       '"merge-topic"',
-      '"add-to-annual-highlights"',
-      '"add-to-actions"',
     ]) {
       expect(source).toContain(actionType);
     }
@@ -2145,7 +2139,7 @@ describe("MVP public surface", () => {
       "This note captures the main review decision and enough local context to summarize it.",
     );
     expect(detail.metadata).toEqual([
-      "topic / candidate",
+      "theme-hypothesis / candidate",
       "rank 4",
       "Ranked because the note has review-worthy local evidence.",
     ]);
@@ -2200,7 +2194,7 @@ describe("MVP public surface", () => {
     const candidates = [
       reviewCandidateFixture("current", "Current Topic", "accepted"),
       reviewCandidateFixture("topic", "Topic Signal", "candidate"),
-      reviewCandidateFixture("next", "Next Note", "candidate", { type: "note" }),
+      reviewCandidateFixture("next", "Next Theme", "candidate"),
       reviewCandidateFixture("closed", "Closed Topic", "ignored"),
     ];
 
@@ -2211,19 +2205,19 @@ describe("MVP public surface", () => {
         at: "2026-05-08T00:00:00.000Z",
       }),
     ).toBe("current");
-    expect(isPendingReviewQueueCandidate(candidates[1] as ReviewCandidate)).toBe(false);
+    expect(isPendingReviewQueueCandidate(candidates[1] as ReviewCandidate)).toBe(true);
     expect(isPendingReviewQueueCandidate(candidates[2] as ReviewCandidate)).toBe(true);
-    expect(getNextReviewSelection(candidates, "current")).toBe("next");
+    expect(getNextReviewSelection(candidates, "current")).toBe("topic");
   });
 
-  it("keeps pending topic signals out of Review Board queue fallback selection", () => {
+  it("keeps pending theme hypotheses in Review Board queue fallback selection", () => {
     const candidates = [
-      reviewCandidateFixture("current", "Current Note", "accepted", { type: "note" }),
+      reviewCandidateFixture("current", "Current Note", "accepted"),
       reviewCandidateFixture("topic", "Topic Signal", "candidate"),
       reviewCandidateFixture("closed", "Closed Topic", "ignored"),
     ];
 
-    expect(getNextReviewSelection(candidates, "current")).toBe("closed");
+    expect(getNextReviewSelection(candidates, "current")).toBe("topic");
   });
 });
 
@@ -2237,10 +2231,6 @@ function reviewSessionFixture(): ReviewSessionState {
   const candidates = [
     reviewCandidateFixture("accepted", "Accepted Topic", "accepted"),
     reviewCandidateFixture("renamed", "Renamed Topic", "renamed"),
-    reviewCandidateFixture("action", "Action Topic", "next-action"),
-    reviewCandidateFixture("highlight", "Highlight Topic", "candidate", {
-      includeInAnnualHighlights: true,
-    }),
     reviewCandidateFixture("ignored", "Ignored Topic", "ignored"),
     reviewCandidateFixture("merged", "Merged Topic", "merged"),
     reviewCandidateFixture("unreviewed", "Unreviewed Topic", "candidate"),
@@ -2252,28 +2242,15 @@ function reviewSessionFixture(): ReviewSessionState {
     scopeHash: "scope",
     scanId: "scan",
     candidates,
-    decisions: [
-      {
-        id: "decision-action",
-        candidateId: "action",
-        action: "convert-to-project",
-        label: "Convert accepted topic into project",
-        evidence: candidates[2]?.evidence ?? [],
-        includeInReport: true,
-        createdAt: "2026-05-08T00:00:00.000Z",
-      },
-    ],
+    decisions: [],
     progress: {
       total: candidates.length,
-      reviewed: 5,
-      candidate: 2,
+      reviewed: 4,
+      candidate: 1,
       accepted: 1,
       renamed: 1,
       merged: 1,
       ignored: 1,
-      archived: 0,
-      nextAction: 1,
-      annualHighlights: 1,
     },
     createdAt: "2026-05-08T00:00:00.000Z",
     updatedAt: "2026-05-08T00:00:00.000Z",
@@ -2371,7 +2348,7 @@ function reviewCandidateFixture(
   const sourcePath = `Projects/${id[0]?.toUpperCase() ?? ""}${id.slice(1)}.md`;
   return {
     id,
-    type: "topic",
+    type: "theme-hypothesis",
     title,
     reason: `${id} unsupported reason`,
     reasons: [],

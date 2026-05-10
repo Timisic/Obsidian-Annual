@@ -52,7 +52,7 @@ Annual Review 仍是默认 preset，同时保留 Quarterly Review、Monthly Revi
 - 代表 Evidence Notes。
 - 这些笔记为什么可能属于同一条思考线的 Connection Explanation。
 - 证据链接、摘录和不确定性说明。
-- 用户操作：Accept、Rename、Merge、Ignore、Open evidence、Re-explain。
+- 用户操作：Accept、Rename、Merge、Ignore、Open Source Note。
 
 主题假设需要用户复核。插件可以提示“这些笔记可能共同表达了什么”，
 但最终报告只写入用户确认过的主题名称、解释、证据和用户补充。

@@ -105,7 +105,7 @@ export class YearModal extends Modal {
     new Setting(contentEl)
       .setName("Optional AI enrichment")
       .setDesc(
-        "None keeps this MVP run local. ChatGPT is an explicit enrichment pass that can only supplement candidate rationale and report draft text.",
+        "None keeps this MVP run local. ChatGPT is an explicit enrichment pass that can only supplement evidence explanations and report draft text.",
       )
       .addDropdown((dropdown) => {
         dropdown
