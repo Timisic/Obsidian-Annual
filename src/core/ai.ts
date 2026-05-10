@@ -5,6 +5,10 @@ import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
+import {
+  buildThemeEvidencePackage,
+  parseThemeHypotheses,
+} from "./themeEvidence";
 import type {
   AiHighValueNoteInsight,
   AiReportEnhancements,
@@ -12,6 +16,8 @@ import type {
   AnnualReviewSettings,
   NoteStats,
   SourceFile,
+  ThemeEvidencePackage,
+  ThemeHypothesis,
   YearAggregate,
 } from "./types";
 
@@ -119,7 +125,15 @@ export async function renderAiReportEnhancements(
     return unavailableAiEnhancements("ChatGPT provider returned an empty response.");
   }
 
-  return withFallbackHighValueEnhancements(parseAiEnhancements(content), options);
+  const evidencePackage = buildThemeEvidencePackage(
+    options.aggregate,
+    options.files,
+    options.settings,
+  );
+  return withFallbackHighValueEnhancements(
+    parseAiEnhancements(content, evidencePackage),
+    options,
+  );
 }
 
 async function renderCodexReportSection(
@@ -138,7 +152,15 @@ async function renderCodexReportSection(
     );
   }
 
-  return withFallbackHighValueEnhancements(parseAiEnhancements(result.content), options);
+  const evidencePackage = buildThemeEvidencePackage(
+    options.aggregate,
+    options.files,
+    options.settings,
+  );
+  return withFallbackHighValueEnhancements(
+    parseAiEnhancements(result.content, evidencePackage),
+    options,
+  );
 }
 
 export function buildAiPrompt(
@@ -146,6 +168,7 @@ export function buildAiPrompt(
   files: SourceFile[],
   settings: AnnualReviewSettings,
 ): string {
+  const evidencePackage = buildThemeEvidencePackage(aggregate, files, settings);
   const activeNotes = activeNoteEntries(aggregate, files, settings);
   const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
 
@@ -179,6 +202,21 @@ export function buildAiPrompt(
       outputSchema: {
         periodJudgment:
           "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
+        themeHypotheses: [
+          {
+            id: "stable short id",
+            title:
+              "synthesized content theme; do not use raw tags/folders/months/document titles",
+            summary:
+              "2-3 sentence theme summary grounded in evidencePackage.evidenceNotes",
+            evidenceNoteIds: ["exact evidencePackage.evidenceNotes[].id values"],
+            connectionExplanation:
+              "how the evidence notes connect through local evidence signals",
+            uncertainty:
+              "required if fewer than two evidence notes support the hypothesis",
+            source: "ai",
+          },
+        ],
         themeInsights: [
           {
             title:
@@ -207,8 +245,9 @@ export function buildAiPrompt(
             : `${contextNotes.length} active notes include excerpts; ${omittedNoteCount} additional active notes are represented in the link graph only.`,
         excerptLimit: `${MAX_AI_CONTEXT_EXCERPT_CHARS} characters per included note`,
         evidenceRules:
-          "Use supplied excerpts, backlinks, linkedNotes, and exact Obsidian note paths. Preserve wikilink compatibility.",
+          "Use supplied evidencePackage excerpts, backlinks, linkedNotes, evidence note ids, and exact Obsidian note paths. Preserve wikilink compatibility.",
       },
+      evidencePackage,
       year: aggregate.year,
       privacyMode: aggregate.scope.privacyMode,
       totals: {
@@ -267,6 +306,11 @@ function buildCodexContext(
   files: SourceFile[],
   settings: AnnualReviewSettings,
 ): unknown {
+  const evidencePackage = compactThemeEvidencePackage(
+    buildThemeEvidencePackage(aggregate, files, settings),
+    20,
+    240,
+  );
   const activeNotes = activeNoteEntries(aggregate, files, settings);
   const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
   const contextNotes = activeNotes
@@ -295,8 +339,9 @@ function buildCodexContext(
     contextPolicy: {
       noteCoverage: `${contextNotes.length} active notes include excerpts and backlink summaries for local Codex fallback.`,
       evidenceSources:
-        "Use listed note paths, excerpts, topic metrics, link metrics, evidence-note signals, and backlink context only.",
+        "Use evidencePackage ids, listed note paths, excerpts, topic metrics, link metrics, evidence-note signals, and backlink context only.",
     },
+    evidencePackage,
     year: aggregate.year,
     privacyMode: aggregate.scope.privacyMode,
     totals: {
@@ -344,6 +389,32 @@ function buildCodexContext(
     isolatedPotentialNotes: aggregate.isolatedPotentialNotes
       .slice(0, 3)
       .map((note) => note.path),
+  };
+}
+
+function compactThemeEvidencePackage(
+  evidencePackage: ThemeEvidencePackage,
+  noteLimit: number,
+  excerptLimit: number,
+): ThemeEvidencePackage {
+  return {
+    ...evidencePackage,
+    evidenceNotes: evidencePackage.evidenceNotes.slice(0, noteLimit).map((note) => ({
+      ...note,
+      excerpt:
+        note.excerpt.length <= excerptLimit
+          ? note.excerpt
+          : `${note.excerpt.slice(0, excerptLimit).trim()}...`,
+      links: note.links.slice(0, 5),
+      backlinks: note.backlinks.slice(0, 4),
+      commonLinks: note.commonLinks.slice(0, 4),
+      frontmatterSignals: note.frontmatterSignals.slice(0, 3),
+      repeatedPhrases: note.repeatedPhrases.slice(0, 3),
+      questionSentences: note.questionSentences.slice(0, 2),
+      entities: note.entities.slice(0, 4),
+      crossFolderLinks: note.crossFolderLinks.slice(0, 4),
+      weakSignals: note.weakSignals.slice(0, 3),
+    })),
   };
 }
 
@@ -845,7 +916,10 @@ function extractResponseText(data: OpenAiResponse): string {
   return chunks.join("\n\n");
 }
 
-function parseAiEnhancements(content: string): AiReportEnhancements {
+function parseAiEnhancements(
+  content: string,
+  evidencePackage?: ThemeEvidencePackage,
+): AiReportEnhancements {
   const parsed = parseJsonObject(content);
   if (!parsed) {
     return {
@@ -853,13 +927,20 @@ function parseAiEnhancements(content: string): AiReportEnhancements {
       periodJudgment: toOneSentenceSummary(content),
     };
   }
+  const themeHypotheses = evidencePackage
+    ? parseThemeHypotheses(content, evidencePackage)
+    : [];
+  const parsedThemeInsights = arrayValue(parsed.themeInsights)
+    .map(toThemeInsight)
+    .filter((theme): theme is AiThemeInsight => Boolean(theme))
+    .slice(0, 5);
 
   return {
     periodJudgment: stringValue(parsed.periodJudgment) || toOneSentenceSummary(content),
-    themeInsights: arrayValue(parsed.themeInsights)
-      .map(toThemeInsight)
-      .filter((theme): theme is AiThemeInsight => Boolean(theme))
-      .slice(0, 5),
+    themeInsights:
+      parsedThemeInsights.length > 0
+        ? parsedThemeInsights
+        : themeHypotheses.map(themeHypothesisToInsight),
     highValueNotes: arrayValue(parsed.highValueNotes)
       .map(toHighValueNoteInsight)
       .filter((note): note is AiHighValueNoteInsight => Boolean(note))
@@ -868,6 +949,16 @@ function parseAiEnhancements(content: string): AiReportEnhancements {
       .map(stringValue)
       .filter(Boolean)
       .slice(0, 5),
+  };
+}
+
+function themeHypothesisToInsight(theme: ThemeHypothesis): AiThemeInsight {
+  return {
+    title: theme.title,
+    synthesis: theme.summary,
+    connections: theme.connectionExplanation,
+    evidenceNotes: theme.evidenceNoteIds,
+    nextQuestion: "",
   };
 }
 

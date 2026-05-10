@@ -325,6 +325,41 @@ export interface AiReportEnhancements {
   nextActions: string[];
 }
 
+export type ThemeHypothesisSource = "local" | "ai" | "mixed";
+
+export interface ThemeHypothesis {
+  id: string;
+  title: string;
+  summary: string;
+  evidenceNoteIds: string[];
+  connectionExplanation: string;
+  uncertainty?: string;
+  source: ThemeHypothesisSource;
+}
+
+export interface ThemeEvidenceNote {
+  id: string;
+  path: string;
+  title: string;
+  dateSignals: string[];
+  excerpt: string;
+  links: string[];
+  backlinks: string[];
+  commonLinks: string[];
+  frontmatterSignals: string[];
+  repeatedPhrases: string[];
+  questionSentences: string[];
+  entities: string[];
+  crossFolderLinks: string[];
+  weakSignals: string[];
+  whyIncluded: string;
+}
+
+export interface ThemeEvidencePackage {
+  reviewRange: string;
+  evidenceNotes: ThemeEvidenceNote[];
+}
+
 export interface SourceFile {
   path: string;
   ctime: number;
