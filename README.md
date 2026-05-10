@@ -146,6 +146,10 @@ npm run lint
 8. 修改年报中的用户手写区块后重新生成，确认手写内容未被覆盖。
 9. 在默认设置下确认没有外部网络请求或 AI 调用。
 
+## TODO
+
+- 核心产品闭环完成后，执行 [Prompt-vs-Plugin Benchmark](docs/prompt-vs-plugin-benchmark.md)：用固定测试 vault 对比“一份完整提示词 + 大模型读取所有允许笔记”和 Annual Review 插件，确认插件在证据编译、状态、交互、Obsidian 跳转、复现和隐私范围控制上有真实差异。
+
 ## 更多文档
 
 - [Product Definition](docs/product-definition.md)
