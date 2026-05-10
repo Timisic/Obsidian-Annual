@@ -383,7 +383,10 @@ describe("extraction", () => {
   });
 
   it("extracts frontmatter, tags, links, headings, and tasks", async () => {
-    const source = await fixtureFile("Daily/2026-01-01.md", "2026-01-01T08:00:00.000Z");
+    const source = await fixtureFile(
+      "Review Fixtures/2026-01-01.md",
+      "2026-01-01T08:00:00.000Z",
+    );
     const note = extractNoteStats(source, DEFAULT_SETTINGS);
     expect(note.frontmatter.tags).toEqual(["journal", "中文"]);
     expect(note.tags).toEqual(["journal", "writing", "中文"]);
@@ -552,16 +555,19 @@ describe("aggregation and rendering", () => {
   it("uses explicit note dates to distribute flattened-mtime daily notes", async () => {
     const flattenedTime = "2026-05-09T10:55:29.000Z";
     const dailyPaths = [
-      "Daily/2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
-      "Daily/2026月复盘/2月/2026-02-05 环境促进想法转变.md",
-      "Daily/2026月复盘/3月/2026-03-01 Linya不去北京了.md",
-      "Daily/2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
-      "Daily/2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
+      "Review Fixtures/2026-01-05.md",
+      "Review Fixtures/2026-02-05.md",
+      "Review Fixtures/2026-03-01.md",
+      "Review Fixtures/2026-04-04.md",
+      "Review Fixtures/2026-05-02.md",
     ];
     const aggregate = buildYearAggregate(
-      await Promise.all(
-        dailyPaths.map((path) => fixtureFile(path, flattenedTime, flattenedTime)),
-      ),
+      dailyPaths.map((path, index) => ({
+        path,
+        ctime: Date.parse(flattenedTime),
+        mtime: Date.parse(flattenedTime),
+        content: `# Fixture ${index + 1}\n\nSynthetic review note content for month ${index + 1}.`,
+      })),
       2026,
       DEFAULT_SETTINGS,
     );
