@@ -24,49 +24,24 @@ describe("Review Board action rendering state", () => {
   it("renders pending candidates with the primary decision flow", () => {
     expect(getReviewBoardActionState(candidate("pending", "candidate"))).toEqual({
       kind: "pending",
-      actions: [
-        "accept",
-        "addHighlight",
-        "addAction",
-        "ignore",
-        "openSourceNote",
-        "renameTopic",
-        "mergeTopic",
-      ],
+      actions: ["accept", "ignore", "openSourceNote", "renameTopic", "mergeTopic"],
     });
   });
 
   it("renders accepted candidates without pending accept or ignore controls", () => {
     expect(getReviewBoardActionState(candidate("accepted", "accepted"))).toEqual({
       kind: "accepted",
-      actions: [
-        "addHighlight",
-        "addAction",
-        "openSourceNote",
-        "renameTopic",
-        "mergeTopic",
-      ],
+      actions: ["openSourceNote", "renameTopic", "mergeTopic"],
     });
   });
 
   it("renders closed candidates as navigation-only decisions", () => {
-    for (const status of ["ignored", "archived", "merged"] as const) {
+    for (const status of ["ignored", "merged"] as const) {
       expect(getReviewBoardActionState(candidate(status, status))).toEqual({
         kind: "closed",
         actions: ["openSourceNote"],
       });
     }
-  });
-
-  it("keeps already highlighted accepted candidates minimal", () => {
-    expect(
-      getReviewBoardActionState(
-        candidate("highlighted", "accepted", { includeInAnnualHighlights: true }),
-      ),
-    ).toEqual({
-      kind: "accepted",
-      actions: ["addAction", "openSourceNote", "renameTopic", "mergeTopic"],
-    });
   });
 });
 
@@ -77,7 +52,7 @@ function candidate(
 ): ReviewCandidate {
   return {
     id,
-    type: "topic",
+    type: "theme-hypothesis",
     title: id,
     reason: `Reason for ${id}`,
     reasons: [

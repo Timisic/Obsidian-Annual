@@ -9,9 +9,10 @@ source-note evidence.
 ## Highlights
 
 - Scans local Markdown notes and Obsidian metadata inside the active vault.
-- Builds annual review candidates for themes, notes, projects, tasks, dormant
-  notes, and bridge notes.
-- Provides Review Board commands for reviewing candidate rationale and evidence.
+- Builds Review Board Theme Hypotheses from evidence notes and local weak
+  signals.
+- Provides Review Board commands for accepting, renaming, merging, ignoring, and
+  opening source notes for Theme Hypotheses.
 - Generates protected Markdown annual reports under `Annual Reviews/`.
 - Keeps AI optional; default settings do not make network requests or send
   telemetry.

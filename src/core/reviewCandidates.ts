@@ -2,13 +2,11 @@ import {
   calculateReviewProgress,
   mergeScannedCandidates,
   type EvidenceSource,
-  type EvidenceSourceKind,
   type ReviewCandidate,
-  type ReviewCandidateType,
   type ReviewSessionState,
 } from "./reviewState";
 import { normalizeReviewCandidateTitle } from "./reviewTitle";
-import type { ExplanationReason, HighValueNote, TopTopic, YearAggregate } from "./types";
+import type { TopTopic, YearAggregate } from "./types";
 
 export function buildReviewSession(
   aggregate: YearAggregate,
@@ -57,14 +55,9 @@ export function reviewScopeHash(aggregate: YearAggregate): string {
 }
 
 function buildReviewCandidates(aggregate: YearAggregate): ReviewCandidate[] {
-  return [
-    ...aggregate.topicEvolution.topTopics.flatMap((topic, index) =>
-      topicCandidate(aggregate, topic, index),
-    ),
-    ...aggregate.highValueNotes.map((note, index) =>
-      highValueNoteCandidate(aggregate, note, index),
-    ),
-  ].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
+  return aggregate.topicEvolution.topTopics
+    .flatMap((topic, index) => topicCandidate(aggregate, topic, index))
+    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
 }
 
 function topicCandidate(
@@ -77,7 +70,7 @@ function topicCandidate(
     return [];
   }
   const title = normalizeReviewCandidateTitle(topic.name);
-  const id = candidateId(aggregate.year, "topic", topic.name);
+  const id = candidateId(aggregate.year, topic.name);
   const evidence: EvidenceSource[] = sourcePaths.map((path, evidenceIndex) => ({
     id: `${id}:evidence:${evidenceIndex + 1}`,
     kind: "note",
@@ -89,7 +82,7 @@ function topicCandidate(
   return [
     {
       id,
-      type: "topic",
+      type: "theme-hypothesis",
       title,
       reason: `${title} added ${topic.addedWords} words across ${topic.newNotes} new notes and ${topic.updatedNotes} updated notes.`,
       reasons: evidence.map((item) => ({
@@ -112,114 +105,8 @@ function topicCandidate(
   ];
 }
 
-function highValueNoteCandidate(
-  aggregate: YearAggregate,
-  note: HighValueNote,
-  index: number,
-): ReviewCandidate {
-  const id = candidateId(aggregate.year, noteCandidateType(note), note.path);
-  const evidence = evidenceFromReasons(id, note);
-  const reasons = traceableReasons(note, evidence[0]);
-  return {
-    id,
-    type: noteCandidateType(note),
-    title: note.title,
-    reason: note.reason,
-    reasons,
-    status: "candidate",
-    evidence,
-    sourcePaths: [note.path],
-    score: note.inboundLinks * 10 + note.outboundLinks * 4 + note.periodWordCount,
-    rank: 100 + index + 1,
-    rankReason: `${note.suggestionLabel}; ${note.kind}; ${note.suggestedAction}`,
-    decisionIds: [],
-    createdAt: aggregate.generatedAt,
-    updatedAt: aggregate.generatedAt,
-  };
-}
-
-function noteCandidateType(note: HighValueNote): ReviewCandidateType {
-  if (note.suggestionLabel === "possible-bridge" || note.kind === "桥接笔记") {
-    return "bridge-note";
-  }
-  if (note.kind === "需维护") {
-    return "dormant-note";
-  }
-  return "note";
-}
-
-function evidenceFromReasons(id: string, note: HighValueNote): EvidenceSource[] {
-  const evidence = note.reasons
-    .map((reason, index) => {
-      const sourcePath = reason.sourcePath ?? reason.relatedPaths?.[0] ?? note.path;
-      return {
-        id: `${id}:evidence:${index + 1}`,
-        kind: evidenceKind(reason),
-        label: reason.label,
-        target: sourcePath,
-        sourcePath,
-        reason: reason.statField ? `${reason.type}; ${reason.statField}` : reason.type,
-      } satisfies EvidenceSource;
-    })
-    .filter((item) => item.sourcePath);
-  return evidence.length > 0
-    ? evidence
-    : [
-        {
-          id: `${id}:evidence:1`,
-          kind: "note",
-          label: note.path,
-          target: note.path,
-          sourcePath: note.path,
-          reason: note.suggestedAction,
-        },
-      ];
-}
-
-function traceableReasons(
-  note: HighValueNote,
-  fallbackEvidence?: EvidenceSource,
-): ExplanationReason[] {
-  const reasons = note.reasons.filter(
-    (reason) =>
-      reason.sourcePath ||
-      reason.statField ||
-      (reason.relatedPaths && reason.relatedPaths.length > 0),
-  );
-  if (reasons.length > 0) {
-    return reasons;
-  }
-  return [
-    {
-      type: "word-count",
-      label: note.reason,
-      evidenceId: fallbackEvidence?.id ?? `${note.path}:evidence`,
-      sourcePath: note.path,
-      statField: "wordCount",
-    },
-  ];
-}
-
-function evidenceKind(reason: ExplanationReason): EvidenceSourceKind {
-  switch (reason.type) {
-    case "backlink":
-    case "outlink":
-    case "topic-bridge":
-      return "link";
-    case "task":
-      return "task";
-    case "tag":
-      return "tag";
-    case "updated-at":
-    case "dormant":
-      return "timeline";
-    default:
-      return "note";
-  }
-}
-
-function candidateId(year: number, type: ReviewCandidateType, value: string): string {
-  return `review:${year}:${type}:${slug(value)}`;
+function candidateId(year: number, value: string): string {
+  return `review:${year}:theme-hypothesis:${slug(value)}`;
 }
 
 function slug(value: string): string {

@@ -64,7 +64,7 @@ Hypothesis queue. Each theme card shows:
 - A Connection Explanation for why those notes may belong to the same line of
   thought.
 - Evidence links, excerpts, and uncertainty notes.
-- User actions: Accept, Rename, Merge, Ignore, Open evidence, Re-explain.
+- User actions: Accept, Rename, Merge, Ignore, Open Source Note.
 
 Theme Hypotheses require user review. The plugin can say "these notes may form
 this theme," but the final report only includes user-confirmed titles,

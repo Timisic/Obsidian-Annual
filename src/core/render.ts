@@ -1,6 +1,6 @@
 import { toTopicEvolutionJson } from "./topics";
 import { reviewCandidateDisplayTitle } from "./reviewTitle";
-import type { ReviewCandidate, ReviewDecision, ReviewSessionState } from "./reviewState";
+import type { ReviewCandidate, ReviewSessionState } from "./reviewState";
 import type {
   AiHighValueNoteInsight,
   AiReportEnhancements,
@@ -229,15 +229,15 @@ const REPORT_TEXT = {
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
-    highValueNotes: "Review Candidates",
+    highValueNotes: "Theme Hypotheses",
     aiValueReason: "Recommendation rationale",
-    topHighValueNotes: "Suggested review candidates",
+    topHighValueNotes: "Confirmed theme hypotheses",
     outputReadyNotes: "Output-ready notes",
     maintenanceNotes: "Notes needing maintenance",
     noOutputReadyNotes: "No output-ready notes found.",
     noMaintenanceNotes: "No maintenance-needed notes found.",
     highValueNotesSummary: (count: number) =>
-      `These ${count} notes are suggested for review because their content, links, or activity signals give concrete reasons to inspect them. Confirm or reject each one manually before treating it as representative.`,
+      `These ${count} evidence notes may support theme hypotheses because their content, links, or activity signals give concrete reasons to inspect them.`,
     highValueNote: "Note",
     highValueType: "Suggestion label",
     highValueReason: "Recommendation rationale",
@@ -247,35 +247,36 @@ const REPORT_TEXT = {
     highValueRelatedNotes: "Related notes",
     highValueStatField: "Stat field",
     highValueNoAuditableEvidence:
-      "No auditable evidence was generated for this candidate; review the source note before treating it as a recommendation.",
-    suggestedAction: "Suggested action",
+      "No auditable evidence was generated for this evidence note; review the source note before treating it as a recommendation.",
+    suggestedAction: "Review prompt",
     manualConfirmation: "Manual confirmation",
     manualConfirmationInstruction:
-      "Confirm, rename, ignore, or archive this candidate manually before including it in the annual report.",
-    highValueFeedback: "Review Candidate Reading",
+      "Confirm, rename, merge, or ignore this theme hypothesis before including it in the annual report.",
+    highValueFeedback: "Evidence Note Reading",
     priorityNotes: (notes: string) =>
-      `Suggested candidates to review first: ${notes}. Confirm them manually before moving them into the report.`,
+      `Evidence notes to inspect first: ${notes}. Use them to confirm or refine theme hypotheses manually.`,
     outputReadySignal: (count: number) =>
       `${count} notes have enough structure to be shaped into an article, index, or review memo.`,
     staleCoreSignal: (count: number) =>
       `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
-    noHighValueNotes: "No review-candidate signals found.",
+    noHighValueNotes: "No theme-hypothesis evidence signals found.",
     noReviewedCandidates:
-      "No reviewed Review Board decisions are ready for the report yet. Accept, highlight, or turn candidates into actions before they are included here.",
-    nextPeriodActions: "Next-Period Actions",
-    aiNextActions: "Next Actions",
+      "No confirmed Theme Hypotheses are ready for the report yet. Accept or rename hypotheses in Review Board before including them here.",
+    nextPeriodActions: "Reflection Prompts",
+    aiNextActions: "Reflection Prompts",
     mocAction: (topic: string) =>
       `Create a compact index for ${topic}: evidence notes, current conclusion, and one next question.`,
     isolatedNotesAction: (count: number) =>
-      `Connect or decide the fate of ${count} isolated potential note${count === 1 ? "" : "s"}.`,
-    noIsolatedNotesAction: "No isolated-potential notes need immediate handling.",
+      `Optional review prompt: inspect ${count} isolated potential note${count === 1 ? "" : "s"} if they help explain a theme.`,
+    noIsolatedNotesAction:
+      "No isolated-potential evidence note needs review for the current report.",
     highValuePushAction: (notes: string) =>
-      `Review ${notes} as next-period candidates, then confirm the actual focus manually.`,
+      `Optional review prompt: compare ${notes} against the confirmed theme hypotheses.`,
     noHighValuePushAction:
-      "No review-candidate push is available from the current signals.",
-    nextPeriodSuggestion: "Next Period Suggestion",
+      "No extra theme-hypothesis prompt is available from the current signals.",
+    nextPeriodSuggestion: "Reflection Prompt",
     highValueNextStep:
-      "Review these candidates with their rationale before adding undifferentiated new content.",
+      "Review these evidence notes with their rationale before changing the report narrative.",
     representativeNotes: "Representative Notes",
     representativeNotesDescription:
       "Representative notes are selected deterministically: each active month contributes the highest-volume note from that month's created notes, or from modified notes when the note was created in another year. Ranking uses counted words, then characters, then path as the tie-breaker. This stable evidence set can be reused by later AI summaries.",
@@ -400,9 +401,9 @@ const REPORT_TEXT = {
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
-    highValueNotes: "候选回看笔记",
+    highValueNotes: "主题假设",
     aiValueReason: "推荐理由",
-    topHighValueNotes: "Suggested review candidates",
+    topHighValueNotes: "已确认主题假设",
     outputReadyNotes: "可输出笔记",
     maintenanceNotes: "需维护笔记",
     noOutputReadyNotes: "未找到可输出笔记。",
@@ -419,31 +420,31 @@ const REPORT_TEXT = {
     highValueStatField: "统计字段",
     highValueNoAuditableEvidence:
       "此候选项没有生成可审计证据；请先打开源笔记复核，不要把它当作确定推荐。",
-    suggestedAction: "建议动作",
+    suggestedAction: "复盘提示",
     manualConfirmation: "人工确认",
-    manualConfirmationInstruction: "请人工确认、重命名、忽略或归档后再写入年报。",
-    highValueFeedback: "候选笔记解读",
+    manualConfirmationInstruction: "请人工确认、重命名、合并或忽略主题假设后再写入年报。",
+    highValueFeedback: "证据笔记解读",
     priorityNotes: (notes: string) =>
-      `建议优先回看的候选笔记：${notes}。请人工确认后再写入年报。`,
+      `建议优先检查的证据笔记：${notes}。用它们人工确认或修正主题假设。`,
     outputReadySignal: (count: number) =>
       `有 ${count} 篇笔记已经具备整理成文章、索引页或复盘备忘的条件。`,
     staleCoreSignal: (count: number) =>
       `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
-    noHighValueNotes: "未找到候选回看笔记信号。",
+    noHighValueNotes: "未找到主题假设证据信号。",
     noReviewedCandidates:
-      "还没有可写入年报的 Review Board 审核决策。请先接受候选、加入年度精选或转成行动，再让它们进入这里。",
-    nextPeriodActions: "下期行动",
-    aiNextActions: "下期行动",
+      "还没有可写入年报的主题假设。请先在 Review Board 接受或重命名主题假设。",
+    nextPeriodActions: "复盘提示",
+    aiNextActions: "复盘提示",
     mocAction: (topic: string) =>
       `围绕「${topic}」整理一页小索引：证据笔记、当前判断和一个下一步问题。`,
     isolatedNotesAction: (count: number) =>
-      `处理 ${count} 篇孤立潜力笔记，补链或判断是否归档。`,
-    noIsolatedNotesAction: "当前没有需要立即处理的孤立潜力笔记。",
+      `可选复盘提示：检查 ${count} 篇孤立潜力笔记，看它们是否能解释某个主题。`,
+    noIsolatedNotesAction: "当前报告没有需要额外回看的孤立证据笔记。",
     highValuePushAction: (notes: string) =>
-      `把 ${notes} 作为下期候选回看对象，并在行动前人工确认真正重点。`,
-    noHighValuePushAction: "当前候选笔记信号不足，暂无明确推进对象。",
-    nextPeriodSuggestion: "下期建议",
-    highValueNextStep: "结合推荐理由人工确认这些候选笔记，再决定是否继续推进。",
+      `可选复盘提示：把 ${notes} 与已确认主题假设对照检查。`,
+    noHighValuePushAction: "当前主题假设信号不足，暂无额外复盘提示。",
+    nextPeriodSuggestion: "复盘提示",
+    highValueNextStep: "结合推荐理由人工确认这些证据笔记，再决定是否改写报告叙事。",
     representativeNotes: "代表笔记",
     representativeNotesDescription:
       "代表笔记采用确定性规则选择：每个活跃月份选出该月新建笔记中内容量最高的一篇；如果笔记不是当年新建但在该月被修改，也会参与该月选择。排序依次比较计数字词、字符数和路径。这个稳定证据集可供后续 AI 总结复用。",
@@ -1367,23 +1368,10 @@ function renderReviewedCandidates(
   if (candidates.length === 0) {
     return `- ${text.noReviewedCandidates}`;
   }
-  const highlighted = candidates.filter(
-    (candidate) => candidate.includeInAnnualHighlights,
-  );
   return [
     `### ${text.topHighValueNotes}`,
     "",
     ...candidates.flatMap((candidate) => renderReviewedCandidate(candidate, language)),
-    ...(highlighted.length > 0
-      ? [
-          `### ${language === "zh" ? "年度精选" : "Annual Highlights"}`,
-          "",
-          ...highlighted.map(
-            (candidate) =>
-              `- ${reviewCandidateLink(candidate)}${reviewCandidateEvidenceSuffix(candidate, language)}`,
-          ),
-        ]
-      : []),
   ].join("\n");
 }
 
@@ -1419,12 +1407,7 @@ function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCand
     if (candidate.status === "ignored" || candidate.status === "merged") {
       return false;
     }
-    return (
-      candidate.status === "accepted" ||
-      candidate.status === "renamed" ||
-      candidate.status === "next-action" ||
-      Boolean(candidate.includeInAnnualHighlights)
-    );
+    return candidate.status === "accepted" || candidate.status === "renamed";
   });
 }
 
@@ -1524,14 +1507,8 @@ function renderNextPeriodActions(
   aiThemes: AiThemeInsight[] = [],
   reviewSession?: ReviewSessionState,
 ): string {
-  const reviewActions = reviewSession ? reportActionDecisions(reviewSession) : [];
-  if (reviewActions.length > 0) {
-    return reviewActions
-      .map((decision, index) => `${index + 1}. ${decision.label}`)
-      .join("\n");
-  }
   if (aiActions.length > 0) {
-    return aiActions.map((action, index) => `${index + 1}. ${action}`).join("\n");
+    return aiActions.map((action) => `- ${action}`).join("\n");
   }
   const text = REPORT_TEXT[language];
   const topTopic =
@@ -1542,14 +1519,10 @@ function renderNextPeriodActions(
     ? reportIncludedCandidates(reviewSession).slice(0, 2).map(reviewCandidateLink)
     : [];
   return [
-    `1. ${text.mocAction(topTopic)}`,
-    `2. ${aggregate.isolatedPotentialNotes.length > 0 ? text.isolatedNotesAction(aggregate.isolatedPotentialNotes.length) : text.noIsolatedNotesAction}`,
-    `3. ${highValueFocus.length > 0 ? text.highValuePushAction(formatInlineList(highValueFocus, language)) : text.noHighValuePushAction}`,
+    `- ${text.mocAction(topTopic)}`,
+    `- ${aggregate.isolatedPotentialNotes.length > 0 ? text.isolatedNotesAction(aggregate.isolatedPotentialNotes.length) : text.noIsolatedNotesAction}`,
+    `- ${highValueFocus.length > 0 ? text.highValuePushAction(formatInlineList(highValueFocus, language)) : text.noHighValuePushAction}`,
   ].join("\n");
-}
-
-function reportActionDecisions(reviewSession: ReviewSessionState): ReviewDecision[] {
-  return reviewSession.decisions.filter((decision) => decision.includeInReport);
 }
 
 function renderNoteList(
