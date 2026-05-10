@@ -1,6 +1,13 @@
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
 import { buildHighValueNoteInsights } from "./highValueNotes";
+import {
+  buildAnnualReviewSession,
+  reviewSessionContainsDate,
+  reviewSessionDayKeys,
+  reviewSessionMonthKeys,
+  reviewSessionYear,
+} from "./reviewSession";
 import { createSnapshotScope } from "./snapshot";
 import { buildTopicEvolution } from "./topics";
 import type {
@@ -11,6 +18,7 @@ import type {
   RankedMetric,
   RankedNote,
   ReportScope,
+  ReviewSession,
   SnapshotComparison,
   SourceFile,
   WordGrowthBucket,
@@ -27,18 +35,33 @@ export function buildYearAggregate(
   settings: AnnualReviewSettings,
   options: BuildYearAggregateOptions = {},
 ): YearAggregate {
+  return buildReviewAggregate(
+    files,
+    buildAnnualReviewSession(year, settings),
+    settings,
+    options,
+  );
+}
+
+export function buildReviewAggregate(
+  files: SourceFile[],
+  session: ReviewSession,
+  settings: AnnualReviewSettings,
+  options: BuildYearAggregateOptions = {},
+): YearAggregate {
   const notes = files
     .filter((file) => shouldIncludePath(file.path, settings))
     .map((file) => extractNoteStats(file, settings))
-    .filter((note) => isActiveInYear(note, year));
+    .filter((note) => isActiveInSession(note, session));
   const activityDateSources = {
     frontmatter: 0,
     path: 0,
     filesystem: 0,
   };
 
-  const months = createMonthBuckets(year);
-  const days = createDayBuckets(year);
+  const year = reviewSessionYear(session);
+  const months = createMonthBuckets(session);
+  const days = createDayBuckets(session);
   const activeDates = new Set<string>();
   const tagCounts = new Map<string, number>();
   const folderCounts = new Map<string, number>();
@@ -56,26 +79,26 @@ export function buildYearAggregate(
     const createdTime = activityCreatedTime(note);
     const modifiedTime = activityModifiedTime(note);
     activityDateSources[note.noteDate?.source ?? "filesystem"] += 1;
-    const createdInYear = getYear(createdTime) === year;
-    const modifiedInYear = getYear(modifiedTime) === year;
-    if (createdInYear) {
+    const createdInSession = reviewSessionContainsDate(session, createdTime);
+    const modifiedInSession = reviewSessionContainsDate(session, modifiedTime);
+    if (createdInSession) {
       createdCount += 1;
       activeDates.add(dateKey(createdTime));
       addToMonth(months, createdTime, "created", note, true);
       addToDay(days, createdTime, "created", note, true);
       updateRepresentative(representativeByMonth, monthKey(createdTime), note);
     }
-    if (modifiedInYear) {
+    if (modifiedInSession) {
       modifiedCount += 1;
       activeDates.add(dateKey(modifiedTime));
       addToMonth(months, modifiedTime, "modified", note, false);
       addToDay(days, modifiedTime, "modified", note, false);
-      if (!createdInYear) {
+      if (!createdInSession) {
         updateRepresentative(representativeByMonth, monthKey(modifiedTime), note);
       }
     }
 
-    if (createdInYear) {
+    if (createdInSession) {
       totalWords += note.wordCount;
       totalCharacters += note.charCount;
       taskCount += note.tasks.total;
@@ -90,6 +113,10 @@ export function buildYearAggregate(
 
   const scope: ReportScope = {
     year,
+    preset: session.preset,
+    label: session.label,
+    startDate: session.startDate,
+    endDate: session.endDate,
     reportFolder: settings.reportFolder,
     includeFolders: settings.includeFolders,
     excludeFolders: settings.excludeFolders,
@@ -104,6 +131,7 @@ export function buildYearAggregate(
 
   return {
     year,
+    session,
     generatedAt,
     scope,
     snapshotComparison,
@@ -126,7 +154,7 @@ export function buildYearAggregate(
     representativeNotes: [...representativeByMonth.values()].sort((a, b) =>
       a.path.localeCompare(b.path),
     ),
-    topicEvolution: buildTopicEvolution(notes, year),
+    topicEvolution: buildTopicEvolution(notes, session),
     ...highValueInsights,
   };
 }
@@ -151,10 +179,10 @@ function buildCurrentVaultInference(
   };
 }
 
-function isActiveInYear(note: NoteStats, year: number): boolean {
+function isActiveInSession(note: NoteStats, session: ReviewSession): boolean {
   return (
-    getYear(activityCreatedTime(note)) === year ||
-    getYear(activityModifiedTime(note)) === year
+    reviewSessionContainsDate(session, activityCreatedTime(note)) ||
+    reviewSessionContainsDate(session, activityModifiedTime(note))
   );
 }
 
@@ -166,9 +194,9 @@ function activityModifiedTime(note: NoteStats): number {
   return note.noteDate?.timestamp ?? note.mtime;
 }
 
-function createMonthBuckets(year: number): MonthBucket[] {
-  return Array.from({ length: 12 }, (_, index) => ({
-    month: `${year}-${String(index + 1).padStart(2, "0")}`,
+function createMonthBuckets(session: ReviewSession): MonthBucket[] {
+  return reviewSessionMonthKeys(session).map((month) => ({
+    month,
     created: 0,
     modified: 0,
     words: 0,
@@ -178,20 +206,14 @@ function createMonthBuckets(year: number): MonthBucket[] {
   }));
 }
 
-function createDayBuckets(year: number): DayBucket[] {
-  const start = new Date(year, 0, 1);
-  const end = new Date(year + 1, 0, 1);
+function createDayBuckets(session: ReviewSession): DayBucket[] {
+  const dayKeys = reviewSessionDayKeys(session);
+  const start = new Date(localDateTime(session.startDate));
   const firstWeekday = start.getDay();
-  const days: DayBucket[] = [];
-
-  for (
-    let current = new Date(start);
-    current < end;
-    current.setDate(current.getDate() + 1)
-  ) {
-    const index = days.length;
-    days.push({
-      date: dateKey(current.getTime()),
+  return dayKeys.map((date, index) => {
+    const current = new Date(localDateTime(date));
+    return {
+      date,
       month: monthKey(current.getTime()),
       dayOfMonth: current.getDate(),
       weekday: current.getDay(),
@@ -200,10 +222,8 @@ function createDayBuckets(year: number): DayBucket[] {
       modified: 0,
       words: 0,
       characters: 0,
-    });
-  }
-
-  return days;
+    };
+  });
 }
 
 function addToMonth(
@@ -213,7 +233,8 @@ function addToMonth(
   note: NoteStats,
   includeContent: boolean,
 ): void {
-  const bucket = months[new Date(timestamp).getMonth()];
+  const key = monthKey(timestamp);
+  const bucket = months.find((month) => month.month === key);
   if (!bucket) return;
   bucket[field] += 1;
   if (includeContent) {
@@ -287,10 +308,6 @@ function sortRankedNotes(a: RankedNote, b: RankedNote): number {
 
 function increment(counts: Map<string, number>, key: string, amount = 1): void {
   counts.set(key, (counts.get(key) ?? 0) + amount);
-}
-
-function getYear(timestamp: number): number {
-  return new Date(timestamp).getFullYear();
 }
 
 function dateKey(timestamp: number): string {

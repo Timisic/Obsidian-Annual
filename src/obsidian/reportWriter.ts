@@ -1,5 +1,6 @@
 import type { App, TFile } from "obsidian";
 import type { AnnualReviewChartAsset } from "../core/render";
+import { reviewSessionPathLabel } from "../core/reviewSession";
 
 export const ANNUAL_REVIEW_START_MARKER = "<!-- annual-review:start -->";
 export const ANNUAL_REVIEW_END_MARKER = "<!-- annual-review:end -->";
@@ -7,13 +8,17 @@ export const ANNUAL_REVIEW_END_MARKER = "<!-- annual-review:end -->";
 export async function writeReport(
   app: App,
   reportFolder: string,
-  year: number,
+  labelOrYear: string | number,
   content: string,
 ): Promise<TFile> {
   const folder = normalizePath(reportFolder || "Annual Reviews");
   await ensureFolder(app, folder);
 
-  const path = normalizePath(`${folder}/${year} Annual Review.md`);
+  const label =
+    typeof labelOrYear === "number"
+      ? `${labelOrYear} Annual Review`
+      : reviewSessionPathLabel(labelOrYear);
+  const path = normalizePath(`${folder}/${label}.md`);
   const existing = app.vault.getFileByPath(path);
   if (existing) {
     const previousContent = await app.vault.read(existing);
@@ -31,14 +36,14 @@ export async function writeReport(
 export async function writeAnnualReviewOutput(
   app: App,
   reportFolder: string,
-  year: number,
+  labelOrYear: string | number,
   content: string,
   chartAssets: AnnualReviewChartAsset[],
 ): Promise<TFile> {
   for (const asset of chartAssets) {
     await writeTextFile(app, asset.path, asset.content);
   }
-  return writeReport(app, reportFolder, year, content);
+  return writeReport(app, reportFolder, labelOrYear, content);
 }
 
 async function writeTextFile(app: App, path: string, content: string): Promise<TFile> {

@@ -203,6 +203,12 @@ describe("review state", () => {
     const topic = session.candidates.find((item) => item.type === "theme-hypothesis");
 
     expect(session.candidates.length).toBeGreaterThan(0);
+    expect(session.session).toMatchObject({
+      preset: "annual",
+      label: "2026 Annual Review",
+      startDate: "2026-01-01",
+      endDate: "2026-12-31",
+    });
     expect(topic?.evidence.length).toBeGreaterThan(0);
     expect(topic?.sourcePaths[0]).toMatch(/\.md$/u);
 
@@ -211,14 +217,16 @@ describe("review state", () => {
       candidateId: topic?.id ?? session.candidates[0]?.id ?? "",
       at,
     });
+    const legacyStored = { ...accepted, session: undefined };
     const rescanned = buildReviewSession(
       buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS),
-      accepted,
+      legacyStored,
     );
 
     expect(
       rescanned.candidates.find((item) => item.id === (topic?.id ?? ""))?.status,
     ).toBe("accepted");
+    expect(rescanned.session?.id).toBe(session.session?.id);
   });
 
   it("renders accepted review decisions while excluding ignored candidates and forced actions", () => {

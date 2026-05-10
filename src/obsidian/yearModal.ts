@@ -1,15 +1,26 @@
-import { Modal, Setting, type App } from "obsidian";
+import { Modal, Notice, Setting, type App } from "obsidian";
 import { UI_TEXT } from "../core/language";
+import {
+  buildAnnualReviewSession,
+  buildCustomReviewSession,
+  buildQuarterlyReviewSession,
+} from "../core/reviewSession";
 import { joinFolderList, splitFolderList } from "../core/settings";
 import type {
   AnnualReviewLanguage,
   AnnualReviewSettings,
   GenerateReportOptions,
   ResolvedAnnualReviewLanguage,
+  ReviewPreset,
 } from "../core/types";
 
 export class YearModal extends Modal {
+  private selectedPreset: ReviewPreset = "annual";
   private selectedYear = new Date().getFullYear();
+  private selectedQuarter = 1;
+  private customLabel = "";
+  private customStartDate = `${this.selectedYear}-01-01`;
+  private customEndDate = `${this.selectedYear}-12-31`;
   private runSettings: AnnualReviewSettings;
 
   onChoose: (options: GenerateReportOptions) => void = () => undefined;
@@ -34,6 +45,20 @@ export class YearModal extends Modal {
     contentEl.createEl("h2", { text: text.generateTitle });
 
     new Setting(contentEl)
+      .setName(text.reviewPreset)
+      .setDesc(text.reviewPresetDesc)
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("annual", text.annualPreset)
+          .addOption("quarterly", text.quarterlyPreset)
+          .addOption("custom", text.customPreset)
+          .setValue(this.selectedPreset)
+          .onChange((value) => {
+            this.selectedPreset = value as ReviewPreset;
+          });
+      });
+
+    new Setting(contentEl)
       .setName(text.year)
       .setDesc(text.yearDesc)
       .addText((text) => {
@@ -45,6 +70,57 @@ export class YearModal extends Modal {
             if (Number.isFinite(parsed)) {
               this.selectedYear = parsed;
             }
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(text.quarter)
+      .setDesc(text.quarterDesc)
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("1", "Q1")
+          .addOption("2", "Q2")
+          .addOption("3", "Q3")
+          .addOption("4", "Q4")
+          .setValue(String(this.selectedQuarter))
+          .onChange((value) => {
+            this.selectedQuarter = Number.parseInt(value, 10);
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(text.customLabel)
+      .setDesc(text.customLabelDesc)
+      .addText((text) => {
+        text
+          .setPlaceholder(`${this.selectedYear} Writing Sprint Review`)
+          .setValue(this.customLabel)
+          .onChange((value) => {
+            this.customLabel = value;
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(text.customStartDate)
+      .setDesc(text.customDateDesc)
+      .addText((text) => {
+        text
+          .setPlaceholder(`${this.selectedYear}-01-01`)
+          .setValue(this.customStartDate)
+          .onChange((value) => {
+            this.customStartDate = value;
+          });
+      });
+
+    new Setting(contentEl)
+      .setName(text.customEndDate)
+      .setDesc(text.customDateDesc)
+      .addText((text) => {
+        text
+          .setPlaceholder(`${this.selectedYear}-12-31`)
+          .setValue(this.customEndDate)
+          .onChange((value) => {
+            this.customEndDate = value;
           });
       });
 
@@ -123,8 +199,19 @@ export class YearModal extends Modal {
           .setButtonText(text.generate)
           .setCta()
           .onClick(() => {
-            this.close();
-            this.onChoose({ year: this.selectedYear, settings: this.runSettings });
+            try {
+              const session = this.buildSession();
+              this.close();
+              this.onChoose({
+                year: this.selectedYear,
+                session,
+                settings: this.runSettings,
+              });
+            } catch (error) {
+              new Notice(
+                error instanceof Error ? error.message : "Invalid review date range.",
+              );
+            }
           });
       })
       .addButton((button) => {
@@ -145,5 +232,24 @@ export class YearModal extends Modal {
         this.runSettings[key] = value;
       });
     });
+  }
+
+  private buildSession(): GenerateReportOptions["session"] {
+    if (this.selectedPreset === "quarterly") {
+      return buildQuarterlyReviewSession(
+        this.selectedYear,
+        this.selectedQuarter,
+        this.runSettings,
+      );
+    }
+    if (this.selectedPreset === "custom") {
+      return buildCustomReviewSession({
+        label: this.customLabel,
+        startDate: this.customStartDate,
+        endDate: this.customEndDate,
+        settings: this.runSettings,
+      });
+    }
+    return buildAnnualReviewSession(this.selectedYear, this.runSettings);
   }
 }
