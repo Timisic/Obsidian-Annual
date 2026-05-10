@@ -16,6 +16,7 @@
 - [GitHub release 草案](github-release-draft.md)：首个 `0.1.0` release 的标题、说明和资产清单草稿。
 - [Agent 安装指南](agent-installation.md)：开发和自动化附录，不作为普通用户安装主路径。
 - [AI 报告生成设计](ai-report-design.md)：可选增强设计记录；不作为当前普通用户主路径或默认能力承诺。
+- [Prompt-vs-Plugin Benchmark](prompt-vs-plugin-benchmark.md)：核心产品完成后用于验证插件相对完整提示词和大模型读取 vault 的真实差异。
 - [Data Methodology](data-methodology.md)：解释 vault snapshot、当前 vault 推断、历史 snapshot 统计、扫描范围和增长限制。
 - [项目调研](research/project-research.md)：早期调研资料，已由 Feature Inventory/Review Board 决策裁剪；其中 dashboard、导出、分享和 agent 安装设想不代表当前 MVP surface。
 - [中文 README](../README.md)：仓库默认入口，面向首次使用和本地开发。
