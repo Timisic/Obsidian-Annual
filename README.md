@@ -157,3 +157,17 @@ npm run build
 5. 接受、改名、合并或忽略若干主题假设。
 6. 运行 `Annual Review: Generate report`。
 7. 确认报告只包含用户确认后的主题、证据链接、方法说明和用户手写区，并且源笔记可回链打开。
+
+## TODO
+
+- 核心产品闭环完成后，执行 [Prompt-vs-Plugin Benchmark](docs/prompt-vs-plugin-benchmark.md)：用固定测试 vault 对比“一份完整提示词 + 大模型读取所有允许笔记”和 Annual Review 插件，确认插件在证据编译、状态、交互、Obsidian 跳转、复现和隐私范围控制上有真实差异。
+
+## 更多文档
+
+- [Product Definition](docs/product-definition.md)
+- [SPEC](docs/product-specification.md)
+- [Feature Inventory](docs/feature-inventory.md)
+- [Roadmap](docs/roadmap.md)
+- [文档索引](docs/README.md)
+- [Data Methodology](docs/data-methodology.md)
+- [发布检查清单](docs/release-checklist.md)
