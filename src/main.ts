@@ -17,6 +17,8 @@ import {
 } from "./core/render";
 import {
   buildAnnualReviewSession,
+  buildCustomReviewSession,
+  buildQuarterlyReviewSession,
   resolveGenerateReviewSession,
   reviewSessionPathLabel,
 } from "./core/reviewSession";
@@ -96,17 +98,43 @@ export default class AnnualReviewPlugin extends Plugin {
     }
 
     if (this.settings.enableSmokeCommands) {
-      this.addCommand({
-        id: COMMAND_IDS.generateSmoke2026,
-        name: COMMAND_NAMES.generateSmoke2026,
-        callback: async () => {
-          await this.generateReport({
-            year: 2026,
-            session: buildAnnualReviewSession(2026, this.settings),
-            settings: this.settings,
-          });
+      const smokeSessions = [
+        {
+          id: COMMAND_IDS.generateSmoke2026,
+          name: COMMAND_NAMES.generateSmoke2026,
+          session: () => buildAnnualReviewSession(2026, this.settings),
         },
-      });
+        {
+          id: COMMAND_IDS.generateSmoke2026Q1,
+          name: COMMAND_NAMES.generateSmoke2026Q1,
+          session: () => buildQuarterlyReviewSession(2026, 1, this.settings),
+        },
+        {
+          id: COMMAND_IDS.generateSmoke2026Custom,
+          name: COMMAND_NAMES.generateSmoke2026Custom,
+          session: () =>
+            buildCustomReviewSession({
+              label: "2026 Jan 1-2 Review",
+              startDate: "2026-01-01",
+              endDate: "2026-01-02",
+              settings: this.settings,
+            }),
+        },
+      ] as const;
+
+      for (const smokeSession of smokeSessions) {
+        this.addCommand({
+          id: smokeSession.id,
+          name: smokeSession.name,
+          callback: async () => {
+            await this.generateReport({
+              year: 2026,
+              session: smokeSession.session(),
+              settings: this.settings,
+            });
+          },
+        });
+      }
     }
 
     this.addSettingTab(new AnnualReviewSettingTab(this.app, this));

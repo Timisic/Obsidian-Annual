@@ -2029,12 +2029,16 @@ describe("plugin command ids", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
       generateSmoke2026: "generate-annual-review-2026",
+      generateSmoke2026Custom: "generate-annual-review-2026-custom-range",
+      generateSmoke2026Q1: "generate-annual-review-2026-q1",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
       generateSmoke2026: "Smoke: Generate 2026 report",
+      generateSmoke2026Custom: "Smoke: Generate 2026 custom range report",
+      generateSmoke2026Q1: "Smoke: Generate 2026 Q1 report",
       openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });
