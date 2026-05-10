@@ -11,7 +11,7 @@ import {
   renderAiReportEnhancements,
   renderAiReportSection,
 } from "../src/core/ai";
-import { buildYearAggregate } from "../src/core/aggregate";
+import { buildReviewAggregate, buildYearAggregate } from "../src/core/aggregate";
 import { buildExplanationReasons } from "../src/core/explain";
 import {
   extractNoteStats,
@@ -25,6 +25,10 @@ import {
   buildAnnualReviewChartPaths,
   renderAnnualReview,
 } from "../src/core/render";
+import {
+  buildCustomReviewSession,
+  buildQuarterlyReviewSession,
+} from "../src/core/reviewSession";
 import { buildReviewSession } from "../src/core/reviewCandidates";
 import { buildReviewDetailModel } from "../src/core/reviewDetail";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
@@ -552,6 +556,56 @@ describe("aggregation and rendering", () => {
     expect(aggregate.topicEvolution.topTopics.length).toBeLessThanOrEqual(8);
   });
 
+  it("filters aggregates by quarterly and custom review sessions", async () => {
+    const files = await fixtureVault();
+    const q1 = buildQuarterlyReviewSession(
+      2026,
+      1,
+      DEFAULT_SETTINGS,
+      "2026-05-01T00:00:00.000Z",
+    );
+    const q1Aggregate = buildReviewAggregate(files, q1, DEFAULT_SETTINGS);
+
+    expect(q1Aggregate.session).toMatchObject({
+      preset: "quarterly",
+      label: "2026 Q1 Review",
+      startDate: "2026-01-01",
+      endDate: "2026-03-31",
+    });
+    expect(q1Aggregate.createdCount).toBe(3);
+    expect(q1Aggregate.modifiedCount).toBe(3);
+    expect(q1Aggregate.monthBuckets.map((month) => month.month)).toEqual([
+      "2026-01",
+      "2026-02",
+      "2026-03",
+    ]);
+    expect(q1Aggregate.dayBuckets).toHaveLength(90);
+    expect(q1Aggregate.representativeNotes.map((note) => note.path)).not.toContain(
+      "Projects/Legacy.md",
+    );
+
+    const custom = buildCustomReviewSession({
+      label: "2026 Legacy Followup Review",
+      startDate: "2026-04-01",
+      endDate: "2026-04-10",
+      settings: DEFAULT_SETTINGS,
+      timestamp: "2026-05-01T00:00:00.000Z",
+    });
+    const customAggregate = buildReviewAggregate(files, custom, DEFAULT_SETTINGS);
+
+    expect(customAggregate.session).toMatchObject({
+      preset: "custom",
+      label: "2026 Legacy Followup Review",
+      startDate: "2026-04-01",
+      endDate: "2026-04-10",
+    });
+    expect(customAggregate.createdCount).toBe(0);
+    expect(customAggregate.modifiedCount).toBe(1);
+    expect(customAggregate.activeDays).toBe(1);
+    expect(customAggregate.totalWords).toBe(0);
+    expect(customAggregate.dayBuckets.map((day) => day.date)).toContain("2026-04-05");
+  });
+
   it("uses explicit note dates to distribute flattened-mtime daily notes", async () => {
     const flattenedTime = "2026-05-09T10:55:29.000Z";
     const dailyPaths = [
@@ -802,7 +856,7 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# 2026 Annual Review");
     expect(markdown).toMatch(
-      /^---\ngenerated: ".+"\nyear: 2026\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
+      /^---\ngenerated: ".+"\nyear: 2026\nreview_preset: "annual"\nreview_label: "2026 Annual Review"\nstart_date: "2026-01-01"\nend_date: "2026-12-31"\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
     );
     expect(markdown).not.toContain("Generated:");
     expect(markdown).not.toContain("Included scope:");
@@ -1085,6 +1139,17 @@ describe("aggregation and rendering", () => {
     expect(chartAssets[4]?.content).toContain('"top_topics"');
     expect(chartAssets[4]?.content).toContain('"emerging_topics"');
     expect(chartAssets[4]?.content).toContain('"declining_topics"');
+  });
+
+  it("generates chart asset paths from the review session label", () => {
+    expect(buildAnnualReviewChartPaths("Annual Reviews", "2026 Q1 Review")).toEqual({
+      "daily-cumulative-words":
+        "Annual Reviews/2026 Q1 Review Assets/daily-cumulative-words.svg",
+      "daily-word-heatmap": "Annual Reviews/2026 Q1 Review Assets/daily-word-heatmap.svg",
+      "word-growth-trend": "Annual Reviews/2026 Q1 Review Assets/word-growth-trend.svg",
+      "topic-evolution": "Annual Reviews/2026 Q1 Review Assets/topic-evolution.svg",
+      "topic-evolution-data": "Annual Reviews/2026 Q1 Review Assets/topic-evolution.json",
+    });
   });
 
   it("identifies review candidates, maintenance, output-ready, and isolated potential notes", () => {
@@ -1737,6 +1802,23 @@ describe("Obsidian vault adapter", () => {
         "# 2026 Annual Review",
         ANNUAL_REVIEW_END_MARKER,
       ].join("\n"),
+    );
+  });
+
+  it("writes custom review reports using the session label path", async () => {
+    const { app, files, writes } = createReportWriterMockApp();
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      "2026 Q1 Review",
+      ["---", 'review_label: "2026 Q1 Review"', "---", "# 2026 Q1 Review"].join("\n"),
+      [],
+    );
+
+    expect(writes).toEqual(["Annual Reviews/2026 Q1 Review.md"]);
+    expect(files.get("Annual Reviews/2026 Q1 Review.md")?.content).toContain(
+      "# 2026 Q1 Review",
     );
   });
 

@@ -1,5 +1,6 @@
 import { toTopicEvolutionJson } from "./topics";
 import { reviewCandidateDisplayTitle } from "./reviewTitle";
+import { reviewSessionPathLabel } from "./reviewSession";
 import type { ReviewCandidate, ReviewSessionState } from "./reviewState";
 import type {
   AiHighValueNoteInsight,
@@ -43,10 +44,14 @@ export interface AnnualReviewChartAsset {
 
 export function buildAnnualReviewChartPaths(
   reportFolder: string,
-  year: number,
+  labelOrYear: string | number,
 ): Record<AnnualReviewChartKind, string> {
   const folder = normalizeReportFolder(reportFolder || "Annual Reviews");
-  const assetFolder = `${folder}/${year} Annual Review Assets`;
+  const label =
+    typeof labelOrYear === "number"
+      ? `${labelOrYear} Annual Review`
+      : reviewSessionPathLabel(labelOrYear);
+  const assetFolder = `${folder}/${label} Assets`;
   return {
     "daily-cumulative-words": `${assetFolder}/daily-cumulative-words.svg`,
     "daily-word-heatmap": `${assetFolder}/daily-word-heatmap.svg`,
@@ -62,7 +67,8 @@ export function buildAnnualReviewChartAssets(
 ): AnnualReviewChartAsset[] {
   const language = options.language ?? "en";
   const paths =
-    options.chartPaths ?? buildAnnualReviewChartPaths("Annual Reviews", aggregate.year);
+    options.chartPaths ??
+    buildAnnualReviewChartPaths("Annual Reviews", aggregate.session.label);
   const assets: AnnualReviewChartAsset[] = [];
 
   if (aggregate.dayBuckets.length > 0 && paths["daily-cumulative-words"]) {
@@ -116,7 +122,7 @@ export function buildAnnualReviewChartAssets(
 
 const REPORT_TEXT = {
   en: {
-    title: (year: number) => `${year} Annual Review`,
+    title: (label: string) => label,
     allMarkdownFiles: "All Markdown files",
     none: "None",
     dataMethodology: "Data Methodology",
@@ -290,7 +296,7 @@ const REPORT_TEXT = {
       `Most created-note writing volume appears in ${month} with ${words} counted words.`,
   },
   zh: {
-    title: (year: number) => `${year} 年度回顾`,
+    title: (label: string) => label,
     allMarkdownFiles: "全部 Markdown 文件",
     none: "无",
     dataMethodology: "数据口径",
@@ -484,7 +490,7 @@ export function renderAnnualReview(
   return [
     renderMetadata(aggregate, language),
     "",
-    `# ${text.title(aggregate.year)}`,
+    `# ${reportTitle(aggregate, language)}`,
     "",
     `## ${text.periodJudgment}`,
     "",
@@ -545,6 +551,20 @@ function hasAiEnhancements(
       enhancements.highValueNotes.length > 0 ||
       enhancements.nextActions.length > 0),
   );
+}
+
+function reportTitle(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  if (
+    language === "zh" &&
+    aggregate.session.preset === "annual" &&
+    aggregate.session.label === `${aggregate.year} Annual Review`
+  ) {
+    return `${aggregate.year} 年度回顾`;
+  }
+  return aggregate.session.label;
 }
 
 function renderPeriodJudgment(
@@ -636,6 +656,10 @@ function renderMetadata(
     "---",
     `generated: ${JSON.stringify(aggregate.generatedAt)}`,
     `year: ${aggregate.year}`,
+    `review_preset: ${JSON.stringify(aggregate.session.preset)}`,
+    `review_label: ${JSON.stringify(aggregate.session.label)}`,
+    `start_date: ${JSON.stringify(aggregate.session.startDate)}`,
+    `end_date: ${JSON.stringify(aggregate.session.endDate)}`,
     `growth_data_source: ${JSON.stringify(growthDataSourceLabel(aggregate, language))}`,
     `activity_date_sources: ${JSON.stringify(activityDateSourceSummary(aggregate, language))}`,
     `included_scope: ${JSON.stringify(formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles))}`,

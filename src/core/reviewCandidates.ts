@@ -19,10 +19,11 @@ export function buildReviewSession(
     stored &&
     stored.schemaVersion === 1 &&
     stored.year === aggregate.year &&
+    (!stored.session || stored.session.id === aggregate.session.id) &&
     stored.scopeHash === scopeHash
   ) {
     return mergeScannedCandidates(
-      stored,
+      { ...stored, session: aggregate.session },
       scannedCandidates,
       scanId,
       aggregate.generatedAt,
@@ -31,6 +32,7 @@ export function buildReviewSession(
   return {
     schemaVersion: 1,
     year: aggregate.year,
+    session: aggregate.session,
     scopeHash,
     scanId,
     candidates: scannedCandidates,
@@ -45,6 +47,10 @@ export function reviewScopeHash(aggregate: YearAggregate): string {
   return stableHash(
     JSON.stringify({
       year: aggregate.year,
+      preset: aggregate.session.preset,
+      label: aggregate.session.label,
+      startDate: aggregate.session.startDate,
+      endDate: aggregate.session.endDate,
       includeFolders: [...aggregate.scope.includeFolders].sort(),
       excludeFolders: [...aggregate.scope.excludeFolders].sort(),
       excludePatterns: [...aggregate.scope.excludePatterns].sort(),
@@ -70,7 +76,7 @@ function topicCandidate(
     return [];
   }
   const title = normalizeReviewCandidateTitle(topic.name);
-  const id = candidateId(aggregate.year, topic.name);
+  const id = candidateId(aggregate.session.id, topic.name);
   const evidence: EvidenceSource[] = sourcePaths.map((path, evidenceIndex) => ({
     id: `${id}:evidence:${evidenceIndex + 1}`,
     kind: "note",
@@ -105,8 +111,8 @@ function topicCandidate(
   ];
 }
 
-function candidateId(year: number, value: string): string {
-  return `review:${year}:theme-hypothesis:${slug(value)}`;
+function candidateId(sessionId: string, value: string): string {
+  return `review:${slug(sessionId)}:theme-hypothesis:${slug(value)}`;
 }
 
 function slug(value: string): string {

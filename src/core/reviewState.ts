@@ -1,4 +1,5 @@
 import type { ExplanationReason } from "./types";
+import type { ReviewSession } from "./types";
 
 export type ReviewCandidateType = "theme-hypothesis";
 
@@ -74,6 +75,7 @@ export interface ReviewProgress {
 export interface ReviewSessionState {
   schemaVersion: 1;
   year: number;
+  session?: ReviewSession;
   scopeHash: string;
   scanId: string;
   candidates: ReviewCandidate[];

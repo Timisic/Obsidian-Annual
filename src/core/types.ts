@@ -1,5 +1,6 @@
 export type AnnualReviewLanguage = "system" | "zh" | "en";
 export type ResolvedAnnualReviewLanguage = Exclude<AnnualReviewLanguage, "system">;
+export type ReviewPreset = "annual" | "quarterly" | "monthly" | "custom";
 
 export interface AnnualReviewSettings {
   reportFolder: string;
@@ -20,8 +21,26 @@ export interface AnnualReviewSettings {
   enableSmokeCommands?: boolean;
 }
 
+export interface ReviewSession {
+  id: string;
+  preset: ReviewPreset;
+  label: string;
+  startDate: string;
+  endDate: string;
+  includeFolders: string[];
+  excludeFolders: string[];
+  excludePatterns: string[];
+  aiEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReportScope {
   year: number;
+  preset: ReviewPreset;
+  label: string;
+  startDate: string;
+  endDate: string;
   reportFolder: string;
   includeFolders: string[];
   excludeFolders: string[];
@@ -256,6 +275,7 @@ export interface SnapshotComparison {
 
 export interface YearAggregate {
   year: number;
+  session: ReviewSession;
   generatedAt: string;
   scope: ReportScope;
   snapshotComparison: SnapshotComparison;
@@ -330,6 +350,7 @@ export interface SourceFile {
 export type LinkCounts = Record<string, number>;
 
 export interface GenerateReportOptions {
-  year: number;
+  year?: number;
+  session?: ReviewSession;
   settings: AnnualReviewSettings;
 }
