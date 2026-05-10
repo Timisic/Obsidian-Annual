@@ -2,124 +2,117 @@
 
 [中文](README.md) | [Docs index](docs/README.md) | [SPEC](docs/product-specification.md)
 
-Obsidian Annual Review is a local-first annual review workflow plugin for
-Obsidian. It helps you select candidate themes from a year of notes, review
-candidate notes, make follow-up decisions, and generate a traceable, editable,
-repeatable Markdown annual report.
+Obsidian Annual Review is a local-first **Time Range Review** plugin for
+Obsidian. It helps you review an annual, quarterly, monthly, or custom date
+range by rediscovering forgotten notes, surfacing the hidden themes that connect
+them, and writing only user-confirmed conclusions into a traceable Markdown
+review report.
 
-The plugin has one main promise: scan the local vault, suggest candidates with
-rationale and evidence links, let the user accept them in Review Board, and
-write accepted results into a protected Markdown annual report.
+It is built around three pains:
 
-## Who it is for
+- **Forgetting**: after a busy period, you remember the recent, loud, or obvious
+  notes, while older but important notes disappear.
+- **Broken connections**: many real relationships between notes are never fully
+  captured by links, tags, or folders.
+- **Distrust of automatic summaries**: AI can write polished summaries, but you
+  need to know what it saw, why it connected those notes, and which claims still
+  need review.
+
+The plugin's promise is not "one-click life summary." The core loop is:
+
+```text
+Choose time range -> Compile evidence notes -> Generate theme hypotheses -> User review -> Write confirmed Markdown report
+```
+
+Annual Review remains the default preset, alongside Quarterly Review, Monthly
+Review, and Custom Range. Every Theme Hypothesis must keep Evidence Notes,
+connection explanations, and uncertainty notes. A hypothesis enters the final
+report only after the user accepts, renames, merges, or otherwise confirms it in
+Review Board.
+
+## Who It Is For
 
 - Obsidian users who write daily notes, project logs, reading notes, research
   notes, or evergreen notes.
-- People who want a meaningful first annual review pass in 10-15 minutes
-  without organizing the whole vault first.
-- Users who want recommendations with reasons and source-note links, while
-  keeping final judgment in their own hands.
-- Users who keep annual reports as local Markdown and review changes with
+- People who want to review a period without organizing their whole vault first.
+- Users who want AI to extract themes and explain relationships, but do not want
+  AI to make final judgments for them.
+- Users who keep review artifacts as local Markdown and inspect changes with
   Obsidian Sync, Git, or another versioning tool.
 
-## Core Workflow
+## Core Concepts
 
-```text
-Scan scope -> Generate candidates -> Review Board -> Decisions -> Markdown report
-```
+| Concept          | Meaning                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| Review Session   | One review's time range, scan scope, privacy settings, AI settings, state, and report path.      |
+| Evidence Note    | A source note included in the evidence pack, with path, title, excerpt, links, and time signals. |
+| Evidence Cluster | A group of evidence notes that may support the same theme.                                       |
+| Theme Hypothesis | A proposed theme line based on evidence. It is a reviewable hypothesis, not a user conclusion.   |
+| Theme Decision   | The user's accept, rename, merge, or ignore decision for a theme hypothesis.                     |
+| Review Report    | The Markdown report written to the vault, containing only confirmed themes and evidence.         |
 
-1. **Scan**: choose a year, include/exclude folders, and privacy mode. The
-   plugin reads only allowed Markdown, properties, tags, links, tasks, and
-   timeline signals inside the active vault, and records a vault snapshot during
-   rebuild/run.
-2. **Candidates**: the plugin proposes topic, note, project, task, dormant-note,
-   and bridge-note candidates with auditable recommendation rationale, stat
-   fields, and evidence links. Unusual activity is only a signal for candidate
-   generation.
-3. **Review**: you accept, rename, merge topics, ignore, archive, or add
-   candidates to actions in the Review Board.
-4. **Decisions**: you decide whether accepted topics, notes, projects, tasks,
-   dormant notes, and bridge notes become annual highlights or next actions.
-5. **Annual report**: the plugin writes accepted material, evidence links,
-   action decisions, and method notes to `Annual Reviews/YYYY Annual Review.md`.
+`project`, `task`, `action`, and `archive` capabilities may return as later
+extensions, but they are not MVP core objects or first-screen promises.
 
-## Review Board Decision Loop
+## Review Board Loop
 
-`Annual Review: Open Review Board` opens the candidate queue for the selected
-year and scope. The queue shows each candidate's type, title, current status,
-recommendation rationale, evidence count, and review progress. Selecting a
-candidate shows the source notes, tags, tasks, or excerpts that justify it, and
-source notes can be opened directly for verification.
+`Annual Review: Open Review Board` opens the current Review Session's Theme
+Hypothesis queue. Each theme card shows:
 
-The `To review` queue has a narrow entry rule: the candidate must still be in
-the undecided `candidate` status, and it must be a note-level object the user can
-review directly: `note`, `project`, `task`, `dormant-note`, or `bridge-note`.
-Abstract taxonomy signals are intentionally excluded from the pending queue:
-`topic` candidates and tag/topic-derived taxonomy items remain scan and
-explanation signals, not items the user must clear one by one. Historical topic
-decisions that a user already accepted, renamed, merged, or turned into actions
-remain preserved in Review Board state and can still feed the annual report.
+- Theme title and one-line explanation.
+- Representative Evidence Notes.
+- A Connection Explanation for why those notes may belong to the same line of
+  thought.
+- Evidence links, excerpts, and uncertainty notes.
+- User actions: Accept, Rename, Merge, Ignore, Open evidence, Re-explain.
 
-MVP decision actions include:
+Theme Hypotheses require user review. The plugin can say "these notes may form
+this theme," but the final report only includes user-confirmed titles,
+explanations, evidence, and additions.
 
-- `Accept`: include the candidate in annual-report input.
-- `Ignore`: exclude the candidate from report generation.
-- `Rename topic`: use the user-confirmed title in the report.
-- `Merge topic`: merge a topic into a target topic instead of reporting it as a
-  standalone candidate.
-- `Add to annual highlights`: mark the candidate as an annual highlight.
-- `Add to actions`: turn the candidate into a next action.
-- `Open source note`: open evidence without changing review state.
+## AI's Role
 
-Review state is stored in plugin-owned data and does not modify source-note
-frontmatter. Rebuilding the index can refresh rationale and evidence for
-undecided candidates; user decisions such as accepted, renamed, merged,
-ignored, highlighted, or actioned candidates are preserved. Report generation
-reads accepted, highlight, and action decisions, and excludes ignored candidates
-or candidates that were merged into another source.
+AI is the **theme extractor and relationship explainer**:
 
-## Privacy Boundary
+- It proposes Theme Hypotheses from a controlled evidence pack.
+- It explains possible relationships between Evidence Notes.
+- It marks uncertainty and notes that need careful user review.
+- After confirmation, it may help polish report draft text.
+
+The plugin is the **evidence compiler, Review Board, state manager, and report
+writer**. By default it makes no network requests, calls no external AI, and
+sends no telemetry. External AI is only used when the user explicitly enables it
+and confirms the context scope.
+
+## Plugin vs. Full Prompt
+
+A strong prompt can ask a model to read many notes and summarize a period. The
+plugin adds:
+
+- Local scan and scope control: Annual / Quarterly / Monthly / Custom Range,
+  include/exclude rules, and privacy boundaries.
+- Reviewable evidence: every Theme Hypothesis is linked to source notes,
+  excerpts, and connection explanations.
+- Saved user decisions: accept, rename, merge, and ignore state persists in the
+  Review Session.
+- Reproducible output: reports contain confirmed content and regeneration does
+  not overwrite user-written sections.
+- Native Obsidian workflow: source notes open directly and the Markdown artifact
+  remains in the vault.
+
+## Privacy And Edit Protection
 
 - No network access, external AI calls, or telemetry by default.
-- By default, the plugin reads only Markdown files and Obsidian metadata cache
-  inside the active vault.
-- The report folder, templates, archives, attachments, and user-excluded scopes
-  are not scanned as source input.
-- `annual-review-snapshots.json` is stored in the plugin-owned
-  `.obsidian/plugins/<plugin-id>/` data directory for later word-delta
-  comparison; it does not modify source-note frontmatter.
-- AI is an optional report-drafting enhancement; the core candidate, review,
-  decision, and evidence workflow does not depend on AI.
-- If a user explicitly enables an external AI provider, the plugin must explain
-  the provider, context scope, excerpt count, and available exclusions before
-  sending.
-
-## How The Plugin Protects User Edits
-
-- The annual report is a normal Markdown file in the vault, so Obsidian, Git, or
-  sync tools can inspect its history.
-- Generated content should live in plugin-managed sections, while user sections
-  remain reserved for personal writing and edits.
+- By default, the plugin reads only allowed Markdown files and Obsidian metadata
+  cache inside the active vault.
+- Report folders, templates, attachments, and user-excluded scopes are not
+  scanned as source input.
+- Generated text lives in plugin-managed sections, while user sections remain
+  reserved for personal writing and edits.
 - Regeneration only replaces reproducible sections and does not overwrite
   user-written sections.
-- Before regeneration, the plugin should preserve the previous version or
-  produce a diffable change for rollback.
-- Every candidate and action suggestion keeps source-note, tag, link, task, or
-  timeline evidence so the user can verify it before accepting it.
-
-## Data Methodology
-
-- When comparable historical snapshots exist, the annual report shows real vault
-  word-count deltas computed from snapshot history.
-- When no historical snapshot exists, or include/exclude scope changes make
-  snapshots incompatible, growth metrics are labeled as current-vault inference
-  instead of precise historical growth.
-- Snapshot capture reuses the same include/exclude folders, exclude patterns,
-  and report-folder exclusion as the report scan. Excluded directories do not
-  enter snapshots or delta statistics.
-- See [Data Methodology](docs/data-methodology.md) for the JSON format,
-  capture timing, limitations, imports, batch modifications, and excluded
-  directory behavior.
+- Every theme hypothesis and connection explanation keeps source-note evidence
+  so the user can verify it before accepting it.
 
 ## Installation And Path Boundaries
 
@@ -128,27 +121,27 @@ Documentation uses three distinct vault paths:
 - **Normal user vault**: the user's own Obsidian vault. Community installation
   and manual release-package installation target this path.
 - **Repo-local validation vault**: `tests/fixtures/obsidian-smoke-vault`, used
-  for both deterministic test samples and in-repository Review Board deploy
-  checks.
-- **Custom smoke vault**: an explicitly supplied `SMOKE_VAULT_PATH` for agent
-  and release-reviewer evidence. It is not the ordinary-user install path.
+  for unit-test samples and repository-local Review Board validation.
+- **Custom smoke vault**: automation agents or release reviewers may set
+  `SMOKE_VAULT_PATH` to an explicit local test vault; this is not a normal user
+  installation path.
 
 ### Install From Obsidian Community Plugins
 
-After the plugin is listed in the community plugin browser:
+After the plugin is listed:
 
 1. Open Obsidian `Settings -> Community plugins`.
 2. Search for **Annual Review**.
 3. Click **Install**, then **Enable**.
 
-### Manually Install The Release Package
+### Manual Release Package Install
 
 ```bash
 npm install
 npm run release:plugin
 ```
 
-Then copy the release assets into the vault plugin directory:
+Copy the release artifacts to a vault plugin directory:
 
 ```bash
 VAULT="/path/to/YourVault"
@@ -159,63 +152,40 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 
 Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 
-## Current Commands
+## Available Commands
 
-- `Annual Review: Rebuild index`: rescan allowed Markdown notes in the active
-  vault and record a snapshot.
-- `Annual Review: Generate report`: choose a year and generation options, then
-  write the protected annual Markdown report.
-- `Annual Review: Open Review Board`: open the candidate review queue, verify
-  evidence, and apply accept, ignore, rename, merge, highlight, action, or
-  source-note decisions.
+| Command                            | Purpose                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Annual Review: Rebuild index`     | Rescan allowed Markdown notes for the current Review Session and record a snapshot.               |
+| `Annual Review: Open Review Board` | Open the Theme Hypothesis queue for evidence review, connection explanation, and theme decisions. |
+| `Annual Review: Generate report`   | Write a protected Markdown review report for Annual / Quarterly / Monthly / Custom Range.         |
 
 ## Development Commands
 
-- `npm run test`: run Vitest coverage for tokenizer, filters, metadata
-  extraction, aggregation, and Markdown rendering.
-- `npm run typecheck`: run TypeScript without emitting build files.
-- `npm run build`: bundle the installable Obsidian plugin.
-- `npm run lint`: run ESLint.
-- `npm run release:plugin`: create `dist/annual-review/` release assets.
-- `npm run dev`: start esbuild watch mode for local plugin development.
-- `npm run dev:deploy-plugin`: development/agent smoke validation only; deploy
-  to an explicit test vault `.obsidian` folder, not the ordinary install path.
+| Command             | Purpose                                                    |
+| ------------------- | ---------------------------------------------------------- |
+| `npm run test`      | Run Vitest.                                                |
+| `npm run typecheck` | Run TypeScript type checking without emitting build files. |
+| `npm run build`     | Build the installable Obsidian plugin bundle.              |
+| `npm run format`    | Format code and docs with Prettier.                        |
 
-## Validation
-
-Automated validation:
+## Local Validation
 
 ```bash
+npm install
 npm run test
 npm run typecheck
 npm run build
-npm run lint
 ```
 
-Manual validation:
+Manual smoke path:
 
-1. Enable the plugin in your temporary test vault, `tests/fixtures/obsidian-smoke-vault`, or an explicitly supplied agent smoke vault.
-2. Run `Annual Review: Rebuild index`.
-3. Run `Annual Review: Open Review Board` and confirm the candidate queue,
-   rationale, evidence sources, and progress are visible.
-4. Apply at least one decision: accept, ignore, rename, merge, add to annual
-   highlights, or add to actions, and confirm opening a source note works.
-5. Reload the plugin or rebuild the index, then confirm user decisions were not
-   overwritten.
+1. Install and enable the plugin.
+2. Create an Annual, Quarterly, Monthly, or Custom Range Review Session.
+3. Run `Annual Review: Rebuild index`.
+4. Open Review Board and confirm Theme Hypotheses, Evidence Notes, Connection
+   Explanation, and review actions are visible.
+5. Accept, rename, merge, or ignore several Theme Hypotheses.
 6. Run `Annual Review: Generate report`.
-7. Confirm the report appears under `Annual Reviews/`, accepted/highlight/action
-   decisions appear in the report, ignored candidates are excluded, and
-   candidates link back to source notes.
-8. Edit a user-written section in the report, regenerate, and confirm the user
-   edit remains intact.
-9. Confirm default settings make no external network request or AI call.
-
-## More Documentation
-
-- [Product Definition](docs/product-definition.md)
-- [SPEC](docs/product-specification.md)
-- [Feature Inventory](docs/feature-inventory.md)
-- [Roadmap](docs/roadmap.md)
-- [Docs index](docs/README.md)
-- [Data Methodology](docs/data-methodology.md)
-- [Release checklist](docs/release-checklist.md)
+7. Confirm the report includes only user-confirmed themes, evidence links,
+   methodology, and user-written sections, and that source notes can be opened.

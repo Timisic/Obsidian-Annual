@@ -2,79 +2,98 @@
 
 [English](README.en.md) | [文档索引](docs/README.md) | [SPEC](docs/product-specification.md)
 
-Obsidian Annual Review 是一个本地优先的年度复盘工作流插件，
-帮助你从一年的笔记中筛选候选主题、复核候选笔记、形成行动决定，
-并输出可追溯、可编辑、可重复生成的 Markdown 年报。
+Obsidian Annual Review 是一个本地优先的 **Time Range Review / 时间范围主题复盘** 插件。
+它帮助你在年度、季度、月度或自定义时间范围内，找回被遗忘的关键笔记，
+复核这一段时间里真正连接你的隐藏主题，并把用户确认后的结果写成可追溯的 Markdown 复盘报告。
 
-它只承诺一个主流程：本地扫描 vault，给出带推荐理由和证据链接的候选项，由你在 Review Board 中接受后写入受保护的 Markdown 年报。
+它解决三个问题：
+
+- **遗忘**：一段时间写了很多笔记，复盘时只记得最近、最强烈或标题最显眼的内容。
+- **连接断裂**：笔记之间的真实关系常常没有被双链、标签或文件夹完整表达。
+- **不信任自动总结**：AI 可以写出漂亮总结，但用户需要知道它看了什么、为什么这样连接、哪些结论仍需复核。
+
+插件的承诺不是“一键替你总结人生”，而是：
+
+```text
+选择时间范围 -> 编译证据笔记 -> 生成主题假设 -> 用户复核 -> 写入确认后的 Markdown 报告
+```
+
+Annual Review 仍是默认 preset，同时保留 Quarterly Review、Monthly Review 和 Custom Range。
+每个 Theme Hypothesis / 主题假设都必须绑定 Evidence Notes / 证据笔记、连接解释和不确定性说明；
+用户需要在 Review Board 中接受、改名、合并或忽略后，主题才会进入最终报告。
 
 ## 适合谁
 
-- 用 Obsidian 写日记复盘、项目记录、读书笔记、研究笔记的个人用户。
-- 想在 10-15 分钟内完成第一轮年度复盘，而不是先整理完整个 vault 的用户。
-- 希望推荐项带有理由和源笔记链接，最终判断仍由自己确认的人。
-- 需要把年报保留为本地 Markdown，并配合 Obsidian Sync、Git 或其他版本管理工具审阅差异的人。
+- 用 Obsidian 写 daily notes、项目记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
+- 想复盘一段时间，而不想先手动整理完整个 vault 的用户。
+- 希望 AI 帮忙提炼主题和解释关系，但不希望 AI 替自己下结论的人。
+- 需要把复盘结果留在本地 Markdown，并能用 Obsidian Sync、Git 或其他版本管理工具审阅差异的人。
 
-## 核心流程
+## 核心概念
 
-```text
-扫描范围 -> 生成候选 -> Review Board 审核 -> 决策 -> Markdown 年报
-```
+| 概念                        | 含义                                                              |
+| --------------------------- | ----------------------------------------------------------------- |
+| Review Session              | 一次复盘的时间范围、扫描范围、隐私设置、AI 设置、状态和报告路径。 |
+| Evidence Note               | 进入证据包的源笔记，带路径、标题、摘录、链接和时间信号。          |
+| Evidence Cluster            | 一组可能互相关联、共同支撑某条主题假设的证据笔记。                |
+| Theme Hypothesis / 主题假设 | 插件基于证据簇提出的主题主线。它是待复核假设，不是用户结论。      |
+| Theme Decision              | 用户对主题假设的接受、改名、合并或忽略。                          |
+| Review Report               | 写入 vault 的 Markdown 复盘报告，只沉淀用户确认后的内容和证据。   |
 
-1. **扫描**：选择年份、包含/排除目录和隐私模式，插件只读取当前 vault 内允许范围的 Markdown、属性、标签、链接、任务和时间线信号，并在 rebuild/run 时记录 vault snapshot。
-2. **候选**：插件提出主题、笔记、项目、任务、沉睡笔记和桥接笔记候选，并给出可审计的“为什么被推荐”理由、统计字段和证据链接；异常活动只作为生成候选的信号。
-3. **审核**：你在 Review Board 中逐项接受、重命名、合并主题、忽略、归档，或把候选项加入行动。
-4. **决策**：你为已接受的主题、笔记、项目、任务、沉睡笔记和桥接笔记写下年度精选或下一步行动。
-5. **年报**：插件把已接受内容、证据链接、行动决定和方法说明写入 `Annual Reviews/YYYY Annual Review.md`。
+`project`、`task`、`action`、`archive` 相关能力会作为后续扩展重新评估，
+但不属于当前 MVP 的核心对象或首屏承诺。
 
-## Review Board 审核闭环
+## Review Board 复核闭环
 
-`Annual Review: Open Review Board` 打开的是当前年份/范围的候选队列。队列会显示每个候选的类型、标题、当前状态、推荐理由、证据数量和审核进度；选择候选后，右侧展示源笔记、标签、任务或摘录证据，并可直接打开源笔记复核。
+`Annual Review: Open Review Board` 打开当前 Review Session 的主题假设队列。
+每张主题卡片展示：
 
-进入 `待审核` 队列的规则是：候选必须仍处于未决 `candidate` 状态，并且必须是可直接复核的笔记级对象，包括 `note`、`project`、`task`、`dormant-note` 和 `bridge-note`。抽象分类信号不会进入待审核队列：`topic` 候选以及由标签/主题聚合得到的 taxonomy 项只作为扫描和解释信号使用，不要求用户逐项审核。已经由用户接受、重命名、合并或转成行动的历史 topic 决策仍会保留在 Review Board 状态中，并可继续作为年报输入。
+- 主题标题和一句话解释。
+- 代表 Evidence Notes。
+- 这些笔记为什么可能属于同一条思考线的 Connection Explanation。
+- 证据链接、摘录和不确定性说明。
+- 用户操作：Accept、Rename、Merge、Ignore、Open evidence、Re-explain。
 
-MVP 决策动作包括：
+主题假设需要用户复核。插件可以提示“这些笔记可能共同表达了什么”，
+但最终报告只写入用户确认过的主题名称、解释、证据和用户补充。
 
-- `Accept`：接受候选，让它进入年报候选输入。
-- `Ignore`：忽略候选，后续生成年报时排除它。
-- `Rename topic`：用用户确认后的标题写入报告。
-- `Merge topic`：把主题合并到目标主题，不再作为独立候选输出。
-- `Add to annual highlights`：把候选标记为年度精选。
-- `Add to actions`：把候选转成下一步行动。
-- `Open source note`：打开证据来源，不改变审核状态。
+## AI 的角色
 
-审核状态保存在插件自己的数据中，不写入源笔记 frontmatter。重复 rebuild index 时，未决候选可以刷新理由和证据；已经接受、重命名、合并、忽略、精选或加入行动的用户决策会保留。生成年报时只读取已接受/精选/行动决策，并排除忽略或已合并为来源的候选。
+AI 是 **主题提炼器和关系解释器**：
 
-## 隐私边界
+- 从受控证据包中提出 Theme Hypotheses。
+- 解释 Evidence Notes 之间的可能关系。
+- 标注不确定性和需要用户重点复核的地方。
+- 在用户确认后辅助润色报告草稿。
 
-- 默认不访问网络，不调用外部 AI，不发送遥测。
-- 默认只读取当前 Obsidian vault 内的 Markdown 和 Obsidian metadata cache。
-- 报告目录、模板、归档、附件和用户排除范围不会进入扫描输入。
-- `annual-review-snapshots.json` 保存在插件自己的 `.obsidian/plugins/<plugin-id>/` 数据目录中，用于后续比较字数增量；它不写入源笔记 frontmatter。
-- AI 只作为可选的报告草稿辅助步骤；核心候选、审核、取舍、行动决定和证据复核仍由用户完成。
-- 如果用户显式启用外部 AI，插件在发送前说明 provider、上下文范围、摘录数量和可排除内容。
+插件是 **证据编译器、Review Board、状态管理器和报告写入器**。
+默认模式不访问网络、不调用外部 AI、不发送遥测；外部 AI 只能在用户显式启用并确认上下文范围后使用。
 
-## 本插件如何保护用户编辑
+## 和完整提示词的差异
 
-- 年报是普通 Markdown 文件，保存在 vault 内，可以用 Obsidian、Git 或同步工具查看历史差异。
-- 生成内容应写入插件管理区块，用户手写区块保留给个人叙事和修改。
+一份强提示词也可以让大模型读取大量笔记并生成总结。插件额外提供的是：
+
+- 本地扫描和范围控制：Annual / Quarterly / Monthly / Custom Range、include/exclude、隐私边界。
+- 证据可复核：每个主题假设绑定 Obsidian 源笔记、摘录和连接解释。
+- 用户确认状态：接受、改名、合并、忽略会保存到 Review Session。
+- 可复现输出：报告只写入用户确认内容，重新生成不覆盖用户手写区。
+- Obsidian 原生体验：直接打开源笔记，长期保留 Markdown 工件。
+
+## 隐私与编辑保护
+
+- 默认不访问网络，不调用外部 AI，不发送 telemetry。
+- 默认只读取当前 vault 内允许范围的 Markdown 和 Obsidian metadata cache。
+- 报告目录、模板、附件和用户排除范围不会进入扫描输入。
+- 生成内容写入插件管理区块，用户手写区块保留给个人叙事和修改。
 - 重新生成只替换可再生区块，不覆盖用户手写内容。
-- 重新生成前应保留上一版备份或形成可 diff 的变更，方便回滚。
-- 每个候选项和行动建议都保留源笔记、标签、链接、任务或时间线证据，用户可以复核后再采纳。
-
-## 数据口径
-
-- 有可比较的历史 snapshot 时，年报会展示基于 snapshot 的真实 vault 字数增量。
-- 没有历史 snapshot，或 include/exclude 范围变化导致 snapshot 不可比较时，增长统计会标记为“当前 vault 推断”，避免把 `ctime`/`mtime` 推断写成确定历史结论。
-- Snapshot 捕获复用同一套 include/exclude folder、exclude pattern 和报告目录排除规则；被排除目录不会进入 snapshot 或增量统计。
-- 详细格式和限制见 [Data Methodology](docs/data-methodology.md)。
+- 每个主题假设和连接解释都保留源笔记证据，用户可复核后再采纳。
 
 ## 安装和路径边界
 
 文档中的 vault 路径分为三类，避免把测试路径当成用户路径：
 
 - **普通用户 vault**：用户自己的 Obsidian vault。社区插件安装和手动安装都以这个路径为目标。
-- **repo-local validation vault**：`tests/fixtures/obsidian-smoke-vault`，同时用于单元测试样本和本仓库内 Review Board 部署验证。
+- **repo-local validation vault**：`tests/fixtures/obsidian-smoke-vault`，用于单元测试样本和本仓库内 Review Board 部署验证。
 - **自定义 smoke vault**：自动化 agent/release reviewer 可通过 `SMOKE_VAULT_PATH` 指向显式提供的本地测试 vault；它不是普通用户安装路径。
 
 ### 从 Obsidian 社区插件安装
@@ -105,46 +124,39 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 
 ## 当前可用命令
 
-| 命令                               | 用途                                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| `Annual Review: Rebuild index`     | 重新扫描当前 vault 中允许范围的 Markdown 笔记，并记录 snapshot。                 |
-| `Annual Review: Generate report`   | 选择年份和生成选项，写入受保护的年度 Markdown 报告。                             |
-| `Annual Review: Open Review Board` | 打开候选审核队列，用于复核证据并执行接受、忽略、重命名、合并、精选、行动等决策。 |
+| 命令                               | 用途                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------- |
+| `Annual Review: Rebuild index`     | 重新扫描当前 Review Session 允许范围内的 Markdown 笔记，并记录 snapshot。       |
+| `Annual Review: Open Review Board` | 打开主题假设队列，用于复核证据笔记、连接解释和主题决策。                        |
+| `Annual Review: Generate report`   | 为 Annual / Quarterly / Monthly / Custom Range 写入受保护的 Markdown 复盘报告。 |
 
 ## 开发命令
 
-| 命令                        | 用途                                                                                   |
-| --------------------------- | -------------------------------------------------------------------------------------- |
-| `npm run test`              | 运行 Vitest，覆盖 tokenizer、路径过滤、元数据提取、年度聚合和 Markdown 渲染。          |
-| `npm run typecheck`         | 运行 TypeScript 类型检查，不生成构建文件。                                             |
-| `npm run build`             | 生成可安装到 Obsidian 的插件 bundle。                                                  |
-| `npm run lint`              | 运行 ESLint。                                                                          |
-| `npm run release:plugin`    | 生成 `dist/annual-review/` 发布资产。                                                  |
-| `npm run dev`               | 启动 esbuild watch，适合本地插件开发。                                                 |
-| `npm run dev:deploy-plugin` | 开发/agent smoke 验证用：显式传入测试 vault 后部署到 `.obsidian`，不作为普通安装路径。 |
+| 命令                | 用途                                       |
+| ------------------- | ------------------------------------------ |
+| `npm run test`      | 运行 Vitest。                              |
+| `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
+| `npm run build`     | 生成可安装到 Obsidian 的插件 bundle。      |
+| `npm run format`    | 使用 Prettier 格式化代码和文档。           |
 
-## 验证建议
-
-自动验证：
+## 本地验证
 
 ```bash
+npm install
 npm run test
 npm run typecheck
 npm run build
-npm run lint
 ```
 
-手动验证：
+手动 smoke 路径：
 
-1. 在你的临时测试 vault、`tests/fixtures/obsidian-smoke-vault` 或显式提供的 agent smoke vault 中启用插件。
-2. 运行 `Annual Review: Rebuild index`。
-3. 运行 `Annual Review: Open Review Board`，确认候选队列、推荐理由、证据来源和进度可见。
-4. 对至少一个候选执行接受、忽略、重命名、合并、加入年度精选或加入行动，并确认打开源笔记可用。
-5. 重新加载插件或重新运行 rebuild index，确认已做出的用户决策没有被覆盖。
+1. 安装并启用插件。
+2. 创建 Annual、Quarterly、Monthly 或 Custom Range Review Session。
+3. 运行 `Annual Review: Rebuild index`。
+4. 打开 Review Board，确认 Theme Hypotheses、Evidence Notes、Connection Explanation 和复核操作可见。
+5. 接受、改名、合并或忽略若干主题假设。
 6. 运行 `Annual Review: Generate report`。
-7. 确认报告生成在 `Annual Reviews/` 下，接受/精选/行动决策进入报告，忽略候选被排除，并且候选项能回链到源笔记。
-8. 修改年报中的用户手写区块后重新生成，确认手写内容未被覆盖。
-9. 在默认设置下确认没有外部网络请求或 AI 调用。
+7. 确认报告只包含用户确认后的主题、证据链接、方法说明和用户手写区，并且源笔记可回链打开。
 
 ## TODO
 
