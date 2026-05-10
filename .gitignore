@@ -5,3 +5,4 @@ styles.css
 data.json
 coverage/
 dist/
+*.DS_Store
