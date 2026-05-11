@@ -4,11 +4,9 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
+import { reviewSessionContainsDate } from "./reviewSession";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
-import {
-  buildThemeEvidencePackage,
-  parseThemeHypotheses,
-} from "./themeEvidence";
+import { buildThemeEvidencePackage, parseThemeHypotheses } from "./themeEvidence";
 import type {
   AiHighValueNoteInsight,
   AiReportEnhancements,
@@ -97,13 +95,14 @@ export async function renderAiReportEnhancements(
     body: JSON.stringify({
       model: options.settings.chatGptModel.trim() || "gpt-5.5",
       instructions: [
-        "You enrich an Obsidian review from supplied vault statistics, note excerpts, backlinks, and linked-note context.",
-        "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
+        "You enrich an Obsidian review from a bounded ReviewSession evidence package.",
+        "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
         "Use the embedded Obsidian CLI/Markdown handoff as binding output guidance.",
         "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
         "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
+        "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
         "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
-        "Evidence-note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
+        "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
         "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
@@ -168,118 +167,7 @@ export function buildAiPrompt(
   files: SourceFile[],
   settings: AnnualReviewSettings,
 ): string {
-  const evidencePackage = buildThemeEvidencePackage(aggregate, files, settings);
-  const activeNotes = activeNoteEntries(aggregate, files, settings);
-  const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
-
-  const contextNotes = activeNotes
-    .slice(0, MAX_AI_CONTEXT_NOTES)
-    .map(({ file, note }) => ({
-      path: note.path,
-      folder: note.folder,
-      created: new Date(note.ctime).toISOString(),
-      modified: new Date(note.mtime).toISOString(),
-      words: note.wordCount,
-      characters: note.charCount,
-      tags: note.tags,
-      links: note.links,
-      headings: note.headings,
-      backlinks: backlinkContext(note.path, activeNotes, MAX_LINKED_NOTE_CONTEXT),
-      linkedNotes: linkedNoteContext(note, noteByPath, MAX_LINKED_NOTE_CONTEXT),
-      excerpt: excerpt(file.content),
-    }));
-
-  const linkGraph = activeNotes.map(({ note }) => ({
-    path: note.path,
-    links: note.links,
-  }));
-
-  const omittedNoteCount = Math.max(0, activeNotes.length - contextNotes.length);
-
-  return JSON.stringify(
-    {
-      task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer evidence-note reasons, and optional reflection prompts.",
-      outputSchema: {
-        periodJudgment:
-          "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
-        themeHypotheses: [
-          {
-            id: "stable short id",
-            title:
-              "synthesized content theme; do not use raw tags/folders/months/document titles",
-            summary:
-              "2-3 sentence theme summary grounded in evidencePackage.evidenceNotes",
-            evidenceNoteIds: ["exact evidencePackage.evidenceNotes[].id values"],
-            connectionExplanation:
-              "how the evidence notes connect through local evidence signals",
-            uncertainty:
-              "required if fewer than two evidence notes support the hypothesis",
-            source: "ai",
-          },
-        ],
-        themeInsights: [
-          {
-            title:
-              "synthesized content theme; do not use raw tags/folders/months/document titles",
-            synthesis:
-              "2-3 sentence annual summary grounded in note excerpts and backlinks",
-            connections: "how this theme connects to other themes or notes",
-            evidenceNotes: ["exact source note paths from contextNotes"],
-            nextQuestion: "one concrete review question",
-          },
-        ],
-        highValueNotes: [
-          {
-            path: "exact source note path from highValueEvidence",
-            reason: "content-specific value reason, not only link/word metrics",
-            suggestedAction: "optional Obsidian-native review prompt",
-          },
-        ],
-        nextActions: ["3 optional reflection prompts grounded in the supplied notes"],
-      },
-      obsidianSkillHandoff: obsidianSkillHandoff(),
-      contextPolicy: {
-        noteCoverage:
-          omittedNoteCount === 0
-            ? "All active notes are included with excerpts."
-            : `${contextNotes.length} active notes include excerpts; ${omittedNoteCount} additional active notes are represented in the link graph only.`,
-        excerptLimit: `${MAX_AI_CONTEXT_EXCERPT_CHARS} characters per included note`,
-        evidenceRules:
-          "Use supplied evidencePackage excerpts, backlinks, linkedNotes, evidence note ids, and exact Obsidian note paths. Preserve wikilink compatibility.",
-      },
-      evidencePackage,
-      year: aggregate.year,
-      privacyMode: aggregate.scope.privacyMode,
-      totals: {
-        createdNotes: aggregate.createdCount,
-        modifiedNotes: aggregate.modifiedCount,
-        activeDays: aggregate.activeDays,
-        longestStreak: aggregate.longestStreak,
-        totalWords: aggregate.totalWords,
-        totalCharacters: aggregate.totalCharacters,
-      },
-      monthlyWords: aggregate.monthBuckets.map((month) => ({
-        month: month.month,
-        created: month.created,
-        modified: month.modified,
-        words: month.words,
-        cumulativeWords:
-          aggregate.wordGrowthBuckets.find((growth) => growth.month === month.month)
-            ?.cumulativeWords ?? 0,
-      })),
-      topTags: aggregate.topTags,
-      topFolders: aggregate.topFolders,
-      topLinks: aggregate.topLinks,
-      representativeNotes: aggregate.representativeNotes,
-      statisticalTopicSeeds: aggregate.topicEvolution.topTopics,
-      highValueEvidence: highValueEvidence(aggregate, activeNotes, noteByPath),
-      linkGraph,
-      contextNotes,
-      omittedNoteCount,
-    },
-    null,
-    2,
-  );
+  return JSON.stringify(buildCodexContext(aggregate, files, settings), null, 2);
 }
 
 export function buildCodexPrompt(
@@ -290,12 +178,13 @@ export function buildCodexPrompt(
   return [
     "You are generating structured Obsidian annual review enrichment.",
     "Use the embedded Obsidian CLI/Markdown handoff as binding guidance.",
-    "Use only the supplied JSON context unless your runtime exposes the vault read-only; preserve source note paths exactly.",
-    "Return JSON only with periodJudgment, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
+    "Use only the supplied JSON context; do not read or request any vault files outside this bounded evidence package.",
+    "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
     "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
     "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
+    "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
     "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
-    "Evidence-note reasons must be distinct for each note and grounded in its excerpt, backlinks, and linked-note context.",
+    "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
   ].join("\n");
@@ -311,24 +200,14 @@ function buildCodexContext(
     20,
     240,
   );
-  const activeNotes = activeNoteEntries(aggregate, files, settings);
-  const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
-  const contextNotes = activeNotes
-    .slice(0, MAX_CODEX_CONTEXT_NOTES)
-    .map(({ file, note }) => ({
-      path: note.path,
-      headings: note.headings,
-      tags: note.tags,
-      links: note.links,
-      backlinks: backlinkContext(note.path, activeNotes, 3),
-      excerpt: excerpt(file.content),
-    }));
 
   return {
-    task: "Generate content-synthesized annual review enrichment JSON from aggregate evidence plus note excerpts/backlinks.",
+    task: "Generate content-synthesized review enrichment JSON from the bounded ReviewSession evidence package.",
     outputSchema: {
       periodJudgment:
-        "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
+        "2-4 evidence-backed review overview sentences; no heading, no bullet list",
+      themeHypotheses:
+        "3-5 semantic themes with id, title, summary, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
       themeInsights:
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
@@ -337,11 +216,19 @@ function buildCodexContext(
     },
     obsidianSkillHandoff: obsidianSkillHandoff(),
     contextPolicy: {
-      noteCoverage: `${contextNotes.length} active notes include excerpts and backlink summaries for local Codex fallback.`,
+      noteCoverage: `${evidencePackage.evidenceNotes.length} bounded evidence notes include short excerpts and local signals for the selected ReviewSession.`,
       evidenceSources:
-        "Use evidencePackage ids, listed note paths, excerpts, topic metrics, link metrics, evidence-note signals, and backlink context only.",
+        "Use only evidencePackage ids, listed note paths, short excerpts, related notes, and local signals.",
     },
     evidencePackage,
+    reviewSession: {
+      id: aggregate.session.id,
+      label: aggregate.session.label,
+      preset: aggregate.session.preset,
+      startDate: aggregate.session.startDate,
+      endDate: aggregate.session.endDate,
+    },
+    reportLanguage: settings.reportLanguage,
     year: aggregate.year,
     privacyMode: aggregate.scope.privacyMode,
     totals: {
@@ -360,30 +247,12 @@ function buildCodexContext(
         modified: month.modified,
         words: month.words,
       })),
-    topTags: aggregate.topTags.slice(0, 6),
-    topFolders: aggregate.topFolders.slice(0, 5),
-    topLinks: aggregate.topLinks.slice(0, 6),
-    representativeNotes: aggregate.representativeNotes.slice(0, 6),
-    topTopics: aggregate.topicEvolution.topTopics.slice(0, 5).map((topic) => ({
-      name: topic.name,
-      addedWords: topic.addedWords,
-      newNotes: topic.newNotes,
-      updatedNotes: topic.updatedNotes,
-      representativeNotes: topic.representativeNotes.slice(0, 2),
-    })),
-    emergingTopics: aggregate.topicEvolution.emergingTopics.slice(0, 5),
-    decliningTopics: aggregate.topicEvolution.decliningTopics.slice(0, 5),
-    highValueNotes: aggregate.highValueNotes.slice(0, 5).map((note) => ({
-      path: note.path,
-      kind: note.kind,
-      suggestionLabel: note.suggestionLabel,
-      reason: note.reason,
-      reasons: note.reasons,
-      suggestedAction: note.suggestedAction,
-      periodWordCount: note.periodWordCount,
-    })),
-    highValueEvidence: highValueEvidence(aggregate, activeNotes, noteByPath),
-    contextNotes,
+    activityEvidence: {
+      topTags: aggregate.topTags.slice(0, 6),
+      topFolders: aggregate.topFolders.slice(0, 5),
+      topLinks: aggregate.topLinks.slice(0, 6),
+      representativeNotes: aggregate.representativeNotes.slice(0, 6),
+    },
     outputReadyNotes: aggregate.outputReadyNotes.slice(0, 3).map((note) => note.path),
     maintenanceNotes: aggregate.maintenanceNotes.slice(0, 3).map((note) => note.path),
     isolatedPotentialNotes: aggregate.isolatedPotentialNotes
@@ -428,8 +297,14 @@ function activeNoteEntries(
     .map((file) => ({ file, note: extractNoteStats(file, settings) }))
     .filter(
       (entry) =>
-        new Date(entry.note.ctime).getFullYear() === aggregate.year ||
-        new Date(entry.note.mtime).getFullYear() === aggregate.year,
+        reviewSessionContainsDate(
+          aggregate.session,
+          entry.note.noteDate?.timestamp ?? entry.note.ctime,
+        ) ||
+        reviewSessionContainsDate(
+          aggregate.session,
+          entry.note.noteDate?.timestamp ?? entry.note.mtime,
+        ),
     )
     .sort((a, b) => a.note.path.localeCompare(b.note.path));
 }
@@ -738,7 +613,7 @@ function obsidianSkillHandoff(): Record<string, unknown> {
   return {
     invokedSkills: ["obsidian-cli", "obsidian-markdown"],
     obsidianCli: [
-      "Treat active-year notes, backlinks, and linked-note excerpts as if read through Obsidian vault APIs/CLI.",
+      "Treat the supplied ReviewSession evidence package as the only readable Obsidian context.",
       "When citing evidence, use exact vault-relative note paths supplied in context.",
     ],
     obsidianMarkdown: [
@@ -934,13 +809,22 @@ function parseAiEnhancements(
     .map(toThemeInsight)
     .filter((theme): theme is AiThemeInsight => Boolean(theme))
     .slice(0, 5);
+  const effectiveThemeHypotheses =
+    themeHypotheses.length > 0
+      ? themeHypotheses
+      : parsedThemeInsights
+          .map((theme, index) => themeInsightToHypothesis(theme, index, evidencePackage))
+          .filter((theme): theme is ThemeHypothesis => Boolean(theme));
 
   return {
     periodJudgment: stringValue(parsed.periodJudgment) || toOneSentenceSummary(content),
+    themeHypotheses: effectiveThemeHypotheses,
     themeInsights:
       parsedThemeInsights.length > 0
         ? parsedThemeInsights
-        : themeHypotheses.map(themeHypothesisToInsight),
+        : effectiveThemeHypotheses.map((theme) =>
+            themeHypothesisToInsight(theme, evidencePackage),
+          ),
     highValueNotes: arrayValue(parsed.highValueNotes)
       .map(toHighValueNoteInsight)
       .filter((note): note is AiHighValueNoteInsight => Boolean(note))
@@ -952,12 +836,66 @@ function parseAiEnhancements(
   };
 }
 
-function themeHypothesisToInsight(theme: ThemeHypothesis): AiThemeInsight {
+function themeInsightToHypothesis(
+  insight: AiThemeInsight,
+  index: number,
+  evidencePackage?: ThemeEvidencePackage,
+): ThemeHypothesis | null {
+  if (!evidencePackage) {
+    return null;
+  }
+  const idByReference = new Map(
+    evidencePackage.evidenceNotes.flatMap((note) => [
+      [normalizeLinkIdentity(note.id), note.id] as const,
+      [normalizeLinkIdentity(note.path), note.id] as const,
+      [normalizeLinkIdentity(note.path.replace(/\.md$/iu, "")), note.id] as const,
+      [normalizeLinkIdentity(note.title), note.id] as const,
+    ]),
+  );
+  const evidenceNoteIds = [
+    ...new Set(
+      insight.evidenceNotes
+        .map((note) => idByReference.get(normalizeLinkIdentity(note)))
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (evidenceNoteIds.length === 0) {
+    return null;
+  }
+  const localSignals = evidenceNoteIds
+    .flatMap(
+      (id) =>
+        evidencePackage.evidenceNotes.find((note) => note.id === id)?.localSignals ?? [],
+    )
+    .filter((signal, signalIndex, signals) => signals.indexOf(signal) === signalIndex)
+    .slice(0, 8);
+  return {
+    id: `theme:ai:insight:${index + 1}`,
+    title: insight.title,
+    summary: insight.synthesis,
+    evidenceNoteIds,
+    connectionExplanation: insight.connections,
+    localSignals,
+    uncertainty:
+      evidenceNoteIds.length < 2
+        ? "Low confidence: fewer than two evidence notes support this hypothesis."
+        : undefined,
+    source: "ai",
+  };
+}
+
+function themeHypothesisToInsight(
+  theme: ThemeHypothesis,
+  evidencePackage?: ThemeEvidencePackage,
+): AiThemeInsight {
+  const pathById = new Map(
+    evidencePackage?.evidenceNotes.map((note) => [note.id, note.path]) ?? [],
+  );
   return {
     title: theme.title,
     synthesis: theme.summary,
     connections: theme.connectionExplanation,
-    evidenceNotes: theme.evidenceNoteIds,
+    evidenceNotes: theme.evidenceNoteIds.map((id) => pathById.get(id) ?? id),
     nextQuestion: "",
   };
 }
@@ -1040,6 +978,7 @@ function notePathValue(value: unknown): string {
 function emptyAiEnhancements(): AiReportEnhancements {
   return {
     periodJudgment: "",
+    themeHypotheses: [],
     themeInsights: [],
     highValueNotes: [],
     nextActions: [],

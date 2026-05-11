@@ -22,7 +22,11 @@ import {
   resolveGenerateReviewSession,
   reviewSessionPathLabel,
 } from "./core/reviewSession";
-import { buildReviewSession, reviewScopeHash } from "./core/reviewCandidates";
+import {
+  buildReviewSession,
+  reviewScopeHash,
+  type BuildReviewSessionOptions,
+} from "./core/reviewCandidates";
 import {
   applyReviewAction,
   type ReviewAction,
@@ -38,6 +42,7 @@ import {
   serializeSnapshotFile,
   SNAPSHOT_FILE_NAME,
 } from "./core/snapshot";
+import { buildThemeEvidencePackage } from "./core/themeEvidence";
 import type {
   AnnualReviewLanguage,
   AnnualReviewSettings,
@@ -61,6 +66,24 @@ import { YearModal } from "./obsidian/yearModal";
 
 interface AnnualReviewPluginData extends Partial<AnnualReviewSettings> {
   reviewSessions?: Record<string, ReviewSessionState>;
+}
+
+function normalizeReviewSessions(
+  sessions?: Record<string, ReviewSessionState>,
+): Record<string, ReviewSessionState> {
+  if (!sessions) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(sessions).filter(([, session]) =>
+      Boolean(
+        session &&
+        session.schemaVersion === 1 &&
+        session.session &&
+        session.candidates.every((candidate) => candidate.type === "theme-hypothesis"),
+      ),
+    ),
+  );
 }
 
 export default class AnnualReviewPlugin extends Plugin {
@@ -144,7 +167,7 @@ export default class AnnualReviewPlugin extends Plugin {
     const data = ((await this.loadData()) ?? {}) as AnnualReviewPluginData;
     const { reviewSessions, ...settings } = data;
     this.settings = { ...DEFAULT_SETTINGS, ...settings };
-    this.reviewSessions = reviewSessions ?? {};
+    this.reviewSessions = normalizeReviewSessions(reviewSessions);
   }
 
   async saveSettings(): Promise<void> {
@@ -170,7 +193,18 @@ export default class AnnualReviewPlugin extends Plugin {
   async previewYear(year: number): Promise<void> {
     const files = await this.getIndexedFiles(this.settings);
     this.lastAggregate = buildYearAggregate(files, year, this.settings);
-    await this.refreshReviewSession(this.lastAggregate);
+    const existing = this.reviewSessions[this.reviewSessionKey(this.lastAggregate)];
+    if (existing?.candidates.some((candidate) => candidate.source === "ai")) {
+      return;
+    }
+    await this.refreshReviewSession(this.lastAggregate, {
+      evidencePackage: buildThemeEvidencePackage(
+        this.lastAggregate,
+        files,
+        this.settings,
+      ),
+      language: resolveAnnualReviewLanguage(this.settings.reportLanguage, getLanguage()),
+    });
   }
 
   getLastAggregate(): YearAggregate | null {
@@ -271,16 +305,21 @@ export default class AnnualReviewPlugin extends Plugin {
       const aggregate = buildReviewAggregate(files, session, settings, {
         snapshotComparison,
       });
-      const reviewSession = await this.refreshReviewSession(aggregate);
+      const reportLanguage = resolveAnnualReviewLanguage(
+        settings.reportLanguage,
+        getLanguage(),
+      );
       const aiEnhancements = await renderAiReportEnhancements({
         aggregate,
         files,
         settings,
       });
-      const reportLanguage = resolveAnnualReviewLanguage(
-        settings.reportLanguage,
-        getLanguage(),
-      );
+      const evidencePackage = buildThemeEvidencePackage(aggregate, files, settings);
+      const reviewSession = await this.refreshReviewSession(aggregate, {
+        themeHypotheses: aiEnhancements.themeHypotheses,
+        evidencePackage,
+        language: reportLanguage,
+      });
       const chartPaths = buildAnnualReviewChartPaths(
         settings.reportFolder,
         session.label,
@@ -343,12 +382,14 @@ export default class AnnualReviewPlugin extends Plugin {
 
   private async refreshReviewSession(
     aggregate: YearAggregate,
+    options?: BuildReviewSessionOptions,
   ): Promise<ReviewSessionState> {
     const key = this.reviewSessionKey(aggregate);
     const legacyKey = `${aggregate.year}:${reviewScopeHash(aggregate)}`;
     const next = buildReviewSession(
       aggregate,
       this.reviewSessions[key] ?? this.reviewSessions[legacyKey],
+      options,
     );
     this.reviewSessions[key] = next;
     await this.savePluginData();

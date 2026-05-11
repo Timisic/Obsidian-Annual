@@ -243,11 +243,11 @@ export class AnnualReviewDashboardView extends ItemView {
         row.type = "button";
         row.createSpan({
           cls: "annual-review-board-queue-title",
-          text: `[${candidate.type}] ${displayCandidateTitle(candidate)}`,
+          text: displayCandidateTitle(candidate),
         });
         row.createSpan({
           cls: "annual-review-board-queue-status",
-          text: candidate.status,
+          text: `${candidateStatusLabel(candidate, text)} · ${candidate.evidence.length}`,
         });
         row.onClickEvent(() => {
           this.selectedCandidateId = candidate.id;
@@ -264,10 +264,13 @@ export class AnnualReviewDashboardView extends ItemView {
       });
       return;
     }
-    const detailModel = buildReviewDetailModel(current);
+    const detailModel = buildReviewDetailModel(
+      current,
+      this.controller.getGeneratorLanguage(),
+    );
     const detailHeader = detail.createDiv({ cls: "annual-review-board-detail-header" });
     detailHeader.createEl("h4", { text: displayCandidateTitle(current) });
-    detailHeader.createSpan({ text: detailModel.metadata[0] ?? current.status });
+    detailHeader.createSpan({ text: candidateStatusLabel(current, text) });
     this.renderDecisionControls(detail, session, current);
 
     renderDetailSection(detail, text.currentNoteSummary, (section) => {
@@ -277,11 +280,43 @@ export class AnnualReviewDashboardView extends ItemView {
       });
     });
 
-    if (detailModel.metadata.length > 1) {
+    renderDetailSection(detail, text.connectionExplanation, (section) => {
+      section.createEl("p", {
+        cls: "annual-review-board-summary",
+        text: detailModel.connection,
+      });
+    });
+
+    if (detailModel.localSignals.length > 0) {
+      renderDetailSection(detail, text.localSignals, (section) => {
+        const list = section.createEl("ul");
+        for (const signal of detailModel.localSignals.slice(0, 6)) {
+          list.createEl("li", { text: signal });
+        }
+      });
+    }
+
+    if (detailModel.uncertainty) {
+      renderDetailSection(detail, text.uncertainty, (section) => {
+        section.createEl("p", {
+          cls: "annual-review-board-summary",
+          text: detailModel.uncertainty,
+        });
+      });
+    }
+
+    renderDetailSection(detail, text.reviewCaution, (section) => {
+      section.createEl("p", {
+        cls: "annual-review-board-summary",
+        text: detailModel.caution,
+      });
+    });
+
+    if (detailModel.metadata.length > 0) {
       renderDetailSection(detail, text.essentialMetadata, (section) => {
         section.createEl("p", {
           cls: "annual-review-board-metadata",
-          text: detailModel.metadata.slice(1).join(" / "),
+          text: detailModel.metadata.join(" / "),
         });
       });
     }
@@ -485,6 +520,23 @@ function firstVisibleQueueCandidate(
 
 function displayCandidateTitle(candidate: ReviewCandidate): string {
   return reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
+}
+
+function candidateStatusLabel(
+  candidate: ReviewCandidate,
+  text: (typeof UI_TEXT)[ResolvedAnnualReviewLanguage],
+): string {
+  switch (candidate.status) {
+    case "candidate":
+      return text.toReview;
+    case "accepted":
+    case "renamed":
+      return text.accepted;
+    case "ignored":
+      return text.ignored;
+    case "merged":
+      return text.mergeTopic;
+  }
 }
 
 function renderDetailSection(

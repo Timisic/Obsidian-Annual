@@ -26,8 +26,11 @@ import {
   renderAnnualReview,
 } from "../src/core/render";
 import {
+  buildAnnualReviewSession,
   buildCustomReviewSession,
+  buildMonthlyReviewSession,
   buildQuarterlyReviewSession,
+  reviewPresetFieldVisibility,
 } from "../src/core/reviewSession";
 import { buildReviewSession } from "../src/core/reviewCandidates";
 import {
@@ -564,8 +567,20 @@ describe("aggregation and rendering", () => {
     expect(aggregate.topicEvolution.topTopics.length).toBeLessThanOrEqual(8);
   });
 
-  it("filters aggregates by quarterly and custom review sessions", async () => {
+  it("builds annual, quarterly, monthly, and custom review session ranges", async () => {
     const files = await fixtureVault();
+    const annual = buildAnnualReviewSession(
+      2026,
+      DEFAULT_SETTINGS,
+      "2026-05-01T00:00:00.000Z",
+    );
+    expect(annual).toMatchObject({
+      preset: "annual",
+      label: "2026 Annual Review",
+      startDate: "2026-01-01",
+      endDate: "2026-12-31",
+    });
+
     const q1 = buildQuarterlyReviewSession(
       2026,
       1,
@@ -592,6 +607,25 @@ describe("aggregation and rendering", () => {
       "Projects/Legacy.md",
     );
 
+    const february = buildMonthlyReviewSession(
+      2026,
+      2,
+      DEFAULT_SETTINGS,
+      "2026-05-01T00:00:00.000Z",
+    );
+    const februaryAggregate = buildReviewAggregate(files, february, DEFAULT_SETTINGS);
+
+    expect(februaryAggregate.session).toMatchObject({
+      preset: "monthly",
+      label: "2026-02 Review",
+      startDate: "2026-02-01",
+      endDate: "2026-02-28",
+    });
+    expect(februaryAggregate.monthBuckets.map((month) => month.month)).toEqual([
+      "2026-02",
+    ]);
+    expect(februaryAggregate.dayBuckets).toHaveLength(28);
+
     const custom = buildCustomReviewSession({
       label: "2026 Legacy Followup Review",
       startDate: "2026-04-01",
@@ -612,6 +646,33 @@ describe("aggregation and rendering", () => {
     expect(customAggregate.activeDays).toBe(1);
     expect(customAggregate.totalWords).toBe(0);
     expect(customAggregate.dayBuckets.map((day) => day.date)).toContain("2026-04-05");
+  });
+
+  it("exposes only preset-specific time-range fields for the modal", () => {
+    expect(reviewPresetFieldVisibility("annual")).toEqual({
+      year: true,
+      quarter: false,
+      month: false,
+      customRange: false,
+    });
+    expect(reviewPresetFieldVisibility("quarterly")).toEqual({
+      year: true,
+      quarter: true,
+      month: false,
+      customRange: false,
+    });
+    expect(reviewPresetFieldVisibility("monthly")).toEqual({
+      year: true,
+      quarter: false,
+      month: true,
+      customRange: false,
+    });
+    expect(reviewPresetFieldVisibility("custom")).toEqual({
+      year: false,
+      quarter: false,
+      month: false,
+      customRange: true,
+    });
   });
 
   it("uses explicit note dates to distribute flattened-mtime daily notes", async () => {
@@ -1063,6 +1124,7 @@ describe("aggregation and rendering", () => {
       aiEnhancements: {
         periodJudgment:
           "The year centers on turning daily writing into a research review loop.",
+        themeHypotheses: [],
         themeInsights: [
           {
             title: "Research review loop",
@@ -1350,13 +1412,27 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
     expect(markdown).toContain("### Confirmed theme hypotheses");
-    expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
-    expect(markdown).toContain("[[Projects/Renamed|Renamed Topic]] (renamed)");
-    expect(markdown).toContain("Merged from: [[Projects/Merged|Merged Topic]]");
+    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
+    expect(markdown).toContain("- Decision: Confirmed");
+    expect(markdown).toContain("#### [[Projects/Renamed|Renamed Topic]]");
+    expect(markdown).toContain("- Decision: Renamed and confirmed");
+    expect(markdown).toContain(
+      "- Why this theme exists: Accepted Topic appeared across representative evidence during this review period.",
+    );
+    expect(markdown).toContain(
+      "- Connection explanation: Accepted Topic has enough local writing activity to deserve review.",
+    );
+    expect(markdown).toContain("Evidence notes:");
+    expect(markdown).toContain(
+      "- [[Projects/Accepted]] — Accepted Topic is a representative evidence note.",
+    );
+    expect(markdown).toContain("Merged from:");
+    expect(markdown).toContain(
+      "- [[Projects/Merged|Merged Topic]] — Merged Topic appeared across representative evidence during this review period.",
+    );
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
+    expect(markdown).not.toContain("#### [[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Unreviewed Topic");
-    expect(markdown).not.toContain("accepted unsupported reason");
     expect(markdown).not.toContain("These 4 reviewed candidates are included");
     expect(markdown).not.toContain("Manual confirmation:");
     expect(markdown).not.toContain("Convert accepted topic into project");
@@ -1370,10 +1446,16 @@ describe("aggregation and rendering", () => {
     });
 
     expect(markdown).toContain("### 已确认主题假设");
-    expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
-    expect(markdown).toContain("合并来源: [[Projects/Merged|Merged Topic]]");
+    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
+    expect(markdown).toContain("- 决策: 已确认");
+    expect(markdown).toContain("- 决策: 重命名并确认");
+    expect(markdown).toContain("证据笔记:");
+    expect(markdown).toContain("合并来源:");
+    expect(markdown).toContain(
+      "- [[Projects/Merged|Merged Topic]] — Merged Topic appeared across representative evidence during this review period.",
+    );
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
+    expect(markdown).not.toContain("#### [[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
   });
@@ -1406,7 +1488,7 @@ describe("aggregation and rendering", () => {
     const reviewSection = sectionBetween(markdown, "## 主题假设", "## 数据口径");
 
     expect(reviewSection).toContain(
-      "[[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]] (accepted)",
+      "#### [[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]]",
     );
     expect(reviewSection).not.toContain("|[[Clippings]]");
     expect(reviewSection).not.toMatch(/\[\[[^\]|]+\|\[\[/u);
@@ -1452,6 +1534,65 @@ describe("aggregation and rendering", () => {
     expect(topicCandidate?.reason).not.toContain("[[Clippings]]");
   });
 
+  it("normalizes raw implementation prefixes before topics enter Review Board state", async () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "Projects/Slug Thread.md",
+          ctime: "2026-01-01T08:00:00.000Z",
+          mtime: "2026-01-01T10:00:00.000Z",
+          content: "Slug thread evidence ".repeat(80),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    aggregate.topicEvolution.topTopics = [
+      {
+        name: "[theme-hypothesis] Recurring entity: p-indent",
+        addedWords: 400,
+        newNotes: 1,
+        updatedNotes: 1,
+        representativeNotes: ["Projects/Slug Thread.md"],
+      },
+    ];
+
+    const reviewSession = buildReviewSession(aggregate);
+    const topicCandidate = reviewSession.candidates.find(
+      (candidate) => candidate.type === "theme-hypothesis",
+    );
+
+    expect(topicCandidate).toMatchObject({
+      title: "P Indent",
+      reason: expect.stringContaining("P Indent added"),
+    });
+    expect(topicCandidate?.title).not.toContain("Recurring entity");
+    expect(topicCandidate?.title).not.toContain("[theme-hypothesis]");
+  });
+
+  it("renders legacy folder and linked-thread titles as readable hypothesis titles", async () => {
+    expect(
+      reviewCandidateFixture("linked", "Linked thread: Research", "accepted").title,
+    ).toBe("Linked thread: Research");
+    const session = reviewSessionFixture();
+    session.candidates = [
+      reviewCandidateFixture("linked", "Linked thread: Research", "accepted"),
+      reviewCandidateFixture("year-folder", "2026月复盘", "accepted"),
+      reviewCandidateFixture("month-folder", "4月", "accepted"),
+    ];
+
+    const markdown = renderAnnualReview(
+      buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS),
+      { reviewSession: session },
+    );
+
+    expect(markdown).toContain("[[Projects/Linked|Research]]");
+    expect(markdown).toContain("[[Projects/Year-folder|2026 Monthly Review Notes]]");
+    expect(markdown).toContain("[[Projects/Month-folder|April Review Notes]]");
+    expect(markdown).not.toContain("Linked thread:");
+    expect(markdown).not.toContain("[[Projects/Month-folder|4月]]");
+  });
+
   it("keeps the scoring method documentation present and bounded", () => {
     const method = readFileSync("docs/scoring-method.md", "utf8");
 
@@ -1490,11 +1631,7 @@ describe("theme evidence", () => {
       "2026-04-01T00:00:00.000Z",
     );
     const aggregate = buildReviewAggregate(files, session, DEFAULT_SETTINGS);
-    const evidencePackage = buildThemeEvidencePackage(
-      aggregate,
-      files,
-      DEFAULT_SETTINGS,
-    );
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
 
     expect(evidencePackage.reviewRange).toBe("2026-01-01 to 2026-03-31");
     expect(evidencePackage.evidenceNotes.length).toBeGreaterThanOrEqual(4);
@@ -1531,11 +1668,7 @@ describe("theme evidence", () => {
       buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
       DEFAULT_SETTINGS,
     );
-    const evidencePackage = buildThemeEvidencePackage(
-      aggregate,
-      files,
-      DEFAULT_SETTINGS,
-    );
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
     const prompt = JSON.parse(buildThemeHypothesisPrompt(evidencePackage)) as {
       inputPolicy: { allowedInput: string; weakSignalRule: string };
       evidencePackage: { evidenceNotes: Array<{ id: string; excerpt: string }> };
@@ -1558,11 +1691,7 @@ describe("theme evidence", () => {
       buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
       DEFAULT_SETTINGS,
     );
-    const evidencePackage = buildThemeEvidencePackage(
-      aggregate,
-      files,
-      DEFAULT_SETTINGS,
-    );
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
     const parsed = parseThemeHypotheses(
       JSON.stringify({
         themeHypotheses: [
@@ -1612,11 +1741,7 @@ describe("theme evidence", () => {
       buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
       DEFAULT_SETTINGS,
     );
-    const evidencePackage = buildThemeEvidencePackage(
-      aggregate,
-      files,
-      DEFAULT_SETTINGS,
-    );
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
     const themes = buildLocalThemeHypotheses(evidencePackage);
 
     expect(themes.length).toBeGreaterThan(0);
@@ -1626,7 +1751,9 @@ describe("theme evidence", () => {
       ),
     ).toBe(true);
     expect(themes.every((theme) => theme.source === "local")).toBe(true);
-    expect(themes.map((theme) => theme.title)).toContain("Linked thread: AI Systems");
+    expect(themes.map((theme) => theme.title)).toContain(
+      "Evidence pattern around AI Systems",
+    );
     expect(themes[0]?.title).not.toContain("theme/ai");
 
     const weakTagThemes = buildLocalThemeHypotheses({
@@ -1647,6 +1774,8 @@ describe("theme evidence", () => {
           entities: [],
           crossFolderLinks: [],
           weakSignals: ["tag:theme/ai"],
+          localSignals: ["tags present as weak signals"],
+          relatedNotes: [],
           whyIncluded: "tag evidence",
         },
         {
@@ -1664,12 +1793,14 @@ describe("theme evidence", () => {
           entities: [],
           crossFolderLinks: [],
           weakSignals: ["tag:theme/ai"],
+          localSignals: ["tags present as weak signals"],
+          relatedNotes: [],
           whyIncluded: "tag evidence",
         },
       ],
     });
     expect(weakTagThemes[0]).toMatchObject({
-      title: "Weak tag clue: theme/ai",
+      title: "Low-confidence local clue",
       connectionExplanation: expect.stringContaining("weak evidence"),
     });
   });
@@ -1791,7 +1922,8 @@ describe("AI provider", () => {
     expect(prompt).not.toContain("obsidian-bases");
     expect(prompt).toContain('"highValueNotes"');
     expect(prompt).toContain('"topLinks"');
-    expect(prompt).toContain('"contextNotes"');
+    expect(prompt).toContain('"evidencePackage"');
+    expect(prompt).toContain('"localSignals"');
     expect(prompt).toContain('"backlinks"');
     expect(prompt.length).toBeLessThan(24_000);
   });
@@ -1885,8 +2017,8 @@ describe("AI provider", () => {
 
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research");
-    expect(prompt).toContain('"linkGraph"');
-    expect(prompt).toContain('"contextNotes"');
+    expect(prompt).toContain('"evidencePackage"');
+    expect(prompt).toContain('"relatedNotes"');
     expect(prompt).toContain("Review Fixtures/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
@@ -1906,14 +2038,14 @@ describe("AI provider", () => {
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
     const context = JSON.parse(prompt) as {
-      linkGraph: Array<{ links: string[] }>;
-      contextNotes: Array<{ links: string[] }>;
+      evidencePackage: { evidenceNotes: Array<{ links: string[] }> };
     };
 
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research.md");
-    expect(context.linkGraph[0]?.links).toEqual(["Projects/Research.md"]);
-    expect(context.contextNotes[0]?.links).toEqual(["Projects/Research.md"]);
+    expect(context.evidencePackage.evidenceNotes[0]?.links).toEqual([
+      "Projects/Research.md",
+    ]);
   });
 });
 
@@ -2457,7 +2589,7 @@ describe("MVP public surface", () => {
 
   it("builds a concise selected-note detail model from local candidate data", () => {
     const candidate = reviewCandidateFixture("detail", "Detail Topic", "candidate", {
-      reason: "Fallback reason that should not win when excerpt evidence exists.",
+      reason: "Detail Topic appears across the current review evidence.",
       rank: 4,
       rankReason: "Ranked because the note has review-worthy local evidence.",
       evidence: [
@@ -2478,11 +2610,14 @@ describe("MVP public surface", () => {
     const detail = buildReviewDetailModel(candidate);
 
     expect(detail.summary).toBe(
-      "This note captures the main review decision and enough local context to summarize it.",
+      "Detail Topic appears across the current review evidence.",
     );
+    expect(detail.connection).toBe(
+      "Detail Topic has enough local writing activity to deserve review.",
+    );
+    expect(detail.caution).toContain("Only one evidence note");
     expect(detail.metadata).toEqual([
-      "theme-hypothesis / candidate",
-      "rank 4",
+      "Rank #4",
       "Ranked because the note has review-worthy local evidence.",
     ]);
     expect(detail.evidence).toHaveLength(1);
@@ -2692,20 +2827,30 @@ function reviewCandidateFixture(
   overrides: Partial<ReviewCandidate> = {},
 ): ReviewCandidate {
   const sourcePath = `Projects/${id[0]?.toUpperCase() ?? ""}${id.slice(1)}.md`;
+  const evidenceId = `${id}-evidence`;
   return {
     id,
     type: "theme-hypothesis",
     title,
-    reason: `${id} unsupported reason`,
-    reasons: [],
+    reason: `${title} appeared across representative evidence during this review period.`,
+    reasons: [
+      {
+        type: "word-count",
+        label: `${title} has enough local writing activity to deserve review.`,
+        evidenceId,
+        sourcePath,
+        statField: "wordCount",
+      },
+    ],
     status,
     evidence: [
       {
-        id: `${id}-evidence`,
+        id: evidenceId,
         kind: "note",
         label: title,
         target: sourcePath,
         sourcePath,
+        reason: `${title} is a representative evidence note.`,
       },
     ],
     sourcePaths: [sourcePath],

@@ -46,6 +46,11 @@ export interface ReviewCandidate {
   type: ReviewCandidateType;
   title: string;
   reason: string;
+  aiSummary?: string;
+  connectionExplanation?: string;
+  localSignals?: string[];
+  uncertainty?: string;
+  source?: string;
   reasons: ExplanationReason[];
   status: ReviewCandidateStatus;
   evidence: EvidenceSource[];
@@ -264,6 +269,9 @@ export function mergeScannedCandidates(
   scanId: string,
   updatedAt: string,
 ): ReviewSessionState {
+  const scanHasAiThemes = scannedCandidates.some(
+    (candidate) => candidate.source === "ai",
+  );
   const scannedById = new Map(
     scannedCandidates.map((candidate) => [candidate.id, candidate]),
   );
@@ -271,7 +279,9 @@ export function mergeScannedCandidates(
     .map((storedCandidate) => {
       const scanned = scannedById.get(storedCandidate.id);
       if (!scanned) {
-        return storedCandidate.status === "candidate"
+        return storedCandidate.status === "candidate" ||
+          isLegacyThinCandidate(storedCandidate) ||
+          (scanHasAiThemes && storedCandidate.source !== "ai")
           ? undefined
           : markMissingEvidence(storedCandidate, updatedAt);
       }
@@ -411,4 +421,13 @@ function markMissingEvidence(
     evidence: candidate.evidence.map((evidence) => ({ ...evidence, missing: true })),
     updatedAt,
   };
+}
+
+function isLegacyThinCandidate(candidate: ReviewCandidate): boolean {
+  return (
+    candidate.type === "theme-hypothesis" &&
+    !candidate.aiSummary &&
+    !candidate.connectionExplanation &&
+    (!candidate.localSignals || candidate.localSignals.length === 0)
+  );
 }

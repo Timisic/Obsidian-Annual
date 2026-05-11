@@ -320,6 +320,7 @@ export interface AiHighValueNoteInsight {
 
 export interface AiReportEnhancements {
   periodJudgment: string;
+  themeHypotheses: ThemeHypothesis[];
   themeInsights: AiThemeInsight[];
   highValueNotes: AiHighValueNoteInsight[];
   nextActions: string[];
@@ -333,6 +334,7 @@ export interface ThemeHypothesis {
   summary: string;
   evidenceNoteIds: string[];
   connectionExplanation: string;
+  localSignals: string[];
   uncertainty?: string;
   source: ThemeHypothesisSource;
 }
@@ -352,6 +354,8 @@ export interface ThemeEvidenceNote {
   entities: string[];
   crossFolderLinks: string[];
   weakSignals: string[];
+  localSignals: string[];
+  relatedNotes: string[];
   whyIncluded: string;
 }
 

@@ -239,6 +239,18 @@ const REPORT_TEXT = {
     aiValueReason: "Recommendation rationale",
     topHighValueNotes: "Confirmed theme hypotheses",
     mergedFrom: "Merged from",
+    confirmedDecision: "Decision",
+    confirmedByAccept: "Confirmed",
+    confirmedByRename: "Renamed and confirmed",
+    aiSummary: "AI summary",
+    whyThemeExists: "Why this theme exists",
+    connectionExplanation: "Connection explanation",
+    localSignals: "Local signals",
+    uncertainty: "Uncertainty",
+    reviewCaution: "Review caution",
+    evidenceNotes: "Evidence notes",
+    userNote: "User note",
+    missingEvidence: "missing after rescan",
     outputReadyNotes: "Output-ready notes",
     maintenanceNotes: "Notes needing maintenance",
     noOutputReadyNotes: "No output-ready notes found.",
@@ -412,6 +424,18 @@ const REPORT_TEXT = {
     aiValueReason: "推荐理由",
     topHighValueNotes: "已确认主题假设",
     mergedFrom: "合并来源",
+    confirmedDecision: "决策",
+    confirmedByAccept: "已确认",
+    confirmedByRename: "重命名并确认",
+    aiSummary: "AI 总结",
+    whyThemeExists: "为什么这个主题存在",
+    connectionExplanation: "连接解释",
+    localSignals: "本地信号",
+    uncertainty: "不确定性",
+    reviewCaution: "复核提示",
+    evidenceNotes: "证据笔记",
+    userNote: "用户备注",
+    missingEvidence: "重新扫描后缺失",
     outputReadyNotes: "可输出笔记",
     maintenanceNotes: "需维护笔记",
     noOutputReadyNotes: "未找到可输出笔记。",
@@ -1272,6 +1296,10 @@ function sanitizeInlineMarkdown(markdown?: string): string {
     .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
     .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
     .join(" ")
+    .replace(
+      /\[\[([^\]|#\]]+?)\.md((?:#[^\]|]+)?(?:\|[^\]]+)?)?\]\]/giu,
+      (_match, path: string, suffix = "") => `[[${path}${suffix}]]`,
+    )
     .replace(/\s+/gu, " ")
     .trim();
   const sentence = body.match(/^(.+?[.!?。！？])(?:\s|$)/u)?.[1] ?? body;
@@ -1288,6 +1316,10 @@ function sanitizeParagraphMarkdown(markdown?: string): string {
     .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
     .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
     .join(" ")
+    .replace(
+      /\[\[([^\]|#\]]+?)\.md((?:#[^\]|]+)?(?:\|[^\]]+)?)?\]\]/giu,
+      (_match, path: string, suffix = "") => `[[${path}${suffix}]]`,
+    )
     .replace(/\s+/gu, " ")
     .trim()
     .slice(0, 900);
@@ -1408,34 +1440,246 @@ function renderReviewedCandidate(
   reviewSession: ReviewSessionState,
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
-  const title = reviewCandidateLink(candidate);
+  const text = REPORT_TEXT[language];
   const rows = [
-    `- ${title} (${candidate.status})${reviewCandidateEvidenceSuffix(candidate, language)}`,
+    `#### ${reviewCandidateLink(candidate)}`,
+    "",
+    `- ${text.confirmedDecision}: ${candidate.status === "renamed" ? text.confirmedByRename : text.confirmedByAccept}`,
+    `- ${text.aiSummary}: ${reviewCandidateSummary(candidate, language)}`,
+    `- ${text.whyThemeExists}: ${reviewCandidateReason(candidate, language)}`,
+    `- ${text.connectionExplanation}: ${reviewCandidateConnection(candidate, language)}`,
+    ...renderReviewCandidateLocalSignals(candidate, language),
+    ...renderReviewCandidateUncertainty(candidate, language),
+    `- ${text.reviewCaution}: ${reviewCandidateCaution(candidate, language)}`,
+    "",
+    `${text.evidenceNotes}:`,
+    ...renderReviewCandidateEvidence(candidate, language),
   ];
+  if (candidate.userNote?.trim()) {
+    rows.push("", `- ${text.userNote}: ${sanitizeParagraphMarkdown(candidate.userNote)}`);
+  }
   const mergedSources = mergedSourceCandidates(candidate, reviewSession);
   if (mergedSources.length > 0) {
     rows.push(
-      `  - ${REPORT_TEXT[language].mergedFrom}: ${mergedSources.map(reviewCandidateLink).join(", ")}`,
+      "",
+      `${text.mergedFrom}:`,
+      ...mergedSources.flatMap((source) => renderMergedSourceCandidate(source, language)),
     );
   }
+  rows.push("");
   return rows;
 }
 
-function reviewCandidateEvidenceSuffix(
+function reviewCandidateSummary(
   candidate: ReviewCandidate,
   language: ResolvedAnnualReviewLanguage,
 ): string {
-  const evidence = candidate.evidence
-    .filter((item) => !item.missing)
-    .slice(0, 4)
-    .map((item) => item.sourcePath || item.target)
-    .filter(Boolean);
+  return (
+    sanitizeCandidateParagraph(candidate, candidate.aiSummary, language) ||
+    sanitizeCandidateParagraph(candidate, candidate.reason, language) ||
+    sanitizeHeading(reviewCandidateDisplayTitle(candidate.title, candidate.userTitle))
+  );
+}
 
-  if (evidence.length === 0) {
-    return "";
+function reviewCandidateReason(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  return (
+    sanitizeCandidateParagraph(candidate, candidate.reason, language) ||
+    sanitizeHeading(reviewCandidateDisplayTitle(candidate.title, candidate.userTitle))
+  );
+}
+
+function reviewCandidateConnection(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const candidateConnection = sanitizeCandidateParagraph(
+    candidate,
+    candidate.connectionExplanation,
+    language,
+  );
+  if (candidateConnection) {
+    return candidateConnection;
   }
+  const traceableReasons = candidate.reasons.filter(reasonHasEvidence);
+  const reasonLabels = traceableReasons
+    .map((reason) => sanitizeCandidateInline(candidate, reason.label, language))
+    .filter(Boolean);
+  if (reasonLabels.length > 0) {
+    return reasonLabels.join(" ");
+  }
+  const evidenceReasons = candidate.evidence
+    .map((evidence) => sanitizeCandidateInline(candidate, evidence.reason, language))
+    .filter(Boolean);
+  if (evidenceReasons.length > 0) {
+    return evidenceReasons.join(" ");
+  }
+  return language === "zh"
+    ? "在确认主题前，请先一起复核这些证据笔记。"
+    : "Review the linked evidence notes together before treating this as a confirmed theme.";
+}
 
-  return ` - ${REPORT_TEXT[language].highValueEvidence}: ${evidence.map(wikiLinkPlain).join(", ")}`;
+function renderReviewCandidateLocalSignals(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const signals = (candidate.localSignals ?? [])
+    .map((signal) => sanitizeCandidateInline(candidate, signal, language))
+    .filter(Boolean)
+    .slice(0, 5);
+  if (signals.length === 0) {
+    return [];
+  }
+  return [`- ${REPORT_TEXT[language].localSignals}: ${signals.join("; ")}`];
+}
+
+function renderReviewCandidateUncertainty(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const uncertainty = sanitizeCandidateParagraph(
+    candidate,
+    candidate.uncertainty,
+    language,
+  );
+  return uncertainty ? [`- ${REPORT_TEXT[language].uncertainty}: ${uncertainty}`] : [];
+}
+
+function reviewCandidateCaution(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const missingCount = candidate.evidence.filter((evidence) => evidence.missing).length;
+  if (missingCount === candidate.evidence.length && candidate.evidence.length > 0) {
+    return language === "zh"
+      ? "所有已保存证据在重新扫描后都缺失；采纳前需要重新打开源笔记确认。"
+      : "All saved evidence is missing after the latest rescan; reopen source notes before relying on this theme.";
+  }
+  if (missingCount > 0) {
+    return language === "zh"
+      ? "部分证据在重新扫描后缺失；请确认剩余源笔记仍能支撑这个主题。"
+      : "Some evidence is missing after the latest rescan; confirm the remaining source notes still support this theme.";
+  }
+  if (candidate.evidence.length <= 1) {
+    return language === "zh"
+      ? "当前只有一条证据笔记支撑这个主题，适合作为弱信号复核。"
+      : "Only one evidence note currently supports this theme, so treat it as a weak local signal until reviewed.";
+  }
+  return language === "zh"
+    ? "这是根据本地证据形成的主题判断，请保留可追溯证据并按需要继续改名或合并。"
+    : "This is a local evidence-backed theme; keep the source links attached and rename or merge it if the framing is still rough.";
+}
+
+function renderReviewCandidateEvidence(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const rows = candidate.evidence.slice(0, 6).map((evidence) => {
+    const target = evidence.sourcePath || evidence.target;
+    const link = target ? wikiLinkPlain(target) : sanitizeInlineMarkdown(evidence.label);
+    const reason = sanitizeCandidateInline(candidate, evidence.reason, language);
+    const missing = evidence.missing ? ` (${REPORT_TEXT[language].missingEvidence})` : "";
+    return `- ${link}${missing}${reason ? ` — ${reason}` : ""}`;
+  });
+  return rows.length > 0
+    ? rows
+    : [
+        language === "zh"
+          ? "- 没有可追溯证据；请回到 Review Board 重新复核。"
+          : "- No traceable evidence is available; return to Review Board before relying on this theme.",
+      ];
+}
+
+function sanitizeCandidateParagraph(
+  candidate: ReviewCandidate,
+  markdown?: string,
+  language: ResolvedAnnualReviewLanguage = "en",
+): string {
+  return replaceCandidateRawTitle(
+    candidate,
+    localizeReviewCandidateText(sanitizeParagraphMarkdown(markdown), language),
+  );
+}
+
+function sanitizeCandidateInline(
+  candidate: ReviewCandidate,
+  markdown?: string,
+  language: ResolvedAnnualReviewLanguage = "en",
+): string {
+  return replaceCandidateRawTitle(
+    candidate,
+    localizeReviewCandidateText(sanitizeInlineMarkdown(markdown), language),
+  );
+}
+
+function localizeReviewCandidateText(
+  value: string,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  if (language !== "zh" || !value) {
+    return value;
+  }
+  return value
+    .replace(
+      /^Local evidence groups (.+) around (.+)\.$/u,
+      "本地证据把 $1 归为同一个主题线索，主要依据是 $2。",
+    )
+    .replace(
+      /^These notes share (.+), with supporting local metadata such as excerpts, links, backlinks, dates, or cross-folder connections\.$/u,
+      "这些笔记共享 $1，并由摘录、链接、反向链接、日期或跨文件夹连接等本地元数据支撑。",
+    )
+    .replace(
+      /^These notes share tag "(.+)", but tags are treated as weak evidence and should be confirmed against excerpts, links, and date signals\.$/u,
+      "这些笔记共享标签“$1”，但标签只作为弱证据；需要结合摘录、链接和日期信号复核。",
+    )
+    .replace(
+      /^Only one evidence note is available for this local clue, so it should be reviewed before being promoted into a theme\.$/u,
+      "这个本地线索目前只有一条证据笔记，提升为主题前需要先复核。",
+    )
+    .replace(
+      /^Low confidence: fewer than two evidence notes support (this clue|this hypothesis)\.$/u,
+      "低置信度：少于两条证据笔记支撑这个假设。",
+    )
+    .replace(/topTags:/gu, "高频标签：")
+    .replace(/tags present as weak signals/gu, "标签仅作为弱信号")
+    .replace(/frontmatter context present/gu, "存在 frontmatter 上下文")
+    .replace(/contains reviewable questions/gu, "包含可复核问题")
+    .replace(/reviewable questions/gu, "可复核问题")
+    .replace(/created in review range: /gu, "创建于回顾范围：")
+    .replace(/modified in review range: /gu, "修改于回顾范围：")
+    .replace(/^resurfaced old note: created /u, "旧笔记重新出现：创建于 ")
+    .replace(/, modified /u, "，修改于 ")
+    .replace(/shared links: /gu, "共享链接：")
+    .replace(/repeated phrases: /gu, "重复短语：")
+    .replace(/entities: /gu, "实体：")
+    .replace(/cross-folder links: /gu, "跨文件夹链接：")
+    .replace(/\bweak tags\b/gu, "弱标签")
+    .replace(/\btag:/gu, "标签：")
+    .replace(/\bbacklinks\b/gu, "反向链接")
+    .replace(/\boutbound links\b/gu, "出链")
+    .replace(/\d+ 反向链接/gu, (match) => `${match.replace(" 反向链接", "")} 条反向链接`)
+    .replace(/\d+ 出链/gu, (match) => `${match.replace(" 出链", "")} 条出链`);
+}
+
+function replaceCandidateRawTitle(candidate: ReviewCandidate, value: string): string {
+  const displayTitle = reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
+  const rawTitle = candidate.title.trim();
+  if (!rawTitle || rawTitle === displayTitle) {
+    return value;
+  }
+  return value.replaceAll(rawTitle, displayTitle);
+}
+
+function renderMergedSourceCandidate(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  return [
+    `- ${reviewCandidateLink(candidate)} — ${reviewCandidateReason(candidate, language)}`,
+    ...renderReviewCandidateEvidence(candidate, language).map((row) => `  ${row}`),
+  ];
 }
 
 function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCandidate[] {

@@ -129,13 +129,22 @@ export function parseThemeHypotheses(
   );
 
   return rawThemes
-    .map((value, index) => toThemeHypothesis(value, index, ids, idByPath))
+    .map((value, index) =>
+      toThemeHypothesis(
+        value,
+        index,
+        ids,
+        idByPath,
+        new Map(evidencePackage.evidenceNotes.map((note) => [note.id, note])),
+      ),
+    )
     .filter((theme): theme is ThemeHypothesis => Boolean(theme))
     .slice(0, MAX_LOCAL_THEMES);
 }
 
 export function buildLocalThemeHypotheses(
   evidencePackage: ThemeEvidencePackage,
+  language: "en" | "zh" = "en",
 ): ThemeHypothesis[] {
   const noteById = new Map(evidencePackage.evidenceNotes.map((note) => [note.id, note]));
   const clusters = buildLocalClusters(evidencePackage.evidenceNotes);
@@ -143,7 +152,7 @@ export function buildLocalThemeHypotheses(
     .filter((cluster) => cluster.noteIds.size >= 2)
     .sort(sortClusters)
     .slice(0, MAX_LOCAL_THEMES)
-    .map((cluster) => clusterToTheme(cluster, noteById, false));
+    .map((cluster) => clusterToTheme(cluster, noteById, false, language));
 
   if (strongThemes.length > 0) {
     return strongThemes;
@@ -152,12 +161,22 @@ export function buildLocalThemeHypotheses(
   return evidencePackage.evidenceNotes.slice(0, Math.min(3, MAX_LOCAL_THEMES)).map(
     (note, index): ThemeHypothesis => ({
       id: `theme:local:low-confidence:${index + 1}`,
-      title: `Review clue: ${note.title}`,
-      summary: note.whyIncluded,
+      title:
+        language === "zh" ? "需要复核的单篇笔记线索" : "Single-note clue needing review",
+      summary:
+        language === "zh"
+          ? `这个本地线索来自 ${note.title}：${note.whyIncluded}`
+          : note.whyIncluded,
       evidenceNoteIds: [note.id],
       connectionExplanation:
-        "Only one evidence note is available for this local clue, so it should be reviewed before being promoted into a theme.",
-      uncertainty: "Low confidence: fewer than two evidence notes support this clue.",
+        language === "zh"
+          ? "这个本地线索目前只有一条证据笔记，提升为主题前需要先复核。"
+          : "Only one evidence note is available for this local clue, so it should be reviewed before being promoted into a theme.",
+      localSignals: note.localSignals,
+      uncertainty:
+        language === "zh"
+          ? "低置信度：少于两条证据笔记支撑这个线索。"
+          : "Low confidence: fewer than two evidence notes support this clue.",
       source: "local",
     }),
   );
@@ -173,7 +192,10 @@ function buildEvidenceNote(
 ): ThemeEvidenceNote {
   const { file, note } = entry;
   const createdInRange = reviewSessionContainsDate(aggregate.session, createdTime(note));
-  const modifiedInRange = reviewSessionContainsDate(aggregate.session, modifiedTime(note));
+  const modifiedInRange = reviewSessionContainsDate(
+    aggregate.session,
+    modifiedTime(note),
+  );
   const dateSignals = [
     createdInRange ? `created in review range: ${dateKey(createdTime(note))}` : "",
     modifiedInRange ? `modified in review range: ${dateKey(modifiedTime(note))}` : "",
@@ -211,6 +233,15 @@ function buildEvidenceNote(
     frontmatterSignals.length > 0 ? "frontmatter context present" : "",
     weakSignals.length > 0 ? "tags present as weak signals" : "",
   ].filter(Boolean);
+  const relatedNotes = [
+    ...backlinks,
+    ...links.map((link) => resolveLinkTarget(link, noteByPath)),
+    ...commonLinks.map((link) => resolveLinkTarget(link, noteByPath)),
+    ...crossFolderLinks,
+  ]
+    .filter(Boolean)
+    .filter((path, index, paths) => paths.indexOf(path) === index)
+    .slice(0, 12);
 
   return {
     id: evidenceNoteId(note.path),
@@ -227,6 +258,8 @@ function buildEvidenceNote(
     entities,
     crossFolderLinks,
     weakSignals,
+    localSignals: reasons,
+    relatedNotes,
     whyIncluded:
       reasons.length > 0
         ? reasons.slice(0, 5).join("; ")
@@ -294,10 +327,7 @@ function buildRepeatedPhraseIndex(entries: ActiveNoteEntry[]): Map<string, strin
   );
   const byNote = new Map<string, string[]>();
   for (const [path, phrases] of phrasesByPath.entries()) {
-    byNote.set(
-      path,
-      phrases.filter((phrase) => global.has(phrase)).slice(0, 6),
-    );
+    byNote.set(path, phrases.filter((phrase) => global.has(phrase)).slice(0, 6));
   }
   return byNote;
 }
@@ -336,6 +366,7 @@ function clusterToTheme(
   cluster: ThemeCluster,
   noteById: Map<string, ThemeEvidenceNote>,
   lowConfidence: boolean,
+  language: "en" | "zh",
 ): ThemeHypothesis {
   const noteIds = [...cluster.noteIds]
     .sort((a, b) => {
@@ -354,15 +385,28 @@ function clusterToTheme(
 
   return {
     id: `theme:local:${slug(cluster.key)}`,
-    title: localThemeTitle(cluster),
-    summary: `Local evidence groups ${noteTitles.join(", ")} around ${signal}.`,
+    title: localThemeTitle(cluster, language),
+    summary:
+      language === "zh"
+        ? `本地证据把 ${noteTitles.join("、")} 归为同一个主题线索，主要依据是 ${localSignalLabel(cluster, language)}。`
+        : `Local evidence groups ${noteTitles.join(", ")} around ${signal}.`,
     evidenceNoteIds: noteIds,
     connectionExplanation:
       cluster.kind === "weak-tag"
-        ? `These notes share tag "${cluster.label}", but tags are treated as weak evidence and should be confirmed against excerpts, links, and date signals.`
-        : `These notes share ${signal}, with supporting local metadata such as excerpts, links, backlinks, dates, or cross-folder connections.`,
+        ? language === "zh"
+          ? `这些笔记共享标签“${cluster.label}”，但标签只作为弱证据；需要结合摘录、链接和日期信号复核。`
+          : `These notes share tag "${cluster.label}", but tags are treated as weak evidence and should be confirmed against excerpts, links, and date signals.`
+        : language === "zh"
+          ? `这些笔记共享${localSignalLabel(cluster, language)}，并由摘录、链接、反向链接、日期或跨文件夹连接等本地元数据支撑。`
+          : `These notes share ${signal}, with supporting local metadata such as excerpts, links, backlinks, dates, or cross-folder connections.`,
+    localSignals: noteIds
+      .flatMap((id) => noteById.get(id)?.localSignals ?? [])
+      .filter((signal, index, signals) => signals.indexOf(signal) === index)
+      .slice(0, 8),
     uncertainty: lowConfidence
-      ? "Low confidence: fewer than two evidence notes support this clue."
+      ? language === "zh"
+        ? "低置信度：少于两条证据笔记支撑这个线索。"
+        : "Low confidence: fewer than two evidence notes support this clue."
       : undefined,
     source: "local",
   };
@@ -373,6 +417,7 @@ function toThemeHypothesis(
   index: number,
   validIds: Set<string>,
   idByPath: Map<string, string>,
+  noteById: Map<string, ThemeEvidenceNote>,
 ): ThemeHypothesis | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -400,12 +445,22 @@ function toThemeHypothesis(
     return null;
   }
   const uncertainty = stringValue(record.uncertainty);
+  const localSignals = normalizedSignalList(record.localSignals);
   return {
     id: stringValue(record.id) || `theme:ai:${index + 1}`,
     title,
     summary,
     evidenceNoteIds,
     connectionExplanation,
+    localSignals:
+      localSignals.length > 0
+        ? localSignals
+        : evidenceNoteIds
+            .flatMap((id) => noteById.get(id)?.localSignals ?? [])
+            .filter(
+              (signal, signalIndex, signals) => signals.indexOf(signal) === signalIndex,
+            )
+            .slice(0, 8),
     uncertainty:
       evidenceNoteIds.length < 2 && !uncertainty
         ? "Low confidence: fewer than two evidence notes support this hypothesis."
@@ -463,21 +518,55 @@ function clusterKindWeight(kind: ThemeCluster["kind"]): number {
   }
 }
 
-function localThemeTitle(cluster: ThemeCluster): string {
+function localThemeTitle(cluster: ThemeCluster, language: "en" | "zh"): string {
   switch (cluster.kind) {
     case "link":
-      return `Linked thread: ${titleFromPath(cluster.label)}`;
+      return language === "zh"
+        ? `围绕 ${titleFromPath(cluster.label)} 的证据模式`
+        : `Evidence pattern around ${titleFromPath(cluster.label)}`;
     case "phrase":
-      return `Recurring phrase: ${cluster.label}`;
+      return language === "zh"
+        ? `反复出现的想法：${cluster.label}`
+        : `Recurring idea: ${cluster.label}`;
     case "entity":
-      return `Recurring entity: ${cluster.label}`;
+      return language === "zh"
+        ? "需要解读的重复指称"
+        : `Repeated reference needing interpretation`;
     case "folder":
-      return `Folder thread: ${cluster.label}`;
+      return language === "zh"
+        ? `${titleFromPath(cluster.label)} 中的跨笔记主题`
+        : `Cross-note theme in ${titleFromPath(cluster.label)}`;
     case "weak-tag":
-      return `Weak tag clue: ${cluster.label}`;
+      return language === "zh" ? "低置信度本地线索" : `Low-confidence local clue`;
     case "note":
-      return `Review clue: ${cluster.label}`;
+      return language === "zh"
+        ? "需要复核的单篇笔记线索"
+        : `Single-note clue needing review`;
   }
+}
+
+function localSignalLabel(cluster: ThemeCluster, language: "en" | "zh"): string {
+  if (language !== "zh") {
+    return `${cluster.kind} signal "${cluster.label}"`;
+  }
+  switch (cluster.kind) {
+    case "link":
+      return `链接信号“${titleFromPath(cluster.label)}”`;
+    case "phrase":
+      return `重复短语“${cluster.label}”`;
+    case "entity":
+      return `重复指称“${cluster.label}”`;
+    case "folder":
+      return `文件夹信号“${titleFromPath(cluster.label)}”`;
+    case "weak-tag":
+      return `弱标签信号“${cluster.label}”`;
+    case "note":
+      return `单篇笔记信号“${cluster.label}”`;
+  }
+}
+
+function normalizedSignalList(value: unknown): string[] {
+  return arrayValue(value).map(stringValue).filter(Boolean).slice(0, 8);
 }
 
 function isActiveInReviewRange(note: NoteStats, aggregate: YearAggregate): boolean {
@@ -505,7 +594,9 @@ function titleFromPath(path: string): string {
 
 function folderParts(path: string): string[] {
   const parts = path.split("/").slice(0, -1);
-  return parts.filter((part) => part && !/^(?:daily|dailies|notes|journal)$/iu.test(part));
+  return parts.filter(
+    (part) => part && !/^(?:daily|dailies|notes|journal)$/iu.test(part),
+  );
 }
 
 function excerpt(content: string): string {
@@ -583,7 +674,10 @@ function extractPhraseCandidates(content: string): string[] {
   return [...candidates].slice(0, 40);
 }
 
-function resolveLinkTarget(link: string, noteByPath: Map<string, ActiveNoteEntry>): string {
+function resolveLinkTarget(
+  link: string,
+  noteByPath: Map<string, ActiveNoteEntry>,
+): string {
   const normalized = normalizeLinkIdentity(link);
   for (const path of noteByPath.keys()) {
     if (
@@ -667,7 +761,15 @@ function sourceValue(value: unknown): ThemeHypothesisSource {
 }
 
 function sanitizeInlineText(value: string, maxLength: number): string {
-  return value.replace(/\r?\n/gu, " ").replace(/\s+/gu, " ").trim().slice(0, maxLength);
+  return value
+    .replace(
+      /\[\[([^\]|#\]]+?)\.md((?:#[^\]|]+)?(?:\|[^\]]+)?)?\]\]/giu,
+      (_match, path: string, suffix = "") => `[[${path}${suffix}]]`,
+    )
+    .replace(/\r?\n/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, maxLength);
 }
 
 const STOPWORDS = new Set([

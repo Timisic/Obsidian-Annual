@@ -21,6 +21,16 @@ describe("Review Board action rendering state", () => {
     ).toBeLessThan(source.indexOf('cls: "annual-review-board-evidence"'));
   });
 
+  it("does not render raw candidate type or status labels in the visible queue", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+
+    expect(source).not.toContain("[${candidate.type}]");
+    expect(source).toContain("candidateStatusLabel(candidate, text)");
+  });
+
   it("renders pending candidates with the primary decision flow", () => {
     expect(getReviewBoardActionState(candidate("pending", "candidate"))).toEqual({
       kind: "pending",

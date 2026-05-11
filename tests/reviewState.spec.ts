@@ -290,8 +290,17 @@ describe("review state", () => {
       reviewSession: ignored,
     });
 
-    expect(markdown).toContain("[[accepted-note|accepted-note]]");
-    expect(markdown).not.toContain("[[ignored-note|ignored-note]]");
+    expect(markdown).toContain("[[accepted-note|Accepted Note]]");
+    expect(markdown).toContain("- AI summary: AI summary for Accepted Note");
+    expect(markdown).toContain("- Why this theme exists: Reason for Accepted Note");
+    expect(markdown).toContain(
+      "- Connection explanation: Accepted Note connects multiple evidence notes.",
+    );
+    expect(markdown).toContain("- Local signals: Accepted Note has local evidence");
+    expect(markdown).toContain(
+      "- [[accepted-note]] — Source note supports the candidate.",
+    );
+    expect(markdown).not.toContain("[[ignored-note|Ignored Note]]");
     expect(markdown).not.toContain("Turn accepted evidence into a follow-up review");
     expect(markdown).not.toContain("Confirm, rename, ignore, or archive");
   });
@@ -320,6 +329,10 @@ function candidate(
     type: "theme-hypothesis",
     title: id,
     reason: `Reason for ${id}`,
+    aiSummary: `AI summary for ${id}`,
+    connectionExplanation: `${id} connects multiple evidence notes.`,
+    localSignals: [`${id} has local evidence`],
+    source: "ai",
     reasons: [reasonFor(id)],
     status: "candidate",
     evidence,

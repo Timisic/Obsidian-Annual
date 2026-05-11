@@ -1,4 +1,9 @@
-import type { AnnualReviewSettings, GenerateReportOptions, ReviewSession } from "./types";
+import type {
+  AnnualReviewSettings,
+  GenerateReportOptions,
+  ReviewPreset,
+  ReviewSession,
+} from "./types";
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/u;
 
@@ -52,6 +57,24 @@ export function buildMonthlyReviewSession(
     settings,
     timestamp,
   });
+}
+
+export interface ReviewPresetFieldVisibility {
+  year: boolean;
+  quarter: boolean;
+  month: boolean;
+  customRange: boolean;
+}
+
+export function reviewPresetFieldVisibility(
+  preset: ReviewPreset,
+): ReviewPresetFieldVisibility {
+  return {
+    year: preset === "annual" || preset === "quarterly" || preset === "monthly",
+    quarter: preset === "quarterly",
+    month: preset === "monthly",
+    customRange: preset === "custom",
+  };
 }
 
 export function buildCustomReviewSession(input: {
