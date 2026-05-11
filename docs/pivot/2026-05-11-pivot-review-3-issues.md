@@ -107,16 +107,16 @@
 
 所以插件的差异不能建立在“AI 会总结”上。插件真正的差异在于：
 
-| 维度 | 完整 prompt | 插件 |
-|---|---|---|
-| 输入 | 通常直接把大量笔记交给模型 | 先根据时间范围、链接、标题、路径、重复概念、本地信号编译证据包 |
-| 范围控制 | 容易混入范围外内容 | 所有分析绑定 ReviewSession 的 start/end |
-| 证据 | 模型可能只给结论 | 每条主题假设绑定证据笔记、来源路径和连接解释 |
-| 用户控制 | 主要靠追问 | 用户可以接受、改名、合并、忽略、查看证据 |
-| 复现性 | 每次对话可能漂移 | 复盘 session、证据包、用户决策可以保存在 vault 中 |
-| Obsidian 体验 | 跳转、修改、写回都麻烦 | 可以直接打开源笔记、写入 Markdown 报告、保护用户手写区 |
-| 隐私与成本 | 可能全量发送笔记 | 可以只发送受控摘录和证据包 |
-| 长期价值 | 结果容易散落在聊天记录 | 报告、证据和用户确认状态留在 vault 中 |
+| 维度          | 完整 prompt                | 插件                                                           |
+| ------------- | -------------------------- | -------------------------------------------------------------- |
+| 输入          | 通常直接把大量笔记交给模型 | 先根据时间范围、链接、标题、路径、重复概念、本地信号编译证据包 |
+| 范围控制      | 容易混入范围外内容         | 所有分析绑定 ReviewSession 的 start/end                        |
+| 证据          | 模型可能只给结论           | 每条主题假设绑定证据笔记、来源路径和连接解释                   |
+| 用户控制      | 主要靠追问                 | 用户可以接受、改名、合并、忽略、查看证据                       |
+| 复现性        | 每次对话可能漂移           | 复盘 session、证据包、用户决策可以保存在 vault 中              |
+| Obsidian 体验 | 跳转、修改、写回都麻烦     | 可以直接打开源笔记、写入 Markdown 报告、保护用户手写区         |
+| 隐私与成本    | 可能全量发送笔记           | 可以只发送受控摘录和证据包                                     |
+| 长期价值      | 结果容易散落在聊天记录     | 报告、证据和用户确认状态留在 vault 中                          |
 
 因此插件不是要和大模型抢“总结能力”，而是要把大模型放进一个更可靠的复盘流程里：
 
@@ -420,6 +420,7 @@ README should include a TODO or benchmark section:
 After the core product loop is complete, compare this plugin against a strong prompt that asks an LLM to read the same vault and summarize the review themes.
 
 The benchmark should compare:
+
 - missed important notes;
 - evidence accuracy;
 - theme stability;

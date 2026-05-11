@@ -107,7 +107,7 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 
 - [ ] tag 名称与 `manifest.json` 的 `version` 完全一致，不加 `v` 前缀。
 - [ ] release 附件包含 `manifest.json`、`main.js`、`styles.css`。
-- [ ] release notes 使用 [`docs/github-release-draft.md`](github-release-draft.md) 作为初稿。
+- [ ] release notes 可参考归档草案 [`docs/archive/github-release-draft.md`](archive/github-release-draft.md)，并按当前 README / SPEC 更新。
 - [ ] GitHub Actions 的 CI workflow 通过，并上传 `annual-review-release-assets` artifact。
 
 ## 社区插件提交
