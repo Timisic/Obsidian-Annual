@@ -1,0 +1,104 @@
+<svg class="annual-review-chart annual-review-daily-cumulative" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 280" width="100%" height="auto" role="img" aria-label="累计增长">
+<title>累计增长</title>
+<line x1="62" y1="232" x2="794" y2="232" stroke="#d0d7de" stroke-width="1" />
+<text x="54" y="236" font-size="10" text-anchor="end" fill="currentColor">0</text>
+<line x1="62" y1="128" x2="794" y2="128" stroke="#d0d7de" stroke-width="1" />
+<text x="54" y="132" font-size="10" text-anchor="end" fill="currentColor">10000</text>
+<line x1="62" y1="24" x2="794" y2="24" stroke="#d0d7de" stroke-width="1" />
+<text x="54" y="28" font-size="10" text-anchor="end" fill="currentColor">20000</text>
+<line x1="62" y1="24" x2="62" y2="232" stroke="#57606a" stroke-width="1" />
+<line x1="62" y1="232" x2="794" y2="232" stroke="#57606a" stroke-width="1" />
+<text x="18" y="128" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 128)">累计字词</text>
+<path d="M 62 231.31 L 70.41 230.93 L 78.83 230.93 L 87.24 230.93 L 95.66 224.72 L 104.07 224.72 L 112.48 221.74 L 120.90 221.74 L 129.31 221.74 L 137.72 221.74 L 146.14 221.74 L 154.55 221.74 L 162.97 218.49 L 171.38 218.49 L 179.79 212.69 L 188.21 212.69 L 196.62 212.69 L 205.03 212.69 L 213.45 207.16 L 221.86 207.16 L 230.28 207.16 L 238.69 207.16 L 247.10 207.16 L 255.52 207.16 L 263.93 207.16 L 272.34 207.16 L 280.76 207.16 L 289.17 207.16 L 297.59 207.16 L 306 207.16 L 314.41 207.16 L 322.83 207.16 L 331.24 207.16 L 339.66 207.16 L 348.07 207.16 L 356.48 194.19 L 364.90 194.19 L 373.31 190.29 L 381.72 190.29 L 390.14 190.29 L 398.55 188.88 L 406.97 188.88 L 415.38 188.88 L 423.79 188.88 L 432.21 188.88 L 440.62 188.88 L 449.03 188.88 L 457.45 188.88 L 465.86 188.88 L 474.28 188.88 L 482.69 188.88 L 491.10 188.88 L 499.52 176.17 L 507.93 176.17 L 516.34 176.17 L 524.76 165.95 L 533.17 165.95 L 541.59 150.51 L 550 150.51 L 558.41 142.09 L 566.83 142.09 L 575.24 142.09 L 583.66 132.13 L 592.07 132.13 L 600.48 132.13 L 608.90 132.13 L 617.31 132.13 L 625.72 127.00 L 634.14 127.00 L 642.55 127.00 L 650.97 127.00 L 659.38 127.00 L 667.79 127.00 L 676.21 127.00 L 684.62 118.69 L 693.03 118.69 L 701.45 118.69 L 709.86 118.69 L 718.28 118.69 L 726.69 118.69 L 735.10 118.69 L 743.52 111.29 L 751.93 111.29 L 760.34 111.29 L 768.76 104.87 L 777.17 104.87 L 785.59 104.87 L 794 95.52" fill="none" stroke="#4f7cac" stroke-width="3" stroke-linejoin="round" />
+<circle cx="62" cy="231.31" r="2.6" fill="#4f7cac"><title>2026-01-01: 66 累计字词</title></circle>
+<circle cx="70.41" cy="230.93" r="2.6" fill="#4f7cac"><title>2026-01-02: 103 累计字词</title></circle>
+<circle cx="78.83" cy="230.93" r="2.6" fill="#4f7cac"><title>2026-01-03: 103 累计字词</title></circle>
+<circle cx="87.24" cy="230.93" r="2.6" fill="#4f7cac"><title>2026-01-04: 103 累计字词</title></circle>
+<circle cx="95.66" cy="224.72" r="2.6" fill="#4f7cac"><title>2026-01-05: 700 累计字词</title></circle>
+<circle cx="104.07" cy="224.72" r="2.6" fill="#4f7cac"><title>2026-01-06: 700 累计字词</title></circle>
+<circle cx="112.48" cy="221.74" r="2.6" fill="#4f7cac"><title>2026-01-07: 987 累计字词</title></circle>
+<circle cx="120.90" cy="221.74" r="2.6" fill="#4f7cac"><title>2026-01-08: 987 累计字词</title></circle>
+<circle cx="129.31" cy="221.74" r="2.6" fill="#4f7cac"><title>2026-01-09: 987 累计字词</title></circle>
+<circle cx="137.72" cy="221.74" r="2.6" fill="#4f7cac"><title>2026-01-10: 987 累计字词</title></circle>
+<circle cx="146.14" cy="221.74" r="2.6" fill="#4f7cac"><title>2026-01-11: 987 累计字词</title></circle>
+<circle cx="154.55" cy="221.74" r="2.6" fill="#4f7cac"><title>2026-01-12: 987 累计字词</title></circle>
+<circle cx="162.97" cy="218.49" r="2.6" fill="#4f7cac"><title>2026-01-13: 1299 累计字词</title></circle>
+<circle cx="171.38" cy="218.49" r="2.6" fill="#4f7cac"><title>2026-01-14: 1299 累计字词</title></circle>
+<circle cx="179.79" cy="212.69" r="2.6" fill="#4f7cac"><title>2026-01-15: 1857 累计字词</title></circle>
+<circle cx="188.21" cy="212.69" r="2.6" fill="#4f7cac"><title>2026-01-16: 1857 累计字词</title></circle>
+<circle cx="196.62" cy="212.69" r="2.6" fill="#4f7cac"><title>2026-01-17: 1857 累计字词</title></circle>
+<circle cx="205.03" cy="212.69" r="2.6" fill="#4f7cac"><title>2026-01-18: 1857 累计字词</title></circle>
+<circle cx="213.45" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-19: 2388 累计字词</title></circle>
+<circle cx="221.86" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-20: 2388 累计字词</title></circle>
+<circle cx="230.28" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-21: 2388 累计字词</title></circle>
+<circle cx="238.69" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-22: 2388 累计字词</title></circle>
+<circle cx="247.10" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-23: 2388 累计字词</title></circle>
+<circle cx="255.52" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-24: 2388 累计字词</title></circle>
+<circle cx="263.93" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-25: 2388 累计字词</title></circle>
+<circle cx="272.34" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-26: 2388 累计字词</title></circle>
+<circle cx="280.76" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-27: 2388 累计字词</title></circle>
+<circle cx="289.17" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-28: 2388 累计字词</title></circle>
+<circle cx="297.59" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-29: 2388 累计字词</title></circle>
+<circle cx="306" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-30: 2388 累计字词</title></circle>
+<circle cx="314.41" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-01-31: 2388 累计字词</title></circle>
+<circle cx="322.83" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-02-01: 2388 累计字词</title></circle>
+<circle cx="331.24" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-02-02: 2388 累计字词</title></circle>
+<circle cx="339.66" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-02-03: 2388 累计字词</title></circle>
+<circle cx="348.07" cy="207.16" r="2.6" fill="#4f7cac"><title>2026-02-04: 2388 累计字词</title></circle>
+<circle cx="356.48" cy="194.19" r="2.6" fill="#4f7cac"><title>2026-02-05: 3636 累计字词</title></circle>
+<circle cx="364.90" cy="194.19" r="2.6" fill="#4f7cac"><title>2026-02-06: 3636 累计字词</title></circle>
+<circle cx="373.31" cy="190.29" r="2.6" fill="#4f7cac"><title>2026-02-07: 4011 累计字词</title></circle>
+<circle cx="381.72" cy="190.29" r="2.6" fill="#4f7cac"><title>2026-02-08: 4011 累计字词</title></circle>
+<circle cx="390.14" cy="190.29" r="2.6" fill="#4f7cac"><title>2026-02-09: 4011 累计字词</title></circle>
+<circle cx="398.55" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-10: 4146 累计字词</title></circle>
+<circle cx="406.97" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-11: 4146 累计字词</title></circle>
+<circle cx="415.38" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-12: 4146 累计字词</title></circle>
+<circle cx="423.79" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-13: 4146 累计字词</title></circle>
+<circle cx="432.21" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-14: 4146 累计字词</title></circle>
+<circle cx="440.62" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-15: 4146 累计字词</title></circle>
+<circle cx="449.03" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-16: 4146 累计字词</title></circle>
+<circle cx="457.45" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-17: 4146 累计字词</title></circle>
+<circle cx="465.86" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-18: 4146 累计字词</title></circle>
+<circle cx="474.28" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-19: 4146 累计字词</title></circle>
+<circle cx="482.69" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-20: 4146 累计字词</title></circle>
+<circle cx="491.10" cy="188.88" r="2.6" fill="#4f7cac"><title>2026-02-21: 4146 累计字词</title></circle>
+<circle cx="499.52" cy="176.17" r="2.6" fill="#4f7cac"><title>2026-02-22: 5368 累计字词</title></circle>
+<circle cx="507.93" cy="176.17" r="2.6" fill="#4f7cac"><title>2026-02-23: 5368 累计字词</title></circle>
+<circle cx="516.34" cy="176.17" r="2.6" fill="#4f7cac"><title>2026-02-24: 5368 累计字词</title></circle>
+<circle cx="524.76" cy="165.95" r="2.6" fill="#4f7cac"><title>2026-02-25: 6351 累计字词</title></circle>
+<circle cx="533.17" cy="165.95" r="2.6" fill="#4f7cac"><title>2026-02-26: 6351 累计字词</title></circle>
+<circle cx="541.59" cy="150.51" r="2.6" fill="#4f7cac"><title>2026-02-27: 7836 累计字词</title></circle>
+<circle cx="550" cy="150.51" r="2.6" fill="#4f7cac"><title>2026-02-28: 7836 累计字词</title></circle>
+<circle cx="558.41" cy="142.09" r="2.6" fill="#4f7cac"><title>2026-03-01: 8645 累计字词</title></circle>
+<circle cx="566.83" cy="142.09" r="2.6" fill="#4f7cac"><title>2026-03-02: 8645 累计字词</title></circle>
+<circle cx="575.24" cy="142.09" r="2.6" fill="#4f7cac"><title>2026-03-03: 8645 累计字词</title></circle>
+<circle cx="583.66" cy="132.13" r="2.6" fill="#4f7cac"><title>2026-03-04: 9603 累计字词</title></circle>
+<circle cx="592.07" cy="132.13" r="2.6" fill="#4f7cac"><title>2026-03-05: 9603 累计字词</title></circle>
+<circle cx="600.48" cy="132.13" r="2.6" fill="#4f7cac"><title>2026-03-06: 9603 累计字词</title></circle>
+<circle cx="608.90" cy="132.13" r="2.6" fill="#4f7cac"><title>2026-03-07: 9603 累计字词</title></circle>
+<circle cx="617.31" cy="132.13" r="2.6" fill="#4f7cac"><title>2026-03-08: 9603 累计字词</title></circle>
+<circle cx="625.72" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-09: 10096 累计字词</title></circle>
+<circle cx="634.14" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-10: 10096 累计字词</title></circle>
+<circle cx="642.55" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-11: 10096 累计字词</title></circle>
+<circle cx="650.97" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-12: 10096 累计字词</title></circle>
+<circle cx="659.38" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-13: 10096 累计字词</title></circle>
+<circle cx="667.79" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-14: 10096 累计字词</title></circle>
+<circle cx="676.21" cy="127.00" r="2.6" fill="#4f7cac"><title>2026-03-15: 10096 累计字词</title></circle>
+<circle cx="684.62" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-16: 10895 累计字词</title></circle>
+<circle cx="693.03" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-17: 10895 累计字词</title></circle>
+<circle cx="701.45" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-18: 10895 累计字词</title></circle>
+<circle cx="709.86" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-19: 10895 累计字词</title></circle>
+<circle cx="718.28" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-20: 10895 累计字词</title></circle>
+<circle cx="726.69" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-21: 10895 累计字词</title></circle>
+<circle cx="735.10" cy="118.69" r="2.6" fill="#4f7cac"><title>2026-03-22: 10895 累计字词</title></circle>
+<circle cx="743.52" cy="111.29" r="2.6" fill="#4f7cac"><title>2026-03-23: 11607 累计字词</title></circle>
+<circle cx="751.93" cy="111.29" r="2.6" fill="#4f7cac"><title>2026-03-24: 11607 累计字词</title></circle>
+<circle cx="760.34" cy="111.29" r="2.6" fill="#4f7cac"><title>2026-03-25: 11607 累计字词</title></circle>
+<circle cx="768.76" cy="104.87" r="2.6" fill="#4f7cac"><title>2026-03-26: 12224 累计字词</title></circle>
+<circle cx="777.17" cy="104.87" r="2.6" fill="#4f7cac"><title>2026-03-27: 12224 累计字词</title></circle>
+<circle cx="785.59" cy="104.87" r="2.6" fill="#4f7cac"><title>2026-03-28: 12224 累计字词</title></circle>
+<circle cx="794" cy="95.52" r="2.6" fill="#4f7cac"><title>2026-03-29: 13123 累计字词</title></circle>
+<text x="62" y="260" font-size="10" text-anchor="start" fill="currentColor">01</text>
+<text x="322.83" y="260" font-size="10" text-anchor="middle" fill="currentColor">02</text>
+<text x="558.41" y="260" font-size="10" text-anchor="middle" fill="currentColor">03</text>
+</svg>

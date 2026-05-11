@@ -5,14 +5,16 @@
 
 ## 1. 产品定位
 
-Obsidian Annual Review 是 Obsidian 的时间范围主题复盘插件。
-它支持 Annual、Quarterly、Monthly 和 Custom Range Review Session，
-从用户指定范围内的 Markdown 笔记中编译 Evidence Notes，
-生成需要用户复核的 Theme Hypotheses，
-并把用户确认后的主题、证据和连接解释写入可追溯、可编辑、可重复生成的 Markdown Review Report。
+Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
 
-核心体验是 Theme Review Workflow，不是统计面板，也不是 AI 自动总结生成器。
-AI 的正确角色是主题提炼和关系解释；最终主题判断必须由用户在 Review Board 中确认。
+它支持 Annual、Quarterly、Monthly 和 Custom Range Review Session，
+从用户指定范围内的 Markdown 笔记中编译 Evidence Package，
+由 AI 或本地规则生成需要用户复核的 semantic Theme Hypotheses，
+并把用户确认后的主题、证据、连接解释和活动证据写入可追溯、可编辑、可重复生成的 Markdown Review Report。
+
+核心体验是 Theme Review Workflow，不是统计面板，也不是一次性 AI 自动总结生成器。
+AI 是核心分析层：它基于受控证据包提出主题假设、解释跨笔记关系、标注不确定性；
+最终主题判断必须由用户在 Review Board 中确认。
 
 ## 2. 产品原则
 
@@ -20,6 +22,8 @@ AI 的正确角色是主题提炼和关系解释；最终主题判断必须由�
 - 遗忘优先：先把被时间淹没但仍有价值的 Evidence Notes 带回用户眼前。
 - 连接优先：发现跨笔记、跨文件夹、跨时间的隐藏关系，并解释为什么这些笔记可能属于同一主题。
 - 证据优先：每个 Theme Hypothesis 都必须绑定 Evidence Notes、摘录、链接和不确定性说明。
+- AI 受控优先：AI 只能处理用户确认范围内的证据包、provider 或本地 CLI 路径必须显式选择，避免不受控的全 vault 总结。
+- 图表证据优先：图表用于说明 activity rhythm、writing bursts、dormant periods 和主题形成的时间背景，不作为产品主身份。
 - 用户判断优先：主题假设需要用户复核；未经确认不得写成用户结论。
 - 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
 
@@ -27,7 +31,7 @@ AI 的正确角色是主题提炼和关系解释；最终主题判断必须由�
 
 目标用户：
 
-- 长期使用 Obsidian 写 daily notes、项目记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
+- 长期使用 Obsidian 写 daily notes、工作记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
 - 想复盘年度、季度、月份或一段自定义时间，但不想先整理完整个 vault 的用户。
 - 希望 AI 帮忙提炼主题和解释关系，但要求每条结论都有证据且能被自己确认的人。
 
@@ -36,6 +40,7 @@ AI 的正确角色是主题提炼和关系解释；最终主题判断必须由�
 - 遗忘：重要笔记被时间、数量和近期记忆淹没。
 - 连接断裂：真实关系常常没有被标签、文件夹和双链完整表达。
 - 不信任自动总结：用户需要知道 AI 看了什么、为什么这样连接、哪些地方仍不确定。
+- 复盘范围不止一年：用户需要 Annual、Quarterly、Monthly 和 Custom Range，而不是固定年度报告。
 
 ## 4. Review Workflow
 
@@ -62,7 +67,7 @@ AI 的正确角色是主题提炼和关系解释；最终主题判断必须由�
 - 是否包含 frontmatter、标题、链接、摘录和时间线信号。
 - 隐私模式。
 - 生成语言。
-- AI provider，可选且默认关闭。
+- AI provider 或 local CLI path，必须由用户显式选择；默认不调用外部 provider。
 
 默认排除：
 
@@ -182,9 +187,11 @@ Annual Reviews/2026-03-01 to 2026-04-15 Review.md
 - Rediscovered Notes：被重新带回眼前的关键证据笔记。
 - Connection Explanations：主题内笔记关系说明。
 - User Reflection：用户手写区，保留给个人叙事和补充。
+- Activity Evidence Charts：活动节奏、写作爆发、沉寂阶段和主题形成背景的图表证据。
 - Regeneration Notes：说明哪些区块可再生、哪些区块由用户维护。
 
-AI 可以作为可选步骤帮助润色已确认内容或重新解释证据关系，
+AI 是主题假设和关系解释的核心分析层，但必须受证据包和用户选择的 provider / local CLI path 约束。
+AI 输出需要绑定源笔记、摘录和可复核理由；它可以在用户确认后帮助组织报告文字，
 但不能替代主题假设复核和用户确认。
 
 ## 5. 数据模型
@@ -202,6 +209,7 @@ type ReviewSession = {
   scope: ReviewScope;
   privacyMode: "standard" | "private";
   aiProviderId?: string;
+  localCliPath?: string;
   status: ReviewSessionStatus;
   evidenceNoteIds: string[];
   evidenceClusterIds: string[];
@@ -365,7 +373,7 @@ candidate
 默认模式：
 
 - 无网络请求。
-- 无外部 AI。
+- 无外部 AI provider；仍可使用本地规则生成基础证据簇和可复核占位主题。
 - 无 telemetry。
 - 不读取 vault 外部文件。
 - 不扫描排除范围。
@@ -373,12 +381,12 @@ candidate
 
 AI opt-in 模式：
 
-- 用户必须显式选择 provider。
-- 发送前展示时间范围、上下文摘要、摘录数量、目标 provider 和排除范围。
+- 用户必须显式选择 provider 或 local CLI path。
+- 发送前展示时间范围、上下文摘要、摘录数量、目标 provider / local CLI path 和排除范围。
 - 只发送 Evidence Notes 的必要摘录、主题聚合输入和有限统计。
 - 不发送完整 vault。
 - 不写入硬编码密钥。
-- provider 失败时回退到本地确定性报告。
+- provider 或 local CLI 失败时回退到本地确定性报告。
 
 ## 9. 失败场景
 
@@ -428,8 +436,8 @@ npm run release:check
 - Evidence Cluster 聚合和排序。
 - Theme Hypothesis 生成、状态流转和用户决策保留。
 - Review Report 写入和 generated/user 区块合并。
-- 默认无 AI provider 时不访问网络。
-- AI provider 失败时回退本地确定性报告。
+- 默认无外部 provider / local CLI path 时不访问网络。
+- AI provider 或 local CLI 失败时回退本地确定性报告。
 
 手动验证路径：
 

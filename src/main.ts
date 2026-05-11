@@ -18,6 +18,7 @@ import {
 import {
   buildAnnualReviewSession,
   buildCustomReviewSession,
+  buildMonthlyReviewSession,
   buildQuarterlyReviewSession,
   resolveGenerateReviewSession,
   reviewSessionPathLabel,
@@ -133,6 +134,11 @@ export default class AnnualReviewPlugin extends Plugin {
           session: () => buildQuarterlyReviewSession(2026, 1, this.settings),
         },
         {
+          id: COMMAND_IDS.generateSmoke2026Jan,
+          name: COMMAND_NAMES.generateSmoke2026Jan,
+          session: () => buildMonthlyReviewSession(2026, 1, this.settings),
+        },
+        {
           id: COMMAND_IDS.generateSmoke2026Custom,
           name: COMMAND_NAMES.generateSmoke2026Custom,
           session: () =>
@@ -204,6 +210,25 @@ export default class AnnualReviewPlugin extends Plugin {
         this.settings,
       ),
       language: resolveAnnualReviewLanguage(this.settings.reportLanguage, getLanguage()),
+    });
+  }
+
+  async previewSession(session: ReviewSession): Promise<void> {
+    const files = await this.getIndexedFiles(this.settings);
+    const aggregate = buildReviewAggregate(files, session, this.settings);
+    const reportLanguage = resolveAnnualReviewLanguage(
+      this.settings.reportLanguage,
+      getLanguage(),
+    );
+    const evidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      this.settings,
+    );
+    this.lastAggregate = aggregate;
+    await this.refreshReviewSession(aggregate, {
+      evidencePackage,
+      language: reportLanguage,
     });
   }
 

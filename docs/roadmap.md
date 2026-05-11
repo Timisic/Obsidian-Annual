@@ -1,7 +1,9 @@
 # Roadmap
 
+Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
+
 本路线图围绕 Time Range Review 主线展开。
-图表美化、分享导出、多 provider 扩展、Canvas/Bases/HTML 输出、泛用 dashboard、项目管理、任务管理、行动系统和归档系统不进入 MVP 主线；
+图表美化、分享导出、多 provider 扩展、Canvas/Bases/HTML 输出、泛用 dashboard、项目线索、任务线索、行动项和归档判断不进入 MVP 主线；
 它们只有在服务于主题复盘、证据复核和受保护 Markdown 报告闭环时才会重新评估。
 
 ## Now: Time Range Review 可信小闭环
@@ -10,12 +12,13 @@
 - 本地扫描：只读取允许范围内的 Markdown、metadata cache、链接、标签、标题、摘录和时间信号。
 - Evidence Notes：把范围内值得复核的源笔记编译成证据笔记，保留路径、摘录、链接和进入证据包的理由。
 - Evidence Clusters：基于链接、共同表达、时间分布、文件夹上下文和重新引用痕迹组织证据簇。
-- Theme Hypotheses：为每个证据簇生成主题假设、连接解释、代表证据和不确定性说明。
+- AI-assisted Theme Hypotheses：把受控证据包交给 AI 或本地规则，为每个证据簇生成语义主题假设、连接解释、代表证据和不确定性说明。
 - Theme Review Board：展示主题假设和证据笔记，并支持 Accept、Rename、Merge、Ignore、Open evidence、Re-explain。
 - 用户复核要求：主题假设必须被用户接受、改名或合并后才能进入报告。
 - Review Report：写入已确认主题、Evidence Notes、Connection Explanation、Methodology 和用户手写区。
+- Activity Evidence Charts：保留活动节奏、写作爆发、沉寂阶段和主题形成背景的图表证据，但不扩展成泛用统计产品。
 - 用户编辑保护：生成区块和用户手写区块分离，重新生成不覆盖手写内容。
-- 默认隐私边界：无网络、无外部 AI、无 telemetry。
+- 默认隐私边界：无网络、无外部 provider、无 telemetry；用户必须显式选择 AI provider 或 local CLI path，并确认上下文范围。
 
 ## Next: 降低主题复核成本
 
@@ -29,20 +32,20 @@
 
 ## Later: 增强可复核性和 AI 控制
 
-- 发送前 AI 上下文预览：仅在用户显式启用 AI 时展示 provider、时间范围、摘录数量和排除范围。
+- 发送前 AI 上下文预览：仅在用户显式启用 AI 时展示 provider 或 local CLI path、时间范围、摘录数量和排除范围。
 - 字段级隐私控制：允许从 AI 或主题上下文中排除特定路径、标签或 frontmatter 字段。
 - 报告再生成记录：记录每次生成的范围、主题数量、证据数量和用户确认数量。
 - 历史 Review Session：允许继续上次未完成的年度、季度、月度或自定义范围复盘。
 - 手动补充证据笔记：用户可以把任意源笔记加入本次复盘证据包。
-- Prompt-vs-Plugin Benchmark：用同一测试 vault 对比强提示词和插件在遗漏、证据、复核、复现性和用户控制上的差异。
+- Prompt-vs-Plugin Benchmark：用同一测试 vault 对比强提示词和插件在 missed important notes、evidence accuracy、theme stability、user reviewability、Obsidian navigation、privacy/context control 和 regeneration consistency 上的差异。
 - Obsidian 原生发布准备：README、manifest、版本 release artifact 和社区插件提交材料保持一致。
 
 ## Deferred From MVP
 
-- Project candidate 或项目线索管理。
-- Task candidate 或任务线索管理。
-- Add to actions / Action Item 系统。
-- Archive / 归档判断系统。
+- 项目线索管理。
+- 任务线索管理。
+- 行动项系统。
+- 归档判断系统。
 - Dashboard Chart 和泛用统计面板。
 - 分享卡、HTML 导出、Canvas 导出等复盘闭环外的输出形式。
 - 多 provider 生态作为主卖点。

@@ -917,24 +917,25 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Theme Hypotheses");
+    expect(markdown).toContain("## Confirmed theme hypotheses");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
-    expect(markdown).toContain("# 2026 Annual Review");
+    expect(markdown).toContain("# Review Report: 2026 Annual Review");
     expect(markdown).toMatch(
       /^---\ngenerated: ".+"\nyear: 2026\nreview_preset: "annual"\nreview_label: "2026 Annual Review"\nstart_date: "2026-01-01"\nend_date: "2026-12-31"\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
     );
-    expect(markdown).not.toContain("Generated:");
+    expect(markdown).toContain("- Generated:");
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## Annual Overview",
-      "## Writing Growth",
-      "## Topic Evolution",
-      "## Theme Hypotheses",
+      "## Review Range",
+      "## Activity Evidence",
+      "## Confirmed theme hypotheses",
+      "## Rediscovered Notes",
+      "## Hidden Connections",
       "## Reflection Prompts",
       "## Data Methodology",
     ]);
@@ -957,12 +958,12 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Notes created in each active month");
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
-    expect(markdown).toContain("## Topic Evolution");
+    expect(markdown).toContain("### Theme Signal Chart");
     expect(markdown).toContain(
       'class="annual-review-chart annual-review-topic-evolution"',
     );
     expect(markdown).toContain(
-      "content-thread synthesis is generated only when summarization is enabled",
+      "turning those signals into content threads works best when summary generation is enabled",
     );
     expect(markdown).not.toContain(
       "| Topic | Added words | New notes | Representative Notes |",
@@ -979,7 +980,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Theme Hypotheses");
+    expect(markdown).toContain("## Confirmed theme hypotheses");
     expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
     expect(markdown).not.toContain("### Confirmed theme hypotheses");
     expect(markdown).not.toContain("### Output-ready notes");
@@ -1088,12 +1089,13 @@ describe("aggregation and rendering", () => {
     );
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
     expect(markdown).toContain('report_language: "zh"');
-    expect(markdown).toContain("# 2026 年度回顾");
+    expect(markdown).toContain("# 回顾报告：2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## 年度总览",
-      "## 写作增长",
-      "## 主题演化",
-      "## 主题假设",
+      "## 回顾范围",
+      "## 活动证据",
+      "## 已确认主题假设",
+      "## 重新发现的笔记",
+      "## 隐藏连接",
       "## 复盘提示",
       "## 数据口径",
     ]);
@@ -1105,9 +1107,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("### 热力图");
     expect(markdown).toContain('class="annual-review-chart annual-review-heatmap"');
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
-    expect(markdown).toContain("## 主题演化");
+    expect(markdown).toContain("### 主题信号图");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 主题假设");
+    expect(markdown).toContain("## 已确认主题假设");
     expect(markdown).toContain("还没有可写入年报的主题假设");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
@@ -1146,8 +1148,8 @@ describe("aggregation and rendering", () => {
       },
     });
 
-    expect(markdown).toContain("## Topic Evolution");
-    expect(markdown).toContain("### Content Threads");
+    expect(markdown).toContain("### Theme Signal Chart");
+    expect(markdown).toContain("## Hidden Connections");
     expect(markdown).toContain("Research review loop");
     expect(markdown).toContain("[[Daily/2026-01-01]]");
     expect(markdown).not.toContain("| Theme |");
@@ -1485,7 +1487,7 @@ describe("aggregation and rendering", () => {
       language: "zh",
       reviewSession,
     });
-    const reviewSection = sectionBetween(markdown, "## 主题假设", "## 数据口径");
+    const reviewSection = sectionBetween(markdown, "## 已确认主题假设", "## 数据口径");
 
     expect(reviewSection).toContain(
       "#### [[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]]",
@@ -1594,7 +1596,7 @@ describe("aggregation and rendering", () => {
   });
 
   it("keeps the scoring method documentation present and bounded", () => {
-    const method = readFileSync("docs/scoring-method.md", "utf8");
+    const method = readFileSync("docs/archive/scoring-method.md", "utf8");
 
     expect(method).toContain("统计口径");
     expect(method).toContain("阈值");
@@ -2108,7 +2110,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      ["---", "year: 2026", "---", "# 2026 Annual Review"].join("\n"),
+      ["---", "year: 2026", "---", "# Review Report: 2026 Annual Review"].join("\n"),
       [
         {
           kind: "daily-word-heatmap",
@@ -2136,7 +2138,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
-        "# 2026 Annual Review",
+        "# Review Report: 2026 Annual Review",
         ANNUAL_REVIEW_END_MARKER,
         "",
         REVIEW_USER_REFLECTION_START_MARKER,
@@ -2168,7 +2170,7 @@ describe("Obsidian vault adapter", () => {
       "User preface stays exactly.",
       "",
       ANNUAL_REVIEW_START_MARKER,
-      "# 2026 Annual Review",
+      "# Review Report: 2026 Annual Review",
       "Old machine section.",
       ANNUAL_REVIEW_END_MARKER,
       "",
@@ -2182,7 +2184,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      ["---", "year: 2026", "---", "# 2026 Annual Review", "New machine section."].join(
+      ["---", "year: 2026", "---", "# Review Report: 2026 Annual Review", "New machine section."].join(
         "\n",
       ),
       [],
@@ -2197,7 +2199,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
-        "# 2026 Annual Review",
+        "# Review Report: 2026 Annual Review",
         "New machine section.",
         ANNUAL_REVIEW_END_MARKER,
         "",
@@ -2215,7 +2217,7 @@ describe("Obsidian vault adapter", () => {
   it("preserves user reflection blocks when regenerating a marked annual report", async () => {
     const existingReport = [
       ANNUAL_REVIEW_START_MARKER,
-      "# 2026 Annual Review",
+      "# Review Report: 2026 Annual Review",
       "Old machine section.",
       ANNUAL_REVIEW_END_MARKER,
       "",
@@ -2233,7 +2235,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      "# 2026 Annual Review\nNew machine section.",
+      "# Review Report: 2026 Annual Review\nNew machine section.",
       [],
     );
 
@@ -2242,13 +2244,13 @@ describe("Obsidian vault adapter", () => {
     expect(reportContent).toContain("New machine section.");
     expect(reportContent).not.toContain("Old machine section.");
     expect(reportContent).toContain("This is my handwritten reflection.");
-    expect(reportContent.match(/review:user:start/gu)).toHaveLength(1);
-    expect(reportContent.match(/review:user:end/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:user-reflection:start/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:user-reflection:end/gu)).toHaveLength(1);
   });
 
   it("creates a full backup before converting a legacy annual report without markers", async () => {
     const legacyReport = [
-      "# 2026 Annual Review",
+      "# Review Report: 2026 Annual Review",
       "",
       "User summary that must be recoverable.",
     ].join("\n");
@@ -2264,7 +2266,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "year: 2026",
         "---",
-        "# 2026 Annual Review",
+        "# Review Report: 2026 Annual Review",
         "Regenerated machine section.",
       ].join("\n"),
       [],
@@ -2286,7 +2288,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
-        "# 2026 Annual Review",
+        "# Review Report: 2026 Annual Review",
         "Regenerated machine section.",
         ANNUAL_REVIEW_END_MARKER,
         "",
@@ -2305,7 +2307,7 @@ describe("Obsidian vault adapter", () => {
       "---",
       "",
       ANNUAL_REVIEW_START_MARKER,
-      "# 2026 Annual Review",
+      "# Review Report: 2026 Annual Review",
       "Old machine section.",
       ANNUAL_REVIEW_END_MARKER,
       "",
@@ -2319,7 +2321,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      ["---", "year: 2026", "old: false", "---", "# 2026 Annual Review"].join("\n"),
+      ["---", "year: 2026", "old: false", "---", "# Review Report: 2026 Annual Review"].join("\n"),
       [],
     );
 
@@ -2330,8 +2332,8 @@ describe("Obsidian vault adapter", () => {
     expect(reportContent).not.toContain("old: true");
     expect(reportContent).toContain("old: false");
     expect(reportContent).toContain("User notes stay.");
-    expect(reportContent.match(/annual-review:start/gu)).toHaveLength(1);
-    expect(reportContent.match(/annual-review:end/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:generated:start/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:generated:end/gu)).toHaveLength(1);
   });
 });
 
@@ -2411,16 +2413,18 @@ describe("plugin command ids", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
       generateSmoke2026: "generate-annual-review-2026",
-      generateSmoke2026Custom: "generate-annual-review-2026-custom-range",
+      generateSmoke2026Jan: "generate-annual-review-2026-jan",
       generateSmoke2026Q1: "generate-annual-review-2026-q1",
+      generateSmoke2026Custom: "generate-annual-review-2026-custom-range",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
       generateSmoke2026: "Smoke: Generate 2026 report",
-      generateSmoke2026Custom: "Smoke: Generate 2026 custom range report",
+      generateSmoke2026Jan: "Smoke: Generate 2026 January report",
       generateSmoke2026Q1: "Smoke: Generate 2026 Q1 report",
+      generateSmoke2026Custom: "Smoke: Generate 2026 custom range report",
       openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });

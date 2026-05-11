@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildYearAggregate } from "../src/core/aggregate";
 import { buildReviewSession } from "../src/core/reviewCandidates";
 import { renderAnnualReview } from "../src/core/render";
+import { buildThemeEvidencePackage } from "../src/core/themeEvidence";
 import {
   applyReviewAction,
   calculateReviewProgress,
@@ -241,8 +242,13 @@ describe("review state", () => {
   });
 
   it("builds stable review sessions from aggregate signals and preserves decisions on rescan", async () => {
-    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
-    const session = buildReviewSession(aggregate);
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const session = buildReviewSession(
+      aggregate,
+      undefined,
+      { evidencePackage: buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS) },
+    );
     const topic = session.candidates.find((item) => item.type === "theme-hypothesis");
 
     expect(session.candidates.length).toBeGreaterThan(0);
@@ -261,9 +267,18 @@ describe("review state", () => {
       at,
     });
     const legacyStored = { ...accepted, session: undefined };
+    const rescannedFiles = await fixtureVault();
+    const rescannedAggregate = buildYearAggregate(rescannedFiles, 2026, DEFAULT_SETTINGS);
     const rescanned = buildReviewSession(
-      buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS),
+      rescannedAggregate,
       legacyStored,
+      {
+        evidencePackage: buildThemeEvidencePackage(
+          rescannedAggregate,
+          rescannedFiles,
+          DEFAULT_SETTINGS,
+        ),
+      },
     );
 
     expect(

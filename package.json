@@ -1,7 +1,7 @@
 {
   "name": "obsidian-annual-review",
   "version": "0.1.0",
-  "description": "Local-first Obsidian plugin that generates editable annual review notes.",
+  "description": "AI-assisted Obsidian plugin for evidence-backed time range review reports.",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
@@ -19,6 +19,7 @@
   "keywords": [
     "obsidian",
     "annual-review",
+    "time-range-review",
     "markdown"
   ],
   "author": "Timisic",

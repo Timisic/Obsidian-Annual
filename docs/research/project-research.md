@@ -3,8 +3,8 @@
 调研日期：2026-05-03
 
 > 状态：历史调研资料。当前 MVP surface 以
-> [`docs/feature-inventory.md`](../feature-inventory.md) 和
-> [`docs/review-board-alignment-decisions.md`](../review-board-alignment-decisions.md)
+> [`docs/product-specification.md`](../product-specification.md) 和
+> [`docs/roadmap.md`](../roadmap.md)
 > 为准；本文中关于泛用 dashboard、分享卡、Canvas/Bases/HTML 导出和普通 agent
 > 安装路径的设想都已降级为 Backlog，不是当前主能力。
 

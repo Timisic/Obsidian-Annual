@@ -1,16 +1,19 @@
-# Obsidian Annual Review
+# Obsidian Time Range Review
 
 [English](README.en.md) | [文档索引](docs/README.md) | [SPEC](docs/product-specification.md)
 
-Obsidian Annual Review 是一个本地优先的 **Time Range Review / 时间范围主题复盘** 插件。
-它帮助你在年度、季度、月度或自定义时间范围内，找回被遗忘的关键笔记，
-复核这一段时间里真正连接你的隐藏主题，并把用户确认后的结果写成可追溯的 Markdown 复盘报告。
+Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
 
-它解决三个问题：
+它是一个本地优先、证据约束的 Obsidian 时间范围复盘插件。用户可以选择年度、季度、月度或自定义时间范围，
+让插件编译源笔记证据包，用 AI 生成可复核的语义主题假设和连接解释，
+再把用户确认后的主题、证据和说明写入 vault 内的 Markdown 复盘报告。
+
+它解决四个问题：
 
 - **遗忘**：一段时间写了很多笔记，复盘时只记得最近、最强烈或标题最显眼的内容。
 - **连接断裂**：笔记之间的真实关系常常没有被双链、标签或文件夹完整表达。
-- **不信任自动总结**：AI 可以写出漂亮总结，但用户需要知道它看了什么、为什么这样连接、哪些结论仍需复核。
+- **不信任一次性 AI 总结**：AI 可以写出漂亮总结，但用户需要知道它看了什么、为什么这样连接、哪些结论仍需复核。
+- **复盘范围不止一年**：真实复盘可能是年度、季度、月度，也可能是任意项目期、休假期、学习期或恢复期。
 
 插件的承诺不是“一键替你总结人生”，而是：
 
@@ -18,13 +21,13 @@ Obsidian Annual Review 是一个本地优先的 **Time Range Review / 时间范�
 选择时间范围 -> 编译证据笔记 -> 生成主题假设 -> 用户复核 -> 写入确认后的 Markdown 报告
 ```
 
-Annual Review 仍是默认 preset，同时保留 Quarterly Review、Monthly Review 和 Custom Range。
+Annual Review 只是一个 preset；同一套产品定义也覆盖 Quarterly Review、Monthly Review 和 Custom Range。
 每个 Theme Hypothesis / 主题假设都必须绑定 Evidence Notes / 证据笔记、连接解释和不确定性说明；
 用户需要在 Review Board 中接受、改名、合并或忽略后，主题才会进入最终报告。
 
 ## 适合谁
 
-- 用 Obsidian 写 daily notes、项目记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
+- 用 Obsidian 写 daily notes、工作记录、读书笔记、研究笔记或 evergreen notes 的个人用户。
 - 想复盘一段时间，而不想先手动整理完整个 vault 的用户。
 - 希望 AI 帮忙提炼主题和解释关系，但不希望 AI 替自己下结论的人。
 - 需要把复盘结果留在本地 Markdown，并能用 Obsidian Sync、Git 或其他版本管理工具审阅差异的人。
@@ -40,7 +43,7 @@ Annual Review 仍是默认 preset，同时保留 Quarterly Review、Monthly Revi
 | Theme Decision              | 用户对主题假设的接受、改名、合并或忽略。                          |
 | Review Report               | 写入 vault 的 Markdown 复盘报告，只沉淀用户确认后的内容和证据。   |
 
-`project`、`task`、`action`、`archive` 相关能力会作为后续扩展重新评估，
+项目线索、任务线索、行动项和归档判断相关能力会作为后续扩展重新评估，
 但不属于当前 MVP 的核心对象或首屏承诺。
 
 ## Review Board 复核闭环
@@ -59,15 +62,28 @@ Annual Review 仍是默认 preset，同时保留 Quarterly Review、Monthly Revi
 
 ## AI 的角色
 
-AI 是 **主题提炼器和关系解释器**：
+AI 是核心分析层中的 **主题假设生成器和关系解释器**，不是最后一步的美化器：
 
-- 从受控证据包中提出 Theme Hypotheses。
-- 解释 Evidence Notes 之间的可能关系。
-- 标注不确定性和需要用户重点复核的地方。
-- 在用户确认后辅助润色报告草稿。
+- 它只基于受控 Evidence Package 生成语义 Theme Hypotheses。
+- 它解释 Evidence Notes 之间细微但可追溯的连接。
+- 它必须把输出绑定到源笔记、摘录、路径和用户可复核的理由。
+- 它标注不确定性和需要用户重点复核的地方。
+- 它可以在用户确认主题后辅助整理报告文字，但不能替代证据复核和主题判断。
 
-插件是 **证据编译器、Review Board、状态管理器和报告写入器**。
-默认模式不访问网络、不调用外部 AI、不发送遥测；外部 AI 只能在用户显式启用并确认上下文范围后使用。
+用户必须显式选择 AI provider 或本地 CLI 路径，并在发送前确认时间范围、摘录数量、排除范围和目标边界。
+插件应避免不受控的全 vault 总结：它先编译范围内证据包，再把有限上下文交给 AI 或本地规则生成可复核假设。
+默认模式不访问网络、不调用外部 provider、不发送遥测。
+
+## 图表的角色
+
+图表保留在 Review Report 中作为 activity evidence / 活动证据。它们帮助用户理解：
+
+- activity rhythm / 活跃节奏；
+- writing bursts / 写作爆发；
+- dormant periods / 沉寂阶段；
+- theme formation context / 主题形成的时间背景。
+
+图表支持主题复盘和证据解释，但不主导产品身份；核心仍是证据包、AI 主题假设、用户复核和 Markdown 报告。
 
 ## 和完整提示词的差异
 
@@ -78,6 +94,20 @@ AI 是 **主题提炼器和关系解释器**：
 - 用户确认状态：接受、改名、合并、忽略会保存到 Review Session。
 - 可复现输出：报告只写入用户确认内容，重新生成不覆盖用户手写区。
 - Obsidian 原生体验：直接打开源笔记，长期保留 Markdown 工件。
+
+## TODO: Prompt-vs-Plugin Benchmark
+
+After the core product loop is complete, compare this plugin against a strong prompt that asks an LLM to read the same vault and summarize the review themes.
+
+The benchmark should compare:
+
+- missed important notes;
+- evidence accuracy;
+- theme stability;
+- user reviewability;
+- Obsidian navigation;
+- privacy and context control;
+- regeneration consistency.
 
 ## 隐私与编辑保护
 
@@ -169,15 +199,11 @@ npm run dev:deploy-smoke
 6. 运行 `Annual Review: Generate report`。
 7. 确认报告只包含用户确认后的主题、证据链接、方法说明和用户手写区，并且源笔记可回链打开。
 
-## TODO
-
-- 核心产品闭环完成后，执行 [Prompt-vs-Plugin Benchmark](docs/prompt-vs-plugin-benchmark.md)：用固定测试 vault 对比“一份完整提示词 + 大模型读取所有允许笔记”和 Annual Review 插件，确认插件在证据编译、状态、交互、Obsidian 跳转、复现和隐私范围控制上有真实差异。
-
 ## 更多文档
 
 - [Product Definition](docs/product-definition.md)
 - [SPEC](docs/product-specification.md)
-- [Feature Inventory](docs/feature-inventory.md)
+- [Prompt-vs-Plugin Benchmark](docs/prompt-vs-plugin-benchmark.md)
 - [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
 - [Data Methodology](docs/data-methodology.md)

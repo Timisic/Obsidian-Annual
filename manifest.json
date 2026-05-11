@@ -1,9 +1,9 @@
 {
   "id": "annual-review",
-  "name": "Annual Review",
+  "name": "Time Range Review",
   "version": "0.1.0",
   "minAppVersion": "1.7.2",
-  "description": "Create editable annual review notes from local vault activity and review decisions.",
+  "description": "AI-assisted review plugin for rediscovering notes and generating evidence-backed time range reports.",
   "author": "Timisic",
   "isDesktopOnly": true
 }

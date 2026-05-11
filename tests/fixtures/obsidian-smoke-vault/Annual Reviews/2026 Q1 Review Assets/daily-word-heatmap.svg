@@ -1,0 +1,102 @@
+<svg class="annual-review-chart annual-review-heatmap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 147" width="100%" height="auto" role="img" aria-label="每日字词热力图">
+<title>每日字词热力图</title>
+<desc>颜色越深，表示当天新建笔记字词量越高。</desc>
+<text x="34" y="14" font-size="10" fill="currentColor">01</text>
+<text x="99" y="14" font-size="10" fill="currentColor">02</text>
+<text x="151" y="14" font-size="10" fill="currentColor">03</text>
+<text x="8" y="35" font-size="9" fill="currentColor">日</text>
+<text x="8" y="48" font-size="9" fill="currentColor">一</text>
+<text x="8" y="61" font-size="9" fill="currentColor">二</text>
+<text x="8" y="74" font-size="9" fill="currentColor">三</text>
+<text x="8" y="87" font-size="9" fill="currentColor">四</text>
+<text x="8" y="100" font-size="9" fill="currentColor">五</text>
+<text x="8" y="113" font-size="9" fill="currentColor">六</text>
+<rect x="34" y="78" width="10" height="10" rx="2" fill="#9be9a8"><title>2026-01-01: 66 字词, 1 新建, 1 修改</title></rect>
+<rect x="34" y="91" width="10" height="10" rx="2" fill="#9be9a8"><title>2026-01-02: 37 字词, 1 新建, 1 修改</title></rect>
+<rect x="34" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-03: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="47" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-04: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="47" y="39" width="10" height="10" rx="2" fill="#40c463"><title>2026-01-05: 597 字词, 1 新建, 1 修改</title></rect>
+<rect x="47" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-06: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="47" y="65" width="10" height="10" rx="2" fill="#9be9a8"><title>2026-01-07: 287 字词, 1 新建, 1 修改</title></rect>
+<rect x="47" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-08: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="47" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-09: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="47" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-10: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="60" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-11: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="60" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-12: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="60" y="52" width="10" height="10" rx="2" fill="#9be9a8"><title>2026-01-13: 312 字词, 1 新建, 1 修改</title></rect>
+<rect x="60" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-14: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="60" y="78" width="10" height="10" rx="2" fill="#40c463"><title>2026-01-15: 558 字词, 1 新建, 1 修改</title></rect>
+<rect x="60" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-16: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="60" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-17: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="73" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-18: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="73" y="39" width="10" height="10" rx="2" fill="#40c463"><title>2026-01-19: 531 字词, 1 新建, 1 修改</title></rect>
+<rect x="73" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-20: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="73" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-21: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="73" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-22: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="73" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-23: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="73" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-24: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-25: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-26: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-27: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-28: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-29: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-30: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="86" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-01-31: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="99" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-01: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="99" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-02: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="99" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-03: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="99" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-04: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="99" y="78" width="10" height="10" rx="2" fill="#216e39"><title>2026-02-05: 1248 字词, 1 新建, 1 修改</title></rect>
+<rect x="99" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-06: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="99" y="104" width="10" height="10" rx="2" fill="#40c463"><title>2026-02-07: 375 字词, 1 新建, 1 修改</title></rect>
+<rect x="112" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-08: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="112" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-09: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="112" y="52" width="10" height="10" rx="2" fill="#9be9a8"><title>2026-02-10: 135 字词, 1 新建, 1 修改</title></rect>
+<rect x="112" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-11: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="112" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-12: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="112" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-13: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="112" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-14: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-15: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-16: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-17: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-18: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-19: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-20: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="125" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-21: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="138" y="26" width="10" height="10" rx="2" fill="#216e39"><title>2026-02-22: 1222 字词, 1 新建, 1 修改</title></rect>
+<rect x="138" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-23: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="138" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-24: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="138" y="65" width="10" height="10" rx="2" fill="#30a14e"><title>2026-02-25: 983 字词, 2 新建, 2 修改</title></rect>
+<rect x="138" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-26: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="138" y="91" width="10" height="10" rx="2" fill="#216e39"><title>2026-02-27: 1485 字词, 1 新建, 1 修改</title></rect>
+<rect x="138" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-02-28: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="151" y="26" width="10" height="10" rx="2" fill="#30a14e"><title>2026-03-01: 809 字词, 1 新建, 1 修改</title></rect>
+<rect x="151" y="39" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-02: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="151" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-03: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="151" y="65" width="10" height="10" rx="2" fill="#30a14e"><title>2026-03-04: 958 字词, 2 新建, 2 修改</title></rect>
+<rect x="151" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-05: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="151" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-06: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="151" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-07: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="164" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-08: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="164" y="39" width="10" height="10" rx="2" fill="#40c463"><title>2026-03-09: 493 字词, 1 新建, 1 修改</title></rect>
+<rect x="164" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-10: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="164" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-11: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="164" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-12: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="164" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-13: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="164" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-14: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="177" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-15: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="177" y="39" width="10" height="10" rx="2" fill="#30a14e"><title>2026-03-16: 799 字词, 2 新建, 2 修改</title></rect>
+<rect x="177" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-17: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="177" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-18: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="177" y="78" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-19: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="177" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-20: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="177" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-21: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="190" y="26" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-22: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="190" y="39" width="10" height="10" rx="2" fill="#40c463"><title>2026-03-23: 712 字词, 2 新建, 2 修改</title></rect>
+<rect x="190" y="52" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-24: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="190" y="65" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-25: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="190" y="78" width="10" height="10" rx="2" fill="#40c463"><title>2026-03-26: 617 字词, 1 新建, 1 修改</title></rect>
+<rect x="190" y="91" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-27: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="190" y="104" width="10" height="10" rx="2" fill="#ebedf0"><title>2026-03-28: 0 字词, 0 新建, 0 修改</title></rect>
+<rect x="203" y="26" width="10" height="10" rx="2" fill="#30a14e"><title>2026-03-29: 899 字词, 1 新建, 1 修改</title></rect>
+</svg>

@@ -516,37 +516,36 @@ export function renderAnnualReview(
   return [
     renderMetadata(aggregate, language),
     "",
-    `# ${reportTitle(aggregate, language)}`,
+    `# ${reportHeading(aggregate, language)}`,
     "",
-    `## ${text.periodJudgment}`,
+    `## ${language === "zh" ? "回顾范围" : "Review Range"}`,
     "",
-    renderPeriodJudgment(
-      aggregate,
-      language,
-      aiEnhancements?.periodJudgment || options.periodJudgment,
-    ),
+    renderReviewRange(aggregate, language),
     "",
-    `## ${text.writingGrowth}`,
+    `## ${language === "zh" ? "活动证据" : "Activity Evidence"}`,
     "",
     renderWritingGrowth(aggregate, language, options.chartPaths),
     "",
-    `## ${text.topicEvolution}`,
-    "",
-    renderTopicEvolution(
-      aggregate.topicEvolution,
-      language,
-      options.chartPaths?.["topic-evolution"],
-      aiEnhancements?.themeInsights,
-      aiEnabled,
-    ),
-    "",
-    `## ${text.highValueNotes}`,
+    `## ${text.topHighValueNotes}`,
     "",
     renderHighValueNotes(
       aggregate,
       language,
       aiEnhancements?.highValueNotes,
       aiEnabled,
+      options.reviewSession,
+    ),
+    "",
+    `## ${language === "zh" ? "重新发现的笔记" : "Rediscovered Notes"}`,
+    "",
+    renderRediscoveredNotes(aggregate, language, options.reviewSession),
+    "",
+    `## ${language === "zh" ? "隐藏连接" : "Hidden Connections"}`,
+    "",
+    renderHiddenConnections(
+      aggregate,
+      language,
+      aiEnhancements?.themeInsights,
       options.reviewSession,
     ),
     "",
@@ -591,6 +590,31 @@ function reportTitle(
     return `${aggregate.year} 年度回顾`;
   }
   return aggregate.session.label;
+}
+
+function reportHeading(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const title = reportTitle(aggregate, language);
+  return language === "zh" ? `回顾报告：${title}` : `Review Report: ${title}`;
+}
+
+function renderReviewRange(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const label = language === "zh" ? "范围" : "Range";
+  const preset = language === "zh" ? "类型" : "Type";
+  const generated = language === "zh" ? "生成时间" : "Generated";
+  const summary = renderPeriodJudgment(aggregate, language);
+  return [
+    `- ${label}: ${aggregate.session.startDate} to ${aggregate.session.endDate}`,
+    `- ${preset}: ${aggregate.session.preset}`,
+    `- ${generated}: ${aggregate.generatedAt}`,
+    "",
+    summary,
+  ].join("\n");
 }
 
 function renderPeriodJudgment(
@@ -642,6 +666,19 @@ function renderWritingGrowth(
     `### ${text.growthFeedback}`,
     "",
     ...renderGrowthFeedback(aggregate, language),
+    ...(aggregate.topicEvolution.topTopics.length > 0
+      ? [
+          "",
+          `### ${language === "zh" ? "主题信号图" : "Theme Signal Chart"}`,
+          "",
+          chartPaths?.["topic-evolution"]
+            ? renderChartReference(
+                chartPaths["topic-evolution"],
+                text.topicEvolutionChart,
+              )
+            : renderTopicEvolutionSvg(aggregate.topicEvolution, language),
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -722,12 +759,18 @@ function renderDataMethodology(
 
   return [
     `- ${text.growthDataSource}: ${growthDataSourceLabel(aggregate, language)}`,
+    `- ${language === "zh" ? "回顾范围" : "Review range"}: ${aggregate.session.startDate} to ${aggregate.session.endDate} (${aggregate.session.preset})`,
     `- ${text.activityDateSources}: ${activityDateSourceSummary(aggregate, language)}`,
     ...renderFilesystemDateWarning(aggregate, language),
     ...(comparison.source === "historical-snapshot"
       ? [`- ${text.snapshotWordDelta}: ${formatSignedInteger(comparison.wordDelta)}`]
       : []),
     `- ${scopeLabel}: ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)}; ${excludedLabel}: ${formatScope(aggregate.scope.excludeFolders, text.none)}; ${patternsLabel}: ${formatScope(aggregate.scope.excludePatterns, text.none)}; ${reportFolderLabel}: ${aggregate.scope.reportFolder}`,
+    `- ${
+      language === "zh"
+        ? "AI 使用：仅使用本范围 evidence package 和有限摘录；主题必须保留来源笔记链接。"
+        : "AI use: limited to this range's evidence package and bounded excerpts; theme conclusions must keep source-note links."
+    }`,
     `- ${methodology}`,
   ].join("\n");
 }
@@ -1780,6 +1823,88 @@ function renderHighValueFeedback(
     `- ${text.outputReadySignal(aggregate.highValueFeedback.outputReadyCount)}`,
     `- ${text.staleCoreSignal(aggregate.highValueFeedback.staleCoreCount)}`,
   ];
+}
+
+function renderRediscoveredNotes(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+  reviewSession?: ReviewSessionState,
+): string {
+  const blockedPaths = new Set(
+    reviewSession?.candidates
+      .filter(
+        (candidate) => candidate.status === "ignored" || candidate.status === "merged",
+      )
+      .flatMap((candidate) => candidate.sourcePaths) ?? [],
+  );
+  const notes = [
+    ...aggregate.maintenanceNotes,
+    ...aggregate.isolatedPotentialNotes,
+    ...aggregate.representativeNotes.map((note) => ({
+      path: note.path,
+      title: note.title,
+      suggestedAction:
+        language === "zh"
+          ? "作为本范围的代表笔记重新检查。"
+          : "Revisit as a representative note from this range.",
+    })),
+  ]
+    .filter((note) => !blockedPaths.has(note.path))
+    .slice(0, 6);
+  if (notes.length === 0) {
+    return `- ${REPORT_TEXT[language].noDataFound}`;
+  }
+  return notes
+    .map((note) => `- ${wikiLink(note.path, note.title)}: ${note.suggestedAction}`)
+    .join("\n");
+}
+
+function renderHiddenConnections(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+  aiThemes: AiThemeInsight[] = [],
+  reviewSession?: ReviewSessionState,
+): string {
+  if (reviewSession) {
+    const candidates = reportIncludedCandidates(reviewSession);
+    if (candidates.length > 0) {
+      return (
+        candidates
+          .flatMap((candidate) => {
+            const evidence = candidate.evidence
+              .filter((item) => !item.missing)
+              .map((item) => item.sourcePath || item.target)
+              .filter(Boolean);
+            return evidence.length >= 2
+              ? [
+                  `- ${reviewCandidateLink(candidate)}: ${evidence
+                    .slice(0, 4)
+                    .map(wikiLinkPlain)
+                    .join(", ")}`,
+                ]
+              : [];
+          })
+          .join("\n") || `- ${REPORT_TEXT[language].noDataFound}`
+      );
+    }
+  }
+  if (aiThemes.length > 0) {
+    return aiThemes
+      .filter((theme) => theme.connections || theme.evidenceNotes.length > 0)
+      .slice(0, 5)
+      .map((theme) => {
+        const notes = theme.evidenceNotes.slice(0, 4).map(wikiLinkPlain).join(", ");
+        return `- ${sanitizeInlineMarkdown(theme.title)}: ${sanitizeParagraphMarkdown(
+          theme.connections,
+        )}${notes ? ` (${notes})` : ""}`;
+      })
+      .join("\n");
+  }
+  const links = aggregate.topLinks.slice(0, 5);
+  if (links.length === 0) {
+    return `- ${REPORT_TEXT[language].noDataFound}`;
+  }
+  return links.map((link) => `- ${wikiLinkPlain(link.name)}: ${link.count}`).join("\n");
 }
 
 function renderHighValueActionList(notes: HighValueNote[], emptyText: string): string {
