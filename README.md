@@ -137,6 +137,7 @@ cp dist/annual-review/{manifest.json,main.js,styles.css} "$PLUGIN_DIR/"
 | `npm run test`      | 运行 Vitest。                              |
 | `npm run typecheck` | 运行 TypeScript 类型检查，不生成构建文件。 |
 | `npm run build`     | 生成可安装到 Obsidian 的插件 bundle。      |
+| `npm run lint`      | 运行 ESLint。                              |
 | `npm run format`    | 使用 Prettier 格式化代码和文档。           |
 
 ## 本地验证
@@ -146,9 +147,19 @@ npm install
 npm run test
 npm run typecheck
 npm run build
+npm run lint
 ```
 
-手动 smoke 路径：
+repo-local smoke vault 验证使用 `tests/fixtures/obsidian-smoke-vault`，不要指向个人 vault：
+
+```bash
+npm run dev:deploy-smoke
+/Applications/Obsidian.app/Contents/MacOS/obsidian-cli vault="obsidian-smoke-vault" plugin:reload id=annual-review
+/Applications/Obsidian.app/Contents/MacOS/obsidian-cli vault="obsidian-smoke-vault" command id=annual-review:rebuild-annual-review-index
+/Applications/Obsidian.app/Contents/MacOS/obsidian-cli vault="obsidian-smoke-vault" command id=annual-review:open-annual-review-dashboard
+```
+
+手动 smoke 检查：
 
 1. 安装并启用插件。
 2. 创建 Annual、Quarterly、Monthly 或 Custom Range Review Session。

@@ -167,6 +167,7 @@ Open Obsidian and enable **Annual Review** from `Settings -> Community plugins`.
 | `npm run test`      | Run Vitest.                                                |
 | `npm run typecheck` | Run TypeScript type checking without emitting build files. |
 | `npm run build`     | Build the installable Obsidian plugin bundle.              |
+| `npm run lint`      | Run ESLint.                                                |
 | `npm run format`    | Format code and docs with Prettier.                        |
 
 ## Local Validation
@@ -176,9 +177,20 @@ npm install
 npm run test
 npm run typecheck
 npm run build
+npm run lint
 ```
 
-Manual smoke path:
+Repo-local smoke validation uses `tests/fixtures/obsidian-smoke-vault`; do not
+point this flow at a personal vault:
+
+```bash
+npm run dev:deploy-smoke
+/Applications/Obsidian.app/Contents/MacOS/obsidian-cli vault="obsidian-smoke-vault" plugin:reload id=annual-review
+/Applications/Obsidian.app/Contents/MacOS/obsidian-cli vault="obsidian-smoke-vault" command id=annual-review:rebuild-annual-review-index
+/Applications/Obsidian.app/Contents/MacOS/obsidian-cli vault="obsidian-smoke-vault" command id=annual-review:open-annual-review-dashboard
+```
+
+Manual smoke checks:
 
 1. Install and enable the plugin.
 2. Create an Annual, Quarterly, Monthly, or Custom Range Review Session.

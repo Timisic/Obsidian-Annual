@@ -135,7 +135,7 @@ Theme Hypothesis / 主题假设是基于 Evidence Cluster 提出的复盘主线�
 - 代表摘录和 Obsidian 源链接。
 - 不确定性说明。
 - 信号来源或可选置信度。
-- 初始状态 `proposed`。
+- 初始状态 `candidate`。
 
 ### 4.6 Review Board
 
@@ -148,7 +148,7 @@ Review Board 是主题复核界面。用户处理 Theme Hypothesis，而不是�
 - Merge：把重复或相近主题合并到目标主题。
 - Ignore：本次复盘不采用，但保留状态。
 - Open evidence：打开源笔记或证据摘录。
-- Re-explain：基于相同证据重新生成或刷新连接解释。
+- Re-explain：可选后续能力；当前 MVP 不把它作为必需操作。
 
 推荐交互：
 
@@ -162,16 +162,16 @@ Review Board 是主题复核界面。用户处理 Theme Hypothesis，而不是�
 默认路径：
 
 ```text
-Reviews/<range label> Review.md
+Annual Reviews/<range label>.md
 ```
 
 示例：
 
 ```text
-Reviews/2026 Annual Review.md
-Reviews/2026 Q1 Review.md
-Reviews/2026-03 Review.md
-Reviews/2026-03-01 to 2026-04-15 Review.md
+Annual Reviews/2026 Annual Review.md
+Annual Reviews/2026 Q1 Review.md
+Annual Reviews/2026-03 Review.md
+Annual Reviews/2026-03-01 to 2026-04-15 Review.md
 ```
 
 报告结构：
@@ -200,7 +200,7 @@ type ReviewSession = {
   startDate: string;
   endDate: string;
   scope: ReviewScope;
-  privacyMode: "local-only" | "ai-assisted";
+  privacyMode: "standard" | "private";
   aiProviderId?: string;
   status: ReviewSessionStatus;
   evidenceNoteIds: string[];
@@ -249,7 +249,7 @@ type EvidenceCluster = {
 ### 5.4 ThemeHypothesis
 
 ```ts
-type ThemeHypothesisStatus = "proposed" | "accepted" | "renamed" | "merged" | "ignored";
+type ThemeHypothesisStatus = "candidate" | "accepted" | "renamed" | "merged" | "ignored";
 
 type ThemeHypothesis = {
   id: string;
@@ -318,7 +318,7 @@ cancelled
 ### 6.2 ThemeHypothesisStatus
 
 ```text
-proposed
+candidate
   -> accepted
   -> renamed
   -> merged
@@ -358,7 +358,7 @@ proposed
 - 未识别的手写内容默认保留。
 - 重新生成前读取当前文件并合并，而不是从空文件覆盖。
 - 如果区块结构损坏，写入新副本并提示用户手动合并。
-- 可选创建 `Reviews/.history/<range label> Review.<timestamp>.md` 备份。
+- 可选创建 `Annual Reviews/.history/<range label>.<timestamp>.md` 备份。
 
 ## 8. 隐私边界
 
