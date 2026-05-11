@@ -172,6 +172,17 @@ export function applyReviewAction(
     target.mergedSourceIds = [...new Set([...(target.mergedSourceIds ?? []), source.id])];
     target.evidence = mergeEvidence(target.evidence, source.evidence);
     target.updatedAt = action.at;
+    const decision = buildReviewDecision({
+      candidateId: source.id,
+      action: "merge",
+      label: `${displayCandidateTitle(source)} -> ${displayCandidateTitle(target)}`,
+      note: action.note,
+      evidence: source.evidence,
+      includeInReport: true,
+      at: action.at,
+      targetCandidateId: target.id,
+    });
+    recordDecision(decisions, [source, target], decision);
     return refreshSession({ ...session, candidates, decisions, updatedAt: action.at });
   }
 
@@ -181,11 +192,36 @@ export function applyReviewAction(
     case "accept":
       candidate.status = "accepted";
       candidate.updatedAt = action.at;
+      recordDecision(
+        decisions,
+        [candidate],
+        buildReviewDecision({
+          candidateId: candidate.id,
+          action: "accept",
+          label: displayCandidateTitle(candidate),
+          evidence: candidate.evidence,
+          includeInReport: true,
+          at: action.at,
+        }),
+      );
       break;
     case "ignore":
       candidate.status = "ignored";
       candidate.userNote = action.note ?? candidate.userNote;
       candidate.updatedAt = action.at;
+      recordDecision(
+        decisions,
+        [candidate],
+        buildReviewDecision({
+          candidateId: candidate.id,
+          action: "ignore",
+          label: displayCandidateTitle(candidate),
+          note: action.note,
+          evidence: candidate.evidence,
+          includeInReport: false,
+          at: action.at,
+        }),
+      );
       break;
     case "rename-topic":
       if (candidate.type !== "theme-hypothesis") {
@@ -198,6 +234,19 @@ export function applyReviewAction(
       candidate.userTitle = action.title.trim();
       candidate.userNote = action.note ?? candidate.userNote;
       candidate.updatedAt = action.at;
+      recordDecision(
+        decisions,
+        [candidate],
+        buildReviewDecision({
+          candidateId: candidate.id,
+          action: "rename",
+          label: candidate.userTitle,
+          note: action.note,
+          evidence: candidate.evidence,
+          includeInReport: true,
+          at: action.at,
+        }),
+      );
       break;
   }
 
@@ -312,6 +361,45 @@ function mergeEvidence(
     }
   }
   return [...merged.values()];
+}
+
+function buildReviewDecision(input: {
+  candidateId: string;
+  action: ReviewDecision["action"];
+  label: string;
+  note?: string;
+  evidence: EvidenceSource[];
+  includeInReport: boolean;
+  at: string;
+  targetCandidateId?: string;
+}): ReviewDecision {
+  return {
+    id: ["decision", input.action, input.candidateId, input.targetCandidateId, input.at]
+      .filter(Boolean)
+      .join(":"),
+    candidateId: input.candidateId,
+    action: input.action,
+    label: input.label,
+    note: input.note,
+    evidence: input.evidence.map((evidence) => ({ ...evidence })),
+    includeInReport: input.includeInReport,
+    createdAt: input.at,
+  };
+}
+
+function recordDecision(
+  decisions: ReviewDecision[],
+  candidates: ReviewCandidate[],
+  decision: ReviewDecision,
+): void {
+  decisions.push(decision);
+  for (const candidate of candidates) {
+    candidate.decisionIds = [...new Set([...candidate.decisionIds, decision.id])];
+  }
+}
+
+function displayCandidateTitle(candidate: ReviewCandidate): string {
+  return candidate.userTitle || candidate.title;
 }
 
 function markMissingEvidence(

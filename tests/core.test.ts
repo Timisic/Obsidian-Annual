@@ -52,6 +52,8 @@ import type { ReviewCandidate, ReviewSessionState } from "../src/core/reviewStat
 import {
   ANNUAL_REVIEW_END_MARKER,
   ANNUAL_REVIEW_START_MARKER,
+  REVIEW_USER_REFLECTION_END_MARKER,
+  REVIEW_USER_REFLECTION_START_MARKER,
   writeAnnualReviewOutput,
 } from "../src/obsidian/reportWriter";
 import {
@@ -1350,8 +1352,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("### Confirmed theme hypotheses");
     expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
     expect(markdown).toContain("[[Projects/Renamed|Renamed Topic]] (renamed)");
+    expect(markdown).toContain("Merged from: [[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("Merged Topic");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("Unreviewed Topic");
     expect(markdown).not.toContain("accepted unsupported reason");
     expect(markdown).not.toContain("These 4 reviewed candidates are included");
@@ -1368,8 +1371,9 @@ describe("aggregation and rendering", () => {
 
     expect(markdown).toContain("### 已确认主题假设");
     expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
+    expect(markdown).toContain("合并来源: [[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("Merged Topic");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
   });
@@ -2002,6 +2006,10 @@ describe("Obsidian vault adapter", () => {
         ANNUAL_REVIEW_START_MARKER,
         "# 2026 Annual Review",
         ANNUAL_REVIEW_END_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_START_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_END_MARKER,
       ].join("\n"),
     );
   });
@@ -2065,8 +2073,45 @@ describe("Obsidian vault adapter", () => {
         "",
         "- [ ] User action item stays exactly.",
         "",
+        REVIEW_USER_REFLECTION_START_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_END_MARKER,
       ].join("\n"),
     );
+  });
+
+  it("preserves user reflection blocks when regenerating a marked annual report", async () => {
+    const existingReport = [
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      "Old machine section.",
+      ANNUAL_REVIEW_END_MARKER,
+      "",
+      REVIEW_USER_REFLECTION_START_MARKER,
+      "",
+      "This is my handwritten reflection.",
+      "",
+      REVIEW_USER_REFLECTION_END_MARKER,
+    ].join("\n");
+    const { app, files } = createReportWriterMockApp([
+      ["Annual Reviews/2026 Annual Review.md", existingReport],
+    ]);
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      "# 2026 Annual Review\nNew machine section.",
+      [],
+    );
+
+    const reportContent =
+      files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
+    expect(reportContent).toContain("New machine section.");
+    expect(reportContent).not.toContain("Old machine section.");
+    expect(reportContent).toContain("This is my handwritten reflection.");
+    expect(reportContent.match(/review:user:start/gu)).toHaveLength(1);
+    expect(reportContent.match(/review:user:end/gu)).toHaveLength(1);
   });
 
   it("creates a full backup before converting a legacy annual report without markers", async () => {
@@ -2112,6 +2157,10 @@ describe("Obsidian vault adapter", () => {
         "# 2026 Annual Review",
         "Regenerated machine section.",
         ANNUAL_REVIEW_END_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_START_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_END_MARKER,
       ].join("\n"),
     );
   });
@@ -2522,10 +2571,14 @@ function sectionBetween(markdown: string, start: string, end: string): string {
 
 function reviewSessionFixture(): ReviewSessionState {
   const candidates = [
-    reviewCandidateFixture("accepted", "Accepted Topic", "accepted"),
+    reviewCandidateFixture("accepted", "Accepted Topic", "accepted", {
+      mergedSourceIds: ["merged"],
+    }),
     reviewCandidateFixture("renamed", "Renamed Topic", "renamed"),
     reviewCandidateFixture("ignored", "Ignored Topic", "ignored"),
-    reviewCandidateFixture("merged", "Merged Topic", "merged"),
+    reviewCandidateFixture("merged", "Merged Topic", "merged", {
+      mergedIntoId: "accepted",
+    }),
     reviewCandidateFixture("unreviewed", "Unreviewed Topic", "candidate"),
   ];
 
