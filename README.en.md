@@ -1,22 +1,27 @@
-# Obsidian Annual Review
+# Obsidian Time Range Review
 
 [中文](README.md) | [Docs index](docs/README.md) | [SPEC](docs/product-specification.md)
 
-Obsidian Annual Review is a local-first **Time Range Review** plugin for
-Obsidian. It helps you review an annual, quarterly, monthly, or custom date
-range by rediscovering forgotten notes, surfacing the hidden themes that connect
-them, and writing only user-confirmed conclusions into a traceable Markdown
-review report.
+Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
 
-It is built around three pains:
+It is a local-first, evidence-constrained Obsidian review plugin for annual,
+quarterly, monthly, and custom ranges. It compiles source-note evidence packages,
+uses AI to generate reviewable semantic theme hypotheses and connection
+explanations, and writes only user-confirmed themes, evidence, and notes into a
+Markdown review report inside the vault.
+
+It is built around four pains:
 
 - **Forgetting**: after a busy period, you remember the recent, loud, or obvious
   notes, while older but important notes disappear.
 - **Broken connections**: many real relationships between notes are never fully
   captured by links, tags, or folders.
-- **Distrust of automatic summaries**: AI can write polished summaries, but you
-  need to know what it saw, why it connected those notes, and which claims still
-  need review.
+- **Distrust of one-shot AI summaries**: AI can write polished summaries, but
+  you need to know what it saw, why it connected those notes, and which claims
+  still need review.
+- **Review ranges beyond one year**: real reviews may be annual, quarterly,
+  monthly, or custom ranges such as a launch, study period, leave, or recovery
+  window.
 
 The plugin's promise is not "one-click life summary." The core loop is:
 
@@ -24,15 +29,15 @@ The plugin's promise is not "one-click life summary." The core loop is:
 Choose time range -> Compile evidence notes -> Generate theme hypotheses -> User review -> Write confirmed Markdown report
 ```
 
-Annual Review remains the default preset, alongside Quarterly Review, Monthly
-Review, and Custom Range. Every Theme Hypothesis must keep Evidence Notes,
-connection explanations, and uncertainty notes. A hypothesis enters the final
-report only after the user accepts, renames, merges, or otherwise confirms it in
-Review Board.
+Annual Review is only one preset; the same product definition covers Quarterly
+Review, Monthly Review, and Custom Range. Every Theme Hypothesis must keep
+Evidence Notes, connection explanations, and uncertainty notes. A hypothesis
+enters the final report only after the user accepts, renames, merges, or
+otherwise confirms it in Review Board.
 
 ## Who It Is For
 
-- Obsidian users who write daily notes, project logs, reading notes, research
+- Obsidian users who write daily notes, work logs, reading notes, research
   notes, or evergreen notes.
 - People who want to review a period without organizing their whole vault first.
 - Users who want AI to extract themes and explain relationships, but do not want
@@ -51,8 +56,8 @@ Review Board.
 | Theme Decision   | The user's accept, rename, merge, or ignore decision for a theme hypothesis.                     |
 | Review Report    | The Markdown report written to the vault, containing only confirmed themes and evidence.         |
 
-`project`, `task`, `action`, and `archive` capabilities may return as later
-extensions, but they are not MVP core objects or first-screen promises.
+Project leads, task leads, action items, and archive judgments may return as
+later extensions, but they are not MVP core objects or first-screen promises.
 
 ## Review Board Loop
 
@@ -72,17 +77,38 @@ explanations, evidence, and additions.
 
 ## AI's Role
 
-AI is the **theme extractor and relationship explainer**:
+AI is the core analysis layer's **theme hypothesis generator and relationship
+explainer**, not a final polishing feature:
 
-- It proposes Theme Hypotheses from a controlled evidence pack.
-- It explains possible relationships between Evidence Notes.
+- It generates semantic Theme Hypotheses only from a controlled Evidence
+  Package.
+- It explains subtle but traceable relationships between Evidence Notes.
+- Its output must stay tied to source notes, excerpts, paths, and reviewable
+  reasons.
 - It marks uncertainty and notes that need careful user review.
-- After confirmation, it may help polish report draft text.
+- After the user confirms themes, it may help organize report text, but it
+  cannot replace evidence review or user judgment.
 
-The plugin is the **evidence compiler, Review Board, state manager, and report
-writer**. By default it makes no network requests, calls no external AI, and
-sends no telemetry. External AI is only used when the user explicitly enables it
-and confirms the context scope.
+Users explicitly choose an AI provider or local CLI path and confirm the time
+range, excerpt count, excluded scope, and target boundary before anything is
+sent. The plugin should avoid uncontrolled full-vault summarization: it first
+compiles a bounded evidence package, then gives limited context to AI or local
+rules to produce reviewable hypotheses. By default it makes no network
+requests, calls no external provider, and sends no telemetry.
+
+## Charts' Role
+
+Charts remain in the Review Report as activity evidence. They help users
+understand:
+
+- activity rhythm;
+- writing bursts;
+- dormant periods;
+- context for theme formation.
+
+Charts support review and evidence interpretation, but they do not define the
+product. The core loop remains evidence packages, AI theme hypotheses, user
+review, and Markdown reports.
 
 ## Plugin vs. Full Prompt
 
@@ -99,6 +125,21 @@ plugin adds:
   not overwrite user-written sections.
 - Native Obsidian workflow: source notes open directly and the Markdown artifact
   remains in the vault.
+
+## TODO: Prompt-vs-Plugin Benchmark
+
+After the core product loop is complete, compare this plugin against a strong
+prompt that asks an LLM to read the same vault and summarize the review themes.
+
+The benchmark should compare:
+
+- missed important notes;
+- evidence accuracy;
+- theme stability;
+- user reviewability;
+- Obsidian navigation;
+- privacy and context control;
+- regeneration consistency.
 
 ## Privacy And Edit Protection
 

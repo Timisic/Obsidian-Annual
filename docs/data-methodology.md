@@ -1,14 +1,20 @@
 # Data Methodology
 
-Annual Review reports combine two kinds of local evidence:
+Obsidian Time Range Review reports combine source-note evidence with activity
+evidence. The activity layer currently uses two local evidence sources:
 
 - **Current vault inference**: statistics inferred from the Markdown files that
   exist in the vault at generation time, using file `ctime` and `mtime`.
 - **Historical snapshot statistics**: word-count changes computed by comparing
-  saved vault snapshots captured by previous Annual Review rebuild/run actions.
+  saved vault snapshots captured by previous Time Range Review rebuild/generate
+  commands.
 
 The report labels which source was used so growth language does not overstate
 what the vault can prove.
+
+Charts generated from this data are activity evidence, not the product's main
+identity. They help explain activity rhythm, writing bursts, dormant periods,
+and the time context around theme formation.
 
 ## Snapshot File
 
@@ -43,11 +49,11 @@ The file has a top-level schema version and a list of snapshots:
       "totalWords": 12345,
       "notes": [
         {
-          "path": "Projects/Research.md",
+          "path": "Research/Reading.md",
           "wordCount": 1200,
           "modifiedTime": 1770000000000,
-          "folder": "Projects",
-          "tags": ["project", "research"]
+          "folder": "Research",
+          "tags": ["reading", "research"]
         }
       ]
     }
@@ -60,10 +66,12 @@ path, word count, modified time, folder, and tags.
 
 ## Capture Timing
 
-Snapshots are captured when Annual Review reads the vault for the main workflow:
+Snapshots are captured when Time Range Review reads the vault for the main
+workflow:
 
 - `Annual Review: Rebuild index` records a snapshot after scanning the allowed
-  Markdown files.
+  Markdown files for the selected Annual / Quarterly / Monthly / Custom Range
+  Review Session.
 - `Annual Review: Generate report` records a snapshot for the run and compares
   it with earlier comparable snapshots before rendering the report.
 
@@ -71,7 +79,7 @@ No source note frontmatter is modified.
 
 ## Scope Rules
 
-Snapshot capture uses the same scan rules as the annual report:
+Snapshot capture uses the same scan rules as the selected time-range report:
 
 - The report folder is excluded so generated reports and chart assets do not
   become source input.
@@ -88,7 +96,7 @@ result as current-vault inference with a scope-mismatch note.
 
 ## Growth Semantics
 
-When comparable snapshots exist, Annual Review computes real vault word-count
+When comparable snapshots exist, Time Range Review computes real vault word-count
 delta as:
 
 ```text
@@ -99,7 +107,7 @@ It also records added, removed, and changed note paths. A note is considered
 changed only when its word count changes. A batch `mtime` update without word
 count changes does not create word growth.
 
-When no comparable snapshot exists, the report still shows current annual
+When no comparable snapshot exists, the report still shows current range
 activity inferred from `ctime` and `mtime`, but labels it as current vault
 inference. That fallback is useful for first-run reports, but it is not a
 precise historical word-count delta.
@@ -128,6 +136,6 @@ before report aggregation. Excluded notes therefore do not contribute to:
 - historical word delta;
 - report candidate, topic, tag, link, or activity statistics.
 
-Changing include/exclude settings changes the scope. Annual Review will not
+Changing include/exclude settings changes the scope. Time Range Review will not
 compare snapshots across incompatible scopes because that would make deltas look
 more precise than they are.

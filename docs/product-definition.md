@@ -2,9 +2,12 @@
 
 ## 一句话定位
 
-Obsidian Annual Review 是 Obsidian 的本地优先 **Time Range Review / 时间范围主题复盘** 插件。
+Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
+
+它是 Obsidian 的本地优先、证据约束 **Time Range Review / 时间范围主题复盘** 插件。
 它帮助用户在 Annual、Quarterly、Monthly 或 Custom Range 中找回被遗忘的关键笔记，
-生成可复核的 Theme Hypotheses / 主题假设，解释支撑这些主题的 Evidence Notes / 证据笔记之间的关系，
+由 AI 基于受控证据包生成可复核的 Theme Hypotheses / 主题假设，
+解释支撑这些主题的 Evidence Notes / 证据笔记之间的细微关系，
 并在用户确认后输出可追溯、可编辑、可重复生成的 Markdown 复盘报告。
 
 ## 定位转换
@@ -15,17 +18,19 @@ Obsidian Annual Review 是 Obsidian 的本地优先 **Time Range Review / 时间
 
 - 时间范围可以是 Annual、Quarterly、Monthly 或 Custom Range。
 - 核心输出不是自动总结，而是用户复核后的主题主线和证据。
-- AI 的角色是主题提炼和关系解释，不是替用户下结论。
+- AI 是核心分析层，用于基于证据包生成语义主题假设和关系解释，不是替用户下结论。
 - Review Board 只把 Theme Hypothesis 当作需要用户复核的假设。
-- Markdown 报告沉淀用户确认后的主题、证据、连接解释和个人补充。
+- Markdown 报告沉淀用户确认后的主题、证据、连接解释、活动证据图表和个人补充。
 
 ## 第一性原理
 
 1. 遗忘优先：复盘首先要把被时间淹没但仍有价值的笔记带回用户眼前。
 2. 连接优先：插件要帮助用户看见跨笔记、跨文件夹、跨月份的隐藏关系。
 3. 证据优先：每个主题假设都必须能回到 Evidence Notes、摘录、链接和时间信号。
-4. 用户判断优先：Theme Hypothesis 是待复核假设；最终主题名称、价值判断和报告内容由用户确认。
-5. 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
+4. AI 受控优先：用户显式选择 provider 或 local CLI path，AI 只处理有限证据包，避免不受控的全 vault 总结。
+5. 用户判断优先：Theme Hypothesis 是待复核假设；最终主题名称、价值判断和报告内容由用户确认。
+6. 图表证据优先：图表说明 activity rhythm、writing bursts、dormant periods 和主题形成背景，不替代主题复核。
+7. 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
 
 ## 核心用户痛点
 
@@ -52,6 +57,11 @@ Obsidian Annual Review 是 Obsidian 的本地优先 **Time Range Review / 时间
 插件需要让每条主题假设都绑定证据笔记、连接解释和不确定性说明。
 用户必须能接受、改名、合并或忽略；最终报告必须区分插件生成内容、AI 辅助草稿和用户确认内容。
 
+### 复盘范围不止一年
+
+用户需要 Annual、Quarterly、Monthly 和 Custom Range，而不是固定年度报告。
+同一套证据编译、主题假设、Review Board 和 Markdown 报告闭环必须适配任意明确时间范围。
+
 ## 产品闭环
 
 ```text
@@ -68,6 +78,7 @@ Obsidian Annual Review 是 Obsidian 的本地优先 **Time Range Review / 时间
 - 3-7 个用户确认后的主题主线。
 - 每个主题背后的 Evidence Notes、摘录和连接解释。
 - 被重新发现的关键旧笔记。
+- 活动节奏、写作爆发、沉寂阶段和主题形成背景的图表证据。
 - 本次复盘的方法说明：时间范围、扫描范围、排除范围、是否使用 AI、发送了哪些上下文类型。
 - 一份可继续编辑、可重新生成、可 diff 的 Markdown 复盘报告。
 
@@ -82,44 +93,44 @@ Obsidian Annual Review 是 Obsidian 的本地优先 **Time Range Review / 时间
 | Theme Decision              | 用户对主题假设的接受、改名、合并或忽略。                          | 核心     |
 | Review Report               | 保存在 vault 内的 Markdown 复盘报告，只写入用户确认后的内容。     | 核心     |
 
-`Project`、`Task`、`Action Item` 和 `Archive` 是后续可能扩展的复盘辅助能力。
+项目线索、任务线索、行动项和归档判断是后续可能扩展的复盘辅助能力。
 它们不属于当前 MVP 的核心对象，也不应出现在 README 首屏承诺中。
 
 ## AI 与插件的分工
 
-AI 可以：
+AI 是核心分析层，可以：
 
-- 基于受控证据包提出 Theme Hypotheses。
-- 解释 Evidence Notes 之间的可能关系。
+- 基于受控 Evidence Package 提出 semantic Theme Hypotheses。
+- 解释 Evidence Notes 之间细微但可追溯的关系。
 - 标注不确定性、遗漏风险和需要用户重点复核的证据。
-- 在用户确认后辅助润色报告草稿。
+- 在用户确认后辅助组织报告文字。
 
 插件必须：
 
 - 本地扫描 vault 并编译 Evidence Notes。
-- 控制时间范围、include/exclude、隐私边界和 provider 上下文。
+- 控制时间范围、include/exclude、隐私边界、provider 或 local CLI path 上下文。
 - 在 Review Board 中呈现证据、解释和用户决策。
 - 保存 Review Session、Theme Decision 和报告写入状态。
 - 保护用户手写内容，支持重新生成和 diff。
 
 AI 不应该：
 
-- 默认读取完整 vault。
+- 默认读取完整 vault 或进行不受控全 vault 总结。
 - 默认访问网络。
 - 把未经复核的主题假设写成用户结论。
 - 替用户做价值判断、取舍或最终命名。
 
 ## 插件与完整提示词的差异
 
-| 维度          | 完整提示词                     | 插件                                              |
-| ------------- | ------------------------------ | ------------------------------------------------- |
-| 输入          | 直接读取大量笔记或整个 vault。 | 先本地扫描，再编译受控证据包。                    |
-| 输出          | 一次性总结。                   | 主题假设、证据笔记、用户决策和最终报告。          |
-| 证据          | 依赖模型引用，容易漂移。       | 每条主题绑定 Obsidian 源笔记、摘录和连接解释。    |
-| 用户控制      | 主要靠追问。                   | 接受、改名、合并、忽略、查看证据。                |
-| 复现性        | 每次回答可能不同。             | Review Session、snapshot、decision state 可保存。 |
-| 隐私          | 常常需要大范围发送内容。       | 可限制范围、摘录、排除目录和 provider。           |
-| Obsidian 体验 | 需要手动跳转和核查。           | 直接打开源笔记，保留 Markdown 报告。              |
+| 维度          | 完整提示词                     | 插件                                                     |
+| ------------- | ------------------------------ | -------------------------------------------------------- |
+| 输入          | 直接读取大量笔记或整个 vault。 | 先本地扫描，再编译受控证据包。                           |
+| 输出          | 一次性总结。                   | 主题假设、证据笔记、用户决策和最终报告。                 |
+| 证据          | 依赖模型引用，容易漂移。       | 每条主题绑定 Obsidian 源笔记、摘录和连接解释。           |
+| 用户控制      | 主要靠追问。                   | 接受、改名、合并、忽略、查看证据。                       |
+| 复现性        | 每次回答可能不同。             | Review Session、snapshot、decision state 可保存。        |
+| 隐私          | 常常需要大范围发送内容。       | 可限制范围、摘录、排除目录、provider 和 local CLI path。 |
+| Obsidian 体验 | 需要手动跳转和核查。           | 直接打开源笔记，保留 Markdown 报告。                     |
 
 插件不需要在“文字漂亮程度”上胜过大模型。
 插件必须在可复核、可控制、可复现、可留存上胜出。
@@ -141,14 +152,14 @@ AI 不应该：
 - 读取 vault 外部文件。
 - 把自动判断伪装成用户结论。
 - 覆盖用户手写报告内容。
-- 把图表、多 provider、项目管理或行动系统放在主题复盘闭环之前。
+- 把图表、多 provider、项目线索或行动项放在主题复盘闭环之前。
 
 ## 成功标准
 
-- README 首屏 10 秒内能说明插件解决遗忘、连接断裂和不信任自动总结三个痛点。
+- README 首屏 10 秒内能说明插件解决遗忘、连接断裂、不信任一次性 AI 总结和复盘范围不止一年四个痛点。
 - 用户能创建 Annual / Quarterly / Monthly / Custom Range Review Session。
 - 每个 Theme Hypothesis 都有 Evidence Notes、连接解释和不确定性说明。
 - 文档明确 Theme Hypothesis / 主题假设需要用户复核。
-- 年报能清楚区分插件生成内容、AI 辅助内容和用户确认内容。
+- 复盘报告能清楚区分插件生成内容、AI 辅助内容和用户确认内容，并保留活动证据图表。
 - 默认模式无网络请求。
 - 重新生成不会抹掉用户手写内容。
