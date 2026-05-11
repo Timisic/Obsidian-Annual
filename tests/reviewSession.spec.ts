@@ -27,6 +27,7 @@ import {
 } from "../src/core/render";
 import {
   buildCustomReviewSession,
+  buildMonthlyReviewSession,
   buildQuarterlyReviewSession,
 } from "../src/core/reviewSession";
 import { buildReviewSession } from "../src/core/reviewCandidates";
@@ -147,6 +148,25 @@ describe("aggregation and rendering", () => {
       "Projects/Legacy.md",
     );
 
+    const january = buildMonthlyReviewSession(
+      2026,
+      1,
+      DEFAULT_SETTINGS,
+      "2026-05-01T00:00:00.000Z",
+    );
+    const januaryAggregate = buildReviewAggregate(files, january, DEFAULT_SETTINGS);
+
+    expect(januaryAggregate.session).toMatchObject({
+      preset: "monthly",
+      label: "2026-01 Review",
+      startDate: "2026-01-01",
+      endDate: "2026-01-31",
+    });
+    expect(januaryAggregate.monthBuckets.map((month) => month.month)).toEqual([
+      "2026-01",
+    ]);
+    expect(januaryAggregate.dayBuckets).toHaveLength(31);
+
     const custom = buildCustomReviewSession({
       label: "2026 Legacy Followup Review",
       startDate: "2026-04-01",
@@ -210,6 +230,11 @@ describe("aggregation and rendering", () => {
     });
     expect(aggregate.dayBuckets.find((day) => day.date === "2026-01-05")).toBeUndefined();
     expect(aggregate.dayBuckets.find((day) => day.date === "2026-01-25")).toBeUndefined();
+
+    const aiPrompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
+    expect(aiPrompt).toContain("inside range words");
+    expect(aiPrompt).not.toContain("before range words");
+    expect(aiPrompt).not.toContain("after range words");
   });
 
   it("uses explicit note dates to distribute flattened-mtime daily notes", async () => {
@@ -454,24 +479,24 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Theme Hypotheses");
+    expect(markdown).toContain("## Confirmed theme hypotheses");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
-    expect(markdown).toContain("# 2026 Annual Review");
+    expect(markdown).toContain("# Review Report: 2026 Annual Review");
     expect(markdown).toMatch(
       /^---\ngenerated: ".+"\nyear: 2026\nreview_preset: "annual"\nreview_label: "2026 Annual Review"\nstart_date: "2026-01-01"\nend_date: "2026-12-31"\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
     );
-    expect(markdown).not.toContain("Generated:");
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## Annual Overview",
-      "## Writing Growth",
-      "## Topic Evolution",
-      "## Theme Hypotheses",
+      "## Review Range",
+      "## Activity Evidence",
+      "## Confirmed theme hypotheses",
+      "## Rediscovered Notes",
+      "## Hidden Connections",
       "## Reflection Prompts",
       "## Data Methodology",
     ]);
@@ -494,13 +519,11 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Notes created in each active month");
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
-    expect(markdown).toContain("## Topic Evolution");
+    expect(markdown).not.toContain("## Topic Evolution");
     expect(markdown).toContain(
       'class="annual-review-chart annual-review-topic-evolution"',
     );
-    expect(markdown).toContain(
-      "content-thread synthesis is generated only when summarization is enabled",
-    );
+    expect(markdown).toContain("### Theme Signal Chart");
     expect(markdown).not.toContain(
       "| Topic | Added words | New notes | Representative Notes |",
     );
@@ -516,7 +539,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Theme Hypotheses");
+    expect(markdown).toContain("## Confirmed theme hypotheses");
     expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
     expect(markdown).not.toContain("### Confirmed theme hypotheses");
     expect(markdown).not.toContain("### Output-ready notes");
@@ -625,12 +648,13 @@ describe("aggregation and rendering", () => {
     );
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
     expect(markdown).toContain('report_language: "zh"');
-    expect(markdown).toContain("# 2026 年度回顾");
+    expect(markdown).toContain("# 回顾报告：2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## 年度总览",
-      "## 写作增长",
-      "## 主题演化",
-      "## 主题假设",
+      "## 回顾范围",
+      "## 活动证据",
+      "## 已确认主题假设",
+      "## 重新发现的笔记",
+      "## 隐藏连接",
       "## 复盘提示",
       "## 数据口径",
     ]);
@@ -642,9 +666,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("### 热力图");
     expect(markdown).toContain('class="annual-review-chart annual-review-heatmap"');
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
-    expect(markdown).toContain("## 主题演化");
+    expect(markdown).not.toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 主题假设");
+    expect(markdown).toContain("## 已确认主题假设");
     expect(markdown).toContain("还没有可写入年报的主题假设");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
@@ -682,8 +706,7 @@ describe("aggregation and rendering", () => {
       },
     });
 
-    expect(markdown).toContain("## Topic Evolution");
-    expect(markdown).toContain("### Content Threads");
+    expect(markdown).toContain("## Hidden Connections");
     expect(markdown).toContain("Research review loop");
     expect(markdown).toContain("[[Daily/2026-01-01]]");
     expect(markdown).not.toContain("| Theme |");
@@ -1001,7 +1024,11 @@ describe("aggregation and rendering", () => {
       language: "zh",
       reviewSession,
     });
-    const reviewSection = sectionBetween(markdown, "## 主题假设", "## 数据口径");
+    const reviewSection = sectionBetween(
+      markdown,
+      "## 已确认主题假设",
+      "## 重新发现的笔记",
+    );
 
     expect(reviewSection).toContain(
       "[[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]] (accepted)",
@@ -1014,38 +1041,31 @@ describe("aggregation and rendering", () => {
   });
 
   it("normalizes wikilink-shaped topic names before they enter Review Board state", async () => {
-    const aggregate = buildYearAggregate(
-      [
-        sourceFrom({
-          path: "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
-          ctime: "2026-01-01T08:00:00.000Z",
-          mtime: "2026-01-01T10:00:00.000Z",
-          content: "AI agent notes ".repeat(80),
-        }),
-      ],
-      2026,
-      DEFAULT_SETTINGS,
-    );
-    aggregate.topicEvolution.topTopics = [
-      {
-        name: "[[Clippings]]",
-        addedWords: 1200,
-        newNotes: 2,
-        updatedNotes: 1,
-        representativeNotes: [
-          "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
-        ],
-      },
+    const files = [
+      sourceFrom({
+        path: "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
+        ctime: "2026-01-01T08:00:00.000Z",
+        mtime: "2026-01-01T10:00:00.000Z",
+        content: "AI agent notes ".repeat(80),
+      }),
+      sourceFrom({
+        path: "Daily/Clippings/Followup.md",
+        ctime: "2026-01-02T08:00:00.000Z",
+        mtime: "2026-01-02T10:00:00.000Z",
+        content: "AI agent notes connect to the same clipping folder. ".repeat(40),
+      }),
     ];
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
 
-    const reviewSession = buildReviewSession(aggregate);
+    const reviewSession = buildReviewSession(aggregate, undefined, evidencePackage);
     const topicCandidate = reviewSession.candidates.find(
       (candidate) => candidate.type === "theme-hypothesis",
     );
 
     expect(topicCandidate).toMatchObject({
-      title: "Clippings",
-      reason: expect.stringContaining("Clippings added"),
+      title: "Folder thread: Clippings",
+      reason: expect.stringContaining("Local evidence groups"),
     });
     expect(topicCandidate?.reason).not.toContain("[[Clippings]]");
   });

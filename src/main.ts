@@ -7,7 +7,7 @@ import {
   type App,
 } from "obsidian";
 import { renderAiReportEnhancements } from "./core/ai";
-import { buildReviewAggregate, buildYearAggregate } from "./core/aggregate";
+import { buildReviewAggregate } from "./core/aggregate";
 import { COMMAND_IDS, COMMAND_NAMES, COMMAND_SURFACE } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
 import {
@@ -18,6 +18,7 @@ import {
 import {
   buildAnnualReviewSession,
   buildCustomReviewSession,
+  buildMonthlyReviewSession,
   buildQuarterlyReviewSession,
   resolveGenerateReviewSession,
   reviewSessionPathLabel,
@@ -29,6 +30,7 @@ import {
   type ReviewSessionState,
 } from "./core/reviewState";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
+import { buildThemeEvidencePackage } from "./core/themeEvidence";
 import {
   appendSnapshot,
   createVaultSnapshot,
@@ -110,6 +112,11 @@ export default class AnnualReviewPlugin extends Plugin {
           session: () => buildQuarterlyReviewSession(2026, 1, this.settings),
         },
         {
+          id: COMMAND_IDS.generateSmoke2026Jan,
+          name: COMMAND_NAMES.generateSmoke2026Jan,
+          session: () => buildMonthlyReviewSession(2026, 1, this.settings),
+        },
+        {
           id: COMMAND_IDS.generateSmoke2026Custom,
           name: COMMAND_NAMES.generateSmoke2026Custom,
           session: () =>
@@ -167,10 +174,10 @@ export default class AnnualReviewPlugin extends Plugin {
     new Notice(this.text().rebuilt(this.indexedFiles.length));
   }
 
-  async previewYear(year: number): Promise<void> {
+  async previewSession(session: ReviewSession): Promise<void> {
     const files = await this.getIndexedFiles(this.settings);
-    this.lastAggregate = buildYearAggregate(files, year, this.settings);
-    await this.refreshReviewSession(this.lastAggregate);
+    this.lastAggregate = buildReviewAggregate(files, session, this.settings);
+    await this.refreshReviewSession(this.lastAggregate, files, this.settings);
   }
 
   getLastAggregate(): YearAggregate | null {
@@ -271,7 +278,7 @@ export default class AnnualReviewPlugin extends Plugin {
       const aggregate = buildReviewAggregate(files, session, settings, {
         snapshotComparison,
       });
-      const reviewSession = await this.refreshReviewSession(aggregate);
+      const reviewSession = await this.refreshReviewSession(aggregate, files, settings);
       const aiEnhancements = await renderAiReportEnhancements({
         aggregate,
         files,
@@ -343,12 +350,16 @@ export default class AnnualReviewPlugin extends Plugin {
 
   private async refreshReviewSession(
     aggregate: YearAggregate,
+    files: SourceFile[],
+    settings: AnnualReviewSettings,
   ): Promise<ReviewSessionState> {
     const key = this.reviewSessionKey(aggregate);
     const legacyKey = `${aggregate.year}:${reviewScopeHash(aggregate)}`;
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, settings);
     const next = buildReviewSession(
       aggregate,
       this.reviewSessions[key] ?? this.reviewSessions[legacyKey],
+      evidencePackage,
     );
     this.reviewSessions[key] = next;
     await this.savePluginData();

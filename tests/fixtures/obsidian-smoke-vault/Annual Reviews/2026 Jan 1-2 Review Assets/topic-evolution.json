@@ -1,0 +1,58 @@
+{
+  "top_topics": [
+    {
+      "name": "journal",
+      "added_words": 103,
+      "new_notes": 2,
+      "updated_notes": 2,
+      "representative_notes": [
+        "Review Fixtures/2026-01-01.md",
+        "Review Fixtures/2026-01-02.md"
+      ]
+    },
+    {
+      "name": "中文",
+      "added_words": 66,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": ["Review Fixtures/2026-01-01.md"]
+    },
+    {
+      "name": "writing",
+      "added_words": 66,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": ["Review Fixtures/2026-01-01.md"]
+    }
+  ],
+  "emerging_topics": ["journal", "中文", "writing"],
+  "declining_topics": [],
+  "monthly_topic_words": [
+    {
+      "month": "2026-01",
+      "topics": {
+        "journal": 103,
+        "writing": 66,
+        "中文": 66
+      }
+    }
+  ],
+  "note_topics": [
+    {
+      "path": "Review Fixtures/2026-01-02.md",
+      "topics": ["journal"],
+      "sources": {
+        "journal": "tag"
+      }
+    },
+    {
+      "path": "Review Fixtures/2026-01-01.md",
+      "topics": ["journal", "writing", "中文"],
+      "sources": {
+        "journal": "tag",
+        "writing": "tag",
+        "中文": "tag"
+      }
+    }
+  ]
+}

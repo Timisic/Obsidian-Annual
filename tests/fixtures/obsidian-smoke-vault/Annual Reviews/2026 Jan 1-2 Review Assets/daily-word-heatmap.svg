@@ -1,0 +1,14 @@
+<svg class="annual-review-chart annual-review-heatmap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71 147" width="100%" height="auto" role="img" aria-label="每日字词热力图">
+<title>每日字词热力图</title>
+<desc>颜色越深，表示当天新建笔记字词量越高。</desc>
+<text x="34" y="14" font-size="10" fill="currentColor">01</text>
+<text x="8" y="35" font-size="9" fill="currentColor">日</text>
+<text x="8" y="48" font-size="9" fill="currentColor">一</text>
+<text x="8" y="61" font-size="9" fill="currentColor">二</text>
+<text x="8" y="74" font-size="9" fill="currentColor">三</text>
+<text x="8" y="87" font-size="9" fill="currentColor">四</text>
+<text x="8" y="100" font-size="9" fill="currentColor">五</text>
+<text x="8" y="113" font-size="9" fill="currentColor">六</text>
+<rect x="34" y="78" width="10" height="10" rx="2" fill="#216e39"><title>2026-01-01: 66 字词, 1 新建, 1 修改</title></rect>
+<rect x="34" y="91" width="10" height="10" rx="2" fill="#30a14e"><title>2026-01-02: 37 字词, 1 新建, 1 修改</title></rect>
+</svg>

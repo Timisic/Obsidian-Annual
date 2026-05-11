@@ -4,6 +4,7 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
+import { reviewSessionContainsDate } from "./reviewSession";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
 import { buildThemeEvidencePackage, parseThemeHypotheses } from "./themeEvidence";
 import type {
@@ -19,8 +20,8 @@ import type {
 } from "./types";
 
 const MAX_AI_CONTEXT_NOTES = 80;
-const MAX_AI_CONTEXT_EXCERPT_CHARS = 700;
-const MAX_CODEX_CONTEXT_NOTES = 28;
+const MAX_AI_CONTEXT_EXCERPT_CHARS = 280;
+const MAX_CODEX_CONTEXT_NOTES = 20;
 const MAX_LINKED_NOTE_CONTEXT = 4;
 const LOCAL_CODEX_TIMEOUT_MS = 300_000;
 const LOCAL_CODEX_PATH_ENTRIES = [
@@ -195,7 +196,7 @@ export function buildAiPrompt(
 
   return JSON.stringify(
     {
-      task: "Generate an Obsidian annual review enrichment JSON object with content-synthesized themes, richer evidence-note reasons, and optional reflection prompts.",
+      task: "Generate an Obsidian time range review enrichment JSON object with content-synthesized themes, richer evidence-note reasons, and optional reflection prompts.",
       outputSchema: {
         periodJudgment:
           "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
@@ -245,6 +246,13 @@ export function buildAiPrompt(
           "Use supplied evidencePackage excerpts, backlinks, linkedNotes, evidence note ids, and exact Obsidian note paths. Preserve wikilink compatibility.",
       },
       evidencePackage,
+      session: {
+        id: aggregate.session.id,
+        preset: aggregate.session.preset,
+        label: aggregate.session.label,
+        startDate: aggregate.session.startDate,
+        endDate: aggregate.session.endDate,
+      },
       year: aggregate.year,
       privacyMode: aggregate.scope.privacyMode,
       totals: {
@@ -305,8 +313,8 @@ function buildCodexContext(
 ): unknown {
   const evidencePackage = compactThemeEvidencePackage(
     buildThemeEvidencePackage(aggregate, files, settings),
-    20,
-    240,
+    8,
+    120,
   );
   const activeNotes = activeNoteEntries(aggregate, files, settings);
   const noteByPath = new Map(activeNotes.map((entry) => [entry.note.path, entry]));
@@ -318,11 +326,11 @@ function buildCodexContext(
       tags: note.tags,
       links: note.links,
       backlinks: backlinkContext(note.path, activeNotes, 3),
-      excerpt: excerpt(file.content),
+      excerpt: compactExcerpt(file.content, 260),
     }));
 
   return {
-    task: "Generate content-synthesized annual review enrichment JSON from aggregate evidence plus note excerpts/backlinks.",
+    task: "Generate content-synthesized time range review enrichment JSON from aggregate evidence plus note excerpts/backlinks.",
     outputSchema: {
       periodJudgment:
         "2-4 evidence-backed annual overview sentences; no heading, no bullet list",
@@ -339,6 +347,13 @@ function buildCodexContext(
         "Use evidencePackage ids, listed note paths, excerpts, topic metrics, link metrics, evidence-note signals, and backlink context only.",
     },
     evidencePackage,
+    session: {
+      id: aggregate.session.id,
+      preset: aggregate.session.preset,
+      label: aggregate.session.label,
+      startDate: aggregate.session.startDate,
+      endDate: aggregate.session.endDate,
+    },
     year: aggregate.year,
     privacyMode: aggregate.scope.privacyMode,
     totals: {
@@ -389,6 +404,11 @@ function buildCodexContext(
   };
 }
 
+function compactExcerpt(content: string, limit: number): string {
+  const value = excerpt(content);
+  return value.length <= limit ? value : `${value.slice(0, limit).trim()}...`;
+}
+
 function compactThemeEvidencePackage(
   evidencePackage: ThemeEvidencePackage,
   noteLimit: number,
@@ -402,6 +422,8 @@ function compactThemeEvidencePackage(
         note.excerpt.length <= excerptLimit
           ? note.excerpt
           : `${note.excerpt.slice(0, excerptLimit).trim()}...`,
+      localSignals: note.localSignals.slice(0, 8),
+      relatedNotes: note.relatedNotes.slice(0, 6),
       links: note.links.slice(0, 5),
       backlinks: note.backlinks.slice(0, 4),
       commonLinks: note.commonLinks.slice(0, 4),
@@ -423,12 +445,23 @@ function activeNoteEntries(
   return files
     .filter((file) => shouldIncludePath(file.path, settings))
     .map((file) => ({ file, note: extractNoteStats(file, settings) }))
-    .filter(
-      (entry) =>
-        new Date(entry.note.ctime).getFullYear() === aggregate.year ||
-        new Date(entry.note.mtime).getFullYear() === aggregate.year,
-    )
+    .filter((entry) => isActiveInReviewSession(entry.note, aggregate))
     .sort((a, b) => a.note.path.localeCompare(b.note.path));
+}
+
+function isActiveInReviewSession(note: NoteStats, aggregate: YearAggregate): boolean {
+  return (
+    reviewSessionContainsDate(aggregate.session, activityCreatedTime(note)) ||
+    reviewSessionContainsDate(aggregate.session, activityModifiedTime(note))
+  );
+}
+
+function activityCreatedTime(note: NoteStats): number {
+  return note.noteDate?.timestamp ?? note.ctime;
+}
+
+function activityModifiedTime(note: NoteStats): number {
+  return note.noteDate?.timestamp ?? note.mtime;
 }
 
 function backlinkContext(
@@ -496,7 +529,7 @@ function highValueEvidence(
       lastUpdated: item.lastUpdated,
       periodWordCount: item.periodWordCount,
       headings: entry?.note.headings ?? [],
-      excerpt: entry ? excerpt(entry.file.content) : "",
+      excerpt: entry ? compactExcerpt(entry.file.content, 260) : "",
       backlinks: backlinkContext(item.path, activeNotes, MAX_LINKED_NOTE_CONTEXT),
       linkedNotes: entry
         ? linkedNoteContext(entry.note, noteByPath, MAX_LINKED_NOTE_CONTEXT)

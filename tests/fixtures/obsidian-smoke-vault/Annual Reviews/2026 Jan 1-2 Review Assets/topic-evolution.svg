@@ -10,24 +10,14 @@
 <line x1="62" y1="28" x2="62" y2="286" stroke="#57606a" stroke-width="1" />
 <line x1="62" y1="286" x2="664" y2="286" stroke="#57606a" stroke-width="1" />
 <text x="18" y="157" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 157)">新增字数</text>
-<rect x="62" y="232.85" width="297" height="53.15" fill="#4f7cac"><title>2026-01: journal 103 字词</title></rect>
-<rect x="62" y="198.80" width="297" height="34.06" fill="#d98c46"><title>2026-01: 中文 66 字词</title></rect>
-<rect x="62" y="164.74" width="297" height="34.06" fill="#4f9d69"><title>2026-01: writing 66 字词</title></rect>
-<text x="210.50" y="312" font-size="10" text-anchor="middle" fill="currentColor">01</text>
-<rect x="367" y="259.17" width="297" height="26.83" fill="#8a6fbd"><title>2026-05: research 52 字词</title></rect>
-<rect x="367" y="243.69" width="297" height="15.48" fill="#c75f7a"><title>2026-05: legacy 30 字词</title></rect>
-<rect x="367" y="232.34" width="297" height="11.35" fill="#6f8f2f"><title>2026-05: project 22 字词</title></rect>
-<text x="515.50" y="312" font-size="10" text-anchor="middle" fill="currentColor">05</text>
+<rect x="62" y="232.85" width="602" height="53.15" fill="#4f7cac"><title>2026-01: journal 103 字词</title></rect>
+<rect x="62" y="198.80" width="602" height="34.06" fill="#d98c46"><title>2026-01: 中文 66 字词</title></rect>
+<rect x="62" y="164.74" width="602" height="34.06" fill="#4f9d69"><title>2026-01: writing 66 字词</title></rect>
+<text x="363" y="312" font-size="10" text-anchor="middle" fill="currentColor">01</text>
 <rect x="688" y="36" width="10" height="10" fill="#4f7cac" />
 <text x="704" y="46" font-size="11" fill="currentColor">journal</text>
 <rect x="688" y="54" width="10" height="10" fill="#d98c46" />
 <text x="704" y="64" font-size="11" fill="currentColor">中文</text>
 <rect x="688" y="72" width="10" height="10" fill="#4f9d69" />
 <text x="704" y="82" font-size="11" fill="currentColor">writing</text>
-<rect x="688" y="90" width="10" height="10" fill="#8a6fbd" />
-<text x="704" y="100" font-size="11" fill="currentColor">research</text>
-<rect x="688" y="108" width="10" height="10" fill="#c75f7a" />
-<text x="704" y="118" font-size="11" fill="currentColor">legacy</text>
-<rect x="688" y="126" width="10" height="10" fill="#6f8f2f" />
-<text x="704" y="136" font-size="11" fill="currentColor">project</text>
 </svg>
