@@ -5,10 +5,7 @@ import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
-import {
-  buildThemeEvidencePackage,
-  parseThemeHypotheses,
-} from "./themeEvidence";
+import { buildThemeEvidencePackage, parseThemeHypotheses } from "./themeEvidence";
 import type {
   AiHighValueNoteInsight,
   AiReportEnhancements,

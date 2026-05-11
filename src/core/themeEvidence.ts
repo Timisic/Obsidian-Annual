@@ -173,7 +173,10 @@ function buildEvidenceNote(
 ): ThemeEvidenceNote {
   const { file, note } = entry;
   const createdInRange = reviewSessionContainsDate(aggregate.session, createdTime(note));
-  const modifiedInRange = reviewSessionContainsDate(aggregate.session, modifiedTime(note));
+  const modifiedInRange = reviewSessionContainsDate(
+    aggregate.session,
+    modifiedTime(note),
+  );
   const dateSignals = [
     createdInRange ? `created in review range: ${dateKey(createdTime(note))}` : "",
     modifiedInRange ? `modified in review range: ${dateKey(modifiedTime(note))}` : "",
@@ -294,10 +297,7 @@ function buildRepeatedPhraseIndex(entries: ActiveNoteEntry[]): Map<string, strin
   );
   const byNote = new Map<string, string[]>();
   for (const [path, phrases] of phrasesByPath.entries()) {
-    byNote.set(
-      path,
-      phrases.filter((phrase) => global.has(phrase)).slice(0, 6),
-    );
+    byNote.set(path, phrases.filter((phrase) => global.has(phrase)).slice(0, 6));
   }
   return byNote;
 }
@@ -505,7 +505,9 @@ function titleFromPath(path: string): string {
 
 function folderParts(path: string): string[] {
   const parts = path.split("/").slice(0, -1);
-  return parts.filter((part) => part && !/^(?:daily|dailies|notes|journal)$/iu.test(part));
+  return parts.filter(
+    (part) => part && !/^(?:daily|dailies|notes|journal)$/iu.test(part),
+  );
 }
 
 function excerpt(content: string): string {
@@ -583,7 +585,10 @@ function extractPhraseCandidates(content: string): string[] {
   return [...candidates].slice(0, 40);
 }
 
-function resolveLinkTarget(link: string, noteByPath: Map<string, ActiveNoteEntry>): string {
+function resolveLinkTarget(
+  link: string,
+  noteByPath: Map<string, ActiveNoteEntry>,
+): string {
   const normalized = normalizeLinkIdentity(link);
   for (const path of noteByPath.keys()) {
     if (

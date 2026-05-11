@@ -166,7 +166,7 @@ npm run build
 
 - [Product Definition](docs/product-definition.md)
 - [SPEC](docs/product-specification.md)
-- [Feature Inventory](docs/feature-inventory.md)
+- [Prompt-vs-Plugin Benchmark](docs/prompt-vs-plugin-benchmark.md)
 - [Roadmap](docs/roadmap.md)
 - [文档索引](docs/README.md)
 - [Data Methodology](docs/data-methodology.md)
