@@ -6,15 +6,22 @@ import {
   type ReviewSessionState,
 } from "./reviewState";
 import { normalizeReviewCandidateTitle } from "./reviewTitle";
-import type { TopTopic, YearAggregate } from "./types";
+import { buildLocalThemeHypotheses } from "./themeEvidence";
+import type {
+  ThemeEvidenceNote,
+  ThemeEvidencePackage,
+  ThemeHypothesis,
+  YearAggregate,
+} from "./types";
 
 export function buildReviewSession(
   aggregate: YearAggregate,
   stored?: ReviewSessionState,
+  evidencePackage?: ThemeEvidencePackage,
 ): ReviewSessionState {
   const scopeHash = reviewScopeHash(aggregate);
   const scanId = `${aggregate.year}:${scopeHash}:${aggregate.generatedAt}`;
-  const scannedCandidates = buildReviewCandidates(aggregate);
+  const scannedCandidates = buildReviewCandidates(aggregate, evidencePackage);
   if (
     stored &&
     stored.schemaVersion === 1 &&
@@ -60,55 +67,74 @@ export function reviewScopeHash(aggregate: YearAggregate): string {
   );
 }
 
-function buildReviewCandidates(aggregate: YearAggregate): ReviewCandidate[] {
-  return aggregate.topicEvolution.topTopics
-    .flatMap((topic, index) => topicCandidate(aggregate, topic, index))
+function buildReviewCandidates(
+  aggregate: YearAggregate,
+  evidencePackage?: ThemeEvidencePackage,
+): ReviewCandidate[] {
+  if (!evidencePackage) {
+    return [];
+  }
+  return buildLocalThemeHypotheses(evidencePackage)
+    .flatMap((theme, index) => themeCandidate(aggregate, theme, index))
     .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
 }
 
-function topicCandidate(
+function themeCandidate(
   aggregate: YearAggregate,
-  topic: TopTopic,
+  theme: ThemeHypothesis,
   index: number,
 ): ReviewCandidate[] {
-  const sourcePaths = topic.representativeNotes.slice(0, 5);
+  const sourcePaths = theme.sourcePaths.slice(0, 5);
   if (sourcePaths.length === 0) {
     return [];
   }
-  const title = normalizeReviewCandidateTitle(topic.name);
-  const id = candidateId(aggregate.session.id, topic.name);
-  const evidence: EvidenceSource[] = sourcePaths.map((path, evidenceIndex) => ({
-    id: `${id}:evidence:${evidenceIndex + 1}`,
-    kind: "note",
-    label: path,
-    target: path,
-    sourcePath: path,
-    reason: `${title} representative source note.`,
-  }));
+  const title = normalizeReviewCandidateTitle(theme.title);
+  const id = candidateId(aggregate.session.id, theme.id);
+  const evidence = theme.evidenceNotes.map((note, evidenceIndex) =>
+    evidenceFromThemeNote(id, note, evidenceIndex),
+  );
   return [
     {
       id,
       type: "theme-hypothesis",
       title,
-      reason: `${title} added ${topic.addedWords} words across ${topic.newNotes} new notes and ${topic.updatedNotes} updated notes.`,
+      reason: theme.summary,
       reasons: evidence.map((item) => ({
-        type: "word-count",
-        label: `${title} evidence appears in ${item.sourcePath}.`,
+        type: "topic-bridge",
+        label: theme.connectionExplanation,
         evidenceId: item.id,
         sourcePath: item.sourcePath ?? sourcePaths[0] ?? "",
-        statField: "wordCount",
+        relatedPaths: sourcePaths.filter((path) => path !== item.sourcePath),
       })),
       status: "candidate",
       evidence,
       sourcePaths,
-      score: topic.addedWords + topic.newNotes * 10 + topic.updatedNotes,
+      score: theme.evidenceNoteIds.length * 10 + theme.localSignals.length,
       rank: index + 1,
-      rankReason: "Ranked by topic growth and representative notes.",
+      rankReason:
+        theme.uncertainty ??
+        "Ranked by evidence-note count and local connection signals.",
       decisionIds: [],
       createdAt: aggregate.generatedAt,
       updatedAt: aggregate.generatedAt,
     },
   ];
+}
+
+function evidenceFromThemeNote(
+  candidateIdValue: string,
+  note: ThemeEvidenceNote,
+  index: number,
+): EvidenceSource {
+  return {
+    id: `${candidateIdValue}:evidence:${index + 1}`,
+    kind: "note",
+    label: note.title,
+    target: note.sourcePath,
+    sourcePath: note.sourcePath,
+    excerpt: note.excerpt,
+    reason: note.whyIncluded,
+  };
 }
 
 function candidateId(sessionId: string, value: string): string {

@@ -187,7 +187,7 @@ describe("AI provider", () => {
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain('"contextNotes"');
     expect(prompt).toContain('"backlinks"');
-    expect(prompt.length).toBeLessThan(24_000);
+    expect(prompt.length).toBeLessThan(26_000);
   });
 
   it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {

@@ -332,6 +332,10 @@ export interface ThemeHypothesis {
   title: string;
   summary: string;
   evidenceNoteIds: string[];
+  evidenceNotes: ThemeEvidenceNote[];
+  sourcePaths: string[];
+  localSignals: string[];
+  aiSignals: string[];
   connectionExplanation: string;
   uncertainty?: string;
   source: ThemeHypothesisSource;
@@ -340,9 +344,12 @@ export interface ThemeHypothesis {
 export interface ThemeEvidenceNote {
   id: string;
   path: string;
+  sourcePath: string;
   title: string;
   dateSignals: string[];
   excerpt: string;
+  localSignals: string[];
+  relatedNotes: string[];
   links: string[];
   backlinks: string[];
   commonLinks: string[];

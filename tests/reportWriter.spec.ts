@@ -264,8 +264,12 @@ describe("Obsidian vault adapter", () => {
     expect(reportContent).toContain("New machine section.");
     expect(reportContent).not.toContain("Old machine section.");
     expect(reportContent).toContain("This is my handwritten reflection.");
-    expect(reportContent.match(/review:user:start/gu)).toHaveLength(1);
-    expect(reportContent.match(/review:user:end/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:user-reflection:start/gu)).toHaveLength(
+      1,
+    );
+    expect(reportContent.match(/time-range-review:user-reflection:end/gu)).toHaveLength(
+      1,
+    );
   });
 
   it("creates a full backup before converting a legacy annual report without markers", async () => {
@@ -352,7 +356,7 @@ describe("Obsidian vault adapter", () => {
     expect(reportContent).not.toContain("old: true");
     expect(reportContent).toContain("old: false");
     expect(reportContent).toContain("User notes stay.");
-    expect(reportContent.match(/annual-review:start/gu)).toHaveLength(1);
-    expect(reportContent.match(/annual-review:end/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:generated:start/gu)).toHaveLength(1);
+    expect(reportContent.match(/time-range-review:generated:end/gu)).toHaveLength(1);
   });
 });

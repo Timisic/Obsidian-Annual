@@ -1,5 +1,6 @@
 import { ItemView, Setting, type WorkspaceLeaf } from "obsidian";
 import { UI_TEXT } from "../core/language";
+import { buildAnnualReviewSession } from "../core/reviewSession";
 import type {
   ReviewAction,
   ReviewCandidate,
@@ -11,6 +12,7 @@ import { joinFolderList } from "../core/settings";
 import type {
   AnnualReviewSettings,
   ResolvedAnnualReviewLanguage,
+  ReviewSession,
   YearAggregate,
 } from "../core/types";
 import { getReviewBoardActionState } from "./reviewActions";
@@ -30,7 +32,7 @@ export interface AnnualReviewDashboardController {
   getGeneratorLanguage(): ResolvedAnnualReviewLanguage;
   getIndexStatus(): { fileCount: number; builtAt: string | null };
   getReviewSession(): ReviewSessionState | null;
-  previewYear(year: number): Promise<void>;
+  previewSession(session: ReviewSession): Promise<void>;
   openGenerateModal(): void;
   rebuildIndex(): Promise<void>;
   openLastReport(): Promise<void>;
@@ -59,7 +61,7 @@ export class AnnualReviewDashboardView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.renderLoading(this.text().buildingPreview);
-    await this.controller.previewYear(this.selectedYear);
+    await this.controller.previewSession(this.defaultPreviewSession());
     this.render();
   }
 
@@ -97,7 +99,7 @@ export class AnnualReviewDashboardView extends ItemView {
             .onClick(async () => {
               this.selectedYear = year;
               this.renderLoading(text.refreshingPreview);
-              await this.controller.previewYear(year);
+              await this.controller.previewSession(this.defaultPreviewSession(year));
               this.render();
             });
         })
@@ -110,7 +112,7 @@ export class AnnualReviewDashboardView extends ItemView {
           button.setButtonText(text.rebuild).onClick(async () => {
             this.renderLoading(text.refreshingPreview);
             await this.controller.rebuildIndex();
-            await this.controller.previewYear(year);
+            await this.controller.previewSession(this.defaultPreviewSession(year));
             this.render();
           });
         })
@@ -180,6 +182,10 @@ export class AnnualReviewDashboardView extends ItemView {
 
   private text(): (typeof UI_TEXT)[ResolvedAnnualReviewLanguage] {
     return UI_TEXT[this.controller.getGeneratorLanguage()];
+  }
+
+  private defaultPreviewSession(year = this.selectedYear): ReviewSession {
+    return buildAnnualReviewSession(year, this.controller.getSettings());
   }
 
   private renderReviewBoard(

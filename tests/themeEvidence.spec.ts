@@ -91,6 +91,7 @@ describe("theme evidence", () => {
     );
     expect(research).toMatchObject({
       id: "note:projects-research-md",
+      sourcePath: "Projects/Research.md",
       title: "Research",
     });
     expect(research?.dateSignals).toContain("created in review range: 2026-01-10");
@@ -99,8 +100,10 @@ describe("theme evidence", () => {
     expect(research?.commonLinks).toContain("Areas/AI Systems.md");
     expect(research?.frontmatterSignals).toContain("topic: Local AI");
     expect(research?.weakSignals).toContain("tag:theme/ai");
+    expect(research?.localSignals).toContain("tag:theme/ai");
     expect(research?.repeatedPhrases).toContain("local evidence loop");
     expect(research?.crossFolderLinks).toContain("Areas/AI Systems.md");
+    expect(research?.relatedNotes).toContain("Daily/2026-02-01.md");
     expect(research?.whyIncluded).toContain("shared links");
 
     const legacy = evidencePackage.evidenceNotes.find(
@@ -235,9 +238,12 @@ describe("theme evidence", () => {
         {
           id: "note:a",
           path: "A.md",
+          sourcePath: "A.md",
           title: "A",
           dateSignals: [],
           excerpt: "A",
+          localSignals: ["tag:theme/ai"],
+          relatedNotes: [],
           links: [],
           backlinks: [],
           commonLinks: [],
@@ -252,9 +258,12 @@ describe("theme evidence", () => {
         {
           id: "note:b",
           path: "B.md",
+          sourcePath: "B.md",
           title: "B",
           dateSignals: [],
           excerpt: "B",
+          localSignals: ["tag:theme/ai"],
+          relatedNotes: [],
           links: [],
           backlinks: [],
           commonLinks: [],

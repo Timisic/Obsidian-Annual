@@ -120,6 +120,9 @@ export function parseThemeHypotheses(
         : arrayValue((parsed as Record<string, unknown>).themes)
       : [];
   const ids = new Set(evidencePackage.evidenceNotes.map((note) => note.id));
+  const evidenceNoteById = new Map(
+    evidencePackage.evidenceNotes.map((note) => [note.id, note]),
+  );
   const idByPath = new Map(
     evidencePackage.evidenceNotes.flatMap((note) => [
       [normalizeEvidenceReference(note.path), note.id] as const,
@@ -129,7 +132,9 @@ export function parseThemeHypotheses(
   );
 
   return rawThemes
-    .map((value, index) => toThemeHypothesis(value, index, ids, idByPath))
+    .map((value, index) =>
+      toThemeHypothesis(value, index, ids, idByPath, evidenceNoteById),
+    )
     .filter((theme): theme is ThemeHypothesis => Boolean(theme))
     .slice(0, MAX_LOCAL_THEMES);
 }
@@ -155,6 +160,10 @@ export function buildLocalThemeHypotheses(
       title: `Review clue: ${note.title}`,
       summary: note.whyIncluded,
       evidenceNoteIds: [note.id],
+      evidenceNotes: [note],
+      sourcePaths: [note.path],
+      localSignals: note.localSignals,
+      aiSignals: [],
       connectionExplanation:
         "Only one evidence note is available for this local clue, so it should be reviewed before being promoted into a theme.",
       uncertainty: "Low confidence: fewer than two evidence notes support this clue.",
@@ -218,9 +227,23 @@ function buildEvidenceNote(
   return {
     id: evidenceNoteId(note.path),
     path: note.path,
+    sourcePath: note.path,
     title: titleFromPath(note.path),
     dateSignals,
     excerpt: excerpt(file.content),
+    localSignals: [
+      ...dateSignals,
+      ...links.map((link) => `outlink:${link}`),
+      ...backlinks.map((path) => `backlink:${path}`),
+      ...commonLinks.map((link) => `shared-link:${link}`),
+      ...repeatedPhrases.map((phrase) => `repeated-phrase:${phrase}`),
+      ...questionSentences.map((question) => `question:${question}`),
+      ...entities.map((entity) => `entity:${entity}`),
+      ...crossFolderLinks.map((path) => `cross-folder-link:${path}`),
+      ...frontmatterSignals.map((signal) => `frontmatter:${signal}`),
+      ...weakSignals,
+    ],
+    relatedNotes: uniqueStrings([...backlinks, ...crossFolderLinks]),
     links,
     backlinks,
     commonLinks,
@@ -357,6 +380,16 @@ function clusterToTheme(
     title: localThemeTitle(cluster),
     summary: `Local evidence groups ${noteTitles.join(", ")} around ${signal}.`,
     evidenceNoteIds: noteIds,
+    evidenceNotes: noteIds
+      .map((id) => noteById.get(id))
+      .filter((note): note is ThemeEvidenceNote => Boolean(note)),
+    sourcePaths: noteIds
+      .map((id) => noteById.get(id)?.path)
+      .filter((path): path is string => Boolean(path)),
+    localSignals: uniqueStrings(
+      noteIds.flatMap((id) => noteById.get(id)?.localSignals ?? []),
+    ).slice(0, 20),
+    aiSignals: [],
     connectionExplanation:
       cluster.kind === "weak-tag"
         ? `These notes share tag "${cluster.label}", but tags are treated as weak evidence and should be confirmed against excerpts, links, and date signals.`
@@ -373,6 +406,7 @@ function toThemeHypothesis(
   index: number,
   validIds: Set<string>,
   idByPath: Map<string, string>,
+  evidenceNoteById: Map<string, ThemeEvidenceNote>,
 ): ThemeHypothesis | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -405,6 +439,20 @@ function toThemeHypothesis(
     title,
     summary,
     evidenceNoteIds,
+    evidenceNotes: evidenceNoteIds
+      .map((id) => evidenceNoteById.get(id))
+      .filter((note): note is ThemeEvidenceNote => Boolean(note)),
+    sourcePaths: evidenceNoteIds
+      .map((id) => evidenceNoteById.get(id)?.path)
+      .filter((path): path is string => Boolean(path)),
+    localSignals: uniqueStrings(
+      evidenceNoteIds.flatMap((id) => evidenceNoteById.get(id)?.localSignals ?? []),
+    ).slice(0, 20),
+    aiSignals: uniqueStrings([
+      stringValue(record.connectionExplanation),
+      stringValue(record.connections),
+      stringValue(record.uncertainty),
+    ]).filter(Boolean),
     connectionExplanation,
     uncertainty:
       evidenceNoteIds.length < 2 && !uncertainty
@@ -665,6 +713,10 @@ function arrayValue(value: unknown): unknown[] {
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? sanitizeInlineText(value, 700) : "";
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
 function sourceValue(value: unknown): ThemeHypothesisSource {

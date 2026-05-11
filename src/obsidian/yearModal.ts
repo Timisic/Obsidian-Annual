@@ -3,6 +3,7 @@ import { UI_TEXT } from "../core/language";
 import {
   buildAnnualReviewSession,
   buildCustomReviewSession,
+  buildMonthlyReviewSession,
   buildQuarterlyReviewSession,
 } from "../core/reviewSession";
 import { joinFolderList, splitFolderList } from "../core/settings";
@@ -18,6 +19,7 @@ export class YearModal extends Modal {
   private selectedPreset: ReviewPreset = "annual";
   private selectedYear = new Date().getFullYear();
   private selectedQuarter = 1;
+  private selectedMonth = new Date().getMonth() + 1;
   private customLabel = "";
   private customStartDate = `${this.selectedYear}-01-01`;
   private customEndDate = `${this.selectedYear}-12-31`;
@@ -51,6 +53,7 @@ export class YearModal extends Modal {
         dropdown
           .addOption("annual", text.annualPreset)
           .addOption("quarterly", text.quarterlyPreset)
+          .addOption("monthly", text.monthlyPreset)
           .addOption("custom", text.customPreset)
           .setValue(this.selectedPreset)
           .onChange((value) => {
@@ -86,6 +89,18 @@ export class YearModal extends Modal {
           .onChange((value) => {
             this.selectedQuarter = Number.parseInt(value, 10);
           });
+      });
+
+    new Setting(contentEl)
+      .setName(text.month)
+      .setDesc(text.monthDesc)
+      .addDropdown((dropdown) => {
+        for (let month = 1; month <= 12; month += 1) {
+          dropdown.addOption(String(month), String(month).padStart(2, "0"));
+        }
+        dropdown.setValue(String(this.selectedMonth)).onChange((value) => {
+          this.selectedMonth = Number.parseInt(value, 10);
+        });
       });
 
     new Setting(contentEl)
@@ -239,6 +254,13 @@ export class YearModal extends Modal {
       return buildQuarterlyReviewSession(
         this.selectedYear,
         this.selectedQuarter,
+        this.runSettings,
+      );
+    }
+    if (this.selectedPreset === "monthly") {
+      return buildMonthlyReviewSession(
+        this.selectedYear,
+        this.selectedMonth,
         this.runSettings,
       );
     }

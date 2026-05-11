@@ -2,12 +2,14 @@ import type { App, TFile } from "obsidian";
 import type { AnnualReviewChartAsset } from "../core/render";
 import { reviewSessionPathLabel } from "../core/reviewSession";
 
-export const ANNUAL_REVIEW_START_MARKER = "<!-- annual-review:start -->";
-export const ANNUAL_REVIEW_END_MARKER = "<!-- annual-review:end -->";
+export const ANNUAL_REVIEW_START_MARKER = "<!-- time-range-review:generated:start -->";
+export const ANNUAL_REVIEW_END_MARKER = "<!-- time-range-review:generated:end -->";
 export const REVIEW_USER_REFLECTION_START_MARKER =
-  '<!-- review:user:start section="reflection" -->';
+  "<!-- time-range-review:user-reflection:start -->";
 export const REVIEW_USER_REFLECTION_END_MARKER =
-  '<!-- review:user:end section="reflection" -->';
+  "<!-- time-range-review:user-reflection:end -->";
+const LEGACY_ANNUAL_REVIEW_START_MARKER = "<!-- annual-review:start -->";
+const LEGACY_ANNUAL_REVIEW_END_MARKER = "<!-- annual-review:end -->";
 
 export async function writeReport(
   app: App,
@@ -127,20 +129,37 @@ function findMachineSection(
 ): { startIndex: number; endIndex: number } | null {
   const startIndex = content.indexOf(ANNUAL_REVIEW_START_MARKER);
   if (startIndex === -1) {
+    return findDelimitedSection(
+      content,
+      LEGACY_ANNUAL_REVIEW_START_MARKER,
+      LEGACY_ANNUAL_REVIEW_END_MARKER,
+    );
+  }
+  return findDelimitedSection(
+    content,
+    ANNUAL_REVIEW_START_MARKER,
+    ANNUAL_REVIEW_END_MARKER,
+  );
+}
+
+function findDelimitedSection(
+  content: string,
+  startMarker: string,
+  endMarker: string,
+): { startIndex: number; endIndex: number } | null {
+  const startIndex = content.indexOf(startMarker);
+  if (startIndex === -1) {
     return null;
   }
 
-  const endMarkerIndex = content.indexOf(
-    ANNUAL_REVIEW_END_MARKER,
-    startIndex + ANNUAL_REVIEW_START_MARKER.length,
-  );
+  const endMarkerIndex = content.indexOf(endMarker, startIndex + startMarker.length);
   if (endMarkerIndex === -1) {
     return null;
   }
 
   return {
     startIndex,
-    endIndex: endMarkerIndex + ANNUAL_REVIEW_END_MARKER.length,
+    endIndex: endMarkerIndex + endMarker.length,
   };
 }
 
