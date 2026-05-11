@@ -100,6 +100,42 @@ describe("review state", () => {
       status: "ignored",
       userNote: "Not central this year.",
     });
+    expect(merged.decisions.map((decision) => decision.action)).toEqual([
+      "accept",
+      "rename",
+      "ignore",
+      "merge",
+    ]);
+    expect(merged.decisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          candidateId: "topic-1",
+          action: "rename",
+          label: "Writing Systems",
+          includeInReport: true,
+        }),
+        expect.objectContaining({
+          candidateId: "topic-2",
+          action: "merge",
+          label: "topic-2 -> Writing Systems",
+          includeInReport: true,
+        }),
+        expect.objectContaining({
+          candidateId: "topic-3",
+          action: "ignore",
+          includeInReport: false,
+        }),
+      ]),
+    );
+    const mergeDecision = merged.decisions.find(
+      (decision) => decision.action === "merge",
+    );
+    expect(
+      merged.candidates.find((item) => item.id === "topic-1")?.decisionIds,
+    ).toContain(mergeDecision?.id);
+    expect(
+      merged.candidates.find((item) => item.id === "topic-2")?.decisionIds,
+    ).toContain(mergeDecision?.id);
     expect(merged.progress).toMatchObject({
       total: 3,
       reviewed: 3,
@@ -152,6 +188,13 @@ describe("review state", () => {
       userTitle: "Local-first review",
       reason: "Refreshed machine reason",
       score: 99,
+    });
+    expect(merged.decisions).toHaveLength(1);
+    expect(merged.decisions[0]).toMatchObject({
+      candidateId: "topic-1",
+      action: "rename",
+      label: "Local-first review",
+      includeInReport: true,
     });
     expect(merged.candidates.find((item) => item.id === "note-1")).toMatchObject({
       status: "candidate",

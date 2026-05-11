@@ -4,6 +4,10 @@ import { reviewSessionPathLabel } from "../core/reviewSession";
 
 export const ANNUAL_REVIEW_START_MARKER = "<!-- annual-review:start -->";
 export const ANNUAL_REVIEW_END_MARKER = "<!-- annual-review:end -->";
+export const REVIEW_USER_REFLECTION_START_MARKER =
+  '<!-- review:user:start section="reflection" -->';
+export const REVIEW_USER_REFLECTION_END_MARKER =
+  '<!-- review:user:end section="reflection" -->';
 
 export async function writeReport(
   app: App,
@@ -30,7 +34,7 @@ export async function writeReport(
     );
     return existing;
   }
-  return app.vault.create(path, formatMachineSection(content));
+  return app.vault.create(path, formatReportDocument(content));
 }
 
 export async function writeAnnualReviewOutput(
@@ -87,15 +91,21 @@ function mergeAnnualReviewContent(
 ): string {
   const section = findMachineSection(existingContent);
   if (!section) {
-    return formatMachineSection(nextMachineContent);
+    return formatReportDocument(nextMachineContent);
   }
 
   const managedStartIndex = machineSectionStartIndex(existingContent, section.startIndex);
-  return appendUserContent(
-    formatMachineSection(nextMachineContent),
-    existingContent.slice(0, managedStartIndex),
-    existingContent.slice(section.endIndex),
+  return ensureUserReflectionBlock(
+    appendUserContent(
+      formatMachineSection(nextMachineContent),
+      existingContent.slice(0, managedStartIndex),
+      existingContent.slice(section.endIndex),
+    ),
   );
+}
+
+function formatReportDocument(content: string): string {
+  return ensureUserReflectionBlock(formatMachineSection(content));
 }
 
 function formatMachineSection(content: string): string {
@@ -175,6 +185,17 @@ function appendUserContent(
     .join("\n\n");
 
   return userContent ? `${machineSection}\n\n${userContent}\n` : machineSection;
+}
+
+function ensureUserReflectionBlock(content: string): string {
+  if (
+    content.includes(REVIEW_USER_REFLECTION_START_MARKER) &&
+    content.includes(REVIEW_USER_REFLECTION_END_MARKER)
+  ) {
+    return content;
+  }
+
+  return `${content.trimEnd()}\n\n${REVIEW_USER_REFLECTION_START_MARKER}\n\n${REVIEW_USER_REFLECTION_END_MARKER}`;
 }
 
 async function createLegacyBackup(

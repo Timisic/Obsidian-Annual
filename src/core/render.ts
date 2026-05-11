@@ -238,6 +238,7 @@ const REPORT_TEXT = {
     highValueNotes: "Theme Hypotheses",
     aiValueReason: "Recommendation rationale",
     topHighValueNotes: "Confirmed theme hypotheses",
+    mergedFrom: "Merged from",
     outputReadyNotes: "Output-ready notes",
     maintenanceNotes: "Notes needing maintenance",
     noOutputReadyNotes: "No output-ready notes found.",
@@ -410,6 +411,7 @@ const REPORT_TEXT = {
     highValueNotes: "主题假设",
     aiValueReason: "推荐理由",
     topHighValueNotes: "已确认主题假设",
+    mergedFrom: "合并来源",
     outputReadyNotes: "可输出笔记",
     maintenanceNotes: "需维护笔记",
     noOutputReadyNotes: "未找到可输出笔记。",
@@ -1395,18 +1397,28 @@ function renderReviewedCandidates(
   return [
     `### ${text.topHighValueNotes}`,
     "",
-    ...candidates.flatMap((candidate) => renderReviewedCandidate(candidate, language)),
+    ...candidates.flatMap((candidate) =>
+      renderReviewedCandidate(candidate, reviewSession, language),
+    ),
   ].join("\n");
 }
 
 function renderReviewedCandidate(
   candidate: ReviewCandidate,
+  reviewSession: ReviewSessionState,
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
   const title = reviewCandidateLink(candidate);
-  return [
+  const rows = [
     `- ${title} (${candidate.status})${reviewCandidateEvidenceSuffix(candidate, language)}`,
   ];
+  const mergedSources = mergedSourceCandidates(candidate, reviewSession);
+  if (mergedSources.length > 0) {
+    rows.push(
+      `  - ${REPORT_TEXT[language].mergedFrom}: ${mergedSources.map(reviewCandidateLink).join(", ")}`,
+    );
+  }
+  return rows;
 }
 
 function reviewCandidateEvidenceSuffix(
@@ -1433,6 +1445,17 @@ function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCand
     }
     return candidate.status === "accepted" || candidate.status === "renamed";
   });
+}
+
+function mergedSourceCandidates(
+  candidate: ReviewCandidate,
+  reviewSession: ReviewSessionState,
+): ReviewCandidate[] {
+  const mergedSourceIds = new Set(candidate.mergedSourceIds ?? []);
+  if (mergedSourceIds.size === 0) {
+    return [];
+  }
+  return reviewSession.candidates.filter((item) => mergedSourceIds.has(item.id));
 }
 
 function reviewCandidateLink(candidate: ReviewCandidate): string {
