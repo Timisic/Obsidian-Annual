@@ -22,12 +22,12 @@ export async function fixtureFile(
 export async function fixtureVault(): Promise<SourceFile[]> {
   return [
     await fixtureFile(
-      "Daily/2026-01-01.md",
+      "Review Fixtures/2026-01-01.md",
       "2026-01-01T08:00:00.000Z",
       "2026-01-01T10:00:00.000Z",
     ),
     await fixtureFile(
-      "Daily/2026-01-02.md",
+      "Review Fixtures/2026-01-02.md",
       "2026-01-02T08:00:00.000Z",
       "2026-01-03T10:00:00.000Z",
     ),

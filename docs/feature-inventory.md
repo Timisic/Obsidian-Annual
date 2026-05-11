@@ -2,22 +2,23 @@
 
 This inventory keeps the product surface focused on the trusted annual-review workflow. Core and Support items may appear in the main user path. Backlog and Remove items must not be presented as current primary capabilities.
 
-Canonical MVP flow: local scan -> candidates -> Review Board decisions -> protected Markdown annual report. README, SPEC, release, and agent docs should use this flow and should not promote dashboard analytics, AI summaries, screenshots, or private validation vault deployment as the current product promise.
+Canonical MVP flow: local scan -> Evidence Notes -> Evidence Cluster -> Theme Hypothesis -> Theme Decision -> protected Markdown review report. README, SPEC, release, and agent docs should use this flow and should not promote dashboard analytics, task management, required next actions, screenshots, or private validation vault deployment as the current product promise.
 
 ## Core
 
-| Feature                          | Status | Main-path rule                                                                                            |
-| -------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- |
-| Year and scan-range selection    | Core   | Always shown before generation.                                                                           |
-| Vault scan                       | Core   | Reads allowed local Markdown and Obsidian metadata only.                                                  |
-| Candidate themes                 | Core   | Presented as suggestions with rationale and evidence links.                                               |
-| Candidate review notes           | Core   | Presented as "Suggested review candidates", never as absolute value judgments.                            |
-| Review Board                     | Core   | Used to accept, rename topics, merge topics, ignore, archive, highlight, or move candidates into actions. |
-| Evidence links                   | Core   | Every recommendation needs source notes, tags, links, tasks, excerpts, or timeline evidence.              |
-| Recommendation rationale         | Core   | Explains why the item is suggested and what signal produced it.                                           |
-| User accepted state              | Core   | Users decide what is accepted, renamed, merged, ignored, archived, or moved into actions.                 |
-| Protected Markdown annual report | Core   | Regeneration must preserve user-written sections and remain diffable.                                     |
-| Local-first default              | Core   | No network, AI, or telemetry by default.                                                                  |
+| Feature                          | Status | Main-path rule                                                                                 |
+| -------------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
+| Year and scan-range selection    | Core   | Always shown before generation.                                                                |
+| Vault scan                       | Core   | Reads allowed local Markdown and Obsidian metadata only.                                       |
+| Theme Hypothesis cards           | Core   | The only Review Board card type users need to understand.                                      |
+| Evidence Notes                   | Core   | Source notes that support a theme hypothesis.                                                  |
+| Evidence Clusters                | Core   | Groups of related evidence notes; tags can contribute weak signals but are not the theme path. |
+| Review Board                     | Core   | Used to accept, rename, merge, ignore, or open source notes for Theme Hypotheses.              |
+| Evidence links                   | Core   | Every hypothesis needs source notes, links, excerpts, timeline, folder, tag, or task evidence. |
+| Recommendation rationale         | Core   | Explains why the item is suggested and what signal produced it.                                |
+| Theme Decision state             | Core   | Users decide what is accepted, renamed, merged, or ignored.                                    |
+| Protected Markdown annual report | Core   | Regeneration must preserve user-written sections and remain diffable.                          |
+| Local-first default              | Core   | No network, AI, or telemetry by default.                                                       |
 
 ## Support
 
@@ -49,6 +50,13 @@ Canonical MVP flow: local scan -> candidates -> Review Board decisions -> protec
 | Broad dashboard metrics                  | Backlog | Metrics without review decisions can dilute the main workflow.                   |
 | Agent installation as ordinary-user path | Backlog | Useful for development or automation, but not the primary install route.         |
 | Multi-provider AI expansion              | Backlog | Provider breadth is not a core product promise.                                  |
+| Project candidate cards                  | Backlog | Project context can support evidence, but it is not an MVP card type.            |
+| Task candidate cards                     | Backlog | Task syntax can support evidence, but Review Board is not task management.       |
+| Dormant-note candidate cards             | Backlog | Dormancy can rank evidence, but it is not an independent MVP candidate.          |
+| Bridge-note candidate cards              | Backlog | Bridge behavior can explain clusters, but it is not an independent MVP card.     |
+| Add to actions / action item system      | Backlog | Reports may include optional prompts, not required action sections.              |
+| Archive decision system                  | Backlog | Ignore is the MVP close path.                                                    |
+| Annual highlights                        | Backlog | Adds another report destination before the hypothesis loop is stable.            |
 
 ## Remove
 
@@ -59,3 +67,4 @@ Canonical MVP flow: local scan -> candidates -> Review Board decisions -> protec
 | Placeholder/backlog helper scripts in package scripts            | Remove | AI context placeholder and writing-growth helpers are kept as internal files/tests only, not ordinary package script capabilities.                           |
 | Absolute note-value wording                                      | Remove | Replace user-facing text with review candidates, recommendation rationale, and manual accept/reject language.                                                |
 | Unprotected overwrite-style regeneration promises                | Remove | Main docs only describe protected regeneration with user-written sections preserved.                                                                         |
+| Tracked personal Daily smoke notes                               | Remove | `tests/fixtures/obsidian-smoke-vault/Daily/` is ignored and removed from git tracking; deterministic tests use `Review Fixtures/`.                           |

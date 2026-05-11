@@ -1,21 +1,14 @@
 import type { ExplanationReason } from "./types";
+import type { ReviewSession } from "./types";
 
-export type ReviewCandidateType =
-  | "topic"
-  | "note"
-  | "project"
-  | "task"
-  | "dormant-note"
-  | "bridge-note";
+export type ReviewCandidateType = "theme-hypothesis";
 
 export type ReviewCandidateStatus =
   | "candidate"
   | "accepted"
   | "renamed"
   | "merged"
-  | "ignored"
-  | "archived"
-  | "next-action";
+  | "ignored";
 
 export type EvidenceSourceKind =
   | "note"
@@ -40,14 +33,7 @@ export interface EvidenceSource {
 export interface ReviewDecision {
   id: string;
   candidateId: string;
-  action:
-    | "continue"
-    | "merge"
-    | "archive"
-    | "drop"
-    | "convert-to-project"
-    | "revisit"
-    | "custom";
+  action: "accept" | "rename" | "merge" | "ignore" | "custom";
   label: string;
   note?: string;
   evidence: EvidenceSource[];
@@ -72,7 +58,6 @@ export interface ReviewCandidate {
   mergedIntoId?: string;
   mergedSourceIds?: string[];
   decisionIds: string[];
-  includeInAnnualHighlights?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,14 +70,12 @@ export interface ReviewProgress {
   renamed: number;
   merged: number;
   ignored: number;
-  archived: number;
-  nextAction: number;
-  annualHighlights: number;
 }
 
 export interface ReviewSessionState {
   schemaVersion: 1;
   year: number;
+  session?: ReviewSession;
   scopeHash: string;
   scanId: string;
   candidates: ReviewCandidate[];
@@ -105,7 +88,6 @@ export interface ReviewSessionState {
 export type ReviewAction =
   | { type: "accept"; candidateId: string; at: string }
   | { type: "ignore"; candidateId: string; at: string; note?: string }
-  | { type: "archive"; candidateId: string; at: string; note?: string }
   | {
       type: "merge-topic";
       sourceCandidateId: string;
@@ -120,13 +102,6 @@ export type ReviewAction =
       at: string;
       note?: string;
     }
-  | { type: "add-to-annual-highlights"; candidateId: string; at: string }
-  | {
-      type: "add-to-actions";
-      candidateId: string;
-      decision: Omit<ReviewDecision, "candidateId" | "evidence" | "createdAt">;
-      at: string;
-    }
   | { type: "open-source-note"; candidateId: string; evidenceId?: string };
 
 const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>([
@@ -134,8 +109,6 @@ const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>([
   "renamed",
   "merged",
   "ignored",
-  "archived",
-  "next-action",
 ]);
 
 export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
@@ -187,9 +160,9 @@ export function applyReviewAction(
   if (action.type === "merge-topic") {
     const source = findCandidate(action.sourceCandidateId);
     const target = findCandidate(action.targetCandidateId);
-    if (source.type !== "topic" || target.type !== "topic") {
+    if (source.type !== "theme-hypothesis" || target.type !== "theme-hypothesis") {
       throw new Error(
-        "merge-topic requires both source and target candidates to be topics.",
+        "merge-topic requires both source and target candidates to be theme hypotheses.",
       );
     }
     source.status = "merged";
@@ -199,6 +172,17 @@ export function applyReviewAction(
     target.mergedSourceIds = [...new Set([...(target.mergedSourceIds ?? []), source.id])];
     target.evidence = mergeEvidence(target.evidence, source.evidence);
     target.updatedAt = action.at;
+    const decision = buildReviewDecision({
+      candidateId: source.id,
+      action: "merge",
+      label: `${displayCandidateTitle(source)} -> ${displayCandidateTitle(target)}`,
+      note: action.note,
+      evidence: source.evidence,
+      includeInReport: true,
+      at: action.at,
+      targetCandidateId: target.id,
+    });
+    recordDecision(decisions, [source, target], decision);
     return refreshSession({ ...session, candidates, decisions, updatedAt: action.at });
   }
 
@@ -208,20 +192,40 @@ export function applyReviewAction(
     case "accept":
       candidate.status = "accepted";
       candidate.updatedAt = action.at;
+      recordDecision(
+        decisions,
+        [candidate],
+        buildReviewDecision({
+          candidateId: candidate.id,
+          action: "accept",
+          label: displayCandidateTitle(candidate),
+          evidence: candidate.evidence,
+          includeInReport: true,
+          at: action.at,
+        }),
+      );
       break;
     case "ignore":
       candidate.status = "ignored";
       candidate.userNote = action.note ?? candidate.userNote;
       candidate.updatedAt = action.at;
-      break;
-    case "archive":
-      candidate.status = "archived";
-      candidate.userNote = action.note ?? candidate.userNote;
-      candidate.updatedAt = action.at;
+      recordDecision(
+        decisions,
+        [candidate],
+        buildReviewDecision({
+          candidateId: candidate.id,
+          action: "ignore",
+          label: displayCandidateTitle(candidate),
+          note: action.note,
+          evidence: candidate.evidence,
+          includeInReport: false,
+          at: action.at,
+        }),
+      );
       break;
     case "rename-topic":
-      if (candidate.type !== "topic") {
-        throw new Error("rename-topic requires a topic candidate.");
+      if (candidate.type !== "theme-hypothesis") {
+        throw new Error("rename-topic requires a theme hypothesis candidate.");
       }
       if (action.title.trim().length === 0) {
         throw new Error("rename-topic requires a non-empty title.");
@@ -230,27 +234,20 @@ export function applyReviewAction(
       candidate.userTitle = action.title.trim();
       candidate.userNote = action.note ?? candidate.userNote;
       candidate.updatedAt = action.at;
+      recordDecision(
+        decisions,
+        [candidate],
+        buildReviewDecision({
+          candidateId: candidate.id,
+          action: "rename",
+          label: candidate.userTitle,
+          note: action.note,
+          evidence: candidate.evidence,
+          includeInReport: true,
+          at: action.at,
+        }),
+      );
       break;
-    case "add-to-annual-highlights":
-      if (candidate.status === "candidate") {
-        candidate.status = "accepted";
-      }
-      candidate.includeInAnnualHighlights = true;
-      candidate.updatedAt = action.at;
-      break;
-    case "add-to-actions": {
-      candidate.status = "next-action";
-      candidate.updatedAt = action.at;
-      const decision: ReviewDecision = {
-        ...action.decision,
-        candidateId: candidate.id,
-        evidence: candidate.evidence,
-        createdAt: action.at,
-      };
-      decisions.push(decision);
-      candidate.decisionIds = [...new Set([...candidate.decisionIds, decision.id])];
-      break;
-    }
   }
 
   return refreshSession({
@@ -289,7 +286,6 @@ export function mergeScannedCandidates(
           mergedIntoId: storedCandidate.mergedIntoId,
           mergedSourceIds: storedCandidate.mergedSourceIds,
           decisionIds: storedCandidate.decisionIds,
-          includeInAnnualHighlights: storedCandidate.includeInAnnualHighlights,
           createdAt: storedCandidate.createdAt,
           updatedAt,
         };
@@ -315,9 +311,6 @@ export function calculateReviewProgress(candidates: ReviewCandidate[]): ReviewPr
     renamed: 0,
     merged: 0,
     ignored: 0,
-    archived: 0,
-    nextAction: 0,
-    annualHighlights: 0,
   };
 
   for (const candidate of candidates) {
@@ -341,17 +334,6 @@ export function calculateReviewProgress(candidates: ReviewCandidate[]): ReviewPr
         progress.ignored += 1;
         progress.reviewed += 1;
         break;
-      case "archived":
-        progress.archived += 1;
-        progress.reviewed += 1;
-        break;
-      case "next-action":
-        progress.nextAction += 1;
-        progress.reviewed += 1;
-        break;
-    }
-    if (candidate.includeInAnnualHighlights) {
-      progress.annualHighlights += 1;
     }
   }
 
@@ -379,6 +361,45 @@ function mergeEvidence(
     }
   }
   return [...merged.values()];
+}
+
+function buildReviewDecision(input: {
+  candidateId: string;
+  action: ReviewDecision["action"];
+  label: string;
+  note?: string;
+  evidence: EvidenceSource[];
+  includeInReport: boolean;
+  at: string;
+  targetCandidateId?: string;
+}): ReviewDecision {
+  return {
+    id: ["decision", input.action, input.candidateId, input.targetCandidateId, input.at]
+      .filter(Boolean)
+      .join(":"),
+    candidateId: input.candidateId,
+    action: input.action,
+    label: input.label,
+    note: input.note,
+    evidence: input.evidence.map((evidence) => ({ ...evidence })),
+    includeInReport: input.includeInReport,
+    createdAt: input.at,
+  };
+}
+
+function recordDecision(
+  decisions: ReviewDecision[],
+  candidates: ReviewCandidate[],
+  decision: ReviewDecision,
+): void {
+  decisions.push(decision);
+  for (const candidate of candidates) {
+    candidate.decisionIds = [...new Set([...candidate.decisionIds, decision.id])];
+  }
+}
+
+function displayCandidateTitle(candidate: ReviewCandidate): string {
+  return candidate.userTitle || candidate.title;
 }
 
 function markMissingEvidence(

@@ -11,7 +11,7 @@ import {
   renderAiReportEnhancements,
   renderAiReportSection,
 } from "../src/core/ai";
-import { buildYearAggregate } from "../src/core/aggregate";
+import { buildReviewAggregate, buildYearAggregate } from "../src/core/aggregate";
 import { buildExplanationReasons } from "../src/core/explain";
 import {
   extractNoteStats,
@@ -25,7 +25,18 @@ import {
   buildAnnualReviewChartPaths,
   renderAnnualReview,
 } from "../src/core/render";
+import {
+  buildCustomReviewSession,
+  buildQuarterlyReviewSession,
+} from "../src/core/reviewSession";
 import { buildReviewSession } from "../src/core/reviewCandidates";
+import {
+  buildLocalThemeHypotheses,
+  buildThemeEvidencePackage,
+  buildThemeHypothesisPrompt,
+  parseThemeHypotheses,
+} from "../src/core/themeEvidence";
+import { buildReviewDetailModel } from "../src/core/reviewDetail";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import {
   createVaultSnapshot,
@@ -41,12 +52,19 @@ import type { ReviewCandidate, ReviewSessionState } from "../src/core/reviewStat
 import {
   ANNUAL_REVIEW_END_MARKER,
   ANNUAL_REVIEW_START_MARKER,
+  REVIEW_USER_REFLECTION_END_MARKER,
+  REVIEW_USER_REFLECTION_START_MARKER,
   writeAnnualReviewOutput,
 } from "../src/obsidian/reportWriter";
+import {
+  AnnualReviewProgressIndicator,
+  clampProgress,
+} from "../src/obsidian/progressModal";
 import { getAnnualReviewDashboardLeaf } from "../src/obsidian/dashboardLeaf";
 import {
   getActionCandidateId,
   getNextReviewSelection,
+  isPendingReviewQueueCandidate,
 } from "../src/obsidian/reviewSelection";
 import { readVaultMarkdownFiles } from "../src/obsidian/vaultFiles";
 import { fixtureFile, fixtureVault } from "./fixtures";
@@ -233,9 +251,9 @@ describe("vault snapshots", () => {
       reportFolder: "Annual Reviews",
     });
     expect(snapshot.notes.map((note) => note.path)).toEqual([
-      "Daily/2026-01-01.md",
       "Projects/Legacy.md",
       "Projects/Research.md",
+      "Review Fixtures/2026-01-01.md",
     ]);
     expect(snapshot.notes).not.toContainEqual(
       expect.objectContaining({ path: "Annual Reviews/2026 Annual Review.md" }),
@@ -243,8 +261,8 @@ describe("vault snapshots", () => {
     expect(snapshot.notes).not.toContainEqual(
       expect.objectContaining({ path: "Archive/Old.md" }),
     );
-    expect(snapshot.notes[0]).toMatchObject({
-      folder: "Daily",
+    expect(snapshot.notes[2]).toMatchObject({
+      folder: "Review Fixtures",
       modifiedTime: Date.parse("2026-01-01T10:00:00.000Z"),
       tags: ["journal", "writing", "中文"],
     });
@@ -377,7 +395,10 @@ describe("extraction", () => {
   });
 
   it("extracts frontmatter, tags, links, headings, and tasks", async () => {
-    const source = await fixtureFile("Daily/2026-01-01.md", "2026-01-01T08:00:00.000Z");
+    const source = await fixtureFile(
+      "Review Fixtures/2026-01-01.md",
+      "2026-01-01T08:00:00.000Z",
+    );
     const note = extractNoteStats(source, DEFAULT_SETTINGS);
     expect(note.frontmatter.tags).toEqual(["journal", "中文"]);
     expect(note.tags).toEqual(["journal", "writing", "中文"]);
@@ -510,15 +531,18 @@ describe("aggregation and rendering", () => {
     expect(aggregate.activeDays).toBe(5);
     expect(aggregate.longestStreak).toBe(2);
     expect(aggregate.topTags[0]).toEqual({ name: "journal", count: 2 });
-    expect(aggregate.topFolders).toContainEqual({ name: "Daily", count: 2 });
+    expect(aggregate.topFolders).toContainEqual({
+      name: "Review Fixtures",
+      count: 2,
+    });
     expect(aggregate.topLinks).toContainEqual({ name: "Projects/Research", count: 2 });
     expect(
       aggregate.highValueNotes.some((note) => note.path === "Projects/Research.md"),
     ).toBe(true);
     expect(aggregate.representativeNotes.map((note) => note.path)).toEqual([
-      "Daily/2026-01-01.md",
       "Projects/Legacy.md",
       "Projects/Research.md",
+      "Review Fixtures/2026-01-01.md",
     ]);
     expect(aggregate.dayBuckets).toHaveLength(365);
     expect(
@@ -540,19 +564,72 @@ describe("aggregation and rendering", () => {
     expect(aggregate.topicEvolution.topTopics.length).toBeLessThanOrEqual(8);
   });
 
+  it("filters aggregates by quarterly and custom review sessions", async () => {
+    const files = await fixtureVault();
+    const q1 = buildQuarterlyReviewSession(
+      2026,
+      1,
+      DEFAULT_SETTINGS,
+      "2026-05-01T00:00:00.000Z",
+    );
+    const q1Aggregate = buildReviewAggregate(files, q1, DEFAULT_SETTINGS);
+
+    expect(q1Aggregate.session).toMatchObject({
+      preset: "quarterly",
+      label: "2026 Q1 Review",
+      startDate: "2026-01-01",
+      endDate: "2026-03-31",
+    });
+    expect(q1Aggregate.createdCount).toBe(3);
+    expect(q1Aggregate.modifiedCount).toBe(3);
+    expect(q1Aggregate.monthBuckets.map((month) => month.month)).toEqual([
+      "2026-01",
+      "2026-02",
+      "2026-03",
+    ]);
+    expect(q1Aggregate.dayBuckets).toHaveLength(90);
+    expect(q1Aggregate.representativeNotes.map((note) => note.path)).not.toContain(
+      "Projects/Legacy.md",
+    );
+
+    const custom = buildCustomReviewSession({
+      label: "2026 Legacy Followup Review",
+      startDate: "2026-04-01",
+      endDate: "2026-04-10",
+      settings: DEFAULT_SETTINGS,
+      timestamp: "2026-05-01T00:00:00.000Z",
+    });
+    const customAggregate = buildReviewAggregate(files, custom, DEFAULT_SETTINGS);
+
+    expect(customAggregate.session).toMatchObject({
+      preset: "custom",
+      label: "2026 Legacy Followup Review",
+      startDate: "2026-04-01",
+      endDate: "2026-04-10",
+    });
+    expect(customAggregate.createdCount).toBe(0);
+    expect(customAggregate.modifiedCount).toBe(1);
+    expect(customAggregate.activeDays).toBe(1);
+    expect(customAggregate.totalWords).toBe(0);
+    expect(customAggregate.dayBuckets.map((day) => day.date)).toContain("2026-04-05");
+  });
+
   it("uses explicit note dates to distribute flattened-mtime daily notes", async () => {
     const flattenedTime = "2026-05-09T10:55:29.000Z";
     const dailyPaths = [
-      "Daily/2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
-      "Daily/2026月复盘/2月/2026-02-05 环境促进想法转变.md",
-      "Daily/2026月复盘/3月/2026-03-01 Linya不去北京了.md",
-      "Daily/2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
-      "Daily/2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
+      "Review Fixtures/2026-01-05.md",
+      "Review Fixtures/2026-02-05.md",
+      "Review Fixtures/2026-03-01.md",
+      "Review Fixtures/2026-04-04.md",
+      "Review Fixtures/2026-05-02.md",
     ];
     const aggregate = buildYearAggregate(
-      await Promise.all(
-        dailyPaths.map((path) => fixtureFile(path, flattenedTime, flattenedTime)),
-      ),
+      dailyPaths.map((path, index) => ({
+        path,
+        ctime: Date.parse(flattenedTime),
+        mtime: Date.parse(flattenedTime),
+        content: `# Fixture ${index + 1}\n\nSynthetic review note content for month ${index + 1}.`,
+      })),
       2026,
       DEFAULT_SETTINGS,
     );
@@ -779,7 +856,7 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Review Candidates");
+    expect(markdown).toContain("## Theme Hypotheses");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
@@ -787,7 +864,7 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# 2026 Annual Review");
     expect(markdown).toMatch(
-      /^---\ngenerated: ".+"\nyear: 2026\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
+      /^---\ngenerated: ".+"\nyear: 2026\nreview_preset: "annual"\nreview_label: "2026 Annual Review"\nstart_date: "2026-01-01"\nend_date: "2026-12-31"\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
     );
     expect(markdown).not.toContain("Generated:");
     expect(markdown).not.toContain("Included scope:");
@@ -796,8 +873,8 @@ describe("aggregation and rendering", () => {
       "## Annual Overview",
       "## Writing Growth",
       "## Topic Evolution",
-      "## Review Candidates",
-      "## Next-Period Actions",
+      "## Theme Hypotheses",
+      "## Reflection Prompts",
       "## Data Methodology",
     ]);
     expect(markdown).toContain("| Total new words |");
@@ -841,9 +918,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Review Candidates");
-    expect(markdown).toContain("No reviewed Review Board decisions are ready");
-    expect(markdown).not.toContain("### Suggested review candidates");
+    expect(markdown).toContain("## Theme Hypotheses");
+    expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
+    expect(markdown).not.toContain("### Confirmed theme hypotheses");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
@@ -865,10 +942,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Representative notes are selected deterministically");
     expect(markdown).toContain("## Data Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
-    expect(markdown).toContain("## Next-Period Actions");
-    expect(markdown).toContain("1. Create a compact index");
-    expect(markdown).toContain("2. ");
-    expect(markdown).toContain("3. No review-candidate push is available");
+    expect(markdown).toContain("## Reflection Prompts");
+    expect(markdown).toContain("- Create a compact index");
+    expect(markdown).toContain("- No extra theme-hypothesis prompt is available");
   });
 
   it("warns when annual activity dates are filesystem-only", () => {
@@ -956,8 +1032,8 @@ describe("aggregation and rendering", () => {
       "## 年度总览",
       "## 写作增长",
       "## 主题演化",
-      "## 候选回看笔记",
-      "## 下期行动",
+      "## 主题假设",
+      "## 复盘提示",
       "## 数据口径",
     ]);
     expect(markdown).toContain("### 累计增长");
@@ -970,11 +1046,11 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 候选回看笔记");
-    expect(markdown).toContain("还没有可写入年报的 Review Board 审核决策");
+    expect(markdown).toContain("## 主题假设");
+    expect(markdown).toContain("还没有可写入年报的主题假设");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
-    expect(markdown).toContain("## 下期行动");
+    expect(markdown).toContain("## 复盘提示");
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
@@ -1020,7 +1096,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain(
       "This note links source evidence back to the project synthesis",
     );
-    expect(markdown).toContain("1. Create a review hub from [[Projects/Research]].");
+    expect(markdown).toContain("- Create a review hub from [[Projects/Research]].");
     expect(markdown).not.toContain("### Feedback Signals");
   });
 
@@ -1071,6 +1147,17 @@ describe("aggregation and rendering", () => {
     expect(chartAssets[4]?.content).toContain('"top_topics"');
     expect(chartAssets[4]?.content).toContain('"emerging_topics"');
     expect(chartAssets[4]?.content).toContain('"declining_topics"');
+  });
+
+  it("generates chart asset paths from the review session label", () => {
+    expect(buildAnnualReviewChartPaths("Annual Reviews", "2026 Q1 Review")).toEqual({
+      "daily-cumulative-words":
+        "Annual Reviews/2026 Q1 Review Assets/daily-cumulative-words.svg",
+      "daily-word-heatmap": "Annual Reviews/2026 Q1 Review Assets/daily-word-heatmap.svg",
+      "word-growth-trend": "Annual Reviews/2026 Q1 Review Assets/word-growth-trend.svg",
+      "topic-evolution": "Annual Reviews/2026 Q1 Review Assets/topic-evolution.svg",
+      "topic-evolution-data": "Annual Reviews/2026 Q1 Review Assets/topic-evolution.json",
+    });
   });
 
   it("identifies review candidates, maintenance, output-ready, and isolated potential notes", () => {
@@ -1248,7 +1335,7 @@ describe("aggregation and rendering", () => {
       ],
     });
 
-    expect(markdown).toContain("No reviewed Review Board decisions are ready");
+    expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
     expect(markdown).not.toContain(
       "No auditable evidence was generated for this candidate",
     );
@@ -1262,19 +1349,17 @@ describe("aggregation and rendering", () => {
     const reviewSession = reviewSessionFixture();
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
-    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("### Confirmed theme hypotheses");
     expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
     expect(markdown).toContain("[[Projects/Renamed|Renamed Topic]] (renamed)");
-    expect(markdown).toContain("[[Projects/Action|Action Topic]] (next-action)");
-    expect(markdown).toContain("[[Projects/Highlight|Highlight Topic]] (candidate)");
-    expect(markdown).toContain("### Annual Highlights");
+    expect(markdown).toContain("Merged from: [[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("Merged Topic");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("Unreviewed Topic");
     expect(markdown).not.toContain("accepted unsupported reason");
     expect(markdown).not.toContain("These 4 reviewed candidates are included");
     expect(markdown).not.toContain("Manual confirmation:");
-    expect(markdown).toContain("1. Convert accepted topic into project");
+    expect(markdown).not.toContain("Convert accepted topic into project");
   });
 
   it("renders only reviewed Review Board decisions in the default Chinese report", async () => {
@@ -1284,11 +1369,11 @@ describe("aggregation and rendering", () => {
       reviewSession: reviewSessionFixture(),
     });
 
-    expect(markdown).toContain("### Suggested review candidates");
+    expect(markdown).toContain("### 已确认主题假设");
     expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
-    expect(markdown).toContain("[[Projects/Highlight|Highlight Topic]] (candidate)");
+    expect(markdown).toContain("合并来源: [[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("Merged Topic");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
   });
@@ -1318,7 +1403,7 @@ describe("aggregation and rendering", () => {
       language: "zh",
       reviewSession,
     });
-    const reviewSection = sectionBetween(markdown, "## 候选回看笔记", "## 数据口径");
+    const reviewSection = sectionBetween(markdown, "## 主题假设", "## 数据口径");
 
     expect(reviewSection).toContain(
       "[[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]] (accepted)",
@@ -1357,7 +1442,7 @@ describe("aggregation and rendering", () => {
 
     const reviewSession = buildReviewSession(aggregate);
     const topicCandidate = reviewSession.candidates.find(
-      (candidate) => candidate.type === "topic",
+      (candidate) => candidate.type === "theme-hypothesis",
     );
 
     expect(topicCandidate).toMatchObject({
@@ -1392,6 +1477,201 @@ describe("aggregation and rendering", () => {
 
     expect(insights.highValueNotes).toHaveLength(10);
     expect(insights.highValueNotes[0]?.path).toBe("Ideas/Note 12.md");
+  });
+});
+
+describe("theme evidence", () => {
+  it("compiles local evidence signals into a bounded evidence package", () => {
+    const files = themeEvidenceFiles();
+    const session = buildQuarterlyReviewSession(
+      2026,
+      1,
+      DEFAULT_SETTINGS,
+      "2026-04-01T00:00:00.000Z",
+    );
+    const aggregate = buildReviewAggregate(files, session, DEFAULT_SETTINGS);
+    const evidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      DEFAULT_SETTINGS,
+    );
+
+    expect(evidencePackage.reviewRange).toBe("2026-01-01 to 2026-03-31");
+    expect(evidencePackage.evidenceNotes.length).toBeGreaterThanOrEqual(4);
+
+    const research = evidencePackage.evidenceNotes.find(
+      (note) => note.path === "Projects/Research.md",
+    );
+    expect(research).toMatchObject({
+      id: "note:projects-research-md",
+      title: "Research",
+    });
+    expect(research?.dateSignals).toContain("created in review range: 2026-01-10");
+    expect(research?.links).toContain("Areas/AI Systems.md");
+    expect(research?.backlinks).toContain("Daily/2026-02-01.md");
+    expect(research?.commonLinks).toContain("Areas/AI Systems.md");
+    expect(research?.frontmatterSignals).toContain("topic: Local AI");
+    expect(research?.weakSignals).toContain("tag:theme/ai");
+    expect(research?.repeatedPhrases).toContain("local evidence loop");
+    expect(research?.crossFolderLinks).toContain("Areas/AI Systems.md");
+    expect(research?.whyIncluded).toContain("shared links");
+
+    const legacy = evidencePackage.evidenceNotes.find(
+      (note) => note.path === "Projects/Legacy.md",
+    );
+    expect(legacy?.dateSignals).toContain(
+      "resurfaced old note: created 2025-10-01, modified 2026-02-20",
+    );
+  });
+
+  it("builds an AI prompt that exposes only the structured evidence package", () => {
+    const files = themeEvidenceFiles();
+    const aggregate = buildReviewAggregate(
+      files,
+      buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
+      DEFAULT_SETTINGS,
+    );
+    const evidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      DEFAULT_SETTINGS,
+    );
+    const prompt = JSON.parse(buildThemeHypothesisPrompt(evidencePackage)) as {
+      inputPolicy: { allowedInput: string; weakSignalRule: string };
+      evidencePackage: { evidenceNotes: Array<{ id: string; excerpt: string }> };
+      outputSchema: { themeHypotheses: Array<{ evidenceNoteIds: string[] }> };
+    };
+
+    expect(prompt.inputPolicy.allowedInput).toContain("structured evidence package");
+    expect(prompt.inputPolicy.weakSignalRule).toContain("weakSignals");
+    expect(prompt.evidencePackage.evidenceNotes[0]?.id).toMatch(/^note:/u);
+    expect(prompt.evidencePackage.evidenceNotes[0]?.excerpt).not.toContain("---");
+    expect(prompt.outputSchema.themeHypotheses[0]?.evidenceNoteIds[0]).toContain(
+      "evidence note ids",
+    );
+  });
+
+  it("parses AI theme hypotheses back to evidence note ids and marks weak singles", () => {
+    const files = themeEvidenceFiles();
+    const aggregate = buildReviewAggregate(
+      files,
+      buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
+      DEFAULT_SETTINGS,
+    );
+    const evidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      DEFAULT_SETTINGS,
+    );
+    const parsed = parseThemeHypotheses(
+      JSON.stringify({
+        themeHypotheses: [
+          {
+            id: "theme-ai-local-loop",
+            title: "Local evidence loop",
+            summary: "The notes connect AI review work to local evidence.",
+            evidenceNoteIds: ["note:projects-research-md", "note:daily-2026-02-01-md"],
+            connectionExplanation:
+              "Both notes share the local evidence loop phrase and cross-link through AI Systems.",
+            source: "ai",
+          },
+          {
+            title: "Single note clue",
+            summary: "One note may become a theme.",
+            evidenceNotes: ["Projects/Legacy.md"],
+            connectionExplanation: "The old note resurfaced during the review range.",
+            source: "mixed",
+          },
+          {
+            title: "Invented clue",
+            summary: "Invalid evidence should be dropped.",
+            evidenceNoteIds: ["note:missing"],
+            connectionExplanation: "No valid evidence id.",
+            source: "ai",
+          },
+        ],
+      }),
+      evidencePackage,
+    );
+
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0]).toMatchObject({
+      id: "theme-ai-local-loop",
+      source: "ai",
+      evidenceNoteIds: ["note:projects-research-md", "note:daily-2026-02-01-md"],
+    });
+    expect(parsed[0]?.connectionExplanation).toContain("cross-link");
+    expect(parsed[1]?.evidenceNoteIds).toEqual(["note:projects-legacy-md"]);
+    expect(parsed[1]?.uncertainty).toContain("Low confidence");
+  });
+
+  it("falls back to auditable local theme clues without AI", () => {
+    const files = themeEvidenceFiles();
+    const aggregate = buildReviewAggregate(
+      files,
+      buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
+      DEFAULT_SETTINGS,
+    );
+    const evidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      DEFAULT_SETTINGS,
+    );
+    const themes = buildLocalThemeHypotheses(evidencePackage);
+
+    expect(themes.length).toBeGreaterThan(0);
+    expect(
+      themes.every(
+        (theme) => theme.connectionExplanation && theme.evidenceNoteIds.length >= 2,
+      ),
+    ).toBe(true);
+    expect(themes.every((theme) => theme.source === "local")).toBe(true);
+    expect(themes.map((theme) => theme.title)).toContain("Linked thread: AI Systems");
+    expect(themes[0]?.title).not.toContain("theme/ai");
+
+    const weakTagThemes = buildLocalThemeHypotheses({
+      reviewRange: "2026-01-01 to 2026-03-31",
+      evidenceNotes: [
+        {
+          id: "note:a",
+          path: "A.md",
+          title: "A",
+          dateSignals: [],
+          excerpt: "A",
+          links: [],
+          backlinks: [],
+          commonLinks: [],
+          frontmatterSignals: [],
+          repeatedPhrases: [],
+          questionSentences: [],
+          entities: [],
+          crossFolderLinks: [],
+          weakSignals: ["tag:theme/ai"],
+          whyIncluded: "tag evidence",
+        },
+        {
+          id: "note:b",
+          path: "B.md",
+          title: "B",
+          dateSignals: [],
+          excerpt: "B",
+          links: [],
+          backlinks: [],
+          commonLinks: [],
+          frontmatterSignals: [],
+          repeatedPhrases: [],
+          questionSentences: [],
+          entities: [],
+          crossFolderLinks: [],
+          weakSignals: ["tag:theme/ai"],
+          whyIncluded: "tag evidence",
+        },
+      ],
+    });
+    expect(weakTagThemes[0]).toMatchObject({
+      title: "Weak tag clue: theme/ai",
+      connectionExplanation: expect.stringContaining("weak evidence"),
+    });
   });
 });
 
@@ -1607,7 +1887,7 @@ describe("AI provider", () => {
     expect(prompt).toContain("Projects/Research");
     expect(prompt).toContain('"linkGraph"');
     expect(prompt).toContain('"contextNotes"');
-    expect(prompt).toContain("Daily/2026-01-01.md");
+    expect(prompt).toContain("Review Fixtures/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
 
@@ -1726,7 +2006,28 @@ describe("Obsidian vault adapter", () => {
         ANNUAL_REVIEW_START_MARKER,
         "# 2026 Annual Review",
         ANNUAL_REVIEW_END_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_START_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_END_MARKER,
       ].join("\n"),
+    );
+  });
+
+  it("writes custom review reports using the session label path", async () => {
+    const { app, files, writes } = createReportWriterMockApp();
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      "2026 Q1 Review",
+      ["---", 'review_label: "2026 Q1 Review"', "---", "# 2026 Q1 Review"].join("\n"),
+      [],
+    );
+
+    expect(writes).toEqual(["Annual Reviews/2026 Q1 Review.md"]);
+    expect(files.get("Annual Reviews/2026 Q1 Review.md")?.content).toContain(
+      "# 2026 Q1 Review",
     );
   });
 
@@ -1772,8 +2073,45 @@ describe("Obsidian vault adapter", () => {
         "",
         "- [ ] User action item stays exactly.",
         "",
+        REVIEW_USER_REFLECTION_START_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_END_MARKER,
       ].join("\n"),
     );
+  });
+
+  it("preserves user reflection blocks when regenerating a marked annual report", async () => {
+    const existingReport = [
+      ANNUAL_REVIEW_START_MARKER,
+      "# 2026 Annual Review",
+      "Old machine section.",
+      ANNUAL_REVIEW_END_MARKER,
+      "",
+      REVIEW_USER_REFLECTION_START_MARKER,
+      "",
+      "This is my handwritten reflection.",
+      "",
+      REVIEW_USER_REFLECTION_END_MARKER,
+    ].join("\n");
+    const { app, files } = createReportWriterMockApp([
+      ["Annual Reviews/2026 Annual Review.md", existingReport],
+    ]);
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      "# 2026 Annual Review\nNew machine section.",
+      [],
+    );
+
+    const reportContent =
+      files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
+    expect(reportContent).toContain("New machine section.");
+    expect(reportContent).not.toContain("Old machine section.");
+    expect(reportContent).toContain("This is my handwritten reflection.");
+    expect(reportContent.match(/review:user:start/gu)).toHaveLength(1);
+    expect(reportContent.match(/review:user:end/gu)).toHaveLength(1);
   });
 
   it("creates a full backup before converting a legacy annual report without markers", async () => {
@@ -1819,6 +2157,10 @@ describe("Obsidian vault adapter", () => {
         "# 2026 Annual Review",
         "Regenerated machine section.",
         ANNUAL_REVIEW_END_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_START_MARKER,
+        "",
+        REVIEW_USER_REFLECTION_END_MARKER,
       ].join("\n"),
     );
   });
@@ -1937,12 +2279,16 @@ describe("plugin command ids", () => {
     expect(COMMAND_IDS).toEqual({
       generate: "generate-annual-review",
       generateSmoke2026: "generate-annual-review-2026",
+      generateSmoke2026Custom: "generate-annual-review-2026-custom-range",
+      generateSmoke2026Q1: "generate-annual-review-2026-q1",
       openDashboard: "open-annual-review-dashboard",
       rebuildIndex: "rebuild-annual-review-index",
     });
     expect(COMMAND_NAMES).toEqual({
       generate: "Generate report",
       generateSmoke2026: "Smoke: Generate 2026 report",
+      generateSmoke2026Custom: "Smoke: Generate 2026 custom range report",
+      generateSmoke2026Q1: "Smoke: Generate 2026 Q1 report",
       openDashboard: "Open Review Board",
       rebuildIndex: "Rebuild index",
     });
@@ -2038,6 +2384,49 @@ describe("MVP public surface", () => {
     expect(pluginSource).not.toContain("getRightLeaf");
   });
 
+  it("uses a floating progress indicator instead of an Obsidian modal", () => {
+    const progressSource = readFileSync(
+      join(process.cwd(), "src/obsidian/progressModal.ts"),
+      "utf8",
+    );
+
+    expect(progressSource).not.toContain("extends Modal");
+    expect(progressSource).toContain("annual-review-progress-indicator");
+    expect(progressSource).toContain('container.setAttribute("role", "status")');
+  });
+
+  it("updates and closes the floating progress indicator lifecycle", () => {
+    withFakeDocument((root) => {
+      const indicator = new AnnualReviewProgressIndicator(
+        {} as ConstructorParameters<typeof AnnualReviewProgressIndicator>[0],
+        "Generating 2026 annual review",
+      );
+
+      indicator.open();
+      const container = root.querySelector(".annual-review-progress-indicator");
+      expect(container).not.toBeNull();
+      expect(container?.getAttribute("role")).toBe("status");
+
+      indicator.update("Reading vault notes", 8);
+      const status = root.querySelector(".annual-review-progress-status");
+      const progress = root.querySelector("progress");
+      expect(status?.textContent).toBe("Reading vault notes");
+      expect(progress?.value).toBe(8);
+
+      indicator.update("Writing annual review note", 150);
+      expect(progress?.value).toBe(100);
+
+      indicator.close();
+      expect(root.children).toHaveLength(0);
+    });
+  });
+
+  it("clamps progress percentages to the native progress range", () => {
+    expect(clampProgress(-5)).toBe(0);
+    expect(clampProgress(35)).toBe(35);
+    expect(clampProgress(105)).toBe(100);
+  });
+
   it("keeps core Review Board actions available in the compact audit view", () => {
     const source = readFileSync(
       join(process.cwd(), "src/obsidian/dashboardView.ts"),
@@ -2049,8 +2438,6 @@ describe("MVP public surface", () => {
       "text.ignore",
       "text.renameTopic",
       "text.mergeTopic",
-      "text.addHighlight",
-      "text.addAction",
       "text.openSourceNote",
     ]) {
       expect(source).toContain(actionText);
@@ -2061,8 +2448,6 @@ describe("MVP public surface", () => {
       '"ignore"',
       '"rename-topic"',
       '"merge-topic"',
-      '"add-to-annual-highlights"',
-      '"add-to-actions"',
     ]) {
       expect(source).toContain(actionType);
     }
@@ -2070,10 +2455,88 @@ describe("MVP public surface", () => {
     expect(source).toContain("this.controller.openSourceNote(candidate.id)");
   });
 
-  it("advances Review Board selection to the next pending candidate after a decision", () => {
+  it("builds a concise selected-note detail model from local candidate data", () => {
+    const candidate = reviewCandidateFixture("detail", "Detail Topic", "candidate", {
+      reason: "Fallback reason that should not win when excerpt evidence exists.",
+      rank: 4,
+      rankReason: "Ranked because the note has review-worthy local evidence.",
+      evidence: [
+        {
+          id: "detail-excerpt",
+          kind: "excerpt",
+          label: "Projects/Detail.md",
+          target: "Projects/Detail.md",
+          sourcePath: "Projects/Detail.md",
+          excerpt:
+            "This note captures the main review decision and enough local context to summarize it.",
+          reason: "excerpt",
+        },
+      ],
+      sourcePaths: ["Projects/Detail.md"],
+    });
+
+    const detail = buildReviewDetailModel(candidate);
+
+    expect(detail.summary).toBe(
+      "This note captures the main review decision and enough local context to summarize it.",
+    );
+    expect(detail.metadata).toEqual([
+      "theme-hypothesis / candidate",
+      "rank 4",
+      "Ranked because the note has review-worthy local evidence.",
+    ]);
+    expect(detail.evidence).toHaveLength(1);
+    expect(detail.linkedNotes).toEqual({
+      paths: ["Projects/Detail.md"],
+      layout: "inline",
+    });
+  });
+
+  it("formats many selected-note linked notes as a list model", () => {
+    const candidate = reviewCandidateFixture("links", "Linked Topic", "candidate", {
+      sourcePaths: ["Projects/A.md", "Projects/B.md", "Projects/C.md", "Projects/D.md"],
+      evidence: [
+        {
+          id: "links-evidence",
+          kind: "note",
+          label: "Projects/A.md",
+          target: "Projects/A.md",
+          sourcePath: "Projects/A.md",
+        },
+      ],
+      reasons: [
+        {
+          type: "topic-bridge",
+          label: "Connects many project notes.",
+          evidenceId: "links-evidence",
+          sourcePath: "Projects/A.md",
+          relatedPaths: [
+            "Projects/B.md",
+            "Projects/C.md",
+            "Projects/D.md",
+            "Projects/E.md",
+          ],
+        },
+      ],
+    });
+
+    expect(buildReviewDetailModel(candidate).linkedNotes).toEqual({
+      paths: [
+        "Projects/A.md",
+        "Projects/B.md",
+        "Projects/C.md",
+        "Projects/D.md",
+        "Projects/E.md",
+      ],
+      layout: "list",
+    });
+  });
+
+  it("advances Review Board selection to the next actionable pending candidate after a decision", () => {
     const candidates = [
       reviewCandidateFixture("current", "Current Topic", "accepted"),
-      reviewCandidateFixture("next", "Next Topic", "candidate"),
+      reviewCandidateFixture("topic", "Topic Signal", "candidate"),
+      reviewCandidateFixture("next", "Next Theme", "candidate"),
       reviewCandidateFixture("closed", "Closed Topic", "ignored"),
     ];
 
@@ -2084,7 +2547,19 @@ describe("MVP public surface", () => {
         at: "2026-05-08T00:00:00.000Z",
       }),
     ).toBe("current");
-    expect(getNextReviewSelection(candidates, "current")).toBe("next");
+    expect(isPendingReviewQueueCandidate(candidates[1] as ReviewCandidate)).toBe(true);
+    expect(isPendingReviewQueueCandidate(candidates[2] as ReviewCandidate)).toBe(true);
+    expect(getNextReviewSelection(candidates, "current")).toBe("topic");
+  });
+
+  it("keeps pending theme hypotheses in Review Board queue fallback selection", () => {
+    const candidates = [
+      reviewCandidateFixture("current", "Current Note", "accepted"),
+      reviewCandidateFixture("topic", "Topic Signal", "candidate"),
+      reviewCandidateFixture("closed", "Closed Topic", "ignored"),
+    ];
+
+    expect(getNextReviewSelection(candidates, "current")).toBe("topic");
   });
 });
 
@@ -2096,14 +2571,14 @@ function sectionBetween(markdown: string, start: string, end: string): string {
 
 function reviewSessionFixture(): ReviewSessionState {
   const candidates = [
-    reviewCandidateFixture("accepted", "Accepted Topic", "accepted"),
-    reviewCandidateFixture("renamed", "Renamed Topic", "renamed"),
-    reviewCandidateFixture("action", "Action Topic", "next-action"),
-    reviewCandidateFixture("highlight", "Highlight Topic", "candidate", {
-      includeInAnnualHighlights: true,
+    reviewCandidateFixture("accepted", "Accepted Topic", "accepted", {
+      mergedSourceIds: ["merged"],
     }),
+    reviewCandidateFixture("renamed", "Renamed Topic", "renamed"),
     reviewCandidateFixture("ignored", "Ignored Topic", "ignored"),
-    reviewCandidateFixture("merged", "Merged Topic", "merged"),
+    reviewCandidateFixture("merged", "Merged Topic", "merged", {
+      mergedIntoId: "accepted",
+    }),
     reviewCandidateFixture("unreviewed", "Unreviewed Topic", "candidate"),
   ];
 
@@ -2113,32 +2588,101 @@ function reviewSessionFixture(): ReviewSessionState {
     scopeHash: "scope",
     scanId: "scan",
     candidates,
-    decisions: [
-      {
-        id: "decision-action",
-        candidateId: "action",
-        action: "convert-to-project",
-        label: "Convert accepted topic into project",
-        evidence: candidates[2]?.evidence ?? [],
-        includeInReport: true,
-        createdAt: "2026-05-08T00:00:00.000Z",
-      },
-    ],
+    decisions: [],
     progress: {
       total: candidates.length,
-      reviewed: 5,
-      candidate: 2,
+      reviewed: 4,
+      candidate: 1,
       accepted: 1,
       renamed: 1,
       merged: 1,
       ignored: 1,
-      archived: 0,
-      nextAction: 1,
-      annualHighlights: 1,
     },
     createdAt: "2026-05-08T00:00:00.000Z",
     updatedAt: "2026-05-08T00:00:00.000Z",
   };
+}
+
+class FakeDomElement {
+  readonly children: FakeDomElement[] = [];
+  className = "";
+  textContent = "";
+  max = 0;
+  value = 0;
+  private parent: FakeDomElement | null = null;
+  private readonly attributes = new Map<string, string>();
+
+  constructor(private readonly tagName: string) {}
+
+  appendChild(child: FakeDomElement): FakeDomElement {
+    child.parent = this;
+    this.children.push(child);
+    return child;
+  }
+
+  setAttribute(name: string, value: string): void {
+    this.attributes.set(name, value);
+  }
+
+  getAttribute(name: string): string | null {
+    return this.attributes.get(name) ?? null;
+  }
+
+  remove(): void {
+    const siblings = this.parent?.children;
+    const index = siblings?.indexOf(this) ?? -1;
+    if (siblings && index >= 0) {
+      siblings.splice(index, 1);
+    }
+    this.parent = null;
+  }
+
+  querySelector(selector: string): FakeDomElement | null {
+    for (const child of this.children) {
+      if (child.matches(selector)) {
+        return child;
+      }
+      const nested = child.querySelector(selector);
+      if (nested) {
+        return nested;
+      }
+    }
+    return null;
+  }
+
+  private matches(selector: string): boolean {
+    if (selector.startsWith(".")) {
+      return this.className.split(/\s+/u).includes(selector.slice(1));
+    }
+    return this.tagName === selector.toLowerCase();
+  }
+}
+
+function withFakeDocument(run: (root: FakeDomElement) => void): void {
+  const hadDocument = Object.prototype.hasOwnProperty.call(globalThis, "document");
+  const previousDocument = globalThis.document;
+  const root = new FakeDomElement("body");
+
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: {
+      body: root,
+      createElement: (tagName: string) => new FakeDomElement(tagName.toLowerCase()),
+    },
+  });
+
+  try {
+    run(root);
+  } finally {
+    if (hadDocument) {
+      Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    } else {
+      Reflect.deleteProperty(globalThis, "document");
+    }
+  }
 }
 
 function reviewCandidateFixture(
@@ -2150,7 +2694,7 @@ function reviewCandidateFixture(
   const sourcePath = `Projects/${id[0]?.toUpperCase() ?? ""}${id.slice(1)}.md`;
   return {
     id,
-    type: "topic",
+    type: "theme-hypothesis",
     title,
     reason: `${id} unsupported reason`,
     reasons: [],
@@ -2170,6 +2714,49 @@ function reviewCandidateFixture(
     updatedAt: "2026-05-08T00:00:00.000Z",
     ...overrides,
   };
+}
+
+function themeEvidenceFiles() {
+  return [
+    sourceFrom({
+      path: "Projects/Research.md",
+      ctime: "2026-01-10T08:00:00.000Z",
+      mtime: "2026-03-01T08:00:00.000Z",
+      content: [
+        "---",
+        "topic: Local AI",
+        "tags: [theme/ai]",
+        "---",
+        "# Research",
+        "The local evidence loop connects annual review signals to [[Areas/AI Systems.md]].",
+        "How should this evidence package stay auditable?",
+      ].join("\n"),
+    }),
+    sourceFrom({
+      path: "Daily/2026-02-01.md",
+      ctime: "2026-02-01T08:00:00.000Z",
+      mtime: "2026-02-01T09:00:00.000Z",
+      content: [
+        "# Daily",
+        "The local evidence loop keeps appearing in [[Projects/Research.md]] and [[Areas/AI Systems.md]].",
+        "What changed after the review board?",
+        "#theme/ai",
+      ].join("\n"),
+    }),
+    sourceFrom({
+      path: "Projects/Legacy.md",
+      ctime: "2025-10-01T08:00:00.000Z",
+      mtime: "2026-02-20T09:00:00.000Z",
+      content:
+        "An old note resurfaced with the local evidence loop and now links to [[Projects/Research.md]].",
+    }),
+    sourceFrom({
+      path: "Areas/AI Systems.md",
+      ctime: "2026-01-05T08:00:00.000Z",
+      mtime: "2026-02-15T09:00:00.000Z",
+      content: "AI Systems collects cross-folder context for local review evidence.",
+    }),
+  ];
 }
 
 function noteFrom(input: {

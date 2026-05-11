@@ -55,7 +55,7 @@ Markdown annual report in the real smoke vault, but the Review Board does not ye
 close the MVP review/decision loop. `Annual Review: Open Review Board` currently
 shows a year preview/dashboard with scan metrics and report actions; smoke-vault
 DOM evidence did not expose candidate queue decision actions such as accept,
-ignore, rename, merge, highlight, or add action. Follow-up: DEC-57.
+ignore, rename, merge, or open source note. Follow-up: DEC-57.
 
 Evidence summary:
 
@@ -76,8 +76,8 @@ MVP loop assessment:
 | -------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Select year/range                | Pass   | Year modal/dashboard year control exist; smoke command generated the 2026 report using configured scope `2026月复盘`.                                             |
 | Scan vault                       | Pass   | Smoke rebuild reported 40 indexed files in the Review Board/dashboard DOM.                                                                                        |
-| Generate candidates              | Pass   | Generated report includes suggested review candidates with auditable reasons and evidence links.                                                                  |
-| Review Board review/decision     | Fail   | Review Board surface is still a preview/dashboard, not a candidate decision board. Gap filed as DEC-57.                                                           |
+| Generate Theme Hypotheses        | Pass   | Generated report includes evidence-backed Theme Hypotheses with auditable source-note links.                                                                      |
+| Review Board review/decision     | Fail   | Review Board surface is still a preview/dashboard, not a Theme Hypothesis decision board. Gap filed as DEC-57.                                                    |
 | Protected Markdown annual report | Pass   | Generated report is wrapped in `<!-- annual-review:start -->` / `<!-- annual-review:end -->` and writes assets under `Annual Reviews/2026 Annual Review Assets/`. |
 
 ## 手动安装验证

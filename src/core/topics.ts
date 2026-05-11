@@ -1,6 +1,13 @@
+import {
+  buildAnnualReviewSession,
+  reviewSessionContainsDate,
+  reviewSessionMonthKeys,
+} from "./reviewSession";
 import type {
+  AnnualReviewSettings,
   NoteStats,
   NoteTopicAssignment,
+  ReviewSession,
   TopicEvolutionData,
   TopicMonthlyBucket,
   TopicSource,
@@ -60,9 +67,13 @@ interface TopicAccumulator {
 
 export function buildTopicEvolution(
   notes: NoteStats[],
-  year: number,
+  sessionOrYear: ReviewSession | number,
 ): TopicEvolutionData {
-  const months = createMonthKeys(year);
+  const session =
+    typeof sessionOrYear === "number"
+      ? buildAnnualReviewSession(sessionOrYear, fallbackSettings())
+      : sessionOrYear;
+  const months = reviewSessionMonthKeys(session);
   const assignments = notes.map(assignTopics);
   const accumulators = new Map<string, TopicAccumulator>();
 
@@ -74,16 +85,16 @@ export function buildTopicEvolution(
 
     const createdTime = activityCreatedTime(note);
     const modifiedTime = activityModifiedTime(note);
-    const createdInYear = getYear(createdTime) === year;
-    const modifiedInYear = getYear(modifiedTime) === year;
+    const createdInSession = reviewSessionContainsDate(session, createdTime);
+    const modifiedInSession = reviewSessionContainsDate(session, modifiedTime);
     for (const topic of assignment.topics) {
       const accumulator = getAccumulator(accumulators, topic);
-      if (createdInYear) {
+      if (createdInSession) {
         accumulator.addedWords += note.wordCount;
         accumulator.newNotes.add(note.path);
         incrementMonth(accumulator.monthlyWords, monthKey(createdTime), note.wordCount);
       }
-      if (modifiedInYear) {
+      if (modifiedInSession) {
         accumulator.updatedNotes.add(note.path);
       }
       updateRepresentative(accumulator, note);
@@ -425,18 +436,27 @@ function sumMonths(words: Map<string, number>, months: string[]): number {
   return months.reduce((sum, month) => sum + (words.get(month) ?? 0), 0);
 }
 
-function createMonthKeys(year: number): string[] {
-  return Array.from(
-    { length: 12 },
-    (_, index) => `${year}-${String(index + 1).padStart(2, "0")}`,
-  );
-}
-
-function getYear(timestamp: number): number {
-  return new Date(timestamp).getFullYear();
-}
-
 function monthKey(timestamp: number): string {
   const date = new Date(timestamp);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function fallbackSettings(): AnnualReviewSettings {
+  return {
+    reportFolder: "Annual Reviews",
+    includeFolders: [],
+    excludeFolders: [],
+    excludePatterns: [],
+    includeTasks: true,
+    includeLinks: true,
+    includeFrontmatter: true,
+    includeHeadings: true,
+    privacyMode: "standard",
+    aiProvider: "none",
+    chatGptApiKey: "",
+    chatGptModel: "",
+    localCodexCommand: "",
+    reportLanguage: "en",
+    generatorLanguage: "en",
+  };
 }

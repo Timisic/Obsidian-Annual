@@ -7,7 +7,7 @@ import {
   type App,
 } from "obsidian";
 import { renderAiReportEnhancements } from "./core/ai";
-import { buildYearAggregate } from "./core/aggregate";
+import { buildReviewAggregate, buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS, COMMAND_NAMES, COMMAND_SURFACE } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
 import {
@@ -15,6 +15,13 @@ import {
   buildAnnualReviewChartPaths,
   renderAnnualReview,
 } from "./core/render";
+import {
+  buildAnnualReviewSession,
+  buildCustomReviewSession,
+  buildQuarterlyReviewSession,
+  resolveGenerateReviewSession,
+  reviewSessionPathLabel,
+} from "./core/reviewSession";
 import { buildReviewSession, reviewScopeHash } from "./core/reviewCandidates";
 import {
   applyReviewAction,
@@ -36,6 +43,7 @@ import type {
   AnnualReviewSettings,
   GenerateReportOptions,
   ResolvedAnnualReviewLanguage,
+  ReviewSession,
   SourceFile,
   VaultSnapshot,
   VaultSnapshotFile,
@@ -47,7 +55,7 @@ import {
 } from "./obsidian/dashboardView";
 import { getAnnualReviewDashboardLeaf } from "./obsidian/dashboardLeaf";
 import { readVaultMarkdownFiles } from "./obsidian/vaultFiles";
-import { AnnualReviewProgressModal } from "./obsidian/progressModal";
+import { AnnualReviewProgressIndicator } from "./obsidian/progressModal";
 import { writeAnnualReviewOutput } from "./obsidian/reportWriter";
 import { YearModal } from "./obsidian/yearModal";
 
@@ -90,13 +98,43 @@ export default class AnnualReviewPlugin extends Plugin {
     }
 
     if (this.settings.enableSmokeCommands) {
-      this.addCommand({
-        id: COMMAND_IDS.generateSmoke2026,
-        name: COMMAND_NAMES.generateSmoke2026,
-        callback: async () => {
-          await this.generateReport({ year: 2026, settings: this.settings });
+      const smokeSessions = [
+        {
+          id: COMMAND_IDS.generateSmoke2026,
+          name: COMMAND_NAMES.generateSmoke2026,
+          session: () => buildAnnualReviewSession(2026, this.settings),
         },
-      });
+        {
+          id: COMMAND_IDS.generateSmoke2026Q1,
+          name: COMMAND_NAMES.generateSmoke2026Q1,
+          session: () => buildQuarterlyReviewSession(2026, 1, this.settings),
+        },
+        {
+          id: COMMAND_IDS.generateSmoke2026Custom,
+          name: COMMAND_NAMES.generateSmoke2026Custom,
+          session: () =>
+            buildCustomReviewSession({
+              label: "2026 Jan 1-2 Review",
+              startDate: "2026-01-01",
+              endDate: "2026-01-02",
+              settings: this.settings,
+            }),
+        },
+      ] as const;
+
+      for (const smokeSession of smokeSessions) {
+        this.addCommand({
+          id: smokeSession.id,
+          name: smokeSession.name,
+          callback: async () => {
+            await this.generateReport({
+              year: 2026,
+              session: smokeSession.session(),
+              settings: this.settings,
+            });
+          },
+        });
+      }
     }
 
     this.addSettingTab(new AnnualReviewSettingTab(this.app, this));
@@ -206,26 +244,31 @@ export default class AnnualReviewPlugin extends Plugin {
   }
 
   private async generateReport(options: GenerateReportOptions): Promise<void> {
-    let progress: AnnualReviewProgressModal | null = null;
+    let progress: AnnualReviewProgressIndicator | null = null;
     try {
-      const { year, settings } = options;
+      const { settings } = options;
+      const session = resolveGenerateReviewSession(options);
       const text = this.text(settings.generatorLanguage);
-      new Notice(text.generating(year));
-      if (settings.aiProvider !== "none") {
-        progress = new AnnualReviewProgressModal(this.app, text.aiProgressTitle(year));
-        progress.open();
-        progress.update(text.progressReadingVault, 8);
-      }
+      new Notice(text.generating(session.label));
+      progress = new AnnualReviewProgressIndicator(
+        this.app,
+        text.progressTitle(session.label),
+      );
+      progress.open();
+      progress.update(text.progressReadingVault, 8);
       const files = await this.getIndexedFiles(settings);
       const currentSnapshot = createVaultSnapshot(files, settings);
-      const snapshotFile = await this.readVaultSnapshotFile();
+      const snapshotFile = await this.readVaultSnapshotFile(session);
       const snapshotComparison = selectSnapshotComparison(
         snapshotFile.snapshots,
         currentSnapshot,
       );
-      await this.writeVaultSnapshotFile(appendSnapshot(snapshotFile, currentSnapshot));
+      await this.writeVaultSnapshotFile(
+        appendSnapshot(snapshotFile, currentSnapshot),
+        session,
+      );
       progress?.update(text.progressAiSummary, 35);
-      const aggregate = buildYearAggregate(files, year, settings, {
+      const aggregate = buildReviewAggregate(files, session, settings, {
         snapshotComparison,
       });
       const reviewSession = await this.refreshReviewSession(aggregate);
@@ -238,7 +281,10 @@ export default class AnnualReviewPlugin extends Plugin {
         settings.reportLanguage,
         getLanguage(),
       );
-      const chartPaths = buildAnnualReviewChartPaths(settings.reportFolder, year);
+      const chartPaths = buildAnnualReviewChartPaths(
+        settings.reportFolder,
+        session.label,
+      );
       progress?.update(text.progressRendering, 78);
       const chartAssets = buildAnnualReviewChartAssets(aggregate, {
         language: reportLanguage,
@@ -255,7 +301,7 @@ export default class AnnualReviewPlugin extends Plugin {
       const report = await writeAnnualReviewOutput(
         this.app,
         settings.reportFolder,
-        year,
+        session.label,
         markdown,
         chartAssets,
       );
@@ -299,7 +345,11 @@ export default class AnnualReviewPlugin extends Plugin {
     aggregate: YearAggregate,
   ): Promise<ReviewSessionState> {
     const key = this.reviewSessionKey(aggregate);
-    const next = buildReviewSession(aggregate, this.reviewSessions[key]);
+    const legacyKey = `${aggregate.year}:${reviewScopeHash(aggregate)}`;
+    const next = buildReviewSession(
+      aggregate,
+      this.reviewSessions[key] ?? this.reviewSessions[legacyKey],
+    );
     this.reviewSessions[key] = next;
     await this.savePluginData();
     return next;
@@ -307,9 +357,9 @@ export default class AnnualReviewPlugin extends Plugin {
 
   private reviewSessionKey(input: YearAggregate | ReviewSessionState): string {
     if ("scopeHash" in input) {
-      return `${input.year}:${input.scopeHash}`;
+      return `${input.session?.id ?? input.year}:${input.scopeHash}`;
     }
-    return `${input.year}:${reviewScopeHash(input)}`;
+    return `${input.session.id}:${reviewScopeHash(input)}`;
   }
 
   private async savePluginData(): Promise<void> {
@@ -319,8 +369,10 @@ export default class AnnualReviewPlugin extends Plugin {
     } satisfies AnnualReviewPluginData);
   }
 
-  private async readVaultSnapshotFile(): Promise<VaultSnapshotFile> {
-    const path = this.snapshotDataPath();
+  private async readVaultSnapshotFile(
+    session?: ReviewSession,
+  ): Promise<VaultSnapshotFile> {
+    const path = this.snapshotDataPath(session);
     const exists = await this.app.vault.adapter.exists(path);
     if (!exists) {
       return emptySnapshotFile();
@@ -336,17 +388,23 @@ export default class AnnualReviewPlugin extends Plugin {
     }
   }
 
-  private async writeVaultSnapshotFile(snapshotFile: VaultSnapshotFile): Promise<void> {
-    const path = this.snapshotDataPath();
+  private async writeVaultSnapshotFile(
+    snapshotFile: VaultSnapshotFile,
+    session?: ReviewSession,
+  ): Promise<void> {
+    const path = this.snapshotDataPath(session);
     await ensureAdapterFolder(this.app, path.split("/").slice(0, -1).join("/"));
     await this.app.vault.adapter.write(path, serializeSnapshotFile(snapshotFile));
   }
 
-  private snapshotDataPath(): string {
+  private snapshotDataPath(session?: ReviewSession): string {
     const folder =
       this.manifest.dir ||
       `${this.app.vault.configDir}/plugins/${this.manifest.id || "annual-review"}`;
-    return normalizeDataPath(`${folder}/${SNAPSHOT_FILE_NAME}`);
+    const fileName = session
+      ? `${reviewSessionPathLabel(session.label)} Snapshots.json`
+      : SNAPSHOT_FILE_NAME;
+    return normalizeDataPath(`${folder}/${fileName}`);
   }
 
   private async openDashboard(): Promise<void> {

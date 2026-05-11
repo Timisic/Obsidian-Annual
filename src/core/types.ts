@@ -1,5 +1,6 @@
 export type AnnualReviewLanguage = "system" | "zh" | "en";
 export type ResolvedAnnualReviewLanguage = Exclude<AnnualReviewLanguage, "system">;
+export type ReviewPreset = "annual" | "quarterly" | "monthly" | "custom";
 
 export interface AnnualReviewSettings {
   reportFolder: string;
@@ -20,8 +21,26 @@ export interface AnnualReviewSettings {
   enableSmokeCommands?: boolean;
 }
 
+export interface ReviewSession {
+  id: string;
+  preset: ReviewPreset;
+  label: string;
+  startDate: string;
+  endDate: string;
+  includeFolders: string[];
+  excludeFolders: string[];
+  excludePatterns: string[];
+  aiEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReportScope {
   year: number;
+  preset: ReviewPreset;
+  label: string;
+  startDate: string;
+  endDate: string;
   reportFolder: string;
   includeFolders: string[];
   excludeFolders: string[];
@@ -256,6 +275,7 @@ export interface SnapshotComparison {
 
 export interface YearAggregate {
   year: number;
+  session: ReviewSession;
   generatedAt: string;
   scope: ReportScope;
   snapshotComparison: SnapshotComparison;
@@ -305,6 +325,41 @@ export interface AiReportEnhancements {
   nextActions: string[];
 }
 
+export type ThemeHypothesisSource = "local" | "ai" | "mixed";
+
+export interface ThemeHypothesis {
+  id: string;
+  title: string;
+  summary: string;
+  evidenceNoteIds: string[];
+  connectionExplanation: string;
+  uncertainty?: string;
+  source: ThemeHypothesisSource;
+}
+
+export interface ThemeEvidenceNote {
+  id: string;
+  path: string;
+  title: string;
+  dateSignals: string[];
+  excerpt: string;
+  links: string[];
+  backlinks: string[];
+  commonLinks: string[];
+  frontmatterSignals: string[];
+  repeatedPhrases: string[];
+  questionSentences: string[];
+  entities: string[];
+  crossFolderLinks: string[];
+  weakSignals: string[];
+  whyIncluded: string;
+}
+
+export interface ThemeEvidencePackage {
+  reviewRange: string;
+  evidenceNotes: ThemeEvidenceNote[];
+}
+
 export interface SourceFile {
   path: string;
   ctime: number;
@@ -330,6 +385,7 @@ export interface SourceFile {
 export type LinkCounts = Record<string, number>;
 
 export interface GenerateReportOptions {
-  year: number;
+  year?: number;
+  session?: ReviewSession;
   settings: AnnualReviewSettings;
 }
