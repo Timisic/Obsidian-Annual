@@ -1,73 +1,13 @@
 {
   "top_topics": [
     {
-      "name": "[[Clippings]]",
-      "added_words": 13905,
-      "new_notes": 6,
-      "updated_notes": 6,
-      "representative_notes": [
-        "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
-        "Daily/Clippings/Agent知识库/知识可以生成，意图只能发现.md"
-      ]
-    },
-    {
-      "name": "AI",
-      "added_words": 11746,
-      "new_notes": 10,
-      "updated_notes": 11,
-      "representative_notes": [
-        "Daily/Clippings/Mike Krieger谈AI产品-构建更容易，判断更难.md",
-        "Daily/Clippings/Karpathy访谈—Don't Outsource Understanding.md"
-      ]
-    },
-    {
       "name": "Future",
-      "added_words": 7430,
-      "new_notes": 8,
-      "updated_notes": 9,
+      "added_words": 4619,
+      "new_notes": 5,
+      "updated_notes": 5,
       "representative_notes": [
-        "Daily/未来与职业/兰小欢：职业选择中的思维陷阱.md",
-        "Daily/未来与职业/叉院转博.md"
-      ]
-    },
-    {
-      "name": "finance",
-      "added_words": 5508,
-      "new_notes": 7,
-      "updated_notes": 8,
-      "representative_notes": [
-        "Daily/理财复盘/黄金交易复盘/黄金外汇战法.md",
-        "Daily/理财复盘/黄金交易复盘/交易也是修行.md"
-      ]
-    },
-    {
-      "name": "clipping",
-      "added_words": 5287,
-      "new_notes": 3,
-      "updated_notes": 3,
-      "representative_notes": [
-        "Daily/Clippings/Agent知识库/知识可以生成，意图只能发现.md",
-        "Daily/Clippings/对科研超过四小时的警惕.md"
-      ]
-    },
-    {
-      "name": "agents",
-      "added_words": 4866,
-      "new_notes": 2,
-      "updated_notes": 2,
-      "representative_notes": [
-        "Daily/Clippings/Mike Krieger谈AI产品-构建更容易，判断更难.md",
-        "Daily/Clippings/Karpathy访谈—Don't Outsource Understanding.md"
-      ]
-    },
-    {
-      "name": "knowledge management",
-      "added_words": 3924,
-      "new_notes": 2,
-      "updated_notes": 2,
-      "representative_notes": [
-        "Daily/Clippings/Agent知识库/知识可以生成，意图只能发现.md",
-        "Daily/Clippings/Agent知识库/LLM维护知识库，但要有界限.md"
+        "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+        "2026月复盘/2月/2026-02-22 AI越来越快.md"
       ]
     },
     {
@@ -76,71 +16,121 @@
       "new_notes": 3,
       "updated_notes": 3,
       "representative_notes": [
-        "Daily/2026月复盘/4月/2026-04-18 玩乐和未来.md",
-        "Daily/2026月复盘/4月/2026-04-10 和馨玉玩了一天.md"
+        "2026月复盘/4月/2026-04-18 玩乐和未来.md",
+        "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md"
+      ]
+    },
+    {
+      "name": "AI",
+      "added_words": 3007,
+      "new_notes": 4,
+      "updated_notes": 4,
+      "representative_notes": [
+        "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+        "2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md"
+      ]
+    },
+    {
+      "name": "finance",
+      "added_words": 2766,
+      "new_notes": 4,
+      "updated_notes": 4,
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
+        "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md"
+      ]
+    },
+    {
+      "name": "夜半散步",
+      "added_words": 1668,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/4月/2026-04-24 夜半散步.md"
+      ]
+    },
+    {
+      "name": "环境促进想法转变",
+      "added_words": 1248,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-05 环境促进想法转变.md"
+      ]
+    },
+    {
+      "name": "Important",
+      "added_words": 1222,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-22 AI越来越快.md"
+      ]
+    },
+    {
+      "name": "探索期有充足额度才有更多可能",
+      "added_words": 1034,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md"
       ]
     }
   ],
   "emerging_topics": [
-    "[[Clippings]]",
-    "clipping",
-    "agents"
+    "ccpl",
+    "夜半散步",
+    "探索期有充足额度才有更多可能"
   ],
   "declining_topics": [
-    "decision",
-    "短期挖矿交易复盘",
-    "环境促进想法转变"
+    "环境促进想法转变",
+    "Important",
+    "lxy"
   ],
   "monthly_topic_words": [
     {
       "month": "2026-01",
       "topics": {
-        "finance": 313,
-        "Future": 2209,
-        "AI": 627,
-        "其他": 6097
+        "其他": 2520
       }
     },
     {
       "month": "2026-02",
       "topics": {
-        "finance": 3914,
         "Future": 1222,
-        "AI": 2454,
-        "其他": 7851
+        "finance": 1485,
+        "AI": 340,
+        "Important": 1222,
+        "环境促进想法转变": 1248,
+        "其他": 1153
       }
     },
     {
       "month": "2026-03",
       "topics": {
-        "finance": 880,
         "Future": 1158,
-        "AI": 3440,
-        "agents": 2598,
+        "finance": 880,
         "ccpl": 441,
-        "其他": 5801
+        "AI": 842,
+        "其他": 3124
       }
     },
     {
       "month": "2026-04",
       "topics": {
+        "夜半散步": 1668,
+        "Future": 2239,
         "finance": 401,
-        "Future": 2841,
-        "[[Clippings]]": 6911,
-        "clipping": 5287,
-        "AI": 2957,
-        "knowledge management": 3924,
+        "探索期有充足额度才有更多可能": 1034,
         "ccpl": 2586,
-        "其他": 13582
+        "AI": 1825,
+        "其他": 5816
       }
     },
     {
       "month": "2026-05",
       "topics": {
-        "[[Clippings]]": 6994,
-        "AI": 2268,
-        "agents": 2268,
-        "其他": 1922
+        "其他": 1343
       }
     },
     {
@@ -174,6 +164,28 @@
   ],
   "note_topics": [
     {
+      "path": "Review Fixtures/2026-01-02.md",
+      "topics": [
+        "journal"
+      ],
+      "sources": {
+        "journal": "tag"
+      }
+    },
+    {
+      "path": "Review Fixtures/2026-01-01.md",
+      "topics": [
+        "journal",
+        "writing",
+        "中文"
+      ],
+      "sources": {
+        "journal": "tag",
+        "writing": "tag",
+        "中文": "tag"
+      }
+    },
+    {
       "path": "Projects/Research.md",
       "topics": [
         "project",
@@ -196,388 +208,7 @@
       }
     },
     {
-      "path": "Daily/理财复盘/GEMINI股市交易Prompt.md",
-      "topics": [
-        "GEMINI股市交易Prompt"
-      ],
-      "sources": {
-        "GEMINI股市交易Prompt": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/黄金外汇战法.md",
-      "topics": [
-        "finance"
-      ],
-      "sources": {
-        "finance": "tag"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-05-06 重新感受了金钱带来的情绪波动.md",
-      "topics": [
-        "重新感受了金钱带来的情绪波动"
-      ],
-      "sources": {
-        "重新感受了金钱带来的情绪波动": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/张峻齐交易课.md",
-      "topics": [
-        "2 B 战法"
-      ],
-      "sources": {
-        "2 B 战法": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-03-10.md",
-      "topics": [
-        "2026 03 10"
-      ],
-      "sources": {
-        "2026 03 10": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/交易也是修行.md",
-      "topics": [
-        "finance"
-      ],
-      "sources": {
-        "finance": "tag"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-01-27 总是高位挂住无处抄底.md",
-      "topics": [
-        "finance"
-      ],
-      "sources": {
-        "finance": "tag"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-02-23 心有余悸.md",
-      "topics": [
-        "finance"
-      ],
-      "sources": {
-        "finance": "tag"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-05-02 近一月XAU有感.md",
-      "topics": [
-        "近一月XAU有感"
-      ],
-      "sources": {
-        "近一月XAU有感": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-01-16 小型瀑布.md",
-      "topics": [
-        "短期挖矿交易复盘"
-      ],
-      "sources": {
-        "短期挖矿交易复盘": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-01-13.md",
-      "topics": [
-        "短期挖矿交易复盘"
-      ],
-      "sources": {
-        "短期挖矿交易复盘": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/理财复盘/黄金交易复盘/2026-01-12.md",
-      "topics": [
-        "短期挖矿交易复盘"
-      ],
-      "sources": {
-        "短期挖矿交易复盘": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/未来与职业/转博项目准备.md",
-      "topics": [
-        "[[叉院转博]]",
-        "[[转博研究领域调研]]"
-      ],
-      "sources": {
-        "[[叉院转博]]": "frontmatter",
-        "[[转博研究领域调研]]": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/未来与职业/转博研究领域调研.md",
-      "topics": [
-        "[[叉院转博]]",
-        "Future"
-      ],
-      "sources": {
-        "[[叉院转博]]": "frontmatter",
-        "Future": "tag"
-      }
-    },
-    {
-      "path": "Daily/未来与职业/兰小欢：职业选择中的思维陷阱.md",
-      "topics": [
-        "Future"
-      ],
-      "sources": {
-        "Future": "tag"
-      }
-    },
-    {
-      "path": "Daily/未来与职业/叉院转博.md",
-      "topics": [
-        "Future"
-      ],
-      "sources": {
-        "Future": "tag"
-      }
-    },
-    {
-      "path": "Daily/未来与职业/自我效能高才有持续的动力.md",
-      "topics": [
-        "Future"
-      ],
-      "sources": {
-        "Future": "tag"
-      }
-    },
-    {
-      "path": "Daily/Clippings/没有骗不到的人，只有不合适的骗局.md",
-      "topics": [
-        "scam",
-        "psychology",
-        "desire"
-      ],
-      "sources": {
-        "scam": "frontmatter",
-        "psychology": "frontmatter",
-        "desire": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/媚上者必欺下，自卑者必自傲.md",
-      "topics": [
-        "[[Clippings]]",
-        "clipping"
-      ],
-      "sources": {
-        "[[Clippings]]": "frontmatter",
-        "clipping": "tag"
-      }
-    },
-    {
-      "path": "Daily/Clippings/大佬更愿意帮助哪种年轻人？.md",
-      "topics": [
-        "networking",
-        "career",
-        "AI"
-      ],
-      "sources": {
-        "networking": "frontmatter",
-        "career": "frontmatter",
-        "AI": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/带着玩的心态学，有松弛感才可持续.md",
-      "topics": [
-        "AI",
-        "content creation",
-        "podcast"
-      ],
-      "sources": {
-        "AI": "frontmatter",
-        "content creation": "frontmatter",
-        "podcast": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/对科研超过四小时的警惕.md",
-      "topics": [
-        "career",
-        "[[Clippings]]",
-        "clipping"
-      ],
-      "sources": {
-        "career": "frontmatter",
-        "[[Clippings]]": "frontmatter",
-        "clipping": "tag"
-      }
-    },
-    {
-      "path": "Daily/Clippings/Karpathy访谈—Don't Outsource Understanding.md",
-      "topics": [
-        "AI",
-        "agents",
-        "[[Clippings]]"
-      ],
-      "sources": {
-        "AI": "frontmatter",
-        "agents": "frontmatter",
-        "[[Clippings]]": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/AI时代需要的是决策、眼界.md",
-      "topics": [
-        "AI",
-        "research",
-        "decision"
-      ],
-      "sources": {
-        "AI": "frontmatter",
-        "research": "frontmatter",
-        "decision": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/How to Win in 2026：The Best Thinking from The Knowledge Project.md",
-      "topics": [
-        "reflection",
-        "decision",
-        "AI"
-      ],
-      "sources": {
-        "reflection": "frontmatter",
-        "decision": "frontmatter",
-        "AI": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了.md",
-      "topics": [
-        "[[Clippings]]"
-      ],
-      "sources": {
-        "[[Clippings]]": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/Mike Krieger谈AI产品-构建更容易，判断更难.md",
-      "topics": [
-        "AI",
-        "product",
-        "agents"
-      ],
-      "sources": {
-        "AI": "frontmatter",
-        "product": "frontmatter",
-        "agents": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/Agent知识库/LLM维护知识库，但要有界限.md",
-      "topics": [
-        "AI",
-        "knowledge management",
-        "tools"
-      ],
-      "sources": {
-        "AI": "frontmatter",
-        "knowledge management": "frontmatter",
-        "tools": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/Clippings/Agent知识库/知识可以生成，意图只能发现.md",
-      "topics": [
-        "knowledge management",
-        "[[Clippings]]",
-        "clipping"
-      ],
-      "sources": {
-        "knowledge management": "frontmatter",
-        "[[Clippings]]": "frontmatter",
-        "clipping": "tag"
-      }
-    },
-    {
-      "path": "Daily/Clippings/Agent知识库/Don't Delegate Understanding.md",
-      "topics": [
-        "[[Clippings]]"
-      ],
-      "sources": {
-        "[[Clippings]]": "frontmatter"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-25 关系中的服软.md",
-      "topics": [
-        "lxy"
-      ],
-      "sources": {
-        "lxy": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-22 AI越来越快.md",
-      "topics": [
-        "Future",
-        "Important"
-      ],
-      "sources": {
-        "Future": "tag",
-        "Important": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
-      "topics": [
-        "finance"
-      ],
-      "sources": {
-        "finance": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-25 AI时代的基建.md",
-      "topics": [
-        "AI"
-      ],
-      "sources": {
-        "AI": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-10 人的行为容易受他人影响.md",
-      "topics": [
-        "人的行为容易受他人影响"
-      ],
-      "sources": {
-        "人的行为容易受他人影响": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-07 刷完美女容易空虚.md",
-      "topics": [
-        "刷完美女容易空虚"
-      ],
-      "sources": {
-        "刷完美女容易空虚": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/2月/2026-02-05 环境促进想法转变.md",
-      "topics": [
-        "环境促进想法转变"
-      ],
-      "sources": {
-        "环境促进想法转变": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/5月/2026-05-05 封号被卡脖子了.md",
+      "path": "2026月复盘/5月/2026-05-05 封号被卡脖子了.md",
       "topics": [
         "封号被卡脖子了"
       ],
@@ -586,7 +217,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/5月/2026-05-03 AI混沌感暴露了什么.md",
+      "path": "2026月复盘/5月/2026-05-03 AI混沌感暴露了什么.md",
       "topics": [
         "AI混沌感暴露了什么"
       ],
@@ -595,7 +226,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
+      "path": "2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
       "topics": [
         "表达不清本质是思考不清"
       ],
@@ -604,7 +235,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md",
+      "path": "2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md",
       "topics": [
         "缓了一天才能收拾情绪"
       ],
@@ -613,52 +244,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-30 课题组的局限.md",
-      "topics": [
-        "Future"
-      ],
-      "sources": {
-        "Future": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-30 叉院终是二次选拔了，但我别有一番滋味.md",
-      "topics": [
-        "叉院终是二次选拔了，但我别有一番滋味"
-      ],
-      "sources": {
-        "叉院终是二次选拔了，但我别有一番滋味": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-26 业界实习.md",
-      "topics": [
-        "业界实习"
-      ],
-      "sources": {
-        "业界实习": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-19 科研启动时.md",
-      "topics": [
-        "科研启动时"
-      ],
-      "sources": {
-        "科研启动时": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-22 精准的表达很有感染力.md",
-      "topics": [
-        "精准的表达很有感染力"
-      ],
-      "sources": {
-        "精准的表达很有感染力": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-24 夜半散步.md",
+      "path": "2026月复盘/4月/2026-04-24 夜半散步.md",
       "topics": [
         "夜半散步"
       ],
@@ -667,52 +253,34 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-15 脱裤子放屁的活.md",
+      "path": "2026月复盘/4月/2026-04-26 业界实习.md",
       "topics": [
-        "脱裤子放屁的活"
+        "业界实习"
       ],
       "sources": {
-        "脱裤子放屁的活": "ai-cluster"
+        "业界实习": "ai-cluster"
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-18 玩乐和未来.md",
+      "path": "2026月复盘/4月/2026-04-30 课题组的局限.md",
       "topics": [
-        "ccpl"
+        "Future"
       ],
       "sources": {
-        "ccpl": "tag"
+        "Future": "tag"
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+      "path": "2026月复盘/4月/2026-04-30 叉院终是二次选拔了，但我别有一番滋味.md",
       "topics": [
-        "探索期有充足额度才有更多可能"
+        "叉院终是二次选拔了，但我别有一番滋味"
       ],
       "sources": {
-        "探索期有充足额度才有更多可能": "ai-cluster"
+        "叉院终是二次选拔了，但我别有一番滋味": "ai-cluster"
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-11 幸福的烦恼，交往的边界.md",
-      "topics": [
-        "亲密关系"
-      ],
-      "sources": {
-        "亲密关系": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-11 有钱之后.md",
-      "topics": [
-        "有钱之后"
-      ],
-      "sources": {
-        "有钱之后": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/4月/2026-04-14 偷鸡流告一段落.md",
+      "path": "2026月复盘/4月/2026-04-14 偷鸡流告一段落.md",
       "topics": [
         "finance"
       ],
@@ -721,7 +289,43 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-10 和馨玉玩了一天.md",
+      "path": "2026月复盘/4月/2026-04-22 精准的表达很有感染力.md",
+      "topics": [
+        "精准的表达很有感染力"
+      ],
+      "sources": {
+        "精准的表达很有感染力": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-15 脱裤子放屁的活.md",
+      "topics": [
+        "脱裤子放屁的活"
+      ],
+      "sources": {
+        "脱裤子放屁的活": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-19 科研启动时.md",
+      "topics": [
+        "科研启动时"
+      ],
+      "sources": {
+        "科研启动时": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+      "topics": [
+        "探索期有充足额度才有更多可能"
+      ],
+      "sources": {
+        "探索期有充足额度才有更多可能": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-18 玩乐和未来.md",
       "topics": [
         "ccpl"
       ],
@@ -730,7 +334,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-08 心情有点不错，收钱有情感.md",
+      "path": "2026月复盘/4月/2026-04-08 心情有点不错，收钱有情感.md",
       "topics": [
         "心情有点不错，收钱有情感"
       ],
@@ -739,16 +343,34 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-06 夹杂兴奋疲惫与焦虑.md",
+      "path": "2026月复盘/4月/2026-04-11 幸福的烦恼，交往的边界.md",
       "topics": [
-        "夹杂兴奋疲惫与焦虑"
+        "亲密关系"
       ],
       "sources": {
-        "夹杂兴奋疲惫与焦虑": "ai-cluster"
+        "亲密关系": "tag"
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-07 不正常的焦虑态.md",
+      "path": "2026月复盘/4月/2026-04-11 有钱之后.md",
+      "topics": [
+        "有钱之后"
+      ],
+      "sources": {
+        "有钱之后": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md",
+      "topics": [
+        "ccpl"
+      ],
+      "sources": {
+        "ccpl": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-07 不正常的焦虑态.md",
       "topics": [
         "不正常的焦虑态"
       ],
@@ -757,7 +379,16 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+      "path": "2026月复盘/4月/2026-04-06 夹杂兴奋疲惫与焦虑.md",
+      "topics": [
+        "夹杂兴奋疲惫与焦虑"
+      ],
+      "sources": {
+        "夹杂兴奋疲惫与焦虑": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
       "topics": [
         "AI",
         "Future"
@@ -768,7 +399,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-29 怀柔区比赛.md",
+      "path": "2026月复盘/3月/2026-03-29 怀柔区比赛.md",
       "topics": [
         "怀柔区比赛"
       ],
@@ -777,7 +408,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-26 或许要步入科研期.md",
+      "path": "2026月复盘/3月/2026-03-26 或许要步入科研期.md",
       "topics": [
         "或许要步入科研期"
       ],
@@ -786,16 +417,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-16 兴奋但是支棱不起来.md",
-      "topics": [
-        "兴奋但是支棱不起来"
-      ],
-      "sources": {
-        "兴奋但是支棱不起来": "ai-cluster"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/3月/2026-03-16 OpenClaw的两次分享.md",
+      "path": "2026月复盘/3月/2026-03-16 OpenClaw的两次分享.md",
       "topics": [
         "OpenClaw的两次分享"
       ],
@@ -804,16 +426,16 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-23 组内学生氛围很不错.md",
+      "path": "2026月复盘/3月/2026-03-16 兴奋但是支棱不起来.md",
       "topics": [
-        "ccpl"
+        "兴奋但是支棱不起来"
       ],
       "sources": {
-        "ccpl": "tag"
+        "兴奋但是支棱不起来": "ai-cluster"
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-23 亏得有点影响现实.md",
+      "path": "2026月复盘/3月/2026-03-23 亏得有点影响现实.md",
       "topics": [
         "finance"
       ],
@@ -822,7 +444,36 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md",
+      "path": "2026月复盘/3月/2026-03-23 组内学生氛围很不错.md",
+      "topics": [
+        "ccpl"
+      ],
+      "sources": {
+        "ccpl": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-04 ALL-in-AI.md",
+      "topics": [
+        "AI",
+        "Future"
+      ],
+      "sources": {
+        "AI": "tag",
+        "Future": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+      "topics": [
+        "finance"
+      ],
+      "sources": {
+        "finance": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md",
       "topics": [
         "AI"
       ],
@@ -831,7 +482,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-01 Linya不去北京了.md",
+      "path": "2026月复盘/3月/2026-03-01 Linya不去北京了.md",
       "topics": [
         "Future",
         "Linya"
@@ -842,18 +493,7 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/3月/2026-03-04 ALL-in-AI.md",
-      "topics": [
-        "AI",
-        "Future"
-      ],
-      "sources": {
-        "AI": "tag",
-        "Future": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+      "path": "2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
       "topics": [
         "finance"
       ],
@@ -862,34 +502,63 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/1月/2026-01-15 不清楚的需求及标准.md",
+      "path": "2026月复盘/2月/2026-02-25 关系中的服软.md",
       "topics": [
-        "不清楚的需求及标准"
+        "lxy"
       ],
       "sources": {
-        "不清楚的需求及标准": "ai-cluster"
+        "lxy": "tag"
       }
     },
     {
-      "path": "Daily/2026月复盘/1月/2026-01-19 边报告变学习.md",
+      "path": "2026月复盘/2月/2026-02-07 刷完美女容易空虚.md",
       "topics": [
-        "黄金交易有点费时间"
+        "刷完美女容易空虚"
       ],
       "sources": {
-        "黄金交易有点费时间": "ai-cluster"
+        "刷完美女容易空虚": "ai-cluster"
       }
     },
     {
-      "path": "Daily/2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
+      "path": "2026月复盘/2月/2026-02-25 AI时代的基建.md",
       "topics": [
-        "论个人睡眠与精神状态"
+        "AI"
       ],
       "sources": {
-        "论个人睡眠与精神状态": "ai-cluster"
+        "AI": "tag"
       }
     },
     {
-      "path": "Daily/2026月复盘/1月/2026-01-07 近期稳中向好.md",
+      "path": "2026月复盘/2月/2026-02-22 AI越来越快.md",
+      "topics": [
+        "Future",
+        "Important"
+      ],
+      "sources": {
+        "Future": "tag",
+        "Important": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-10 人的行为容易受他人影响.md",
+      "topics": [
+        "人的行为容易受他人影响"
+      ],
+      "sources": {
+        "人的行为容易受他人影响": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-05 环境促进想法转变.md",
+      "topics": [
+        "环境促进想法转变"
+      ],
+      "sources": {
+        "环境促进想法转变": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-07 近期稳中向好.md",
       "topics": [
         "近期稳中向好"
       ],
@@ -898,7 +567,25 @@
       }
     },
     {
-      "path": "Daily/2026月复盘/1月/2026-01-13 诚实说这周放纵.md",
+      "path": "2026月复盘/1月/2026-01-19 边报告变学习.md",
+      "topics": [
+        "黄金交易有点费时间"
+      ],
+      "sources": {
+        "黄金交易有点费时间": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-15 不清楚的需求及标准.md",
+      "topics": [
+        "不清楚的需求及标准"
+      ],
+      "sources": {
+        "不清楚的需求及标准": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-13 诚实说这周放纵.md",
       "topics": [
         "诚实说这周放纵"
       ],
@@ -907,25 +594,12 @@
       }
     },
     {
-      "path": "Daily/2026-01-02.md",
+      "path": "2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
       "topics": [
-        "journal"
+        "论个人睡眠与精神状态"
       ],
       "sources": {
-        "journal": "tag"
-      }
-    },
-    {
-      "path": "Daily/2026-01-01.md",
-      "topics": [
-        "journal",
-        "writing",
-        "中文"
-      ],
-      "sources": {
-        "journal": "tag",
-        "writing": "tag",
-        "中文": "tag"
+        "论个人睡眠与精神状态": "ai-cluster"
       }
     }
   ]
