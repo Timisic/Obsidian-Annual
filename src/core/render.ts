@@ -101,19 +101,21 @@ export function buildAnnualReviewChartAssets(
     });
   }
 
-  if (aggregate.topicEvolution.topTopics.length > 0 && paths["topic-evolution"]) {
+  const topicEvolution = reviewSessionTopicEvolution(options.reviewSession) ?? aggregate.topicEvolution;
+
+  if (topicEvolution.topTopics.length > 0 && paths["topic-evolution"]) {
     assets.push({
       kind: "topic-evolution",
       path: paths["topic-evolution"],
-      content: renderTopicEvolutionSvg(aggregate.topicEvolution, language),
+      content: renderTopicEvolutionSvg(topicEvolution, language),
     });
   }
 
-  if (aggregate.topicEvolution.topTopics.length > 0 && paths["topic-evolution-data"]) {
+  if (topicEvolution.topTopics.length > 0 && paths["topic-evolution-data"]) {
     assets.push({
       kind: "topic-evolution-data",
       path: paths["topic-evolution-data"],
-      content: `${JSON.stringify(toTopicEvolutionJson(aggregate.topicEvolution), null, 2)}\n`,
+      content: `${JSON.stringify(toTopicEvolutionJson(topicEvolution), null, 2)}\n`,
     });
   }
 
@@ -524,7 +526,7 @@ export function renderAnnualReview(
     "",
     `## ${language === "zh" ? "活动证据" : "Activity Evidence"}`,
     "",
-    renderWritingGrowth(aggregate, language, options.chartPaths),
+    renderWritingGrowth(aggregate, language, options.chartPaths, options.reviewSession),
     "",
     `## ${text.topHighValueNotes}`,
     "",
@@ -637,10 +639,12 @@ function renderWritingGrowth(
   aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
   chartPaths?: Partial<Record<AnnualReviewChartKind, string>>,
+  reviewSession?: ReviewSessionState,
 ): string {
   const text = REPORT_TEXT[language];
   const days = activePeriodDays(aggregate.dayBuckets);
   const months = activePeriodMonths(aggregate.monthBuckets);
+  const topicEvolution = reviewSessionTopicEvolution(reviewSession) ?? aggregate.topicEvolution;
   return [
     `| ${text.metric} | ${text.value} |`,
     "| --- | ---: |",
@@ -666,7 +670,7 @@ function renderWritingGrowth(
     `### ${text.growthFeedback}`,
     "",
     ...renderGrowthFeedback(aggregate, language),
-    ...(aggregate.topicEvolution.topTopics.length > 0
+    ...(topicEvolution.topTopics.length > 0
       ? [
           "",
           `### ${language === "zh" ? "主题信号图" : "Theme Signal Chart"}`,
@@ -676,7 +680,7 @@ function renderWritingGrowth(
                 chartPaths["topic-evolution"],
                 text.topicEvolutionChart,
               )
-            : renderTopicEvolutionSvg(aggregate.topicEvolution, language),
+            : renderTopicEvolutionSvg(topicEvolution, language),
         ]
       : []),
   ].join("\n");
@@ -723,6 +727,8 @@ function renderMetadata(
     `review_label: ${JSON.stringify(aggregate.session.label)}`,
     `start_date: ${JSON.stringify(aggregate.session.startDate)}`,
     `end_date: ${JSON.stringify(aggregate.session.endDate)}`,
+    "cssclasses:",
+    "  - p-indent",
     `growth_data_source: ${JSON.stringify(growthDataSourceLabel(aggregate, language))}`,
     `activity_date_sources: ${JSON.stringify(activityDateSourceSummary(aggregate, language))}`,
     `included_scope: ${JSON.stringify(formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles))}`,
@@ -1282,6 +1288,114 @@ function renderTopicEvolutionSvg(
   ].join("\n");
 }
 
+function reviewSessionTopicEvolution(
+  reviewSession?: ReviewSessionState,
+): TopicEvolutionData | null {
+  if (!reviewSession) {
+    return null;
+  }
+  const semanticCandidates =
+    reportIncludedCandidates(reviewSession).filter(
+      (candidate) => candidate.source !== "local",
+    );
+  if (semanticCandidates.length === 0) {
+    return emptyTopicEvolution();
+  }
+  const fallbackMonth =
+    reviewSession.session?.startDate.slice(0, 7) ??
+    `${reviewSession.year ?? new Date().getFullYear()}-01`;
+  const candidatePaths = new Map(
+    semanticCandidates.map((candidate) => [
+      candidate.id,
+      traceableReviewCandidatePaths(candidate),
+    ]),
+  );
+  const monthKeys = [
+    ...new Set(
+      semanticCandidates.flatMap((candidate) =>
+        (candidatePaths.get(candidate.id) ?? []).map((path) =>
+          reviewCandidatePathMonth(path, fallbackMonth),
+        ),
+      ),
+    ),
+  ].sort();
+  const months = monthKeys.length > 0 ? monthKeys : [fallbackMonth];
+  const topTopics = semanticCandidates.slice(0, 8).map((candidate) => ({
+    name: reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+    addedWords:
+      Math.max(1, candidatePaths.get(candidate.id)?.length ?? candidate.evidence.length) *
+      100,
+    newNotes: candidatePaths.get(candidate.id)?.length ?? 0,
+    updatedNotes: candidatePaths.get(candidate.id)?.length ?? 0,
+    representativeNotes: (candidatePaths.get(candidate.id) ?? []).slice(0, 2),
+  }));
+  const monthlyBuckets = months.map((month): TopicMonthlyBucket => ({
+    month,
+    topics: Object.fromEntries(
+      topTopics.map((topic) => {
+        const candidate = semanticCandidates.find(
+          (item) => reviewCandidateDisplayTitle(item.title, item.userTitle) === topic.name,
+        );
+        const paths = candidate ? (candidatePaths.get(candidate.id) ?? []) : [];
+        const count =
+          paths.length > 0
+            ? paths.filter(
+                (path) => reviewCandidatePathMonth(path, fallbackMonth) === month,
+              ).length
+            : month === fallbackMonth
+              ? 1
+              : 0;
+        return [topic.name, count > 0 ? count * 100 : 0];
+      }),
+    ),
+  }));
+  return {
+    topTopics,
+    emergingTopics: topTopics.slice(0, 3).map((topic) => topic.name),
+    decliningTopics: [],
+    monthlyBuckets,
+    noteAssignments: semanticCandidates.flatMap((candidate) =>
+      (candidatePaths.get(candidate.id) ?? []).map((path) => ({
+        path,
+        topics: [reviewCandidateDisplayTitle(candidate.title, candidate.userTitle)],
+        sources: {
+          [reviewCandidateDisplayTitle(candidate.title, candidate.userTitle)]:
+            "ai-cluster" as const,
+        },
+      })),
+    ),
+  };
+}
+
+function emptyTopicEvolution(): TopicEvolutionData {
+  return {
+    topTopics: [],
+    emergingTopics: [],
+    decliningTopics: [],
+    monthlyBuckets: [],
+    noteAssignments: [],
+  };
+}
+
+function traceableReviewCandidatePaths(candidate: ReviewCandidate): string[] {
+  return [
+    ...candidate.sourcePaths,
+    ...candidate.evidence.flatMap((evidence) => [evidence.sourcePath, evidence.target]),
+  ]
+    .map((path) => path?.trim())
+    .filter((path): path is string => Boolean(path))
+    .filter((path, index, paths) => paths.indexOf(path) === index);
+}
+
+function reviewCandidatePathMonth(path: string, fallbackMonth: string): string {
+  return pathDateKey(path)?.slice(0, 7) ?? fallbackMonth;
+}
+
+function pathDateKey(path: string): string | null {
+  const match = path.match(/(?:^|[/\s_-])(\d{4})[-_.](\d{2})[-_.](\d{2})(?=$|[^\d])/u);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
 function renderChartReference(path: string, alt: string): string {
   return `![[${path}|${alt}|900]]`;
 }
@@ -1484,22 +1598,34 @@ function renderReviewedCandidate(
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
   const text = REPORT_TEXT[language];
+  const decision =
+    candidate.status === "renamed" ? text.confirmedByRename : text.confirmedByAccept;
+  const summary = reviewCandidateSummary(candidate, language);
+  const reason = reviewCandidateReason(candidate, language);
+  const connection = reviewCandidateConnection(candidate, language);
   const rows = [
     `#### ${reviewCandidateLink(candidate)}`,
     "",
-    `- ${text.confirmedDecision}: ${candidate.status === "renamed" ? text.confirmedByRename : text.confirmedByAccept}`,
-    `- ${text.aiSummary}: ${reviewCandidateSummary(candidate, language)}`,
-    `- ${text.whyThemeExists}: ${reviewCandidateReason(candidate, language)}`,
-    `- ${text.connectionExplanation}: ${reviewCandidateConnection(candidate, language)}`,
+    reportFieldLine(language, text.confirmedDecision, decision, { sentence: true }),
+    "",
+    reportFieldLine(language, text.aiSummary, summary),
+    "",
+    reportFieldLine(language, text.whyThemeExists, reason),
+    "",
+    reportFieldLine(language, text.connectionExplanation, connection),
     ...renderReviewCandidateLocalSignals(candidate, language),
     ...renderReviewCandidateUncertainty(candidate, language),
-    `- ${text.reviewCaution}: ${reviewCandidateCaution(candidate, language)}`,
+    "",
+    reportFieldLine(language, text.reviewCaution, reviewCandidateCaution(candidate, language)),
     "",
     `${text.evidenceNotes}:`,
     ...renderReviewCandidateEvidence(candidate, language),
   ];
   if (candidate.userNote?.trim()) {
-    rows.push("", `- ${text.userNote}: ${sanitizeParagraphMarkdown(candidate.userNote)}`);
+    rows.push(
+      "",
+      reportFieldLine(language, text.userNote, sanitizeParagraphMarkdown(candidate.userNote)),
+    );
   }
   const mergedSources = mergedSourceCandidates(candidate, reviewSession);
   if (mergedSources.length > 0) {
@@ -1575,7 +1701,14 @@ function renderReviewCandidateLocalSignals(
   if (signals.length === 0) {
     return [];
   }
-  return [`- ${REPORT_TEXT[language].localSignals}: ${signals.join("; ")}`];
+  return [
+    "",
+    reportFieldLine(
+      language,
+      REPORT_TEXT[language].localSignals,
+      signals.join(language === "zh" ? "；" : "; "),
+    ),
+  ];
 }
 
 function renderReviewCandidateUncertainty(
@@ -1587,7 +1720,20 @@ function renderReviewCandidateUncertainty(
     candidate.uncertainty,
     language,
   );
-  return uncertainty ? [`- ${REPORT_TEXT[language].uncertainty}: ${uncertainty}`] : [];
+  return uncertainty
+    ? ["", reportFieldLine(language, REPORT_TEXT[language].uncertainty, uncertainty)]
+    : [];
+}
+
+function reportFieldLine(
+  language: ResolvedAnnualReviewLanguage,
+  label: string,
+  value: string,
+  options: { sentence?: boolean } = {},
+): string {
+  const separator = language === "zh" ? "：" : ": ";
+  const sentenceSuffix = options.sentence ? (language === "zh" ? "。" : ".") : "";
+  return `**${label}**${separator}${value}${sentenceSuffix}`;
 }
 
 function reviewCandidateCaution(
@@ -1623,8 +1769,14 @@ function renderReviewCandidateEvidence(
     const target = evidence.sourcePath || evidence.target;
     const link = target ? wikiLinkPlain(target) : sanitizeInlineMarkdown(evidence.label);
     const reason = sanitizeCandidateInline(candidate, evidence.reason, language);
+    const comment = sanitizeCandidateInline(candidate, evidence.userComment, language);
     const missing = evidence.missing ? ` (${REPORT_TEXT[language].missingEvidence})` : "";
-    return `- ${link}${missing}${reason ? ` — ${reason}` : ""}`;
+    const commentText = comment
+      ? language === "zh"
+        ? `；评论：${comment}`
+        : `; comment: ${comment}`
+      : "";
+    return `- ${link}${missing}${reason ? ` — ${reason}` : ""}${commentText}`;
   });
   return rows.length > 0
     ? rows
@@ -1687,7 +1839,7 @@ function localizeReviewCandidateText(
     )
     .replace(/topTags:/gu, "高频标签：")
     .replace(/tags present as weak signals/gu, "标签仅作为弱信号")
-    .replace(/frontmatter context present/gu, "存在 frontmatter 上下文")
+    .replace(/frontmatter context present/gu, "存在属性上下文")
     .replace(/contains reviewable questions/gu, "包含可复核问题")
     .replace(/reviewable questions/gu, "可复核问题")
     .replace(/created in review range: /gu, "创建于回顾范围：")

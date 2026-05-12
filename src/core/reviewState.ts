@@ -27,6 +27,7 @@ export interface EvidenceSource {
   sourcePath?: string;
   excerpt?: string;
   reason?: string;
+  userComment?: string;
   missing?: boolean;
 }
 
@@ -84,6 +85,13 @@ export interface ReviewSessionState {
   scopeHash: string;
   scanId: string;
   candidates: ReviewCandidate[];
+  localFallbackCandidates?: ReviewCandidate[];
+  themeGeneration?: {
+    mode: "ai" | "local" | "degraded-local";
+    aiConfigured: boolean;
+    aiAttempted: boolean;
+    message?: string;
+  };
   decisions: ReviewDecision[];
   progress: ReviewProgress;
   createdAt: string;
@@ -93,6 +101,13 @@ export interface ReviewSessionState {
 export type ReviewAction =
   | { type: "accept"; candidateId: string; at: string }
   | { type: "ignore"; candidateId: string; at: string; note?: string }
+  | {
+      type: "comment-evidence";
+      candidateId: string;
+      evidenceId: string;
+      comment: string;
+      at: string;
+    }
   | {
       type: "merge-topic";
       sourceCandidateId: string;
@@ -228,14 +243,17 @@ export function applyReviewAction(
         }),
       );
       break;
-    case "rename-topic":
+    case "rename-topic": {
       if (candidate.type !== "theme-hypothesis") {
         throw new Error("rename-topic requires a theme hypothesis candidate.");
       }
       if (action.title.trim().length === 0) {
         throw new Error("rename-topic requires a non-empty title.");
       }
-      candidate.status = "renamed";
+      const includeRenamedInReport = candidate.status !== "candidate";
+      if (includeRenamedInReport) {
+        candidate.status = "renamed";
+      }
       candidate.userTitle = action.title.trim();
       candidate.userNote = action.note ?? candidate.userNote;
       candidate.updatedAt = action.at;
@@ -248,11 +266,21 @@ export function applyReviewAction(
           label: candidate.userTitle,
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: true,
+          includeInReport: includeRenamedInReport,
           at: action.at,
         }),
       );
       break;
+    }
+    case "comment-evidence": {
+      const evidence = candidate.evidence.find((item) => item.id === action.evidenceId);
+      if (!evidence) {
+        throw new Error(`Unknown review evidence: ${action.evidenceId}`);
+      }
+      evidence.userComment = action.comment.trim() || undefined;
+      candidate.updatedAt = action.at;
+      break;
+    }
   }
 
   return refreshSession({
@@ -268,9 +296,20 @@ export function mergeScannedCandidates(
   scannedCandidates: ReviewCandidate[],
   scanId: string,
   updatedAt: string,
+  localFallbackCandidates: ReviewCandidate[] = [],
+  themeGeneration?: ReviewSessionState["themeGeneration"],
+  availableSourcePaths: string[] = [],
 ): ReviewSessionState {
   const scanHasAiThemes = scannedCandidates.some(
     (candidate) => candidate.source === "ai",
+  );
+  const availableEvidencePaths = new Set(
+    [
+      ...scannedCandidates.flatMap((candidate) => traceableCandidatePaths(candidate)),
+      ...availableSourcePaths,
+    ]
+      .map(normalizeEvidencePath)
+      .filter(Boolean),
   );
   const scannedById = new Map(
     scannedCandidates.map((candidate) => [candidate.id, candidate]),
@@ -283,7 +322,7 @@ export function mergeScannedCandidates(
           isLegacyThinCandidate(storedCandidate) ||
           (scanHasAiThemes && storedCandidate.source !== "ai")
           ? undefined
-          : markMissingEvidence(storedCandidate, updatedAt);
+          : markMissingEvidence(storedCandidate, updatedAt, availableEvidencePaths);
       }
       scannedById.delete(storedCandidate.id);
       assertCandidateHasEvidence(scanned);
@@ -295,12 +334,20 @@ export function mergeScannedCandidates(
           userNote: storedCandidate.userNote,
           mergedIntoId: storedCandidate.mergedIntoId,
           mergedSourceIds: storedCandidate.mergedSourceIds,
+          evidence: transferEvidenceUserComments(scanned.evidence, storedCandidate.evidence),
           decisionIds: storedCandidate.decisionIds,
           createdAt: storedCandidate.createdAt,
           updatedAt,
         };
       }
-      return { ...scanned, createdAt: storedCandidate.createdAt, updatedAt };
+      return {
+        ...scanned,
+        userTitle: storedCandidate.userTitle,
+        userNote: storedCandidate.userNote,
+        evidence: transferEvidenceUserComments(scanned.evidence, storedCandidate.evidence),
+        createdAt: storedCandidate.createdAt,
+        updatedAt,
+      };
     })
     .filter((candidate): candidate is ReviewCandidate => candidate !== undefined);
 
@@ -309,7 +356,14 @@ export function mergeScannedCandidates(
     candidates.push(candidate);
   }
 
-  return refreshSession({ ...stored, scanId, candidates, updatedAt });
+  return refreshSession({
+    ...stored,
+    scanId,
+    candidates,
+    localFallbackCandidates,
+    themeGeneration,
+    updatedAt,
+  });
 }
 
 export function calculateReviewProgress(candidates: ReviewCandidate[]): ReviewProgress {
@@ -354,6 +408,9 @@ function refreshSession(session: ReviewSessionState): ReviewSessionState {
   for (const candidate of session.candidates) {
     assertCandidateHasEvidence(candidate);
   }
+  for (const candidate of session.localFallbackCandidates ?? []) {
+    assertCandidateHasEvidence(candidate);
+  }
   return {
     ...session,
     progress: calculateReviewProgress(session.candidates),
@@ -371,6 +428,35 @@ function mergeEvidence(
     }
   }
   return [...merged.values()];
+}
+
+function transferEvidenceUserComments(
+  scannedEvidence: EvidenceSource[],
+  storedEvidence: EvidenceSource[],
+): EvidenceSource[] {
+  const commentById = new Map(
+    storedEvidence
+      .filter((evidence) => evidence.userComment?.trim())
+      .map((evidence) => [evidence.id, evidence.userComment?.trim()]),
+  );
+  const commentByPath = new Map(
+    storedEvidence
+      .filter((evidence) => evidence.userComment?.trim())
+      .flatMap((evidence) =>
+        traceableEvidencePaths(evidence).map(
+          (path) => [path, evidence.userComment?.trim()] as const,
+        ),
+      ),
+  );
+  return scannedEvidence.map((evidence) => ({
+    ...evidence,
+    userComment:
+      commentById.get(evidence.id) ??
+      traceableEvidencePaths(evidence)
+        .map((path) => commentByPath.get(path))
+        .find((comment): comment is string => Boolean(comment)) ??
+      evidence.userComment,
+  }));
 }
 
 function buildReviewDecision(input: {
@@ -415,12 +501,37 @@ function displayCandidateTitle(candidate: ReviewCandidate): string {
 function markMissingEvidence(
   candidate: ReviewCandidate,
   updatedAt: string,
+  availableEvidencePaths: Set<string> = new Set(),
 ): ReviewCandidate {
   return {
     ...candidate,
-    evidence: candidate.evidence.map((evidence) => ({ ...evidence, missing: true })),
+    evidence: candidate.evidence.map((evidence) => {
+      const paths = traceableEvidencePaths(evidence);
+      const stillPresent =
+        paths.length > 0 && paths.some((path) => availableEvidencePaths.has(path));
+      return { ...evidence, missing: stillPresent ? false : true };
+    }),
     updatedAt,
   };
+}
+
+function traceableCandidatePaths(candidate: ReviewCandidate): string[] {
+  return [
+    ...candidate.sourcePaths,
+    ...candidate.evidence.flatMap(traceableEvidencePaths),
+  ]
+    .map(normalizeEvidencePath)
+    .filter(Boolean);
+}
+
+function traceableEvidencePaths(evidence: EvidenceSource): string[] {
+  return [evidence.sourcePath, evidence.target]
+    .map(normalizeEvidencePath)
+    .filter(Boolean);
+}
+
+function normalizeEvidencePath(path: string | undefined): string {
+  return path?.trim().replace(/^\[\[|\]\]$/gu, "") ?? "";
 }
 
 function isLegacyThinCandidate(candidate: ReviewCandidate): boolean {

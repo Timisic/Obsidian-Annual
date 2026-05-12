@@ -280,4 +280,39 @@ describe("theme evidence", () => {
       connectionExplanation: expect.stringContaining("weak evidence"),
     });
   });
+
+  it("rewrites Chinese local fallback titles away from raw metadata labels", () => {
+    const files = [
+      sourceFrom({
+        path: "2026月复盘/4月/散步.md",
+        ctime: "2026-04-09T08:00:00.000Z",
+        mtime: "2026-04-09T09:00:00.000Z",
+        content:
+          "---\ntheme: ai\n---\n# 散步\n\np-indent 和 [[纪馨玉]] 反复出现在关系回味的记录里。",
+      }),
+      sourceFrom({
+        path: "2026月复盘/4月/对话.md",
+        ctime: "2026-04-09T10:00:00.000Z",
+        mtime: "2026-04-09T11:00:00.000Z",
+        content:
+          "# 对话\n\np-indent 和 [[纪馨玉]] 再次出现，记录靠近之后的边界感。",
+      }),
+    ];
+    const aggregate = buildReviewAggregate(
+      files,
+      buildQuarterlyReviewSession(2026, 2, DEFAULT_SETTINGS),
+      DEFAULT_SETTINGS,
+    );
+    const themes = buildLocalThemeHypotheses(
+      buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS),
+      "zh",
+    );
+    const text = themes
+      .map((theme) => [theme.title, theme.summary, theme.connectionExplanation].join(" "))
+      .join(" ");
+
+    expect(themes.length).toBeGreaterThan(0);
+    expect(text).not.toMatch(/2026月复盘|4月中的跨笔记主题|p-indent|纪馨玉|frontmatter|created in review range/u);
+    expect(themes[0]?.title).toMatch(/线索|记录/u);
+  });
 });

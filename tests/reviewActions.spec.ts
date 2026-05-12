@@ -38,10 +38,10 @@ describe("Review Board action rendering state", () => {
     });
   });
 
-  it("renders accepted candidates without pending accept or ignore controls", () => {
+  it("renders accepted candidates with post-confirmation ignore controls", () => {
     expect(getReviewBoardActionState(candidate("accepted", "accepted"))).toEqual({
       kind: "accepted",
-      actions: ["openSourceNote", "renameTopic", "mergeTopic"],
+      actions: ["ignore", "openSourceNote", "renameTopic", "mergeTopic"],
     });
   });
 

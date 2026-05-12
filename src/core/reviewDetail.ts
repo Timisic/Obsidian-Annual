@@ -36,15 +36,18 @@ export function buildReviewDetailModel(
   ]);
 
   return {
-    summary: summarizeCandidate(candidate),
-    connection: connectionExplanation(candidate),
+    summary: localizeSignal(summarizeCandidate(candidate), language),
+    connection: localizeSignal(connectionExplanation(candidate), language),
     caution: reviewCaution(candidate, language),
     localSignals: (candidate.localSignals ?? []).map((signal) =>
       localizeSignal(signal, language),
     ),
-    uncertainty: candidate.uncertainty ?? "",
-    metadata: candidateMetadata(candidate),
-    evidence: candidate.evidence,
+    uncertainty: localizeSignal(candidate.uncertainty ?? "", language),
+    metadata: candidateMetadata(candidate, language),
+    evidence: candidate.evidence.map((evidence) => ({
+      ...evidence,
+      reason: localizeSignal(evidence.reason ?? "", language) || evidence.reason,
+    })),
     linkedNotes: {
       paths: linkedPaths,
       layout: linkedPaths.length > INLINE_LINK_LIMIT ? "list" : "inline",
@@ -58,14 +61,23 @@ function localizeSignal(value: string, language: "en" | "zh"): string {
   }
   return value
     .replace(/^tags present as weak signals$/u, "标签仅作为弱信号")
-    .replace(/^frontmatter context present$/u, "存在 frontmatter 上下文")
+    .replace(/^frontmatter context present$/u, "存在属性上下文")
     .replace(/^contains reviewable questions$/u, "包含可复核问题")
+    .replace(/tags present as weak signals/gu, "标签仅作为弱信号")
+    .replace(/frontmatter context present/gu, "存在属性上下文")
+    .replace(/contains reviewable questions/gu, "包含可复核问题")
     .replace(/^created in review range: /u, "创建于回顾范围：")
     .replace(/^modified in review range: /u, "修改于回顾范围：")
+    .replace(/created in review range: /gu, "创建于回顾范围：")
+    .replace(/modified in review range: /gu, "修改于回顾范围：")
     .replace(/^shared links: /u, "共享链接：")
     .replace(/^repeated phrases: /u, "重复短语：")
     .replace(/^entities: /u, "实体：")
     .replace(/^cross-folder links: /u, "跨文件夹链接：")
+    .replace(/shared links: /gu, "共享链接：")
+    .replace(/repeated phrases: /gu, "重复短语：")
+    .replace(/entities: /gu, "实体：")
+    .replace(/cross-folder links: /gu, "跨文件夹链接：")
     .replace(
       /^\d+ backlinks$/u,
       (match) => `${match.replace(" backlinks", "")} 条反向链接`,
@@ -73,6 +85,12 @@ function localizeSignal(value: string, language: "en" | "zh"): string {
     .replace(
       /^\d+ outbound links$/u,
       (match) => `${match.replace(" outbound links", "")} 条出链`,
+    )
+    .replace(/\d+ backlinks/gu, (match) =>
+      `${match.replace(" backlinks", "")} 条反向链接`,
+    )
+    .replace(/\d+ outbound links/gu, (match) =>
+      `${match.replace(" outbound links", "")} 条出链`,
     );
 }
 
@@ -86,10 +104,10 @@ function summarizeCandidate(candidate: ReviewCandidate): string {
   return conciseText(excerpt);
 }
 
-function candidateMetadata(candidate: ReviewCandidate): string[] {
+function candidateMetadata(candidate: ReviewCandidate, language: "en" | "zh"): string[] {
   return [
-    candidate.rank ? `Rank #${candidate.rank}` : "",
-    candidate.rankReason ? conciseText(candidate.rankReason, 140) : "",
+    candidate.rank ? (language === "zh" ? `排序 #${candidate.rank}` : `Rank #${candidate.rank}`) : "",
+    candidate.rankReason ? localizeSignal(conciseText(candidate.rankReason, 140), language) : "",
   ].filter(Boolean);
 }
 

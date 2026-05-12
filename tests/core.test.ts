@@ -711,7 +711,7 @@ describe("aggregation and rendering", () => {
     expect(aggregate.dayBuckets.find((day) => day.date === "2026-05-09")?.words).toBe(0);
   });
 
-  it("prefers frontmatter date metadata before filesystem timestamps", () => {
+  it("prefers frontmatter create metadata before filesystem timestamps", () => {
     const flattenedTime = Date.parse("2026-05-09T10:55:29.000Z");
     const aggregate = buildYearAggregate(
       [
@@ -719,7 +719,7 @@ describe("aggregation and rendering", () => {
           path: "Inbox/Imported note.md",
           ctime: flattenedTime,
           mtime: flattenedTime,
-          content: "---\ndate: 2026-02-14\n---\n\nfrontmatter dated imported note",
+          content: "---\ncreate: 2026-02-14 10:00\n---\n\nfrontmatter dated imported note",
         },
       ],
       2026,
@@ -924,9 +924,11 @@ describe("aggregation and rendering", () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# Review Report: 2026 Annual Review");
-    expect(markdown).toMatch(
-      /^---\ngenerated: ".+"\nyear: 2026\nreview_preset: "annual"\nreview_label: "2026 Annual Review"\nstart_date: "2026-01-01"\nend_date: "2026-12-31"\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
-    );
+    expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026/u);
+    expect(markdown).toContain("cssclasses:\n  - p-indent");
+    expect(markdown).toContain('growth_data_source: "current-vault inference"');
+    expect(markdown).toContain('activity_date_sources: "frontmatter date: 0; path/filename date: 2; filesystem timestamp: 2"');
+    expect(markdown).toContain('report_language: "en"');
     expect(markdown).toContain("- Generated:");
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
@@ -1415,14 +1417,14 @@ describe("aggregation and rendering", () => {
 
     expect(markdown).toContain("### Confirmed theme hypotheses");
     expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
-    expect(markdown).toContain("- Decision: Confirmed");
+    expect(markdown).toContain("**Decision**: Confirmed.");
     expect(markdown).toContain("#### [[Projects/Renamed|Renamed Topic]]");
-    expect(markdown).toContain("- Decision: Renamed and confirmed");
+    expect(markdown).toContain("**Decision**: Renamed and confirmed.");
     expect(markdown).toContain(
-      "- Why this theme exists: Accepted Topic appeared across representative evidence during this review period.",
+      "**Why this theme exists**: Accepted Topic appeared across representative evidence during this review period.",
     );
     expect(markdown).toContain(
-      "- Connection explanation: Accepted Topic has enough local writing activity to deserve review.",
+      "**Connection explanation**: Accepted Topic has enough local writing activity to deserve review.",
     );
     expect(markdown).toContain("Evidence notes:");
     expect(markdown).toContain(
@@ -1440,6 +1442,38 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Convert accepted topic into project");
   });
 
+  it("builds Review Board topic charts from confirmed themes without zeroing undated paths", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const chartPaths = buildAnnualReviewChartPaths(DEFAULT_SETTINGS.reportFolder, 2026);
+    const reviewSession = reviewSessionFixture();
+    const chartAssets = buildAnnualReviewChartAssets(aggregate, {
+      chartPaths,
+      reviewSession,
+    });
+    const topicData = chartAssets.find((asset) =>
+      asset.path.endsWith("topic-evolution.json"),
+    );
+    if (!topicData) {
+      throw new Error("Expected topic-evolution data asset.");
+    }
+    const data = JSON.parse(topicData.content) as {
+      top_topics: Array<{ name: string }>;
+      monthly_topic_words: Array<{ topics: Record<string, number> }>;
+    };
+
+    expect(data.top_topics.map((topic) => topic.name)).toEqual([
+      "Accepted Topic",
+      "Renamed Topic",
+    ]);
+    expect(data.top_topics.map((topic) => topic.name)).not.toContain("Unreviewed Topic");
+    expect(
+      data.monthly_topic_words.some(
+        (bucket) =>
+          bucket.topics["Accepted Topic"] > 0 && bucket.topics["Renamed Topic"] > 0,
+      ),
+    ).toBe(true);
+  });
+
   it("renders only reviewed Review Board decisions in the default Chinese report", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate, {
@@ -1449,8 +1483,8 @@ describe("aggregation and rendering", () => {
 
     expect(markdown).toContain("### 已确认主题假设");
     expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
-    expect(markdown).toContain("- 决策: 已确认");
-    expect(markdown).toContain("- 决策: 重命名并确认");
+    expect(markdown).toContain("**决策**：已确认。");
+    expect(markdown).toContain("**决策**：重命名并确认。");
     expect(markdown).toContain("证据笔记:");
     expect(markdown).toContain("合并来源:");
     expect(markdown).toContain(
@@ -2552,6 +2586,11 @@ describe("MVP public surface", () => {
       indicator.update("Writing annual review note", 150);
       expect(progress?.value).toBe(100);
 
+      indicator.update("Synthesizing themes");
+      expect(status?.textContent).toBe("Synthesizing themes");
+      expect(progress?.getAttribute("value")).toBeNull();
+      expect(progress?.getAttribute("aria-valuenow")).toBeNull();
+
       indicator.close();
       expect(root.children).toHaveLength(0);
     });
@@ -2572,7 +2611,8 @@ describe("MVP public surface", () => {
     for (const actionText of [
       "text.accept",
       "text.ignore",
-      "text.renameTopic",
+      "text.renameTitle",
+      "text.saveRename",
       "text.mergeTopic",
       "text.openSourceNote",
     ]) {
@@ -2765,6 +2805,10 @@ class FakeDomElement {
 
   getAttribute(name: string): string | null {
     return this.attributes.get(name) ?? null;
+  }
+
+  removeAttribute(name: string): void {
+    this.attributes.delete(name);
   }
 
   remove(): void {

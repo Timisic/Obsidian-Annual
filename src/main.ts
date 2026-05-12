@@ -30,7 +30,9 @@ import {
 } from "./core/reviewCandidates";
 import {
   applyReviewAction,
+  calculateReviewProgress,
   type ReviewAction,
+  type ReviewCandidate,
   type ReviewSessionState,
 } from "./core/reviewState";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
@@ -76,15 +78,60 @@ function normalizeReviewSessions(
     return {};
   }
   return Object.fromEntries(
-    Object.entries(sessions).filter(([, session]) =>
-      Boolean(
-        session &&
-        session.schemaVersion === 1 &&
-        session.session &&
-        session.candidates.every((candidate) => candidate.type === "theme-hypothesis"),
-      ),
-    ),
+    Object.entries(sessions)
+      .filter(([, session]) =>
+        Boolean(
+          session &&
+            session.schemaVersion === 1 &&
+            session.session &&
+            session.candidates.every(
+              (candidate) => candidate.type === "theme-hypothesis",
+            ),
+        ),
+      )
+      .map(([key, session]) => [key, normalizeReviewSession(session)]),
   );
+}
+
+function normalizeReviewSession(session: ReviewSessionState): ReviewSessionState {
+  const hasAiPrimary = session.candidates.some((candidate) => candidate.source === "ai");
+  const mixedLocalPrimary = session.candidates.filter((candidate) =>
+    isLocalReviewCandidate(candidate),
+  );
+  if (!hasAiPrimary || mixedLocalPrimary.length === 0) {
+    return session;
+  }
+  const candidates = session.candidates.filter(
+    (candidate) => !isLocalReviewCandidate(candidate),
+  );
+  const localFallbackCandidates = [
+    ...(session.localFallbackCandidates ?? []),
+    ...mixedLocalPrimary,
+  ];
+  return {
+    ...session,
+    candidates,
+    localFallbackCandidates,
+    themeGeneration: session.themeGeneration ?? {
+      mode: "ai",
+      aiConfigured: true,
+      aiAttempted: true,
+      message:
+        "Older local Review Board candidates were moved out of the primary AI queue.",
+    },
+    progress: calculateReviewProgress(candidates),
+  };
+}
+
+function isLocalReviewCandidate(candidate: ReviewCandidate): boolean {
+  return candidate.source === "local" || candidate.source === "local-fallback";
+}
+
+function hasUsableAiReviewSession(session: ReviewSessionState | undefined): boolean {
+  if (!session || session.candidates.length < 5) {
+    return false;
+  }
+  return session.candidates.every((candidate) => candidate.source === "ai");
 }
 
 export default class AnnualReviewPlugin extends Plugin {
@@ -200,22 +247,50 @@ export default class AnnualReviewPlugin extends Plugin {
     const files = await this.getIndexedFiles(this.settings);
     this.lastAggregate = buildYearAggregate(files, year, this.settings);
     const existing = this.reviewSessions[this.reviewSessionKey(this.lastAggregate)];
-    if (existing?.candidates.some((candidate) => candidate.source === "ai")) {
+    if (hasUsableAiReviewSession(existing)) {
       return;
     }
+    const reportLanguage = resolveAnnualReviewLanguage(
+      this.settings.reportLanguage,
+      getLanguage(),
+    );
+    const evidencePackage = buildThemeEvidencePackage(
+      this.lastAggregate,
+      files,
+      this.settings,
+    );
+    const aiConfigured = this.settings.aiProvider !== "none";
+    const aiEnhancements = aiConfigured
+      ? await renderAiReportEnhancements({
+          aggregate: this.lastAggregate,
+          files,
+          settings: this.settings,
+        })
+      : undefined;
     await this.refreshReviewSession(this.lastAggregate, {
-      evidencePackage: buildThemeEvidencePackage(
-        this.lastAggregate,
-        files,
-        this.settings,
-      ),
-      language: resolveAnnualReviewLanguage(this.settings.reportLanguage, getLanguage()),
+      themeHypotheses: aiEnhancements?.themeHypotheses,
+      evidencePackage,
+      language: reportLanguage,
+      aiConfigured,
+      aiAttempted: aiConfigured,
+      aiFailureMessage:
+        aiConfigured && aiEnhancements?.themeHypotheses.length === 0
+          ? aiEnhancements.periodJudgment
+          : undefined,
     });
   }
 
-  async previewSession(session: ReviewSession): Promise<void> {
+  async previewSession(
+    session: ReviewSession,
+    options: { skipAiGeneration?: boolean } = {},
+  ): Promise<void> {
     const files = await this.getIndexedFiles(this.settings);
     const aggregate = buildReviewAggregate(files, session, this.settings);
+    this.lastAggregate = aggregate;
+    const existing = this.reviewSessions[this.reviewSessionKey(aggregate)];
+    if (hasUsableAiReviewSession(existing) || (options.skipAiGeneration && existing)) {
+      return;
+    }
     const reportLanguage = resolveAnnualReviewLanguage(
       this.settings.reportLanguage,
       getLanguage(),
@@ -225,10 +300,27 @@ export default class AnnualReviewPlugin extends Plugin {
       files,
       this.settings,
     );
-    this.lastAggregate = aggregate;
+    const aiConfigured = this.settings.aiProvider !== "none";
+    const aiEnhancements =
+      aiConfigured && !options.skipAiGeneration
+        ? await renderAiReportEnhancements({
+            aggregate,
+            files,
+            settings: this.settings,
+          })
+        : undefined;
     await this.refreshReviewSession(aggregate, {
+      themeHypotheses: aiEnhancements?.themeHypotheses,
       evidencePackage,
       language: reportLanguage,
+      aiConfigured,
+      aiAttempted: aiConfigured,
+      aiFailureMessage:
+        aiConfigured && aiEnhancements?.themeHypotheses.length === 0
+          ? aiEnhancements.periodJudgment
+          : aiConfigured && options.skipAiGeneration
+            ? "AI generation was skipped during workspace startup."
+          : undefined,
     });
   }
 
@@ -288,7 +380,10 @@ export default class AnnualReviewPlugin extends Plugin {
 
   async openSourceNote(candidateId: string, evidenceId?: string): Promise<void> {
     const session = this.getReviewSession();
-    const candidate = session?.candidates.find((item) => item.id === candidateId);
+    const candidate = [
+      ...(session?.candidates ?? []),
+      ...(session?.localFallbackCandidates ?? []),
+    ].find((item) => item.id === candidateId);
     const evidence = evidenceId
       ? candidate?.evidence.find((item) => item.id === evidenceId)
       : candidate?.evidence.find((item) => item.sourcePath);
@@ -326,7 +421,7 @@ export default class AnnualReviewPlugin extends Plugin {
         appendSnapshot(snapshotFile, currentSnapshot),
         session,
       );
-      progress?.update(text.progressAiSummary, 35);
+      progress?.update(text.progressAiSummary);
       const aggregate = buildReviewAggregate(files, session, settings, {
         snapshotComparison,
       });
@@ -344,6 +439,12 @@ export default class AnnualReviewPlugin extends Plugin {
         themeHypotheses: aiEnhancements.themeHypotheses,
         evidencePackage,
         language: reportLanguage,
+        aiConfigured: settings.aiProvider !== "none",
+        aiAttempted: settings.aiProvider !== "none",
+        aiFailureMessage:
+          settings.aiProvider !== "none" && aiEnhancements.themeHypotheses.length === 0
+            ? aiEnhancements.periodJudgment
+            : undefined,
       });
       const chartPaths = buildAnnualReviewChartPaths(
         settings.reportFolder,
@@ -353,6 +454,7 @@ export default class AnnualReviewPlugin extends Plugin {
       const chartAssets = buildAnnualReviewChartAssets(aggregate, {
         language: reportLanguage,
         chartPaths,
+        reviewSession,
       });
       const markdown = renderAnnualReview(aggregate, {
         language: reportLanguage,

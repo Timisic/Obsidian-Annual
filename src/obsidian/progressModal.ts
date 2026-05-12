@@ -39,7 +39,7 @@ export class AnnualReviewProgressIndicator {
     this.containerEl = container;
   }
 
-  update(status: string, value: number): void {
+  update(status: string, value?: number): void {
     if (!this.containerEl) {
       this.open();
     }
@@ -48,7 +48,13 @@ export class AnnualReviewProgressIndicator {
       this.statusEl.textContent = status;
     }
     if (this.progressEl) {
-      this.progressEl.value = clampProgress(value);
+      if (typeof value === "number") {
+        this.progressEl.value = clampProgress(value);
+        this.progressEl.setAttribute("aria-valuenow", String(clampProgress(value)));
+      } else {
+        this.progressEl.removeAttribute("value");
+        this.progressEl.removeAttribute("aria-valuenow");
+      }
     }
   }
 

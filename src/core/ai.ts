@@ -101,7 +101,8 @@ export async function renderAiReportEnhancements(
         "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
         "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
         "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
-        "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
+        "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
+        "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
         "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
         "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
         "Do not invent private facts that are not present in the context.",
@@ -183,7 +184,8 @@ export function buildCodexPrompt(
     "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
     "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
     "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
-    "Theme titles must be synthesized content themes, not raw tags, folders, months, or specific document names.",
+    "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
+    "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
     "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
@@ -207,7 +209,7 @@ function buildCodexContext(
       periodJudgment:
         "2-4 evidence-backed review overview sentences; no heading, no bullet list",
       themeHypotheses:
-        "3-5 semantic themes with id, title, summary, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
+        "5-15 mutually distinct semantic themes with id, title, summary, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
       themeInsights:
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:

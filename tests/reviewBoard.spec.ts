@@ -215,9 +215,60 @@ describe("MVP public surface", () => {
       indicator.update("Writing annual review note", 150);
       expect(progress?.value).toBe(100);
 
+      indicator.update("Synthesizing themes");
+      expect(status?.textContent).toBe("Synthesizing themes");
+      expect(progress?.getAttribute("value")).toBeNull();
+      expect(progress?.getAttribute("aria-valuenow")).toBeNull();
+
       indicator.close();
       expect(root.children).toHaveLength(0);
     });
+  });
+
+  it("uses indeterminate loading bars while AI preview/report generation waits", () => {
+    const dashboardSource = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+
+    expect(dashboardSource).toContain("annual-review-dashboard-loading-bar");
+    expect(dashboardSource).toContain('progress.removeAttribute("value")');
+    expect(pluginSource).toContain("progress?.update(text.progressAiSummary);");
+    expect(pluginSource).not.toContain("progress?.update(text.progressAiSummary, 35)");
+  });
+
+  it("does not rerun AI preview when a cached AI Review Board session exists", () => {
+    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+
+    expect(pluginSource).toContain(
+      "hasUsableAiReviewSession(existing)",
+    );
+    expect(pluginSource).toContain("session.candidates.length < 5");
+    expect(pluginSource).toContain("this.lastAggregate = aggregate;");
+  });
+
+  it("does not block Obsidian workspace restore on AI Review Board generation", () => {
+    const dashboardSource = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+
+    expect(dashboardSource).toContain("skipAiGeneration: true");
+    expect(dashboardSource).not.toContain(
+      "await this.controller.previewSession(this.defaultPreviewSession())",
+    );
+    expect(pluginSource).toContain("AI generation was skipped during workspace startup.");
+  });
+
+  it("migrates older mixed AI/local cache out of the primary Review Board queue", () => {
+    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+
+    expect(pluginSource).toContain("normalizeReviewSession(session)");
+    expect(pluginSource).toContain("localFallbackCandidates");
+    expect(pluginSource).toContain("isLocalReviewCandidate(candidate)");
+    expect(pluginSource).toContain("calculateReviewProgress(candidates)");
   });
 
   it("clamps progress percentages to the native progress range", () => {
@@ -235,7 +286,8 @@ describe("MVP public surface", () => {
     for (const actionText of [
       "text.accept",
       "text.ignore",
-      "text.renameTopic",
+      "text.renameTitle",
+      "text.saveRename",
       "text.mergeTopic",
       "text.openSourceNote",
     ]) {
@@ -252,6 +304,23 @@ describe("MVP public surface", () => {
     }
 
     expect(source).toContain("this.controller.openSourceNote(candidate.id)");
+  });
+
+  it("keeps degraded local clues out of the primary decision queue UI", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/obsidian/dashboardView.ts"),
+      "utf8",
+    );
+    const zhText = readFileSync(join(process.cwd(), "src/core/language.ts"), "utf8");
+
+    expect(source).toContain("localFallbackCandidates");
+    expect(source).toContain("degradedReviewQueue");
+    expect(source).toContain('action.type === "rename-topic"');
+    expect(source).toContain("if (currentIsPrimary) {");
+    expect(source).toContain('type: "comment-evidence"');
+    expect(source).not.toContain("window.prompt");
+    expect(zhText).toContain('topicActions: "主题操作"');
+    expect(zhText).not.toContain('topicActions: "主题决策"');
   });
 
   it("builds a concise selected-note detail model from local candidate data", () => {

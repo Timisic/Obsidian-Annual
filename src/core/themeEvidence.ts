@@ -14,7 +14,8 @@ import type {
 
 const MAX_EVIDENCE_NOTES = 80;
 const MAX_EVIDENCE_EXCERPT_CHARS = 700;
-const MAX_LOCAL_THEMES = 6;
+const MAX_THEME_HYPOTHESES = 15;
+const MAX_LOCAL_THEMES = 10;
 const MAX_EVIDENCE_PER_THEME = 5;
 const WEAK_SIGNAL_PREFIX = "tag:";
 
@@ -75,9 +76,11 @@ export function buildThemeHypothesisPrompt(
         allowedInput:
           "Use only reviewRange and evidenceNotes from this structured evidence package. Do not infer from an entire vault or request full note contents.",
         evidenceIdRule:
-          "Every hypothesis must cite evidenceNoteIds using exact evidenceNotes[].id values.",
+        "Every hypothesis must cite evidenceNoteIds using exact evidenceNotes[].id values.",
         weakSignalRule:
           "weakSignals, including tags, may support a hypothesis but must not be the primary connection.",
+        titleRule:
+          "Generate 5-15 mutually distinct semantic themes when enough evidence exists. Titles must be synthesized themes, not months, folders, tags, frontmatter keys, entity names, repeated phrases, or link names.",
       },
       outputSchema: {
         themeHypotheses: [
@@ -98,6 +101,8 @@ export function buildThemeHypothesisPrompt(
         "Each theme must have at least two evidenceNoteIds unless uncertainty explicitly marks low confidence.",
         "Each theme must include connectionExplanation.",
         "Tags are weak signals only.",
+        "Prefer 5-15 independent themes; merge overlapping themes instead of repeating a local signal.",
+        "Theme titles and summaries must be natural semantic interpretations, not raw local metadata.",
         "Do not invent evidence note ids.",
       ],
       evidencePackage,
@@ -139,7 +144,7 @@ export function parseThemeHypotheses(
       ),
     )
     .filter((theme): theme is ThemeHypothesis => Boolean(theme))
-    .slice(0, MAX_LOCAL_THEMES);
+    .slice(0, MAX_THEME_HYPOTHESES);
 }
 
 export function buildLocalThemeHypotheses(
@@ -165,7 +170,7 @@ export function buildLocalThemeHypotheses(
         language === "zh" ? "需要复核的单篇笔记线索" : "Single-note clue needing review",
       summary:
         language === "zh"
-          ? `这个本地线索来自 ${note.title}：${note.whyIncluded}`
+          ? "这条本地线索来自单篇证据笔记；请结合正文摘录和链接上下文判断是否值得提升为主题。"
           : note.whyIncluded,
       evidenceNoteIds: [note.id],
       connectionExplanation:
@@ -375,9 +380,6 @@ function clusterToTheme(
       return (noteB ? evidenceScore(noteB) : 0) - (noteA ? evidenceScore(noteA) : 0);
     })
     .slice(0, MAX_EVIDENCE_PER_THEME);
-  const noteTitles = noteIds
-    .map((id) => noteById.get(id)?.title)
-    .filter((title): title is string => Boolean(title));
   const signal =
     cluster.kind === "weak-tag"
       ? `weak tag signal "${cluster.label}"`
@@ -388,16 +390,16 @@ function clusterToTheme(
     title: localThemeTitle(cluster, language),
     summary:
       language === "zh"
-        ? `本地证据把 ${noteTitles.join("、")} 归为同一个主题线索，主要依据是 ${localSignalLabel(cluster, language)}。`
-        : `Local evidence groups ${noteTitles.join(", ")} around ${signal}.`,
+        ? `${noteIds.length} 条证据笔记形成一个待复核的本地语义线索；请结合摘录、链接、日期和跨文件夹关系判断是否能提升为主题。`
+        : `${noteIds.length} evidence notes form a local semantic clue; review excerpts, links, dates, and cross-folder relationships before promoting it into a theme.`,
     evidenceNoteIds: noteIds,
     connectionExplanation:
       cluster.kind === "weak-tag"
         ? language === "zh"
-          ? `这些笔记共享标签“${cluster.label}”，但标签只作为弱证据；需要结合摘录、链接和日期信号复核。`
+          ? "这些笔记共享同类弱标签信号，但标签只作为证据线索；需要结合摘录、链接和日期信号复核。"
           : `These notes share tag "${cluster.label}", but tags are treated as weak evidence and should be confirmed against excerpts, links, and date signals.`
         : language === "zh"
-          ? `这些笔记共享${localSignalLabel(cluster, language)}，并由摘录、链接、反向链接、日期或跨文件夹连接等本地元数据支撑。`
+          ? `这些笔记共享同类${localSignalKindLabel(cluster, language)}，并由摘录、链接、反向链接、日期或跨文件夹连接等证据线索支撑。`
           : `These notes share ${signal}, with supporting local metadata such as excerpts, links, backlinks, dates, or cross-folder connections.`,
     localSignals: noteIds
       .flatMap((id) => noteById.get(id)?.localSignals ?? [])
@@ -522,19 +524,19 @@ function localThemeTitle(cluster: ThemeCluster, language: "en" | "zh"): string {
   switch (cluster.kind) {
     case "link":
       return language === "zh"
-        ? `围绕 ${titleFromPath(cluster.label)} 的证据模式`
+        ? "围绕同一对象反复展开的记录"
         : `Evidence pattern around ${titleFromPath(cluster.label)}`;
     case "phrase":
       return language === "zh"
-        ? `反复出现的想法：${cluster.label}`
+        ? "反复出现的想法线索"
         : `Recurring idea: ${cluster.label}`;
     case "entity":
       return language === "zh"
-        ? "需要解读的重复指称"
+        ? "多篇笔记里的重复指称线索"
         : `Repeated reference needing interpretation`;
     case "folder":
       return language === "zh"
-        ? `${titleFromPath(cluster.label)} 中的跨笔记主题`
+        ? "同一空间中的跨笔记线索"
         : `Cross-note theme in ${titleFromPath(cluster.label)}`;
     case "weak-tag":
       return language === "zh" ? "低置信度本地线索" : `Low-confidence local clue`;
@@ -545,23 +547,23 @@ function localThemeTitle(cluster: ThemeCluster, language: "en" | "zh"): string {
   }
 }
 
-function localSignalLabel(cluster: ThemeCluster, language: "en" | "zh"): string {
+function localSignalKindLabel(cluster: ThemeCluster, language: "en" | "zh"): string {
   if (language !== "zh") {
-    return `${cluster.kind} signal "${cluster.label}"`;
+    return `${cluster.kind} signal`;
   }
   switch (cluster.kind) {
     case "link":
-      return `链接信号“${titleFromPath(cluster.label)}”`;
+      return "链接信号";
     case "phrase":
-      return `重复短语“${cluster.label}”`;
+      return "重复短语";
     case "entity":
-      return `重复指称“${cluster.label}”`;
+      return "重复指称";
     case "folder":
-      return `文件夹信号“${titleFromPath(cluster.label)}”`;
+      return "文件夹信号";
     case "weak-tag":
-      return `弱标签信号“${cluster.label}”`;
+      return "弱标签信号";
     case "note":
-      return `单篇笔记信号“${cluster.label}”`;
+      return "单篇笔记信号";
   }
 }
 

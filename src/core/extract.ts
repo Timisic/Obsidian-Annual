@@ -41,7 +41,9 @@ export function extractNoteStats(
 
 const FRONTMATTER_DATE_KEYS = [
   "date",
+  "create",
   "created",
+  "create_time",
   "created_at",
   "createdAt",
   "created_time",

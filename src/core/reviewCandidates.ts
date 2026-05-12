@@ -19,6 +19,9 @@ export interface BuildReviewSessionOptions {
   themeHypotheses?: ThemeHypothesis[];
   evidencePackage?: ThemeEvidencePackage;
   language?: "en" | "zh";
+  aiConfigured?: boolean;
+  aiAttempted?: boolean;
+  aiFailureMessage?: string;
 }
 
 export function buildReviewSession(
@@ -28,7 +31,8 @@ export function buildReviewSession(
 ): ReviewSessionState {
   const scopeHash = reviewScopeHash(aggregate);
   const scanId = `${aggregate.year}:${scopeHash}:${aggregate.generatedAt}`;
-  const scannedCandidates = buildReviewCandidates(aggregate, options);
+  const buildResult = buildReviewCandidates(aggregate, options);
+  const scannedCandidates = buildResult.candidates;
   if (
     stored &&
     stored.schemaVersion === 1 &&
@@ -41,6 +45,9 @@ export function buildReviewSession(
       scannedCandidates,
       scanId,
       aggregate.generatedAt,
+      buildResult.localFallbackCandidates,
+      buildResult.themeGeneration,
+      options.evidencePackage?.evidenceNotes.map((note) => note.path),
     );
   }
   return {
@@ -50,6 +57,8 @@ export function buildReviewSession(
     scopeHash,
     scanId,
     candidates: scannedCandidates,
+    localFallbackCandidates: buildResult.localFallbackCandidates,
+    themeGeneration: buildResult.themeGeneration,
     decisions: [],
     progress: calculateReviewProgress(scannedCandidates),
     createdAt: aggregate.generatedAt,
@@ -77,28 +86,109 @@ export function reviewScopeHash(aggregate: YearAggregate): string {
 function buildReviewCandidates(
   aggregate: YearAggregate,
   options: BuildReviewSessionOptions,
-): ReviewCandidate[] {
+): {
+  candidates: ReviewCandidate[];
+  localFallbackCandidates: ReviewCandidate[];
+  themeGeneration: ReviewSessionState["themeGeneration"];
+} {
   const evidencePackage = options.evidencePackage;
   const suppliedThemes = options.themeHypotheses ?? [];
-  const themes =
-    suppliedThemes.length > 0
-      ? suppliedThemes
-      : evidencePackage
-        ? buildLocalThemeHypotheses(evidencePackage, options.language)
-        : [];
+  const localThemes = evidencePackage
+    ? buildLocalThemeHypotheses(evidencePackage, options.language)
+    : [];
+  const themes = suppliedThemes.length > 0 ? suppliedThemes : localThemes;
   const evidenceById = new Map(
     evidencePackage?.evidenceNotes.map((note) => [note.id, note]) ?? [],
   );
 
   if (themes.length > 0) {
-    return themes
-      .map((theme, index) => themeCandidate(aggregate, theme, index, evidenceById))
+    const candidates = themes
+      .map((theme, index) =>
+        themeCandidate(aggregate, theme, index, evidenceById, options.language),
+      )
       .filter((candidate): candidate is ReviewCandidate => Boolean(candidate))
       .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
+    if (suppliedThemes.length > 0) {
+      if (candidates.length === 0 && options.aiConfigured && options.aiAttempted) {
+        return {
+          candidates: [],
+          localFallbackCandidates: buildCandidateList(
+            aggregate,
+            localThemes,
+            evidenceById,
+            options.language,
+          ),
+          themeGeneration: {
+            mode: "degraded-local",
+            aiConfigured: true,
+            aiAttempted: true,
+            message: options.aiFailureMessage,
+          },
+        };
+      }
+      return {
+        candidates,
+        localFallbackCandidates: [],
+        themeGeneration: {
+          mode: "ai",
+          aiConfigured: Boolean(options.aiConfigured),
+          aiAttempted: Boolean(options.aiAttempted),
+        },
+      };
+    }
+    if (options.aiConfigured && options.aiAttempted) {
+      return {
+        candidates: [],
+        localFallbackCandidates: candidates,
+        themeGeneration: {
+          mode: "degraded-local",
+          aiConfigured: true,
+          aiAttempted: true,
+          message: options.aiFailureMessage,
+        },
+      };
+    }
+    return {
+      candidates,
+      localFallbackCandidates: [],
+      themeGeneration: {
+        mode: "local",
+        aiConfigured: Boolean(options.aiConfigured),
+        aiAttempted: Boolean(options.aiAttempted),
+      },
+    };
   }
 
-  return aggregate.topicEvolution.topTopics
-    .flatMap((topic, index) => topicCandidate(aggregate, topic, index))
+  const candidates = aggregate.topicEvolution.topTopics
+    .flatMap((topic, index) =>
+      topicCandidate(aggregate, topic, index, options.language),
+    )
+    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
+  return {
+    candidates:
+      options.aiConfigured && options.aiAttempted ? [] : candidates,
+    localFallbackCandidates:
+      options.aiConfigured && options.aiAttempted ? candidates : [],
+    themeGeneration: {
+      mode: options.aiConfigured && options.aiAttempted ? "degraded-local" : "local",
+      aiConfigured: Boolean(options.aiConfigured),
+      aiAttempted: Boolean(options.aiAttempted),
+      message: options.aiFailureMessage,
+    },
+  };
+}
+
+function buildCandidateList(
+  aggregate: YearAggregate,
+  themes: ThemeHypothesis[],
+  evidenceById: Map<string, ThemeEvidenceNote>,
+  language: "en" | "zh" = "en",
+): ReviewCandidate[] {
+  return themes
+    .map((theme, index) =>
+      themeCandidate(aggregate, theme, index, evidenceById, language),
+    )
+    .filter((candidate): candidate is ReviewCandidate => Boolean(candidate))
     .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
 }
 
@@ -107,6 +197,7 @@ function themeCandidate(
   theme: ThemeHypothesis,
   index: number,
   evidenceById: Map<string, ThemeEvidenceNote>,
+  language: "en" | "zh" = "en",
 ): ReviewCandidate | null {
   const sourcePaths = theme.evidenceNoteIds
     .map((id) => evidenceById.get(id)?.path)
@@ -169,8 +260,12 @@ function themeCandidate(
     rank: index + 1,
     rankReason:
       theme.source === "ai"
-        ? "Ranked by AI semantic theme order from the bounded evidence package."
-        : "Ranked by local evidence-cluster strength from the bounded evidence package.",
+        ? language === "zh"
+          ? "按 AI 语义主题顺序排序。"
+          : "Ranked by AI semantic theme order from the bounded evidence package."
+        : language === "zh"
+          ? "按本地证据簇强度排序（降级线索）。"
+          : "Ranked by local evidence-cluster strength from the bounded evidence package.",
     decisionIds: [],
     createdAt: aggregate.generatedAt,
     updatedAt: aggregate.generatedAt,
@@ -181,6 +276,7 @@ function topicCandidate(
   aggregate: YearAggregate,
   topic: TopTopic,
   index: number,
+  language: "en" | "zh" = "en",
 ): ReviewCandidate[] {
   const sourcePaths = topic.representativeNotes.slice(0, 5);
   if (sourcePaths.length === 0) {
@@ -225,7 +321,10 @@ function topicCandidate(
       sourcePaths,
       score: topic.addedWords + topic.newNotes * 10 + topic.updatedNotes,
       rank: index + 1,
-      rankReason: "Legacy fallback ranked by topic growth and representative notes.",
+      rankReason:
+        language === "zh"
+          ? "按旧版主题增长和代表笔记排序（降级线索）。"
+          : "Legacy fallback ranked by topic growth and representative notes.",
       decisionIds: [],
       createdAt: aggregate.generatedAt,
       updatedAt: aggregate.generatedAt,

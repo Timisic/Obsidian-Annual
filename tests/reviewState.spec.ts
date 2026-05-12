@@ -147,7 +147,7 @@ describe("review state", () => {
     });
   });
 
-  it("preserves user-decided choices when repeated scans refresh candidates", () => {
+  it("preserves renamed candidate titles when repeated scans refresh candidates", () => {
     const stored = applyReviewAction(
       sessionWith([candidate("topic-1"), candidate("note-1")]),
       {
@@ -185,7 +185,7 @@ describe("review state", () => {
     );
 
     expect(merged.candidates.find((item) => item.id === "topic-1")).toMatchObject({
-      status: "renamed",
+      status: "candidate",
       userTitle: "Local-first review",
       reason: "Refreshed machine reason",
       score: 99,
@@ -195,7 +195,7 @@ describe("review state", () => {
       candidateId: "topic-1",
       action: "rename",
       label: "Local-first review",
-      includeInReport: true,
+      includeInReport: false,
     });
     expect(merged.candidates.find((item) => item.id === "note-1")).toMatchObject({
       status: "candidate",
@@ -223,6 +223,61 @@ describe("review state", () => {
     expect(merged.candidates[0]?.evidence.every((evidence) => evidence.missing)).toBe(
       true,
     );
+  });
+
+  it("does not mark saved evidence missing when a rescan still sees the source note under a new semantic candidate", () => {
+    const stored = applyReviewAction(sessionWith([candidate("old-ai-theme")]), {
+      type: "accept",
+      candidateId: "old-ai-theme",
+      at,
+    });
+    const rescanned = candidate("new-ai-theme", [
+      {
+        id: "new-ai-theme-evidence",
+        kind: "note",
+        label: "same source",
+        target: "old-ai-theme.md",
+        sourcePath: "old-ai-theme.md",
+      },
+    ]);
+
+    const merged = mergeScannedCandidates(stored, [rescanned], "scan-2", at);
+
+    expect(
+      merged.candidates.find((item) => item.id === "old-ai-theme")?.evidence,
+    ).toEqual([
+      expect.objectContaining({
+        sourcePath: "old-ai-theme.md",
+        missing: false,
+      }),
+    ]);
+  });
+
+  it("does not mark reviewed AI evidence missing when AI regeneration is unavailable but source notes still exist", () => {
+    const stored = applyReviewAction(sessionWith([candidate("old-ai-theme")]), {
+      type: "accept",
+      candidateId: "old-ai-theme",
+      at,
+    });
+
+    const merged = mergeScannedCandidates(
+      stored,
+      [],
+      "scan-without-ai",
+      at,
+      [],
+      undefined,
+      ["old-ai-theme.md"],
+    );
+
+    expect(
+      merged.candidates.find((item) => item.id === "old-ai-theme")?.evidence,
+    ).toEqual([
+      expect.objectContaining({
+        sourcePath: "old-ai-theme.md",
+        missing: false,
+      }),
+    ]);
   });
 
   it("calculates progress from statuses without counting candidates as reviewed", () => {
@@ -306,12 +361,12 @@ describe("review state", () => {
     });
 
     expect(markdown).toContain("[[accepted-note|Accepted Note]]");
-    expect(markdown).toContain("- AI summary: AI summary for Accepted Note");
-    expect(markdown).toContain("- Why this theme exists: Reason for Accepted Note");
+    expect(markdown).toContain("**AI summary**: AI summary for Accepted Note");
+    expect(markdown).toContain("**Why this theme exists**: Reason for Accepted Note");
     expect(markdown).toContain(
-      "- Connection explanation: Accepted Note connects multiple evidence notes.",
+      "**Connection explanation**: Accepted Note connects multiple evidence notes.",
     );
-    expect(markdown).toContain("- Local signals: Accepted Note has local evidence");
+    expect(markdown).toContain("**Local signals**: Accepted Note has local evidence");
     expect(markdown).toContain(
       "- [[accepted-note]] — Source note supports the candidate.",
     );
