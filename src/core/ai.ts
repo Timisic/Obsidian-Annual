@@ -14,14 +14,15 @@ import type {
   AnnualReviewSettings,
   NoteStats,
   SourceFile,
+  ThemeEvidenceNote,
   ThemeEvidencePackage,
   ThemeHypothesis,
   YearAggregate,
 } from "./types";
 
-const MAX_AI_CONTEXT_NOTES = 80;
 const MAX_AI_CONTEXT_EXCERPT_CHARS = 700;
 const MAX_CODEX_CONTEXT_NOTES = 28;
+const MAX_PROVIDER_CONTEXT_EXCERPT_CHARS = 240;
 const MAX_LINKED_NOTE_CONTEXT = 4;
 const LOCAL_CODEX_TIMEOUT_MS = 300_000;
 const LOCAL_CODEX_PATH_ENTRIES = [
@@ -30,7 +31,7 @@ const LOCAL_CODEX_PATH_ENTRIES = [
   "/usr/local/bin",
 ];
 const ABSOLUTE_CODEX_COMMAND_EXAMPLE =
-  "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
+  "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;
@@ -125,11 +126,7 @@ export async function renderAiReportEnhancements(
     return unavailableAiEnhancements("ChatGPT provider returned an empty response.");
   }
 
-  const evidencePackage = buildThemeEvidencePackage(
-    options.aggregate,
-    options.files,
-    options.settings,
-  );
+  const evidencePackage = buildProviderVisibleEvidencePackage(options);
   return withFallbackHighValueEnhancements(
     parseAiEnhancements(content, evidencePackage),
     options,
@@ -152,11 +149,7 @@ async function renderCodexReportSection(
     );
   }
 
-  const evidencePackage = buildThemeEvidencePackage(
-    options.aggregate,
-    options.files,
-    options.settings,
-  );
+  const evidencePackage = buildProviderVisibleEvidencePackage(options);
   return withFallbackHighValueEnhancements(
     parseAiEnhancements(result.content, evidencePackage),
     options,
@@ -197,11 +190,11 @@ function buildCodexContext(
   files: SourceFile[],
   settings: AnnualReviewSettings,
 ): unknown {
-  const evidencePackage = compactThemeEvidencePackage(
-    buildThemeEvidencePackage(aggregate, files, settings),
-    20,
-    240,
-  );
+  const evidencePackage = buildProviderVisibleEvidencePackage({
+    aggregate,
+    files,
+    settings,
+  });
 
   return {
     task: "Generate content-synthesized review enrichment JSON from the bounded ReviewSession evidence package.",
@@ -287,6 +280,18 @@ function compactThemeEvidencePackage(
       weakSignals: note.weakSignals.slice(0, 3),
     })),
   };
+}
+
+function buildProviderVisibleEvidencePackage({
+  aggregate,
+  files,
+  settings,
+}: Pick<ChatGptReportOptions, "aggregate" | "files" | "settings">): ThemeEvidencePackage {
+  return compactThemeEvidencePackage(
+    buildThemeEvidencePackage(aggregate, files, settings),
+    MAX_CODEX_CONTEXT_NOTES,
+    MAX_PROVIDER_CONTEXT_EXCERPT_CHARS,
+  );
 }
 
 function activeNoteEntries(
@@ -545,7 +550,7 @@ function fallbackHighValueActionEn(
   if (note.kind === "输出候选") {
     return `Add a current-judgment section and three evidence links so it can become an output draft for ${target}.`;
   }
-  return `Add related notes, current conclusion, and next question sections so it can serve as a review entry for ${target}.`;
+  return `Add related notes, current hypothesis, and next question sections so it can serve as a review entry for ${target}.`;
 }
 
 function relatedTheme(
@@ -846,14 +851,7 @@ function themeInsightToHypothesis(
   if (!evidencePackage) {
     return null;
   }
-  const idByReference = new Map(
-    evidencePackage.evidenceNotes.flatMap((note) => [
-      [normalizeLinkIdentity(note.id), note.id] as const,
-      [normalizeLinkIdentity(note.path), note.id] as const,
-      [normalizeLinkIdentity(note.path.replace(/\.md$/iu, "")), note.id] as const,
-      [normalizeLinkIdentity(note.title), note.id] as const,
-    ]),
-  );
+  const idByReference = buildEvidenceReferenceIndex(evidencePackage.evidenceNotes);
   const evidenceNoteIds = [
     ...new Set(
       insight.evidenceNotes
@@ -922,6 +920,33 @@ function parseJsonObject(content: string): Record<string, unknown> | null {
     }
   }
   return null;
+}
+
+function buildEvidenceReferenceIndex(notes: ThemeEvidenceNote[]): Map<string, string> {
+  const references = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  const add = (reference: string, id: string) => {
+    const normalized = normalizeLinkIdentity(reference);
+    if (!normalized || ambiguous.has(normalized)) {
+      return;
+    }
+    const existing = references.get(normalized);
+    if (existing && existing !== id) {
+      references.delete(normalized);
+      ambiguous.add(normalized);
+      return;
+    }
+    references.set(normalized, id);
+  };
+
+  for (const note of notes) {
+    add(note.id, note.id);
+    add(note.path, note.id);
+    add(note.path.replace(/\.md$/iu, ""), note.id);
+    add(note.title, note.id);
+  }
+
+  return references;
 }
 
 function toThemeInsight(value: unknown): AiThemeInsight | null {

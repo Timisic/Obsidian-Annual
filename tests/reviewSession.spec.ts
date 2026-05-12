@@ -281,7 +281,8 @@ describe("aggregation and rendering", () => {
           path: "Inbox/Imported note.md",
           ctime: flattenedTime,
           mtime: flattenedTime,
-          content: "---\ncreate: 2026-02-14 10:00\n---\n\nfrontmatter dated imported note",
+          content:
+            "---\ncreate: 2026-02-14 10:00\n---\n\nfrontmatter dated imported note",
         },
       ],
       2026,
@@ -479,7 +480,7 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Confirmed theme hypotheses");
+    expect(markdown).toContain("## Reviewed theme hypotheses");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
@@ -489,14 +490,16 @@ describe("aggregation and rendering", () => {
     expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026/u);
     expect(markdown).toContain("cssclasses:\n  - p-indent");
     expect(markdown).toContain('growth_data_source: "current-vault inference"');
-    expect(markdown).toContain('activity_date_sources: "frontmatter date: 0; path/filename date: 2; filesystem timestamp: 2"');
+    expect(markdown).toContain(
+      'activity_date_sources: "frontmatter date: 0; path/filename date: 2; filesystem timestamp: 2"',
+    );
     expect(markdown).toContain('report_language: "en"');
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
       "## Review Range",
       "## Activity Evidence",
-      "## Confirmed theme hypotheses",
+      "## Reviewed theme hypotheses",
       "## Rediscovered Notes",
       "## Hidden Connections",
       "## Reflection Prompts",
@@ -541,9 +544,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Confirmed theme hypotheses");
-    expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
-    expect(markdown).not.toContain("### Confirmed theme hypotheses");
+    expect(markdown).toContain("## Reviewed theme hypotheses");
+    expect(markdown).toContain("No reviewed Theme Hypotheses are ready");
+    expect(markdown).not.toContain("### Reviewed theme hypotheses");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
@@ -654,7 +657,7 @@ describe("aggregation and rendering", () => {
     expect(markdown.match(/^## .+$/gmu)).toEqual([
       "## 回顾范围",
       "## 活动证据",
-      "## 已确认主题假设",
+      "## 已复核主题假设",
       "## 重新发现的笔记",
       "## 隐藏连接",
       "## 复盘提示",
@@ -670,7 +673,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).not.toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 已确认主题假设");
+    expect(markdown).toContain("## 已复核主题假设");
     expect(markdown).toContain("还没有可写入年报的主题假设");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
@@ -959,7 +962,7 @@ describe("aggregation and rendering", () => {
       ],
     });
 
-    expect(markdown).toContain("No confirmed Theme Hypotheses are ready");
+    expect(markdown).toContain("No reviewed Theme Hypotheses are ready");
     expect(markdown).not.toContain(
       "No auditable evidence was generated for this candidate",
     );
@@ -973,7 +976,7 @@ describe("aggregation and rendering", () => {
     const reviewSession = reviewSessionFixture();
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
-    expect(markdown).toContain("### Confirmed theme hypotheses");
+    expect(markdown).toContain("### Reviewed theme hypotheses");
     expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
     expect(markdown).toContain("#### [[Projects/Renamed|Renamed Topic]]");
     expect(markdown).toContain("Merged from:");
@@ -993,7 +996,7 @@ describe("aggregation and rendering", () => {
       reviewSession: reviewSessionFixture(),
     });
 
-    expect(markdown).toContain("### 已确认主题假设");
+    expect(markdown).toContain("### 已复核主题假设");
     expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
     expect(markdown).toContain("合并来源:");
     expect(markdown).not.toContain("Ignored Topic");
@@ -1029,7 +1032,7 @@ describe("aggregation and rendering", () => {
     });
     const reviewSection = sectionBetween(
       markdown,
-      "## 已确认主题假设",
+      "## 已复核主题假设",
       "## 重新发现的笔记",
     );
 
@@ -1095,7 +1098,9 @@ describe("aggregation and rendering", () => {
       reviewSession.localFallbackCandidates
         ?.map((candidate) => [candidate.title, candidate.reason].join(" "))
         .join(" "),
-    ).not.toMatch(/created in review range|modified in review range|frontmatter|月中的跨笔记主题/u);
+    ).not.toMatch(
+      /created in review range|modified in review range|frontmatter|月中的跨笔记主题/u,
+    );
   });
 
   it("uses supplied AI themes as the primary Review Board queue", async () => {

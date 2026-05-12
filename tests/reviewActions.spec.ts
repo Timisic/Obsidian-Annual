@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { getReviewBoardActionState } from "../src/obsidian/reviewActions";
+import { isMergeTargetCandidate } from "../src/obsidian/reviewSelection";
 import type { ReviewCandidate } from "../src/core/reviewState";
 
 const at = "2026-05-09T00:00:00.000Z";
@@ -52,6 +53,14 @@ describe("Review Board action rendering state", () => {
         actions: ["openSourceNote"],
       });
     }
+  });
+
+  it("keeps ignored and merged proposals out of merge targets", () => {
+    expect(isMergeTargetCandidate(candidate("pending", "candidate"))).toBe(true);
+    expect(isMergeTargetCandidate(candidate("accepted", "accepted"))).toBe(true);
+    expect(isMergeTargetCandidate(candidate("renamed", "renamed"))).toBe(true);
+    expect(isMergeTargetCandidate(candidate("ignored", "ignored"))).toBe(false);
+    expect(isMergeTargetCandidate(candidate("merged", "merged"))).toBe(false);
   });
 });
 

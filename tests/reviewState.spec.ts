@@ -6,13 +6,18 @@ import { buildThemeEvidencePackage } from "../src/core/themeEvidence";
 import {
   applyReviewAction,
   calculateReviewProgress,
+  isPendingReviewQueueCandidate,
+  isReviewBoardQueueCandidate,
+  isReviewReportCandidate,
   mergeScannedCandidates,
+  shouldIncludeReviewDecisionInReport,
   type EvidenceSource,
   type ReviewCandidate,
   type ReviewSessionState,
 } from "../src/core/reviewState";
 import { DEFAULT_SETTINGS } from "../src/core/settings";
 import type { ExplanationReason } from "../src/core/types";
+import { normalizeReviewSessions } from "../src/core/reviewSessionPersistence";
 import { fixtureVault } from "./fixtures";
 
 const at = "2026-05-04T15:00:00.000Z";
@@ -55,6 +60,37 @@ describe("review state", () => {
     ).toThrow(
       "Review candidate topic-2 has an explanation reason without traceable evidence.",
     );
+  });
+
+
+  it("centralizes Review Board queue and report inclusion rules", () => {
+    const pending = candidate("pending");
+    const accepted = { ...candidate("accepted"), status: "accepted" as const };
+    const renamed = { ...candidate("renamed"), status: "renamed" as const };
+    const merged = { ...candidate("merged"), status: "merged" as const };
+    const ignored = { ...candidate("ignored"), status: "ignored" as const };
+
+    expect(isPendingReviewQueueCandidate(pending)).toBe(true);
+    expect([pending, accepted, renamed, ignored].map(isReviewBoardQueueCandidate)).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(isReviewBoardQueueCandidate(merged)).toBe(false);
+    expect([pending, accepted, renamed, merged, ignored].map(isReviewReportCandidate)).toEqual([
+      false,
+      true,
+      true,
+      false,
+      false,
+    ]);
+
+    expect(shouldIncludeReviewDecisionInReport("accept", "candidate")).toBe(true);
+    expect(shouldIncludeReviewDecisionInReport("ignore", "candidate")).toBe(false);
+    expect(shouldIncludeReviewDecisionInReport("merge", "merged")).toBe(true);
+    expect(shouldIncludeReviewDecisionInReport("rename", "candidate")).toBe(false);
+    expect(shouldIncludeReviewDecisionInReport("rename", "accepted")).toBe(true);
   });
 
   it("applies MVP review actions and updates progress", () => {
@@ -280,6 +316,131 @@ describe("review state", () => {
     ]);
   });
 
+  it("keeps a reviewed candidate id and decision when provider rewords a theme with overlapping evidence", () => {
+    const stored = applyReviewAction(
+      sessionWith([
+        candidate("old-ai-theme", [
+          evidenceForPath("old-ai-theme", "Daily/2026-01-01.md"),
+          evidenceForPath("old-ai-theme", "Projects/Research.md"),
+          evidenceForPath("old-ai-theme", "Areas/AI Systems.md"),
+        ]),
+      ]),
+      {
+        type: "accept",
+        candidateId: "old-ai-theme",
+        at,
+      },
+    );
+    const rescanned = {
+      ...candidate("new-provider-wording", [
+        evidenceForPath("new-provider-wording", "Projects/Research.md"),
+        evidenceForPath("new-provider-wording", "Daily/2026-01-01.md"),
+        evidenceForPath("new-provider-wording", "Projects/New Context.md"),
+      ]),
+      title: "Provider reworded theme",
+      reason: "Provider phrased the same evidence cluster differently.",
+      score: 98,
+    };
+
+    const merged = mergeScannedCandidates(stored, [rescanned], "scan-2", at);
+
+    expect(merged.candidates).toHaveLength(1);
+    expect(merged.candidates[0]).toMatchObject({
+      id: "old-ai-theme",
+      status: "accepted",
+      title: "Provider reworded theme",
+      reason: "Provider phrased the same evidence cluster differently.",
+      score: 98,
+      decisionIds: stored.candidates[0]?.decisionIds,
+    });
+    expect(merged.decisions[0]).toMatchObject({
+      candidateId: "old-ai-theme",
+      action: "accept",
+    });
+    expect(merged.candidates[0]?.evidence.map((evidence) => evidence.sourcePath)).toEqual(
+      ["Projects/Research.md", "Daily/2026-01-01.md", "Projects/New Context.md"],
+    );
+  });
+
+  it("does not bind a reviewed decision to a reworded theme with only incidental evidence overlap", () => {
+    const stored = applyReviewAction(
+      sessionWith([
+        candidate("old-ai-theme", [
+          evidenceForPath("old-ai-theme", "Daily/2026-01-01.md"),
+          evidenceForPath("old-ai-theme", "Projects/Research.md"),
+          evidenceForPath("old-ai-theme", "Areas/AI Systems.md"),
+        ]),
+      ]),
+      {
+        type: "accept",
+        candidateId: "old-ai-theme",
+        at,
+      },
+    );
+    const rescanned = candidate("new-provider-wording", [
+      evidenceForPath("new-provider-wording", "Projects/Research.md"),
+      evidenceForPath("new-provider-wording", "Archive/Unrelated.md"),
+      evidenceForPath("new-provider-wording", "Daily/2026-02-01.md"),
+    ]);
+
+    const merged = mergeScannedCandidates(stored, [rescanned], "scan-2", at);
+
+    expect(merged.candidates.map((candidate) => candidate.id)).toEqual([
+      "old-ai-theme",
+      "new-provider-wording",
+    ]);
+    expect(
+      merged.candidates.find((candidate) => candidate.id === "old-ai-theme")?.status,
+    ).toBe("accepted");
+    expect(
+      merged.candidates.find((candidate) => candidate.id === "new-provider-wording")
+        ?.status,
+    ).toBe("candidate");
+  });
+
+  it("does not preserve a reviewed candidate id when evidence overlap matches are ambiguous", () => {
+    const stored = applyReviewAction(
+      sessionWith([
+        candidate("old-ai-theme", [
+          evidenceForPath("old-ai-theme", "Daily/2026-01-01.md"),
+          evidenceForPath("old-ai-theme", "Projects/Research.md"),
+          evidenceForPath("old-ai-theme", "Areas/AI Systems.md"),
+        ]),
+      ]),
+      {
+        type: "accept",
+        candidateId: "old-ai-theme",
+        at,
+      },
+    );
+    const firstRewording = candidate("first-provider-wording", [
+      evidenceForPath("first-provider-wording", "Daily/2026-01-01.md"),
+      evidenceForPath("first-provider-wording", "Projects/Research.md"),
+      evidenceForPath("first-provider-wording", "Projects/New Context.md"),
+    ]);
+    const secondRewording = candidate("second-provider-wording", [
+      evidenceForPath("second-provider-wording", "Daily/2026-01-01.md"),
+      evidenceForPath("second-provider-wording", "Projects/Research.md"),
+      evidenceForPath("second-provider-wording", "Areas/New Context.md"),
+    ]);
+
+    const merged = mergeScannedCandidates(
+      stored,
+      [firstRewording, secondRewording],
+      "scan-2",
+      at,
+    );
+
+    expect(merged.candidates.map((candidate) => candidate.id)).toEqual([
+      "old-ai-theme",
+      "first-provider-wording",
+      "second-provider-wording",
+    ]);
+    expect(
+      merged.candidates.find((candidate) => candidate.id === "old-ai-theme")?.status,
+    ).toBe("accepted");
+  });
+
   it("calculates progress from statuses without counting candidates as reviewed", () => {
     expect(
       calculateReviewProgress([
@@ -299,11 +460,9 @@ describe("review state", () => {
   it("builds stable review sessions from aggregate signals and preserves decisions on rescan", async () => {
     const files = await fixtureVault();
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
-    const session = buildReviewSession(
-      aggregate,
-      undefined,
-      { evidencePackage: buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS) },
-    );
+    const session = buildReviewSession(aggregate, undefined, {
+      evidencePackage: buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS),
+    });
     const topic = session.candidates.find((item) => item.type === "theme-hypothesis");
 
     expect(session.candidates.length).toBeGreaterThan(0);
@@ -324,22 +483,31 @@ describe("review state", () => {
     const legacyStored = { ...accepted, session: undefined };
     const rescannedFiles = await fixtureVault();
     const rescannedAggregate = buildYearAggregate(rescannedFiles, 2026, DEFAULT_SETTINGS);
-    const rescanned = buildReviewSession(
-      rescannedAggregate,
-      legacyStored,
-      {
-        evidencePackage: buildThemeEvidencePackage(
-          rescannedAggregate,
-          rescannedFiles,
-          DEFAULT_SETTINGS,
-        ),
-      },
-    );
+    const rescanned = buildReviewSession(rescannedAggregate, legacyStored, {
+      evidencePackage: buildThemeEvidencePackage(
+        rescannedAggregate,
+        rescannedFiles,
+        DEFAULT_SETTINGS,
+      ),
+    });
 
     expect(
       rescanned.candidates.find((item) => item.id === (topic?.id ?? ""))?.status,
     ).toBe("accepted");
     expect(rescanned.session?.id).toBe(session.session?.id);
+  });
+
+  it("keeps legacy persisted review sessions without a session object", () => {
+    const accepted = applyReviewAction(sessionWith([candidate("legacy-topic")]), {
+      type: "accept",
+      candidateId: "legacy-topic",
+      at,
+    });
+    const legacyStored = { ...accepted, session: undefined };
+
+    expect(normalizeReviewSessions({ legacy: legacyStored })).toEqual({
+      legacy: legacyStored,
+    });
   });
 
   it("renders accepted review decisions while excluding ignored candidates and forced actions", () => {
@@ -430,6 +598,17 @@ function evidenceFor(id: string): EvidenceSource {
     label: `${id}.md`,
     target: `${id}.md`,
     sourcePath: `${id}.md`,
+    reason: "Source note supports the candidate.",
+  };
+}
+
+function evidenceForPath(id: string, path: string): EvidenceSource {
+  return {
+    id: `${id}:${path}:evidence`,
+    kind: "note",
+    label: path,
+    target: path,
+    sourcePath: path,
     reason: "Source note supports the candidate.",
   };
 }

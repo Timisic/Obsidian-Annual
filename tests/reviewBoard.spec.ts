@@ -241,9 +241,7 @@ describe("MVP public surface", () => {
   it("does not rerun AI preview when a cached AI Review Board session exists", () => {
     const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
 
-    expect(pluginSource).toContain(
-      "hasUsableAiReviewSession(existing)",
-    );
+    expect(pluginSource).toContain("hasUsableAiReviewSession(existing)");
     expect(pluginSource).toContain("session.candidates.length < 5");
     expect(pluginSource).toContain("this.lastAggregate = aggregate;");
   });
@@ -263,7 +261,10 @@ describe("MVP public surface", () => {
   });
 
   it("migrates older mixed AI/local cache out of the primary Review Board queue", () => {
-    const pluginSource = readFileSync(join(process.cwd(), "src/main.ts"), "utf8");
+    const pluginSource = readFileSync(
+      join(process.cwd(), "src/core/reviewSessionPersistence.ts"),
+      "utf8",
+    );
 
     expect(pluginSource).toContain("normalizeReviewSession(session)");
     expect(pluginSource).toContain("localFallbackCandidates");
