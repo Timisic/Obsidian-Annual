@@ -60,6 +60,16 @@ Annual Review 只是一个 preset；同一套产品定义也覆盖 Quarterly Rev
 主题假设需要用户复核。插件可以提示“这些笔记可能共同表达了什么”，
 但最终报告只写入用户确认过的主题名称、解释、证据和用户补充。
 
+## 可信主题复核保障
+
+Review Board 是 Theme Decision 的保护层，而不只是 AI 输出预览。当前实现用几条规则降低重复复核和误确认风险：
+
+- **稳定 Review Candidate 身份**：当 provider 改写标题、摘要或顺序，但 Evidence Notes 有明确重叠时，已接受、改名、合并或忽略的状态会保留。
+- **多样化 Evidence Selection**：AI Context 优先覆盖不同时间段、文件夹、连接簇和长尾线索，而不是只取最高分笔记。
+- **受限 evidence 引用**：AI 只能引用 provider-visible Evidence Package；重复标题等歧义引用不会被随意绑定到某条笔记。
+- **确认后才入报告**：Review Report 只包含用户确认后的 accepted / renamed themes；candidate、ignored 和 merged source 不会作为独立主题进入报告。
+- **集中 Review Board 规则**：队列可见性、Report inclusion 和 merge target 规则集中在可测试模块中，避免后续交互扩展时规则漂移。
+
 ## AI 的角色
 
 AI 是核心分析层中的 **主题假设生成器和关系解释器**，不是最后一步的美化器：
