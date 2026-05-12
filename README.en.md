@@ -4,6 +4,8 @@
 
 Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
 
+![Obsidian Time Range Review core flowchart](docs/assets/time-range-review-flow.png)
+
 It is a local-first, evidence-constrained Obsidian review plugin for annual,
 quarterly, monthly, and custom ranges. It compiles source-note evidence packages,
 uses AI to generate reviewable semantic theme hypotheses and connection

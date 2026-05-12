@@ -4,6 +4,8 @@
 
 Obsidian Time Range Review is an AI-assisted review plugin that helps users rediscover forgotten notes, uncover hidden themes across a selected time range, and generate evidence-backed Markdown review reports inside their vault.
 
+![Obsidian Time Range Review 核心流程图](docs/assets/time-range-review-flow.png)
+
 它是一个本地优先、证据约束的 Obsidian 时间范围复盘插件。用户可以选择年度、季度、月度或自定义时间范围，
 让插件编译源笔记证据包，用 AI 生成可复核的语义主题假设和连接解释，
 再把用户确认后的主题、证据和说明写入 vault 内的 Markdown 复盘报告。
