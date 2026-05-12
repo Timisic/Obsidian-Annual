@@ -131,6 +131,42 @@ const USER_DECIDED_STATUSES = new Set<ReviewCandidateStatus>([
   "ignored",
 ]);
 
+const REVIEW_REPORT_INCLUDED_STATUSES = new Set<ReviewCandidateStatus>([
+  "accepted",
+  "renamed",
+]);
+
+export function isPendingReviewQueueCandidate(candidate: ReviewCandidate): boolean {
+  return candidate.status === "candidate" && candidate.type === "theme-hypothesis";
+}
+
+export function isReviewBoardQueueCandidate(candidate: ReviewCandidate): boolean {
+  return (
+    candidate.status !== "merged" &&
+    (candidate.status !== "candidate" || isPendingReviewQueueCandidate(candidate))
+  );
+}
+
+export function isReviewReportCandidate(candidate: ReviewCandidate): boolean {
+  return REVIEW_REPORT_INCLUDED_STATUSES.has(candidate.status);
+}
+
+export function shouldIncludeReviewDecisionInReport(
+  action: ReviewDecision["action"],
+  candidateStatus: ReviewCandidateStatus,
+): boolean {
+  switch (action) {
+    case "accept":
+    case "merge":
+      return true;
+    case "rename":
+      return candidateStatus !== "candidate";
+    case "ignore":
+    case "custom":
+      return false;
+  }
+}
+
 export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
   if (candidate.evidence.length === 0) {
     throw new Error(
@@ -198,7 +234,7 @@ export function applyReviewAction(
       label: `${displayCandidateTitle(source)} -> ${displayCandidateTitle(target)}`,
       note: action.note,
       evidence: source.evidence,
-      includeInReport: true,
+      includeInReport: shouldIncludeReviewDecisionInReport("merge", source.status),
       at: action.at,
       targetCandidateId: target.id,
     });
@@ -220,7 +256,7 @@ export function applyReviewAction(
           action: "accept",
           label: displayCandidateTitle(candidate),
           evidence: candidate.evidence,
-          includeInReport: true,
+          includeInReport: shouldIncludeReviewDecisionInReport("accept", candidate.status),
           at: action.at,
         }),
       );
@@ -238,7 +274,7 @@ export function applyReviewAction(
           label: displayCandidateTitle(candidate),
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: false,
+          includeInReport: shouldIncludeReviewDecisionInReport("ignore", candidate.status),
           at: action.at,
         }),
       );
@@ -266,7 +302,7 @@ export function applyReviewAction(
           label: candidate.userTitle,
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: includeRenamedInReport,
+          includeInReport: shouldIncludeReviewDecisionInReport("rename", candidate.status),
           at: action.at,
         }),
       );
@@ -316,7 +352,9 @@ export function mergeScannedCandidates(
   );
   const candidates = stored.candidates
     .map((storedCandidate) => {
-      const scanned = scannedById.get(storedCandidate.id);
+      const exactScanned = scannedById.get(storedCandidate.id);
+      const scanned =
+        exactScanned ?? findEvidenceOverlapMatch(storedCandidate, scannedById);
       if (!scanned) {
         return storedCandidate.status === "candidate" ||
           isLegacyThinCandidate(storedCandidate) ||
@@ -324,17 +362,21 @@ export function mergeScannedCandidates(
           ? undefined
           : markMissingEvidence(storedCandidate, updatedAt, availableEvidencePaths);
       }
-      scannedById.delete(storedCandidate.id);
+      scannedById.delete(scanned.id);
       assertCandidateHasEvidence(scanned);
       if (USER_DECIDED_STATUSES.has(storedCandidate.status)) {
         return {
           ...scanned,
+          id: storedCandidate.id,
           status: storedCandidate.status,
           userTitle: storedCandidate.userTitle,
           userNote: storedCandidate.userNote,
           mergedIntoId: storedCandidate.mergedIntoId,
           mergedSourceIds: storedCandidate.mergedSourceIds,
-          evidence: transferEvidenceUserComments(scanned.evidence, storedCandidate.evidence),
+          evidence: transferEvidenceUserComments(
+            scanned.evidence,
+            storedCandidate.evidence,
+          ),
           decisionIds: storedCandidate.decisionIds,
           createdAt: storedCandidate.createdAt,
           updatedAt,
@@ -342,9 +384,13 @@ export function mergeScannedCandidates(
       }
       return {
         ...scanned,
+        id: storedCandidate.id,
         userTitle: storedCandidate.userTitle,
         userNote: storedCandidate.userNote,
-        evidence: transferEvidenceUserComments(scanned.evidence, storedCandidate.evidence),
+        evidence: transferEvidenceUserComments(
+          scanned.evidence,
+          storedCandidate.evidence,
+        ),
         createdAt: storedCandidate.createdAt,
         updatedAt,
       };
@@ -459,6 +505,70 @@ function transferEvidenceUserComments(
   }));
 }
 
+const MIN_SHARED_EVIDENCE_PATHS_FOR_IDENTITY_MATCH = 2;
+const MIN_SMALLER_SET_COVERAGE_FOR_IDENTITY_MATCH = 0.5;
+const MIN_JACCARD_FOR_IDENTITY_MATCH = 0.4;
+
+function findEvidenceOverlapMatch(
+  storedCandidate: ReviewCandidate,
+  scannedById: Map<string, ReviewCandidate>,
+): ReviewCandidate | undefined {
+  let bestMatch: ReviewCandidate | undefined;
+  let bestScore = 0;
+  let hasAmbiguousBestMatch = false;
+
+  for (const scannedCandidate of scannedById.values()) {
+    if (storedCandidate.type !== scannedCandidate.type) {
+      continue;
+    }
+    const overlap = evidencePathOverlap(
+      traceableCandidateEvidencePaths(storedCandidate),
+      traceableCandidateEvidencePaths(scannedCandidate),
+    );
+    if (!overlap.isSubstantial) {
+      continue;
+    }
+    if (overlap.score > bestScore) {
+      bestMatch = scannedCandidate;
+      bestScore = overlap.score;
+      hasAmbiguousBestMatch = false;
+    } else if (overlap.score === bestScore) {
+      hasAmbiguousBestMatch = true;
+    }
+  }
+
+  return hasAmbiguousBestMatch ? undefined : bestMatch;
+}
+
+function evidencePathOverlap(
+  storedPaths: string[],
+  scannedPaths: string[],
+): { isSubstantial: boolean; score: number } {
+  const stored = new Set(storedPaths);
+  const scanned = new Set(scannedPaths);
+  if (stored.size === 0 || scanned.size === 0) {
+    return { isSubstantial: false, score: 0 };
+  }
+
+  let shared = 0;
+  for (const path of stored) {
+    if (scanned.has(path)) {
+      shared += 1;
+    }
+  }
+
+  const smallerSetCoverage = shared / Math.min(stored.size, scanned.size);
+  const unionSize = new Set([...stored, ...scanned]).size;
+  const jaccard = shared / unionSize;
+  const isSubstantial =
+    shared >= MIN_SHARED_EVIDENCE_PATHS_FOR_IDENTITY_MATCH &&
+    smallerSetCoverage >= MIN_SMALLER_SET_COVERAGE_FOR_IDENTITY_MATCH &&
+    jaccard >= MIN_JACCARD_FOR_IDENTITY_MATCH;
+  const score = shared * 100 + smallerSetCoverage * 10 + jaccard;
+
+  return { isSubstantial, score };
+}
+
 function buildReviewDecision(input: {
   candidateId: string;
   action: ReviewDecision["action"];
@@ -515,11 +625,15 @@ function markMissingEvidence(
   };
 }
 
+function traceableCandidateEvidencePaths(candidate: ReviewCandidate): string[] {
+  return candidate.evidence
+    .flatMap(traceableEvidencePaths)
+    .map(normalizeEvidencePath)
+    .filter(Boolean);
+}
+
 function traceableCandidatePaths(candidate: ReviewCandidate): string[] {
-  return [
-    ...candidate.sourcePaths,
-    ...candidate.evidence.flatMap(traceableEvidencePaths),
-  ]
+  return [...candidate.sourcePaths, ...candidate.evidence.flatMap(traceableEvidencePaths)]
     .map(normalizeEvidencePath)
     .filter(Boolean);
 }

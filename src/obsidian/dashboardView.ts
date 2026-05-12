@@ -20,6 +20,7 @@ import {
   getActionCandidateId,
   getNextReviewSelection,
   isPendingReviewQueueCandidate,
+  isMergeTargetCandidate,
   isReviewBoardQueueCandidate,
 } from "./reviewSelection";
 
@@ -552,10 +553,7 @@ export class AnnualReviewDashboardView extends ItemView {
 
     if (actionIds.has("mergeTopic")) {
       const targets = session.candidates.filter(
-        (item) =>
-          item.type === "theme-hypothesis" &&
-          item.id !== candidate.id &&
-          item.status !== "merged",
+        (item) => item.id !== candidate.id && isMergeTargetCandidate(item),
       );
       if (targets.length > 0) {
         const merge = actions.createDiv({ cls: "annual-review-board-merge" });

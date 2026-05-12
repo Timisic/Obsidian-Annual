@@ -86,11 +86,13 @@ function localizeSignal(value: string, language: "en" | "zh"): string {
       /^\d+ outbound links$/u,
       (match) => `${match.replace(" outbound links", "")} 条出链`,
     )
-    .replace(/\d+ backlinks/gu, (match) =>
-      `${match.replace(" backlinks", "")} 条反向链接`,
+    .replace(
+      /\d+ backlinks/gu,
+      (match) => `${match.replace(" backlinks", "")} 条反向链接`,
     )
-    .replace(/\d+ outbound links/gu, (match) =>
-      `${match.replace(" outbound links", "")} 条出链`,
+    .replace(
+      /\d+ outbound links/gu,
+      (match) => `${match.replace(" outbound links", "")} 条出链`,
     );
 }
 
@@ -106,8 +108,14 @@ function summarizeCandidate(candidate: ReviewCandidate): string {
 
 function candidateMetadata(candidate: ReviewCandidate, language: "en" | "zh"): string[] {
   return [
-    candidate.rank ? (language === "zh" ? `排序 #${candidate.rank}` : `Rank #${candidate.rank}`) : "",
-    candidate.rankReason ? localizeSignal(conciseText(candidate.rankReason, 140), language) : "",
+    candidate.rank
+      ? language === "zh"
+        ? `排序 #${candidate.rank}`
+        : `Rank #${candidate.rank}`
+      : "",
+    candidate.rankReason
+      ? localizeSignal(conciseText(candidate.rankReason, 140), language)
+      : "",
   ].filter(Boolean);
 }
 
@@ -134,12 +142,12 @@ function reviewCaution(candidate: ReviewCandidate, language: "en" | "zh"): strin
   if (candidate.evidence.every((evidence) => evidence.missing)) {
     return language === "zh"
       ? "所有已保存证据在重新扫描后都缺失；采纳前需要重新打开源笔记确认。"
-      : "All saved evidence is missing after the latest rescan; reopen source notes before relying on this theme.";
+      : "All saved evidence is missing after the latest rescan; reopen source notes before relying on this proposal.";
   }
   if (candidate.evidence.some((evidence) => evidence.missing)) {
     return language === "zh"
-      ? "部分证据在重新扫描后缺失；请确认剩余源笔记仍能支撑这个主题。"
-      : "Some saved evidence is missing after the latest rescan; confirm the remaining source notes still support this theme.";
+      ? "部分证据在重新扫描后缺失；请确认剩余源笔记仍能支撑这个假设。"
+      : "Some saved evidence is missing after the latest rescan; confirm the remaining source notes still support this hypothesis.";
   }
   if (candidate.sourcePaths.length <= 1) {
     return language === "zh"

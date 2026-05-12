@@ -30,11 +30,11 @@ import {
 } from "./core/reviewCandidates";
 import {
   applyReviewAction,
-  calculateReviewProgress,
   type ReviewAction,
   type ReviewCandidate,
   type ReviewSessionState,
 } from "./core/reviewState";
+import { normalizeReviewSessions } from "./core/reviewSessionPersistence";
 import { DEFAULT_SETTINGS, joinFolderList, splitFolderList } from "./core/settings";
 import {
   appendSnapshot,
@@ -69,62 +69,6 @@ import { YearModal } from "./obsidian/yearModal";
 
 interface AnnualReviewPluginData extends Partial<AnnualReviewSettings> {
   reviewSessions?: Record<string, ReviewSessionState>;
-}
-
-function normalizeReviewSessions(
-  sessions?: Record<string, ReviewSessionState>,
-): Record<string, ReviewSessionState> {
-  if (!sessions) {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(sessions)
-      .filter(([, session]) =>
-        Boolean(
-          session &&
-            session.schemaVersion === 1 &&
-            session.session &&
-            session.candidates.every(
-              (candidate) => candidate.type === "theme-hypothesis",
-            ),
-        ),
-      )
-      .map(([key, session]) => [key, normalizeReviewSession(session)]),
-  );
-}
-
-function normalizeReviewSession(session: ReviewSessionState): ReviewSessionState {
-  const hasAiPrimary = session.candidates.some((candidate) => candidate.source === "ai");
-  const mixedLocalPrimary = session.candidates.filter((candidate) =>
-    isLocalReviewCandidate(candidate),
-  );
-  if (!hasAiPrimary || mixedLocalPrimary.length === 0) {
-    return session;
-  }
-  const candidates = session.candidates.filter(
-    (candidate) => !isLocalReviewCandidate(candidate),
-  );
-  const localFallbackCandidates = [
-    ...(session.localFallbackCandidates ?? []),
-    ...mixedLocalPrimary,
-  ];
-  return {
-    ...session,
-    candidates,
-    localFallbackCandidates,
-    themeGeneration: session.themeGeneration ?? {
-      mode: "ai",
-      aiConfigured: true,
-      aiAttempted: true,
-      message:
-        "Older local Review Board candidates were moved out of the primary AI queue.",
-    },
-    progress: calculateReviewProgress(candidates),
-  };
-}
-
-function isLocalReviewCandidate(candidate: ReviewCandidate): boolean {
-  return candidate.source === "local" || candidate.source === "local-fallback";
 }
 
 function hasUsableAiReviewSession(session: ReviewSessionState | undefined): boolean {
@@ -295,11 +239,7 @@ export default class AnnualReviewPlugin extends Plugin {
       this.settings.reportLanguage,
       getLanguage(),
     );
-    const evidencePackage = buildThemeEvidencePackage(
-      aggregate,
-      files,
-      this.settings,
-    );
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, this.settings);
     const aiConfigured = this.settings.aiProvider !== "none";
     const aiEnhancements =
       aiConfigured && !options.skipAiGeneration
@@ -320,7 +260,7 @@ export default class AnnualReviewPlugin extends Plugin {
           ? aiEnhancements.periodJudgment
           : aiConfigured && options.skipAiGeneration
             ? "AI generation was skipped during workspace startup."
-          : undefined,
+            : undefined,
     });
   }
 

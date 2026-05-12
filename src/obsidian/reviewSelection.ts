@@ -11,6 +11,14 @@ export function isReviewBoardQueueCandidate(candidate: ReviewCandidate): boolean
   );
 }
 
+export function isMergeTargetCandidate(candidate: ReviewCandidate): boolean {
+  return (
+    candidate.type === "theme-hypothesis" &&
+    candidate.status !== "ignored" &&
+    candidate.status !== "merged"
+  );
+}
+
 export function getActionCandidateId(action: ReviewAction): string | null {
   if (action.type === "merge-topic") {
     return action.sourceCandidateId;

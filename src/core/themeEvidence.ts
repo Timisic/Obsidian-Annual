@@ -46,8 +46,8 @@ export function buildThemeEvidencePackage(
   const commonLinks = buildCommonLinkIndex(activeEntries);
   const repeatedPhrases = buildRepeatedPhraseIndex(activeEntries);
 
-  const evidenceNotes = activeEntries
-    .map((entry) =>
+  const evidenceNotes = selectDiverseEvidenceNotes(
+    activeEntries.map((entry) =>
       buildEvidenceNote(
         entry,
         aggregate,
@@ -56,14 +56,60 @@ export function buildThemeEvidencePackage(
         commonLinks.get(entry.note.path) ?? [],
         repeatedPhrases.get(entry.note.path) ?? [],
       ),
-    )
-    .sort((a, b) => evidenceScore(b) - evidenceScore(a) || a.path.localeCompare(b.path))
-    .slice(0, MAX_EVIDENCE_NOTES);
+    ),
+  );
 
   return {
     reviewRange: `${aggregate.session.startDate} to ${aggregate.session.endDate}`,
-    evidenceNotes,
+    evidenceNotes: selectThemeEvidenceNotes(evidenceNotes, MAX_EVIDENCE_NOTES),
   };
+}
+
+export function selectThemeEvidenceNotes(
+  notes: ThemeEvidenceNote[],
+  limit = MAX_EVIDENCE_NOTES,
+): ThemeEvidenceNote[] {
+  if (limit <= 0) {
+    return [];
+  }
+
+  const ranked = [...notes].sort(sortEvidenceNotes);
+  if (ranked.length <= limit) {
+    return ranked;
+  }
+
+  const selected: ThemeEvidenceNote[] = [];
+  const selectedIds = new Set<string>();
+  const add = (note: ThemeEvidenceNote | undefined) => {
+    if (!note || selectedIds.has(note.id) || selected.length >= limit) {
+      return;
+    }
+    selected.push(note);
+    selectedIds.add(note.id);
+  };
+
+  add(ranked[0]);
+  for (const [, bucket] of [...buildDiversityBuckets(ranked).entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    add(bucket.sort(sortEvidenceNotes).find((note) => !selectedIds.has(note.id)));
+  }
+
+  while (selected.length < limit) {
+    const next = ranked
+      .filter((note) => !selectedIds.has(note.id))
+      .sort(
+        (a, b) =>
+          diversityAdjustedEvidenceScore(b, selected) -
+            diversityAdjustedEvidenceScore(a, selected) || a.path.localeCompare(b.path),
+      )[0];
+    if (!next) {
+      break;
+    }
+    add(next);
+  }
+
+  return selected;
 }
 
 export function buildThemeHypothesisPrompt(
@@ -76,7 +122,7 @@ export function buildThemeHypothesisPrompt(
         allowedInput:
           "Use only reviewRange and evidenceNotes from this structured evidence package. Do not infer from an entire vault or request full note contents.",
         evidenceIdRule:
-        "Every hypothesis must cite evidenceNoteIds using exact evidenceNotes[].id values.",
+          "Every hypothesis must cite evidenceNoteIds using exact evidenceNotes[].id values.",
         weakSignalRule:
           "weakSignals, including tags, may support a hypothesis but must not be the primary connection.",
         titleRule:
@@ -125,13 +171,7 @@ export function parseThemeHypotheses(
         : arrayValue((parsed as Record<string, unknown>).themes)
       : [];
   const ids = new Set(evidencePackage.evidenceNotes.map((note) => note.id));
-  const idByPath = new Map(
-    evidencePackage.evidenceNotes.flatMap((note) => [
-      [normalizeEvidenceReference(note.path), note.id] as const,
-      [normalizeEvidenceReference(note.path.replace(/\.md$/iu, "")), note.id] as const,
-      [normalizeEvidenceReference(note.title), note.id] as const,
-    ]),
-  );
+  const idByPath = buildEvidenceReferenceIndex(evidencePackage.evidenceNotes);
 
   return rawThemes
     .map((value, index) =>
@@ -270,6 +310,149 @@ function buildEvidenceNote(
         ? reasons.slice(0, 5).join("; ")
         : "Active note in the review range with local metadata evidence.",
   };
+}
+
+function selectDiverseEvidenceNotes(notes: ThemeEvidenceNote[]): ThemeEvidenceNote[] {
+  const ranked = [...notes].sort(sortEvidenceNotes);
+  const selected: ThemeEvidenceNote[] = [];
+  const selectedIds = new Set<string>();
+
+  const add = (note: ThemeEvidenceNote | undefined) => {
+    if (!note || selectedIds.has(note.id) || selected.length >= MAX_EVIDENCE_NOTES) {
+      return;
+    }
+    selected.push(note);
+    selectedIds.add(note.id);
+  };
+
+  add(ranked[0]);
+
+  for (const bucket of buildDiversityBuckets(ranked).values()) {
+    add(bucket.sort(sortEvidenceNotes)[0]);
+  }
+
+  while (selected.length < MAX_EVIDENCE_NOTES) {
+    const next = ranked
+      .filter((note) => !selectedIds.has(note.id))
+      .sort(
+        (a, b) =>
+          diversityAdjustedEvidenceScore(b, selected) -
+            diversityAdjustedEvidenceScore(a, selected) || a.path.localeCompare(b.path),
+      )[0];
+    if (!next) {
+      break;
+    }
+    add(next);
+  }
+
+  return selected;
+}
+
+function buildDiversityBuckets(
+  notes: ThemeEvidenceNote[],
+): Map<string, ThemeEvidenceNote[]> {
+  const buckets = new Map<string, ThemeEvidenceNote[]>();
+  for (const note of notes) {
+    for (const key of diversityBucketKeys(note)) {
+      if (!buckets.has(key)) {
+        buckets.set(key, []);
+      }
+      buckets.get(key)?.push(note);
+    }
+  }
+  return buckets;
+}
+
+function buildPeriodGroups(notes: ThemeEvidenceNote[]): Map<string, ThemeEvidenceNote[]> {
+  return groupEvidenceNotesByKeys(notes, timePeriodKeys);
+}
+
+function buildFolderGroups(notes: ThemeEvidenceNote[]): Map<string, ThemeEvidenceNote[]> {
+  return groupEvidenceNotesByKeys(notes, folderCoverageKeys);
+}
+
+function buildConnectionGroups(
+  notes: ThemeEvidenceNote[],
+): Map<string, ThemeEvidenceNote[]> {
+  return groupEvidenceNotesByKeys(notes, connectionClusterKeys);
+}
+
+function buildLongTailGroups(
+  notes: ThemeEvidenceNote[],
+): Map<string, ThemeEvidenceNote[]> {
+  return groupEvidenceNotesByKeys(notes, longTailClueKeys);
+}
+
+function groupEvidenceNotesByKeys(
+  notes: ThemeEvidenceNote[],
+  keyBuilder: (note: ThemeEvidenceNote) => string[],
+): Map<string, ThemeEvidenceNote[]> {
+  const groups = new Map<string, ThemeEvidenceNote[]>();
+  for (const note of notes) {
+    for (const key of keyBuilder(note)) {
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)?.push(note);
+    }
+  }
+  return groups;
+}
+
+function diversityAdjustedEvidenceScore(
+  note: ThemeEvidenceNote,
+  selected: ThemeEvidenceNote[],
+): number {
+  const selectedKeys = new Set(selected.flatMap(diversityBucketKeys));
+  const novelty = diversityBucketKeys(note).filter(
+    (key) => !selectedKeys.has(key),
+  ).length;
+  return evidenceScore(note) + novelty * 100;
+}
+
+function diversityBucketKeys(note: ThemeEvidenceNote): string[] {
+  return [
+    ...timePeriodKeys(note),
+    ...folderCoverageKeys(note),
+    ...connectionClusterKeys(note),
+    ...longTailClueKeys(note),
+  ];
+}
+
+function timePeriodKeys(note: ThemeEvidenceNote): string[] {
+  return note.dateSignals
+    .flatMap((signal) => signal.match(/\d{4}-\d{2}/gu) ?? [])
+    .map((period) => `time:${period}`);
+}
+
+function folderCoverageKeys(note: ThemeEvidenceNote): string[] {
+  return folderParts(note.path).map(
+    (folder) => `folder:${normalizeLinkIdentity(folder)}`,
+  );
+}
+
+function connectionClusterKeys(note: ThemeEvidenceNote): string[] {
+  return [
+    ...note.commonLinks.map((link) => `common-link:${normalizeLinkIdentity(link)}`),
+    ...note.repeatedPhrases.map((phrase) => `phrase:${normalizeLinkIdentity(phrase)}`),
+    ...note.entities.map((entity) => `entity:${normalizeLinkIdentity(entity)}`),
+    ...note.crossFolderLinks.map((path) => `cross-folder:${normalizeLinkIdentity(path)}`),
+  ].slice(0, 12);
+}
+
+function longTailClueKeys(note: ThemeEvidenceNote): string[] {
+  return [
+    note.questionSentences.length > 0 ? "long-tail:question" : "",
+    note.frontmatterSignals.length > 0 ? "long-tail:frontmatter" : "",
+    note.weakSignals.length > 0 ? "long-tail:weak-signal" : "",
+    note.dateSignals.some((signal) => signal.includes("resurfaced old note"))
+      ? "long-tail:resurfaced"
+      : "",
+  ].filter(Boolean);
+}
+
+function sortEvidenceNotes(a: ThemeEvidenceNote, b: ThemeEvidenceNote): number {
+  return evidenceScore(b) - evidenceScore(a) || a.path.localeCompare(b.path);
 }
 
 function buildBacklinkIndex(entries: ActiveNoteEntry[]): Map<string, string[]> {
@@ -469,6 +652,30 @@ function toThemeHypothesis(
         : uncertainty || undefined,
     source: sourceValue(record.source),
   };
+}
+
+function buildEvidenceReferenceIndex(notes: ThemeEvidenceNote[]): Map<string, string> {
+  const idsByReference = new Map<string, Set<string>>();
+  const addReference = (reference: string, id: string) => {
+    const normalized = normalizeEvidenceReference(reference);
+    if (!normalized) return;
+    if (!idsByReference.has(normalized)) {
+      idsByReference.set(normalized, new Set());
+    }
+    idsByReference.get(normalized)?.add(id);
+  };
+
+  for (const note of notes) {
+    addReference(note.path, note.id);
+    addReference(note.path.replace(/\.md$/iu, ""), note.id);
+    addReference(note.title, note.id);
+  }
+
+  return new Map(
+    [...idsByReference.entries()]
+      .filter(([, ids]) => ids.size === 1)
+      .map(([reference, ids]) => [reference, [...ids][0] as string]),
+  );
 }
 
 function normalizeEvidenceId(

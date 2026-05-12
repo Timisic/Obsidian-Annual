@@ -101,7 +101,8 @@ export function buildAnnualReviewChartAssets(
     });
   }
 
-  const topicEvolution = reviewSessionTopicEvolution(options.reviewSession) ?? aggregate.topicEvolution;
+  const topicEvolution =
+    reviewSessionTopicEvolution(options.reviewSession) ?? aggregate.topicEvolution;
 
   if (topicEvolution.topTopics.length > 0 && paths["topic-evolution"]) {
     assets.push({
@@ -239,11 +240,11 @@ const REPORT_TEXT = {
     topLinks: "Top Links",
     highValueNotes: "Theme Hypotheses",
     aiValueReason: "Recommendation rationale",
-    topHighValueNotes: "Confirmed theme hypotheses",
+    topHighValueNotes: "Reviewed theme hypotheses",
     mergedFrom: "Merged from",
     confirmedDecision: "Decision",
-    confirmedByAccept: "Confirmed",
-    confirmedByRename: "Renamed and confirmed",
+    confirmedByAccept: "Accepted proposal",
+    confirmedByRename: "Renamed proposal",
     aiSummary: "AI summary",
     whyThemeExists: "Why this theme exists",
     connectionExplanation: "Connection explanation",
@@ -282,17 +283,17 @@ const REPORT_TEXT = {
       `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
     noHighValueNotes: "No theme-hypothesis evidence signals found.",
     noReviewedCandidates:
-      "No confirmed Theme Hypotheses are ready for the report yet. Accept or rename hypotheses in Review Board before including them here.",
+      "No reviewed Theme Hypotheses are ready for the report yet. Accept or rename proposals in Review Board before including them here.",
     nextPeriodActions: "Reflection Prompts",
     aiNextActions: "Reflection Prompts",
     mocAction: (topic: string) =>
-      `Create a compact index for ${topic}: evidence notes, current conclusion, and one next question.`,
+      `Create a compact index for ${topic}: evidence notes, current hypothesis, and one next question.`,
     isolatedNotesAction: (count: number) =>
       `Optional review prompt: inspect ${count} isolated potential note${count === 1 ? "" : "s"} if they help explain a theme.`,
     noIsolatedNotesAction:
       "No isolated-potential evidence note needs review for the current report.",
     highValuePushAction: (notes: string) =>
-      `Optional review prompt: compare ${notes} against the confirmed theme hypotheses.`,
+      `Optional review prompt: compare ${notes} against the reviewed theme hypotheses.`,
     noHighValuePushAction:
       "No extra theme-hypothesis prompt is available from the current signals.",
     nextPeriodSuggestion: "Reflection Prompt",
@@ -424,11 +425,11 @@ const REPORT_TEXT = {
     topLinks: "高频链接",
     highValueNotes: "主题假设",
     aiValueReason: "推荐理由",
-    topHighValueNotes: "已确认主题假设",
+    topHighValueNotes: "已复核主题假设",
     mergedFrom: "合并来源",
     confirmedDecision: "决策",
-    confirmedByAccept: "已确认",
-    confirmedByRename: "重命名并确认",
+    confirmedByAccept: "已采纳提案",
+    confirmedByRename: "重命名提案",
     aiSummary: "AI 总结",
     whyThemeExists: "为什么这个主题存在",
     connectionExplanation: "连接解释",
@@ -475,7 +476,7 @@ const REPORT_TEXT = {
       `可选复盘提示：检查 ${count} 篇孤立潜力笔记，看它们是否能解释某个主题。`,
     noIsolatedNotesAction: "当前报告没有需要额外回看的孤立证据笔记。",
     highValuePushAction: (notes: string) =>
-      `可选复盘提示：把 ${notes} 与已确认主题假设对照检查。`,
+      `可选复盘提示：把 ${notes} 与已复核主题假设对照检查。`,
     noHighValuePushAction: "当前主题假设信号不足，暂无额外复盘提示。",
     nextPeriodSuggestion: "复盘提示",
     highValueNextStep: "结合推荐理由人工确认这些证据笔记，再决定是否改写报告叙事。",
@@ -644,7 +645,8 @@ function renderWritingGrowth(
   const text = REPORT_TEXT[language];
   const days = activePeriodDays(aggregate.dayBuckets);
   const months = activePeriodMonths(aggregate.monthBuckets);
-  const topicEvolution = reviewSessionTopicEvolution(reviewSession) ?? aggregate.topicEvolution;
+  const topicEvolution =
+    reviewSessionTopicEvolution(reviewSession) ?? aggregate.topicEvolution;
   return [
     `| ${text.metric} | ${text.value} |`,
     "| --- | ---: |",
@@ -775,7 +777,7 @@ function renderDataMethodology(
     `- ${
       language === "zh"
         ? "AI 使用：仅使用本范围 evidence package 和有限摘录；主题必须保留来源笔记链接。"
-        : "AI use: limited to this range's evidence package and bounded excerpts; theme conclusions must keep source-note links."
+        : "AI use: limited to this range's evidence package and bounded excerpts; theme proposals must keep source-note links."
     }`,
     `- ${methodology}`,
   ].join("\n");
@@ -1294,10 +1296,9 @@ function reviewSessionTopicEvolution(
   if (!reviewSession) {
     return null;
   }
-  const semanticCandidates =
-    reportIncludedCandidates(reviewSession).filter(
-      (candidate) => candidate.source !== "local",
-    );
+  const semanticCandidates = reportIncludedCandidates(reviewSession).filter(
+    (candidate) => candidate.source !== "local",
+  );
   if (semanticCandidates.length === 0) {
     return emptyTopicEvolution();
   }
@@ -1329,26 +1330,29 @@ function reviewSessionTopicEvolution(
     updatedNotes: candidatePaths.get(candidate.id)?.length ?? 0,
     representativeNotes: (candidatePaths.get(candidate.id) ?? []).slice(0, 2),
   }));
-  const monthlyBuckets = months.map((month): TopicMonthlyBucket => ({
-    month,
-    topics: Object.fromEntries(
-      topTopics.map((topic) => {
-        const candidate = semanticCandidates.find(
-          (item) => reviewCandidateDisplayTitle(item.title, item.userTitle) === topic.name,
-        );
-        const paths = candidate ? (candidatePaths.get(candidate.id) ?? []) : [];
-        const count =
-          paths.length > 0
-            ? paths.filter(
-                (path) => reviewCandidatePathMonth(path, fallbackMonth) === month,
-              ).length
-            : month === fallbackMonth
-              ? 1
-              : 0;
-        return [topic.name, count > 0 ? count * 100 : 0];
-      }),
-    ),
-  }));
+  const monthlyBuckets = months.map(
+    (month): TopicMonthlyBucket => ({
+      month,
+      topics: Object.fromEntries(
+        topTopics.map((topic) => {
+          const candidate = semanticCandidates.find(
+            (item) =>
+              reviewCandidateDisplayTitle(item.title, item.userTitle) === topic.name,
+          );
+          const paths = candidate ? (candidatePaths.get(candidate.id) ?? []) : [];
+          const count =
+            paths.length > 0
+              ? paths.filter(
+                  (path) => reviewCandidatePathMonth(path, fallbackMonth) === month,
+                ).length
+              : month === fallbackMonth
+                ? 1
+                : 0;
+          return [topic.name, count > 0 ? count * 100 : 0];
+        }),
+      ),
+    }),
+  );
   return {
     topTopics,
     emergingTopics: topTopics.slice(0, 3).map((topic) => topic.name),
@@ -1616,7 +1620,11 @@ function renderReviewedCandidate(
     ...renderReviewCandidateLocalSignals(candidate, language),
     ...renderReviewCandidateUncertainty(candidate, language),
     "",
-    reportFieldLine(language, text.reviewCaution, reviewCandidateCaution(candidate, language)),
+    reportFieldLine(
+      language,
+      text.reviewCaution,
+      reviewCandidateCaution(candidate, language),
+    ),
     "",
     `${text.evidenceNotes}:`,
     ...renderReviewCandidateEvidence(candidate, language),
@@ -1624,7 +1632,11 @@ function renderReviewedCandidate(
   if (candidate.userNote?.trim()) {
     rows.push(
       "",
-      reportFieldLine(language, text.userNote, sanitizeParagraphMarkdown(candidate.userNote)),
+      reportFieldLine(
+        language,
+        text.userNote,
+        sanitizeParagraphMarkdown(candidate.userNote),
+      ),
     );
   }
   const mergedSources = mergedSourceCandidates(candidate, reviewSession);
@@ -1686,8 +1698,8 @@ function reviewCandidateConnection(
     return evidenceReasons.join(" ");
   }
   return language === "zh"
-    ? "在确认主题前，请先一起复核这些证据笔记。"
-    : "Review the linked evidence notes together before treating this as a confirmed theme.";
+    ? "在判断这个提案是否成为主题前，请先一起复核这些证据笔记。"
+    : "Review the linked evidence notes together before deciding whether this proposal is a real theme.";
 }
 
 function renderReviewCandidateLocalSignals(
@@ -1744,21 +1756,21 @@ function reviewCandidateCaution(
   if (missingCount === candidate.evidence.length && candidate.evidence.length > 0) {
     return language === "zh"
       ? "所有已保存证据在重新扫描后都缺失；采纳前需要重新打开源笔记确认。"
-      : "All saved evidence is missing after the latest rescan; reopen source notes before relying on this theme.";
+      : "All saved evidence is missing after the latest rescan; reopen source notes before relying on this proposal.";
   }
   if (missingCount > 0) {
     return language === "zh"
-      ? "部分证据在重新扫描后缺失；请确认剩余源笔记仍能支撑这个主题。"
-      : "Some evidence is missing after the latest rescan; confirm the remaining source notes still support this theme.";
+      ? "部分证据在重新扫描后缺失；请确认剩余源笔记仍能支撑这个假设。"
+      : "Some evidence is missing after the latest rescan; confirm the remaining source notes still support this hypothesis.";
   }
   if (candidate.evidence.length <= 1) {
     return language === "zh"
-      ? "当前只有一条证据笔记支撑这个主题，适合作为弱信号复核。"
-      : "Only one evidence note currently supports this theme, so treat it as a weak local signal until reviewed.";
+      ? "当前只有一条证据笔记支撑这个假设，适合作为弱信号复核。"
+      : "Only one evidence note currently supports this hypothesis, so treat it as a weak local signal until reviewed.";
   }
   return language === "zh"
-    ? "这是根据本地证据形成的主题判断，请保留可追溯证据并按需要继续改名或合并。"
-    : "This is a local evidence-backed theme; keep the source links attached and rename or merge it if the framing is still rough.";
+    ? "这是根据本地证据形成的主题假设，这不是最终结论；请保留可追溯证据并按需要继续改名或合并。"
+    : "This is an evidence-backed theme hypothesis, not a conclusion; keep the source links attached and rename or merge it if the framing is still rough.";
 }
 
 function renderReviewCandidateEvidence(
@@ -1783,7 +1795,7 @@ function renderReviewCandidateEvidence(
     : [
         language === "zh"
           ? "- 没有可追溯证据；请回到 Review Board 重新复核。"
-          : "- No traceable evidence is available; return to Review Board before relying on this theme.",
+          : "- No traceable evidence is available; return to Review Board before relying on this proposal.",
       ];
 }
 
