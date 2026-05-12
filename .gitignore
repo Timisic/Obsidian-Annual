@@ -5,6 +5,7 @@ styles.css
 data.json
 coverage/
 dist/
+fixtures/
 
 # macOS Finder metadata
 .DS_Store

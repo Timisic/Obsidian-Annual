@@ -11,17 +11,28 @@ import type {
   ThemeEvidenceNote,
   ThemeEvidencePackage,
   ThemeHypothesis,
+  TopTopic,
   YearAggregate,
 } from "./types";
+
+export interface BuildReviewSessionOptions {
+  themeHypotheses?: ThemeHypothesis[];
+  evidencePackage?: ThemeEvidencePackage;
+  language?: "en" | "zh";
+  aiConfigured?: boolean;
+  aiAttempted?: boolean;
+  aiFailureMessage?: string;
+}
 
 export function buildReviewSession(
   aggregate: YearAggregate,
   stored?: ReviewSessionState,
-  evidencePackage?: ThemeEvidencePackage,
+  options: BuildReviewSessionOptions = {},
 ): ReviewSessionState {
   const scopeHash = reviewScopeHash(aggregate);
   const scanId = `${aggregate.year}:${scopeHash}:${aggregate.generatedAt}`;
-  const scannedCandidates = buildReviewCandidates(aggregate, evidencePackage);
+  const buildResult = buildReviewCandidates(aggregate, options);
+  const scannedCandidates = buildResult.candidates;
   if (
     stored &&
     stored.schemaVersion === 1 &&
@@ -34,6 +45,9 @@ export function buildReviewSession(
       scannedCandidates,
       scanId,
       aggregate.generatedAt,
+      buildResult.localFallbackCandidates,
+      buildResult.themeGeneration,
+      options.evidencePackage?.evidenceNotes.map((note) => note.path),
     );
   }
   return {
@@ -43,6 +57,8 @@ export function buildReviewSession(
     scopeHash,
     scanId,
     candidates: scannedCandidates,
+    localFallbackCandidates: buildResult.localFallbackCandidates,
+    themeGeneration: buildResult.themeGeneration,
     decisions: [],
     progress: calculateReviewProgress(scannedCandidates),
     createdAt: aggregate.generatedAt,
@@ -69,13 +85,110 @@ export function reviewScopeHash(aggregate: YearAggregate): string {
 
 function buildReviewCandidates(
   aggregate: YearAggregate,
-  evidencePackage?: ThemeEvidencePackage,
-): ReviewCandidate[] {
-  if (!evidencePackage) {
-    return [];
+  options: BuildReviewSessionOptions,
+): {
+  candidates: ReviewCandidate[];
+  localFallbackCandidates: ReviewCandidate[];
+  themeGeneration: ReviewSessionState["themeGeneration"];
+} {
+  const evidencePackage = options.evidencePackage;
+  const suppliedThemes = options.themeHypotheses ?? [];
+  const localThemes = evidencePackage
+    ? buildLocalThemeHypotheses(evidencePackage, options.language)
+    : [];
+  const themes = suppliedThemes.length > 0 ? suppliedThemes : localThemes;
+  const evidenceById = new Map(
+    evidencePackage?.evidenceNotes.map((note) => [note.id, note]) ?? [],
+  );
+
+  if (themes.length > 0) {
+    const candidates = themes
+      .map((theme, index) =>
+        themeCandidate(aggregate, theme, index, evidenceById, options.language),
+      )
+      .filter((candidate): candidate is ReviewCandidate => Boolean(candidate))
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
+    if (suppliedThemes.length > 0) {
+      if (candidates.length === 0 && options.aiConfigured && options.aiAttempted) {
+        return {
+          candidates: [],
+          localFallbackCandidates: buildCandidateList(
+            aggregate,
+            localThemes,
+            evidenceById,
+            options.language,
+          ),
+          themeGeneration: {
+            mode: "degraded-local",
+            aiConfigured: true,
+            aiAttempted: true,
+            message: options.aiFailureMessage,
+          },
+        };
+      }
+      return {
+        candidates,
+        localFallbackCandidates: [],
+        themeGeneration: {
+          mode: "ai",
+          aiConfigured: Boolean(options.aiConfigured),
+          aiAttempted: Boolean(options.aiAttempted),
+        },
+      };
+    }
+    if (options.aiConfigured && options.aiAttempted) {
+      return {
+        candidates: [],
+        localFallbackCandidates: candidates,
+        themeGeneration: {
+          mode: "degraded-local",
+          aiConfigured: true,
+          aiAttempted: true,
+          message: options.aiFailureMessage,
+        },
+      };
+    }
+    return {
+      candidates,
+      localFallbackCandidates: [],
+      themeGeneration: {
+        mode: "local",
+        aiConfigured: Boolean(options.aiConfigured),
+        aiAttempted: Boolean(options.aiAttempted),
+      },
+    };
   }
-  return buildLocalThemeHypotheses(evidencePackage)
-    .flatMap((theme, index) => themeCandidate(aggregate, theme, index))
+
+  const candidates = aggregate.topicEvolution.topTopics
+    .flatMap((topic, index) =>
+      topicCandidate(aggregate, topic, index, options.language),
+    )
+    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
+  return {
+    candidates:
+      options.aiConfigured && options.aiAttempted ? [] : candidates,
+    localFallbackCandidates:
+      options.aiConfigured && options.aiAttempted ? candidates : [],
+    themeGeneration: {
+      mode: options.aiConfigured && options.aiAttempted ? "degraded-local" : "local",
+      aiConfigured: Boolean(options.aiConfigured),
+      aiAttempted: Boolean(options.aiAttempted),
+      message: options.aiFailureMessage,
+    },
+  };
+}
+
+function buildCandidateList(
+  aggregate: YearAggregate,
+  themes: ThemeHypothesis[],
+  evidenceById: Map<string, ThemeEvidenceNote>,
+  language: "en" | "zh" = "en",
+): ReviewCandidate[] {
+  return themes
+    .map((theme, index) =>
+      themeCandidate(aggregate, theme, index, evidenceById, language),
+    )
+    .filter((candidate): candidate is ReviewCandidate => Boolean(candidate))
     .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
 }
 
@@ -83,58 +196,140 @@ function themeCandidate(
   aggregate: YearAggregate,
   theme: ThemeHypothesis,
   index: number,
+  evidenceById: Map<string, ThemeEvidenceNote>,
+  language: "en" | "zh" = "en",
+): ReviewCandidate | null {
+  const sourcePaths = theme.evidenceNoteIds
+    .map((id) => evidenceById.get(id)?.path)
+    .filter((path): path is string => Boolean(path));
+  if (sourcePaths.length === 0) {
+    return null;
+  }
+  const title = normalizeReviewCandidateTitle(theme.title);
+  const id = candidateId(aggregate.session.id, theme.id || title);
+  const evidence: EvidenceSource[] = theme.evidenceNoteIds.flatMap(
+    (noteId, evidenceIndex) => {
+      const note = evidenceById.get(noteId);
+      if (!note) {
+        return [];
+      }
+      return [
+        {
+          id: `${id}:evidence:${evidenceIndex + 1}`,
+          kind: "note",
+          label: note.title,
+          target: note.path,
+          sourcePath: note.path,
+          excerpt: note.excerpt,
+          reason: note.whyIncluded,
+        } satisfies EvidenceSource,
+      ];
+    },
+  );
+  if (evidence.length === 0) {
+    return null;
+  }
+  const localSignals =
+    theme.localSignals.length > 0
+      ? theme.localSignals
+      : evidence.map((item) => item.reason ?? "").filter(Boolean);
+  return {
+    id,
+    type: "theme-hypothesis",
+    title,
+    reason: theme.summary,
+    aiSummary: theme.summary,
+    connectionExplanation: theme.connectionExplanation,
+    localSignals,
+    uncertainty: theme.uncertainty,
+    source: theme.source,
+    reasons: evidence.map((item, reasonIndex) => ({
+      type: "topic-bridge",
+      label:
+        localSignals[reasonIndex % Math.max(1, localSignals.length)] ??
+        theme.connectionExplanation,
+      evidenceId: item.id,
+      sourcePath: item.sourcePath ?? sourcePaths[0] ?? "",
+      relatedPaths: sourcePaths.filter((path) => path !== item.sourcePath),
+      statField: "connectedTopicCount",
+    })),
+    status: "candidate",
+    evidence,
+    sourcePaths,
+    score: Math.max(1, evidence.length * 100 - index),
+    rank: index + 1,
+    rankReason:
+      theme.source === "ai"
+        ? language === "zh"
+          ? "按 AI 语义主题顺序排序。"
+          : "Ranked by AI semantic theme order from the bounded evidence package."
+        : language === "zh"
+          ? "按本地证据簇强度排序（降级线索）。"
+          : "Ranked by local evidence-cluster strength from the bounded evidence package.",
+    decisionIds: [],
+    createdAt: aggregate.generatedAt,
+    updatedAt: aggregate.generatedAt,
+  };
+}
+
+function topicCandidate(
+  aggregate: YearAggregate,
+  topic: TopTopic,
+  index: number,
+  language: "en" | "zh" = "en",
 ): ReviewCandidate[] {
-  const sourcePaths = theme.sourcePaths.slice(0, 5);
+  const sourcePaths = topic.representativeNotes.slice(0, 5);
   if (sourcePaths.length === 0) {
     return [];
   }
-  const title = normalizeReviewCandidateTitle(theme.title);
-  const id = candidateId(aggregate.session.id, theme.id);
-  const evidence = theme.evidenceNotes.map((note, evidenceIndex) =>
-    evidenceFromThemeNote(id, note, evidenceIndex),
-  );
+  const title = normalizeReviewCandidateTitle(topic.name);
+  const id = candidateId(aggregate.session.id, topic.name);
+  const evidence: EvidenceSource[] = sourcePaths.map((path, evidenceIndex) => ({
+    id: `${id}:evidence:${evidenceIndex + 1}`,
+    kind: "note",
+    label: path,
+    target: path,
+    sourcePath: path,
+    reason: `${title} representative source note.`,
+  }));
   return [
     {
       id,
       type: "theme-hypothesis",
       title,
-      reason: theme.summary,
+      reason: `${title} added ${topic.addedWords} words across ${topic.newNotes} new notes and ${topic.updatedNotes} updated notes.`,
+      aiSummary: `${title} is a legacy activity-derived clue and should be regenerated from the bounded evidence package before final review.`,
+      connectionExplanation:
+        "Legacy topic-evolution fallback; use only when semantic evidence-package hypotheses are unavailable.",
+      localSignals: [
+        `topic growth: ${topic.addedWords} words`,
+        `new notes: ${topic.newNotes}`,
+        `updated notes: ${topic.updatedNotes}`,
+      ],
+      uncertainty:
+        "Fallback clue: regenerate semantic theme hypotheses before relying on this candidate.",
+      source: "local-fallback",
       reasons: evidence.map((item) => ({
-        type: "topic-bridge",
-        label: theme.connectionExplanation,
+        type: "word-count",
+        label: `${title} evidence appears in ${item.sourcePath}.`,
         evidenceId: item.id,
         sourcePath: item.sourcePath ?? sourcePaths[0] ?? "",
-        relatedPaths: sourcePaths.filter((path) => path !== item.sourcePath),
+        statField: "wordCount",
       })),
       status: "candidate",
       evidence,
       sourcePaths,
-      score: theme.evidenceNoteIds.length * 10 + theme.localSignals.length,
+      score: topic.addedWords + topic.newNotes * 10 + topic.updatedNotes,
       rank: index + 1,
       rankReason:
-        theme.uncertainty ??
-        "Ranked by evidence-note count and local connection signals.",
+        language === "zh"
+          ? "按旧版主题增长和代表笔记排序（降级线索）。"
+          : "Legacy fallback ranked by topic growth and representative notes.",
       decisionIds: [],
       createdAt: aggregate.generatedAt,
       updatedAt: aggregate.generatedAt,
     },
   ];
-}
-
-function evidenceFromThemeNote(
-  candidateIdValue: string,
-  note: ThemeEvidenceNote,
-  index: number,
-): EvidenceSource {
-  return {
-    id: `${candidateIdValue}:evidence:${index + 1}`,
-    kind: "note",
-    label: note.title,
-    target: note.sourcePath,
-    sourcePath: note.sourcePath,
-    excerpt: note.excerpt,
-    reason: note.whyIncluded,
-  };
 }
 
 function candidateId(sessionId: string, value: string): string {

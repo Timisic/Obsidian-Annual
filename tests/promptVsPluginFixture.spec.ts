@@ -185,7 +185,7 @@ describe("AI provider", () => {
     expect(prompt).not.toContain("obsidian-bases");
     expect(prompt).toContain('"highValueNotes"');
     expect(prompt).toContain('"topLinks"');
-    expect(prompt).toContain('"contextNotes"');
+    expect(prompt).toContain('"evidencePackage"');
     expect(prompt).toContain('"backlinks"');
     expect(prompt.length).toBeLessThan(26_000);
   });
@@ -279,8 +279,8 @@ describe("AI provider", () => {
 
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research");
-    expect(prompt).toContain('"linkGraph"');
-    expect(prompt).toContain('"contextNotes"');
+    expect(prompt).toContain('"evidencePackage"');
+    expect(prompt).toContain('"evidenceNotes"');
     expect(prompt).toContain("Review Fixtures/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");
   });
@@ -300,13 +300,11 @@ describe("AI provider", () => {
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const prompt = buildAiPrompt(aggregate, files, DEFAULT_SETTINGS);
     const context = JSON.parse(prompt) as {
-      linkGraph: Array<{ links: string[] }>;
-      contextNotes: Array<{ links: string[] }>;
+      evidencePackage: { evidenceNotes: Array<{ links: string[] }> };
     };
 
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research.md");
-    expect(context.linkGraph[0]?.links).toEqual(["Projects/Research.md"]);
-    expect(context.contextNotes[0]?.links).toEqual(["Projects/Research.md"]);
+    expect(context.evidencePackage.evidenceNotes[0]?.links).toEqual(["Projects/Research.md"]);
   });
 });

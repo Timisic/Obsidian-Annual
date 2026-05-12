@@ -18,6 +18,9 @@ export function getActionCandidateId(action: ReviewAction): string | null {
   if (action.type === "open-source-note") {
     return null;
   }
+  if (action.type === "comment-evidence") {
+    return action.candidateId;
+  }
   return action.candidateId;
 }
 

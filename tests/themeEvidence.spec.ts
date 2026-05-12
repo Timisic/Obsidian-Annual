@@ -91,7 +91,7 @@ describe("theme evidence", () => {
     );
     expect(research).toMatchObject({
       id: "note:projects-research-md",
-      sourcePath: "Projects/Research.md",
+      path: "Projects/Research.md",
       title: "Research",
     });
     expect(research?.dateSignals).toContain("created in review range: 2026-01-10");
@@ -100,7 +100,7 @@ describe("theme evidence", () => {
     expect(research?.commonLinks).toContain("Areas/AI Systems.md");
     expect(research?.frontmatterSignals).toContain("topic: Local AI");
     expect(research?.weakSignals).toContain("tag:theme/ai");
-    expect(research?.localSignals).toContain("tag:theme/ai");
+    expect(research?.localSignals).toContain("tags present as weak signals");
     expect(research?.repeatedPhrases).toContain("local evidence loop");
     expect(research?.crossFolderLinks).toContain("Areas/AI Systems.md");
     expect(research?.relatedNotes).toContain("Daily/2026-02-01.md");
@@ -229,7 +229,7 @@ describe("theme evidence", () => {
       ),
     ).toBe(true);
     expect(themes.every((theme) => theme.source === "local")).toBe(true);
-    expect(themes.map((theme) => theme.title)).toContain("Linked thread: AI Systems");
+    expect(themes.map((theme) => theme.title).join(" ")).not.toContain("Linked thread:");
     expect(themes[0]?.title).not.toContain("theme/ai");
 
     const weakTagThemes = buildLocalThemeHypotheses({
@@ -238,7 +238,6 @@ describe("theme evidence", () => {
         {
           id: "note:a",
           path: "A.md",
-          sourcePath: "A.md",
           title: "A",
           dateSignals: [],
           excerpt: "A",
@@ -258,7 +257,6 @@ describe("theme evidence", () => {
         {
           id: "note:b",
           path: "B.md",
-          sourcePath: "B.md",
           title: "B",
           dateSignals: [],
           excerpt: "B",
@@ -278,8 +276,43 @@ describe("theme evidence", () => {
       ],
     });
     expect(weakTagThemes[0]).toMatchObject({
-      title: "Weak tag clue: theme/ai",
+      title: "Low-confidence local clue",
       connectionExplanation: expect.stringContaining("weak evidence"),
     });
+  });
+
+  it("rewrites Chinese local fallback titles away from raw metadata labels", () => {
+    const files = [
+      sourceFrom({
+        path: "2026月复盘/4月/散步.md",
+        ctime: "2026-04-09T08:00:00.000Z",
+        mtime: "2026-04-09T09:00:00.000Z",
+        content:
+          "---\ntheme: ai\n---\n# 散步\n\np-indent 和 [[纪馨玉]] 反复出现在关系回味的记录里。",
+      }),
+      sourceFrom({
+        path: "2026月复盘/4月/对话.md",
+        ctime: "2026-04-09T10:00:00.000Z",
+        mtime: "2026-04-09T11:00:00.000Z",
+        content:
+          "# 对话\n\np-indent 和 [[纪馨玉]] 再次出现，记录靠近之后的边界感。",
+      }),
+    ];
+    const aggregate = buildReviewAggregate(
+      files,
+      buildQuarterlyReviewSession(2026, 2, DEFAULT_SETTINGS),
+      DEFAULT_SETTINGS,
+    );
+    const themes = buildLocalThemeHypotheses(
+      buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS),
+      "zh",
+    );
+    const text = themes
+      .map((theme) => [theme.title, theme.summary, theme.connectionExplanation].join(" "))
+      .join(" ");
+
+    expect(themes.length).toBeGreaterThan(0);
+    expect(text).not.toMatch(/2026月复盘|4月中的跨笔记主题|p-indent|纪馨玉|frontmatter|created in review range/u);
+    expect(themes[0]?.title).toMatch(/线索|记录/u);
   });
 });

@@ -138,6 +138,10 @@ export class FakeDomElement {
     return this.attributes.get(name) ?? null;
   }
 
+  removeAttribute(name: string): void {
+    this.attributes.delete(name);
+  }
+
   remove(): void {
     const siblings = this.parent?.children;
     const index = siblings?.indexOf(this) ?? -1;

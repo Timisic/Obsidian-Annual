@@ -273,7 +273,7 @@ describe("aggregation and rendering", () => {
     expect(aggregate.dayBuckets.find((day) => day.date === "2026-05-09")?.words).toBe(0);
   });
 
-  it("prefers frontmatter date metadata before filesystem timestamps", () => {
+  it("prefers frontmatter create metadata before filesystem timestamps", () => {
     const flattenedTime = Date.parse("2026-05-09T10:55:29.000Z");
     const aggregate = buildYearAggregate(
       [
@@ -281,7 +281,7 @@ describe("aggregation and rendering", () => {
           path: "Inbox/Imported note.md",
           ctime: flattenedTime,
           mtime: flattenedTime,
-          content: "---\ndate: 2026-02-14\n---\n\nfrontmatter dated imported note",
+          content: "---\ncreate: 2026-02-14 10:00\n---\n\nfrontmatter dated imported note",
         },
       ],
       2026,
@@ -486,9 +486,11 @@ describe("aggregation and rendering", () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).toContain("# Review Report: 2026 Annual Review");
-    expect(markdown).toMatch(
-      /^---\ngenerated: ".+"\nyear: 2026\nreview_preset: "annual"\nreview_label: "2026 Annual Review"\nstart_date: "2026-01-01"\nend_date: "2026-12-31"\ngrowth_data_source: "current-vault inference"\nactivity_date_sources: "frontmatter date: 0; path\/filename date: 2; filesystem timestamp: 2"\nincluded_scope: "All Markdown files"\nexcluded_scope: "\.obsidian, Templates, Archive, Attachments"\nexcluded_patterns: "None"\nreport_folder: "Annual Reviews"\nprivacy_mode: "standard"\nreport_language: "en"\n---/u,
-    );
+    expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026/u);
+    expect(markdown).toContain("cssclasses:\n  - p-indent");
+    expect(markdown).toContain('growth_data_source: "current-vault inference"');
+    expect(markdown).toContain('activity_date_sources: "frontmatter date: 0; path/filename date: 2; filesystem timestamp: 2"');
+    expect(markdown).toContain('report_language: "en"');
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
@@ -519,7 +521,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("Notes created in each active month");
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
-    expect(markdown).not.toContain("## Topic Evolution");
+    expect(markdown).toContain("### Theme Signal Chart");
     expect(markdown).toContain(
       'class="annual-review-chart annual-review-topic-evolution"',
     );
@@ -683,6 +685,7 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, {
       aiEnabled: true,
       aiEnhancements: {
+        themeHypotheses: [],
         periodJudgment:
           "The year centers on turning daily writing into a research review loop.",
         themeInsights: [
@@ -971,13 +974,13 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
     expect(markdown).toContain("### Confirmed theme hypotheses");
-    expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
-    expect(markdown).toContain("[[Projects/Renamed|Renamed Topic]] (renamed)");
-    expect(markdown).toContain("Merged from: [[Projects/Merged|Merged Topic]]");
+    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
+    expect(markdown).toContain("#### [[Projects/Renamed|Renamed Topic]]");
+    expect(markdown).toContain("Merged from:");
     expect(markdown).not.toContain("Ignored Topic");
     expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("Unreviewed Topic");
-    expect(markdown).not.toContain("accepted unsupported reason");
+    expect(markdown).toContain("accepted unsupported reason");
     expect(markdown).not.toContain("These 4 reviewed candidates are included");
     expect(markdown).not.toContain("Manual confirmation:");
     expect(markdown).not.toContain("Convert accepted topic into project");
@@ -991,8 +994,8 @@ describe("aggregation and rendering", () => {
     });
 
     expect(markdown).toContain("### 已确认主题假设");
-    expect(markdown).toContain("[[Projects/Accepted|Accepted Topic]] (accepted)");
-    expect(markdown).toContain("合并来源: [[Projects/Merged|Merged Topic]]");
+    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
+    expect(markdown).toContain("合并来源:");
     expect(markdown).not.toContain("Ignored Topic");
     expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("下面 4 个已审核候选");
@@ -1031,7 +1034,7 @@ describe("aggregation and rendering", () => {
     );
 
     expect(reviewSection).toContain(
-      "[[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]] (accepted)",
+      "#### [[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]]",
     );
     expect(reviewSection).not.toContain("|[[Clippings]]");
     expect(reviewSection).not.toMatch(/\[\[[^\]|]+\|\[\[/u);
@@ -1058,16 +1061,75 @@ describe("aggregation and rendering", () => {
     const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
     const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
 
-    const reviewSession = buildReviewSession(aggregate, undefined, evidencePackage);
+    const reviewSession = buildReviewSession(aggregate, undefined, { evidencePackage });
     const topicCandidate = reviewSession.candidates.find(
       (candidate) => candidate.type === "theme-hypothesis",
     );
 
     expect(topicCandidate).toMatchObject({
-      title: "Folder thread: Clippings",
-      reason: expect.stringContaining("Local evidence groups"),
+      title: "Cross note theme in Clippings",
+      reason: expect.stringContaining("local semantic clue"),
     });
     expect(topicCandidate?.reason).not.toContain("[[Clippings]]");
+  });
+
+  it("separates degraded local clues from the primary queue when configured AI returns no themes", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const reviewSession = buildReviewSession(aggregate, undefined, {
+      evidencePackage: buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS),
+      language: "zh",
+      aiConfigured: true,
+      aiAttempted: true,
+      aiFailureMessage: "AI unavailable",
+    });
+
+    expect(reviewSession.candidates).toEqual([]);
+    expect(reviewSession.localFallbackCandidates?.length).toBeGreaterThan(0);
+    expect(reviewSession.themeGeneration).toMatchObject({
+      mode: "degraded-local",
+      aiConfigured: true,
+      aiAttempted: true,
+    });
+    expect(
+      reviewSession.localFallbackCandidates
+        ?.map((candidate) => [candidate.title, candidate.reason].join(" "))
+        .join(" "),
+    ).not.toMatch(/created in review range|modified in review range|frontmatter|月中的跨笔记主题/u);
+  });
+
+  it("uses supplied AI themes as the primary Review Board queue", async () => {
+    const files = await fixtureVault();
+    const aggregate = buildYearAggregate(files, 2026, DEFAULT_SETTINGS);
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
+    const firstNote = evidencePackage.evidenceNotes[0];
+    expect(firstNote).toBeDefined();
+
+    const reviewSession = buildReviewSession(aggregate, undefined, {
+      evidencePackage,
+      language: "zh",
+      aiConfigured: true,
+      aiAttempted: true,
+      themeHypotheses: [
+        {
+          id: "theme:ai:understanding-anxiety",
+          title: "从技术兴奋走向理解焦虑",
+          summary: "几篇笔记共同记录了从尝试技术到担心理解不足的变化。",
+          connectionExplanation: "这些证据都围绕技术探索后的理解压力展开。",
+          evidenceNoteIds: [firstNote?.id ?? ""],
+          localSignals: [],
+          source: "ai",
+        },
+      ],
+    });
+
+    expect(reviewSession.candidates).toHaveLength(1);
+    expect(reviewSession.candidates[0]).toMatchObject({
+      title: "从技术兴奋走向理解焦虑",
+      source: "ai",
+    });
+    expect(reviewSession.localFallbackCandidates).toEqual([]);
+    expect(reviewSession.themeGeneration?.mode).toBe("ai");
   });
 
   it("keeps the scoring method documentation present and bounded", () => {

@@ -27,7 +27,7 @@ export function getReviewBoardActionState(
   if (candidate.status === "accepted" || candidate.status === "renamed") {
     return withTopicActions(candidate, {
       kind: "accepted",
-      actions: ["openSourceNote"],
+      actions: ["ignore", "openSourceNote"],
     });
   }
 

@@ -5,6 +5,7 @@ import {
   buildCustomReviewSession,
   buildMonthlyReviewSession,
   buildQuarterlyReviewSession,
+  reviewPresetFieldVisibility,
 } from "../core/reviewSession";
 import { joinFolderList, splitFolderList } from "../core/settings";
 import type {
@@ -41,8 +42,17 @@ export class YearModal extends Modal {
   }
 
   onOpen(): void {
+    this.renderForm();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+  }
+
+  private renderForm(): void {
     const { contentEl } = this;
     const text = UI_TEXT[this.language];
+    const visible = reviewPresetFieldVisibility(this.selectedPreset);
     contentEl.empty();
     contentEl.createEl("h2", { text: text.generateTitle });
 
@@ -58,86 +68,95 @@ export class YearModal extends Modal {
           .setValue(this.selectedPreset)
           .onChange((value) => {
             this.selectedPreset = value as ReviewPreset;
+            this.renderForm();
           });
       });
 
-    new Setting(contentEl)
-      .setName(text.year)
-      .setDesc(text.yearDesc)
-      .addText((text) => {
-        text
-          .setPlaceholder(String(this.selectedYear))
-          .setValue(String(this.selectedYear))
-          .onChange((value) => {
-            const parsed = Number.parseInt(value, 10);
-            if (Number.isFinite(parsed)) {
-              this.selectedYear = parsed;
-            }
-          });
-      });
-
-    new Setting(contentEl)
-      .setName(text.quarter)
-      .setDesc(text.quarterDesc)
-      .addDropdown((dropdown) => {
-        dropdown
-          .addOption("1", "Q1")
-          .addOption("2", "Q2")
-          .addOption("3", "Q3")
-          .addOption("4", "Q4")
-          .setValue(String(this.selectedQuarter))
-          .onChange((value) => {
-            this.selectedQuarter = Number.parseInt(value, 10);
-          });
-      });
-
-    new Setting(contentEl)
-      .setName(text.month)
-      .setDesc(text.monthDesc)
-      .addDropdown((dropdown) => {
-        for (let month = 1; month <= 12; month += 1) {
-          dropdown.addOption(String(month), String(month).padStart(2, "0"));
-        }
-        dropdown.setValue(String(this.selectedMonth)).onChange((value) => {
-          this.selectedMonth = Number.parseInt(value, 10);
+    if (visible.year) {
+      new Setting(contentEl)
+        .setName(text.year)
+        .setDesc(text.yearDesc)
+        .addText((text) => {
+          text
+            .setPlaceholder(String(this.selectedYear))
+            .setValue(String(this.selectedYear))
+            .onChange((value) => {
+              const parsed = Number.parseInt(value, 10);
+              if (Number.isFinite(parsed)) {
+                this.selectedYear = parsed;
+              }
+            });
         });
-      });
+    }
 
-    new Setting(contentEl)
-      .setName(text.customLabel)
-      .setDesc(text.customLabelDesc)
-      .addText((text) => {
-        text
-          .setPlaceholder(`${this.selectedYear} Writing Sprint Review`)
-          .setValue(this.customLabel)
-          .onChange((value) => {
-            this.customLabel = value;
-          });
-      });
+    if (visible.quarter) {
+      new Setting(contentEl)
+        .setName(text.quarter)
+        .setDesc(text.quarterDesc)
+        .addDropdown((dropdown) => {
+          dropdown
+            .addOption("1", "Q1")
+            .addOption("2", "Q2")
+            .addOption("3", "Q3")
+            .addOption("4", "Q4")
+            .setValue(String(this.selectedQuarter))
+            .onChange((value) => {
+              this.selectedQuarter = Number.parseInt(value, 10);
+            });
+        });
+    }
 
-    new Setting(contentEl)
-      .setName(text.customStartDate)
-      .setDesc(text.customDateDesc)
-      .addText((text) => {
-        text
-          .setPlaceholder(`${this.selectedYear}-01-01`)
-          .setValue(this.customStartDate)
-          .onChange((value) => {
-            this.customStartDate = value;
+    if (visible.month) {
+      new Setting(contentEl)
+        .setName(text.month)
+        .setDesc(text.monthDesc)
+        .addDropdown((dropdown) => {
+          for (let month = 1; month <= 12; month += 1) {
+            dropdown.addOption(String(month), `${month}`);
+          }
+          dropdown.setValue(String(this.selectedMonth)).onChange((value) => {
+            this.selectedMonth = Number.parseInt(value, 10);
           });
-      });
+        });
+    }
 
-    new Setting(contentEl)
-      .setName(text.customEndDate)
-      .setDesc(text.customDateDesc)
-      .addText((text) => {
-        text
-          .setPlaceholder(`${this.selectedYear}-12-31`)
-          .setValue(this.customEndDate)
-          .onChange((value) => {
-            this.customEndDate = value;
-          });
-      });
+    if (visible.customRange) {
+      new Setting(contentEl)
+        .setName(text.customLabel)
+        .setDesc(text.customLabelDesc)
+        .addText((text) => {
+          text
+            .setPlaceholder(`${this.selectedYear} Writing Sprint Review`)
+            .setValue(this.customLabel)
+            .onChange((value) => {
+              this.customLabel = value;
+            });
+        });
+
+      new Setting(contentEl)
+        .setName(text.customStartDate)
+        .setDesc(text.customDateDesc)
+        .addText((text) => {
+          text
+            .setPlaceholder(`${this.selectedYear}-01-01`)
+            .setValue(this.customStartDate)
+            .onChange((value) => {
+              this.customStartDate = value;
+            });
+        });
+
+      new Setting(contentEl)
+        .setName(text.customEndDate)
+        .setDesc(text.customDateDesc)
+        .addText((text) => {
+          text
+            .setPlaceholder(`${this.selectedYear}-12-31`)
+            .setValue(this.customEndDate)
+            .onChange((value) => {
+              this.customEndDate = value;
+            });
+        });
+    }
 
     new Setting(contentEl)
       .setName(text.includeFolders)
@@ -232,10 +251,6 @@ export class YearModal extends Modal {
       .addButton((button) => {
         button.setButtonText(text.cancel).onClick(() => this.close());
       });
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
   }
 
   private addMetricToggle(

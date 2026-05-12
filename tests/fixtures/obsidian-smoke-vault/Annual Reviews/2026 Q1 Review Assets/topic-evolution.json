@@ -1,65 +1,343 @@
 {
   "top_topics": [
     {
-      "name": "journal",
-      "added_words": 103,
-      "new_notes": 2,
-      "updated_notes": 2,
+      "name": "Future",
+      "added_words": 2380,
+      "new_notes": 3,
+      "updated_notes": 3,
       "representative_notes": [
-        "Review Fixtures/2026-01-01.md",
-        "Review Fixtures/2026-01-02.md"
+        "2026月复盘/2月/2026-02-22 AI越来越快.md",
+        "2026月复盘/3月/2026-03-01 Linya不去北京了.md"
       ]
     },
     {
-      "name": "中文",
-      "added_words": 66,
-      "new_notes": 1,
-      "updated_notes": 1,
-      "representative_notes": ["Review Fixtures/2026-01-01.md"]
+      "name": "finance",
+      "added_words": 2365,
+      "new_notes": 3,
+      "updated_notes": 3,
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
+        "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md"
+      ]
     },
     {
-      "name": "writing",
-      "added_words": 66,
+      "name": "环境促进想法转变",
+      "added_words": 1248,
       "new_notes": 1,
       "updated_notes": 1,
-      "representative_notes": ["Review Fixtures/2026-01-01.md"]
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-05 环境促进想法转变.md"
+      ]
+    },
+    {
+      "name": "Important",
+      "added_words": 1222,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-22 AI越来越快.md"
+      ]
+    },
+    {
+      "name": "AI",
+      "added_words": 1182,
+      "new_notes": 3,
+      "updated_notes": 3,
+      "representative_notes": [
+        "2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md",
+        "2026月复盘/3月/2026-03-04 ALL-in-AI.md"
+      ]
+    },
+    {
+      "name": "怀柔区比赛",
+      "added_words": 899,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/3月/2026-03-29 怀柔区比赛.md"
+      ]
+    },
+    {
+      "name": "Linya",
+      "added_words": 809,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/3月/2026-03-01 Linya不去北京了.md"
+      ]
+    },
+    {
+      "name": "lxy",
+      "added_words": 643,
+      "new_notes": 1,
+      "updated_notes": 1,
+      "representative_notes": [
+        "2026月复盘/2月/2026-02-25 关系中的服软.md"
+      ]
     }
   ],
-  "emerging_topics": ["journal", "中文", "writing"],
+  "emerging_topics": [
+    "Future",
+    "finance",
+    "环境促进想法转变"
+  ],
   "declining_topics": [],
   "monthly_topic_words": [
     {
       "month": "2026-01",
       "topics": {
-        "journal": 103,
-        "writing": 66,
-        "中文": 66
+        "其他": 2520
       }
     },
     {
       "month": "2026-02",
-      "topics": {}
+      "topics": {
+        "finance": 1485,
+        "AI": 340,
+        "Future": 1222,
+        "lxy": 643,
+        "Important": 1222,
+        "环境促进想法转变": 1248,
+        "其他": 510
+      }
     },
     {
       "month": "2026-03",
-      "topics": {}
+      "topics": {
+        "怀柔区比赛": 899,
+        "finance": 880,
+        "AI": 842,
+        "Future": 1158,
+        "Linya": 809,
+        "其他": 1857
+      }
     }
   ],
   "note_topics": [
     {
       "path": "Review Fixtures/2026-01-02.md",
-      "topics": ["journal"],
+      "topics": [
+        "journal"
+      ],
       "sources": {
         "journal": "tag"
       }
     },
     {
       "path": "Review Fixtures/2026-01-01.md",
-      "topics": ["journal", "writing", "中文"],
+      "topics": [
+        "journal",
+        "writing",
+        "中文"
+      ],
       "sources": {
         "journal": "tag",
         "writing": "tag",
         "中文": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-29 怀柔区比赛.md",
+      "topics": [
+        "怀柔区比赛"
+      ],
+      "sources": {
+        "怀柔区比赛": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-26 或许要步入科研期.md",
+      "topics": [
+        "或许要步入科研期"
+      ],
+      "sources": {
+        "或许要步入科研期": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-16 OpenClaw的两次分享.md",
+      "topics": [
+        "OpenClaw的两次分享"
+      ],
+      "sources": {
+        "OpenClaw的两次分享": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-16 兴奋但是支棱不起来.md",
+      "topics": [
+        "兴奋但是支棱不起来"
+      ],
+      "sources": {
+        "兴奋但是支棱不起来": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-23 亏得有点影响现实.md",
+      "topics": [
+        "finance"
+      ],
+      "sources": {
+        "finance": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-23 组内学生氛围很不错.md",
+      "topics": [
+        "ccpl"
+      ],
+      "sources": {
+        "ccpl": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-04 ALL-in-AI.md",
+      "topics": [
+        "AI",
+        "Future"
+      ],
+      "sources": {
+        "AI": "tag",
+        "Future": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+      "topics": [
+        "finance"
+      ],
+      "sources": {
+        "finance": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md",
+      "topics": [
+        "AI"
+      ],
+      "sources": {
+        "AI": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-01 Linya不去北京了.md",
+      "topics": [
+        "Future",
+        "Linya"
+      ],
+      "sources": {
+        "Future": "tag",
+        "Linya": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
+      "topics": [
+        "finance"
+      ],
+      "sources": {
+        "finance": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-25 关系中的服软.md",
+      "topics": [
+        "lxy"
+      ],
+      "sources": {
+        "lxy": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-07 刷完美女容易空虚.md",
+      "topics": [
+        "刷完美女容易空虚"
+      ],
+      "sources": {
+        "刷完美女容易空虚": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-25 AI时代的基建.md",
+      "topics": [
+        "AI"
+      ],
+      "sources": {
+        "AI": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-22 AI越来越快.md",
+      "topics": [
+        "Future",
+        "Important"
+      ],
+      "sources": {
+        "Future": "tag",
+        "Important": "tag"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-10 人的行为容易受他人影响.md",
+      "topics": [
+        "人的行为容易受他人影响"
+      ],
+      "sources": {
+        "人的行为容易受他人影响": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-05 环境促进想法转变.md",
+      "topics": [
+        "环境促进想法转变"
+      ],
+      "sources": {
+        "环境促进想法转变": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-07 近期稳中向好.md",
+      "topics": [
+        "近期稳中向好"
+      ],
+      "sources": {
+        "近期稳中向好": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-19 边报告变学习.md",
+      "topics": [
+        "黄金交易有点费时间"
+      ],
+      "sources": {
+        "黄金交易有点费时间": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-15 不清楚的需求及标准.md",
+      "topics": [
+        "不清楚的需求及标准"
+      ],
+      "sources": {
+        "不清楚的需求及标准": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-13 诚实说这周放纵.md",
+      "topics": [
+        "诚实说这周放纵"
+      ],
+      "sources": {
+        "诚实说这周放纵": "ai-cluster"
+      }
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
+      "topics": [
+        "论个人睡眠与精神状态"
+      ],
+      "sources": {
+        "论个人睡眠与精神状态": "ai-cluster"
       }
     }
   ]
