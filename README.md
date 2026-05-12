@@ -64,11 +64,28 @@ Annual Review 只是一个 preset；同一套产品定义也覆盖 Quarterly Rev
 
 Review Board 是 Theme Decision 的保护层，而不只是 AI 输出预览。当前实现用几条规则降低重复复核和误确认风险：
 
-- **稳定 Review Candidate 身份**：当 provider 改写标题、摘要或顺序，但 Evidence Notes 有明确重叠时，已接受、改名、合并或忽略的状态会保留。
-- **多样化 Evidence Selection**：AI Context 优先覆盖不同时间段、文件夹、连接簇和长尾线索，而不是只取最高分笔记。
-- **受限 evidence 引用**：AI 只能引用 provider-visible Evidence Package；重复标题等歧义引用不会被随意绑定到某条笔记。
+- **稳定 Review Candidate 身份**：重新扫描或更换 provider 后，如果新的 Theme Hypothesis 引用的是实质重叠的 Evidence Notes，Review Board 会保留原来的接受、改名、合并、忽略、用户备注和证据评论；低重叠主题仍保持分离，避免把不同主线误合并。
+- **去重而不是堆叠主题**：同一组 Evidence Notes 生成出多个相近 provider 输出时，默认压缩成一条 Review Candidate，让用户少复核重复卡片。
+- **多样化 Evidence Selection**：Provider-visible Evidence Package 优先覆盖不同时间段、文件夹、连接簇和长尾线索，而不是只取最高分笔记；本地 fallback 和 provider 生成共享这套受控证据边界。
+- **安全 evidence 引用**：AI 输出应引用稳定 Evidence Note id；路径、wikilink 或标题只能作为兼容引用。重复标题、无效引用和歧义引用不会被静默绑定到任意笔记，无法追溯到证据的主题不会进入 Review Board。
 - **确认后才入报告**：Review Report 只包含用户确认后的 accepted / renamed themes；candidate、ignored 和 merged source 不会作为独立主题进入报告。
-- **集中 Review Board 规则**：队列可见性、Report inclusion 和 merge target 规则集中在可测试模块中，避免后续交互扩展时规则漂移。
+- **集中 Review Board 规则**：队列可见性、允许操作、下一条选择、merge target 和 Report inclusion 规则集中在可测试模块中，避免后续交互扩展时规则漂移。
+
+这些能力对应最近完成的可信复核基础任务：
+
+| 已完成能力          | 用户效果                                                                |
+| ------------------- | ----------------------------------------------------------------------- |
+| 证据重叠身份匹配    | Provider 改写标题、摘要或排序后，不会让已复核主题重新变成待处理卡片。   |
+| 多样化证据选择      | 冷门但有价值的时间段、文件夹或连接线索更有机会进入主题生成上下文。      |
+| 引用校验            | 重复标题和无效 evidence reference 不会污染主题证据链。                  |
+| Review Board 规则层 | Review Board 和 Review Report 对“哪些主题可见/可写入报告”保持同一判断。 |
+
+维护者入口：
+
+- `src/core/reviewState.ts`：Theme Decision 保存、证据重叠匹配、Report inclusion 规则。
+- `src/core/themeEvidence.ts`：Evidence Package、provider-visible 选择、AI 主题解析和 evidence reference 校验。
+- `src/obsidian/reviewSelection.ts` / `src/obsidian/reviewActions.ts`：Review Board 队列、下一条选择和操作状态。
+- `tests/reviewState.spec.ts`、`tests/themeEvidence.spec.ts`、`tests/reviewBoard.spec.ts`、`tests/reviewActions.spec.ts`：对应回归测试。
 
 ## AI 的角色
 

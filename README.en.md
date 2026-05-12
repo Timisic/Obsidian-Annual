@@ -81,21 +81,50 @@ Review Board protects Theme Decisions; it is not just an AI-output preview. The
 current loop reduces duplicate review and mistaken confirmation with a few
 explicit rules:
 
-- **Stable Review Candidate identity**: when a provider rewrites a title,
-  summary, or ordering but the Evidence Notes clearly overlap, accepted,
-  renamed, merged, and ignored states are preserved.
-- **Diverse Evidence Selection**: AI context prioritizes coverage across time
-  periods, folders, connection clusters, and long-tail clues instead of only the
-  highest-scoring notes.
-- **Bounded evidence references**: AI can cite only the provider-visible
-  Evidence Package; ambiguous references such as duplicate titles are not bound
-  to an arbitrary note.
+- **Stable Review Candidate identity**: after a re-scan or provider change, a
+  new Theme Hypothesis that cites substantially overlapping Evidence Notes keeps
+  the prior accept, rename, merge, ignore, user note, and evidence-comment
+  state. Low-overlap themes remain separate so different lines of thought are
+  not accidentally merged.
+- **Deduplicate instead of piling up themes**: when the provider produces
+  several similar outputs over the same Evidence Notes, Review Board collapses
+  them into one Review Candidate by default so users review fewer repeated
+  cards.
+- **Diverse Evidence Selection**: the provider-visible Evidence Package
+  prioritizes coverage across time periods, folders, connection clusters, and
+  long-tail clues instead of only the highest-scoring notes. Local fallback and
+  provider generation share this bounded evidence contract.
+- **Safe evidence references**: AI output should cite stable Evidence Note ids;
+  path, wikilink, and title references are compatibility fallbacks. Duplicate
+  titles, invalid references, and ambiguous references are not silently bound to
+  arbitrary notes, and themes without traceable evidence do not enter Review
+  Board.
 - **Confirmed themes only**: the Review Report includes only user-confirmed
   accepted or renamed themes; candidates, ignored themes, and merged sources do
   not appear as independent report themes.
-- **Centralized Review Board rules**: queue visibility, report inclusion, and
-  merge-target rules live in testable modules so future interaction changes do
-  not drift.
+- **Centralized Review Board rules**: queue visibility, allowed actions, next
+  selection, merge-target rules, and report inclusion live in testable modules
+  so future interaction changes do not drift.
+
+These safeguards correspond to the recently completed trusted-review foundation:
+
+| Completed capability       | User effect                                                                    |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| Evidence-overlap identity  | Provider title, summary, or ordering changes do not re-open reviewed themes.   |
+| Diverse evidence selection | Less obvious periods, folders, and connection clues can shape generation.      |
+| Reference validation       | Duplicate titles and invalid evidence references do not pollute provenance.    |
+| Review Board rules layer   | Review Board and Review Report share one answer for visible/reportable themes. |
+
+Maintainer entry points:
+
+- `src/core/reviewState.ts`: Theme Decision preservation, evidence-overlap
+  matching, and report inclusion rules.
+- `src/core/themeEvidence.ts`: Evidence Package construction, provider-visible
+  selection, AI theme parsing, and evidence-reference validation.
+- `src/obsidian/reviewSelection.ts` / `src/obsidian/reviewActions.ts`: Review
+  Board queues, next selection, and action state.
+- `tests/reviewState.spec.ts`, `tests/themeEvidence.spec.ts`,
+  `tests/reviewBoard.spec.ts`, `tests/reviewActions.spec.ts`: regression tests.
 
 ## AI's Role
 
