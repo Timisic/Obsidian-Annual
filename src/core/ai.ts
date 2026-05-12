@@ -30,7 +30,7 @@ const LOCAL_CODEX_PATH_ENTRIES = [
   "/usr/local/bin",
 ];
 const ABSOLUTE_CODEX_COMMAND_EXAMPLE =
-  "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.codex_hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
+  "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;
