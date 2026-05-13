@@ -1503,15 +1503,50 @@ function reviewCandidateNarrativeParagraphs(
   candidate: ReviewCandidate,
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
+  const summary = reviewCandidateSummary(candidate, language);
+  const uncertainty = reviewCandidateUncertainty(candidate, language);
+  if (isReportReadyNarrative(summary, language)) {
+    return uniqueParagraphs([summary, uncertainty]);
+  }
   const paragraphs = uniqueParagraphs([
-    reviewCandidateSummary(candidate, language),
+    summary,
     reviewCandidateConnection(candidate, language),
     reviewCandidateReason(candidate, language),
     reviewCandidateEvidenceArc(candidate, language),
     reviewCandidateInterpretation(candidate, language),
-    reviewCandidateUncertainty(candidate, language),
+    uncertainty,
   ]);
   return paragraphs;
+}
+
+function isReportReadyNarrative(
+  paragraph: string,
+  language: ResolvedAnnualReviewLanguage,
+): boolean {
+  const plainText = plainNarrativeText(paragraph);
+  if (!plainText) {
+    return false;
+  }
+  const wikilinkCount = (paragraph.match(/\[\[[^\]]+\]\]/gu) ?? []).length;
+  if (language === "zh") {
+    const plainCharacters = Array.from(plainText.replace(/\s+/gu, "")).length;
+    const rawCharacters = Array.from(paragraph.replace(/\s+/gu, "")).length;
+    return (
+      (plainCharacters >= 400 || rawCharacters >= 500) &&
+      (wikilinkCount >= 2 || plainCharacters >= 650)
+    );
+  }
+  const words = plainText.match(/[\p{L}\p{N}'-]+/gu)?.length ?? 0;
+  return words >= 180 && (wikilinkCount >= 2 || words >= 260);
+}
+
+function plainNarrativeText(markdown: string): string {
+  return markdown
+    .replace(/\[\[[^\]|#\]]+(?:#[^\]|]+)?\|([^\]]+)\]\]/gu, "$1")
+    .replace(/\[\[([^\]|#\]]+)(?:#[^\]|]+)?\]\]/gu, "$1")
+    .replace(/[`*_~>#-]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
 }
 
 function uniqueParagraphs(paragraphs: string[]): string[] {

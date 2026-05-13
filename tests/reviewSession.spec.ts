@@ -1007,6 +1007,68 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("人工确认:");
   });
 
+  it("uses long AI report narratives without adding generic fallback prose", async () => {
+    const evidencePaths = [
+      "2026月复盘/2月/2026-02-22 AI越来越快.md",
+      "2026月复盘/3月/2026-03-04 ALL-in-AI.md",
+      "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+      "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+    ];
+    const aggregate = buildYearAggregate(
+      evidencePaths.map((path, index) =>
+        sourceFrom({
+          path,
+          ctime: `2026-0${Math.min(index + 2, 4)}-0${index + 1}T08:00:00.000Z`,
+          mtime: `2026-0${Math.min(index + 2, 4)}-0${index + 1}T10:00:00.000Z`,
+          content: "AI agency tools pressure workflow context ".repeat(80),
+        }),
+      ),
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const aiReportNarrative =
+      "这一条主线关注的是自己如何在 AI 加速里重新夺回主导权。" +
+      "[[2026月复盘/2月/2026-02-22 AI越来越快|AI越来越快]] 先把 AI 放在长期变量里，提醒自己不能只把它当成临时工具，而要看见它会持续改变学习、写作、编码和判断方式。" +
+      "到 [[2026月复盘/3月/2026-03-04 ALL-in-AI|ALL in AI]]，这种观察已经转成投入姿态：愿意把时间、注意力和试错额度都压到这个方向上。" +
+      "但 [[2026月复盘/4月/2026-04-04 懵逼同时有AI压力感|懵逼同时有AI压力感]] 又把另一面写出来，工具越强，越容易让人被速度、信息密度和新范式推着走。" +
+      "[[2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能|探索期有充足额度才有更多可能]] 则把问题推进到资源、额度、账号稳定性和实验空间。" +
+      "把这些笔记放在一起看，年度主线不是简单的工具热情，而是一次关于判断流程、上下文管理和工作边界的训练：既要拥抱 AI 带来的放大效应，也要避免把安全感完全交给工具速度。" +
+      "后续报告可以继续追问这种主导权是否真的变成了可复用的工作流：例如怎样拆任务、怎样保存上下文、怎样判断模型输出是否值得相信，以及怎样把一次次尝试沉淀成项目资产。" +
+      "这样写既保留了四篇证据笔记里的现场感，也把年度复盘从“我用过哪些 AI 工具”推进到“我如何重新组织自己的学习和生产系统”。";
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("ai", "AI 主导权", "accepted", {
+        aiSummary: aiReportNarrative,
+        connectionExplanation: "这些笔记共同呈现 AI 工具投入、压力和资源边界。",
+        reason: "AI 工具从机会变成压力，也迫使自己重新设计判断流程。",
+        uncertainty: "后续是否沉淀成稳定工作流仍需继续观察。",
+        evidence: evidencePaths.map((path) => ({
+          id: path,
+          kind: "note",
+          label: path.split("/").pop()?.replace(/\.md$/u, "") ?? path,
+          target: path,
+          sourcePath: path,
+        })),
+        sourcePaths: evidencePaths,
+      }),
+    ];
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const reviewSection = sectionBetween(markdown, "## 主要主线", "## 值得重读的笔记");
+
+    expect(reviewSection).toContain("### AI 主导权");
+    expect(reviewSection).toContain(
+      "这一条主线关注的是自己如何在 AI 加速里重新夺回主导权。",
+    );
+    expect(reviewSection).toContain("后续是否沉淀成稳定工作流仍需继续观察。");
+    expect(reviewSection).not.toContain("把这些代表笔记串起来看");
+    expect(reviewSection).not.toContain("因此，这条主线在报告里应该");
+    expect(reviewSection).not.toContain("这些笔记共同呈现 AI 工具投入、压力和资源边界");
+    expect(reviewSection).not.toContain("AI 工具从机会变成压力");
+  });
+
   it("renders wikilink-shaped Review Board topic titles as clean report aliases", async () => {
     const aggregate = buildYearAggregate(
       [
