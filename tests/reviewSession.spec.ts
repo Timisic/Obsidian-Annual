@@ -1042,6 +1042,45 @@ describe("aggregation and rendering", () => {
     ).toBe(false);
   });
 
+  it("uses readable evidence aliases without date prefixes", async () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "2026月复盘/2月/2026-02-22 AI越来越快.md",
+          ctime: "2026-02-22T08:00:00.000Z",
+          mtime: "2026-02-22T10:00:00.000Z",
+          content: "AI tools and agency ".repeat(80),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("ai", "AI 主导权", "accepted", {
+        evidence: [
+          {
+            id: "ai-evidence",
+            kind: "note",
+            label: "2026-02-22 AI越来越快",
+            target: "2026月复盘/2月/2026-02-22 AI越来越快.md",
+            sourcePath: "2026月复盘/2月/2026-02-22 AI越来越快.md",
+            reason: "created in review range: 2026-02-22; frontmatter context present",
+          },
+        ],
+        sourcePaths: ["2026月复盘/2月/2026-02-22 AI越来越快.md"],
+      }),
+    ];
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+
+    expect(markdown).toContain("[[2026月复盘/2月/2026-02-22 AI越来越快|AI越来越快]]");
+    expect(markdown).not.toContain("|2026-02-22 AI越来越快");
+    expect(markdown).not.toContain("|2026 02 22 AI越来越快");
+  });
+
   it("normalizes wikilink-shaped topic names before they enter Review Board state", async () => {
     const files = [
       sourceFrom({

@@ -272,6 +272,40 @@ describe("Obsidian vault adapter", () => {
     );
   });
 
+  it("repairs reports whose generated marker was written before frontmatter", async () => {
+    const existingReport = [
+      ANNUAL_REVIEW_START_MARKER,
+      "---",
+      "year: 2026",
+      "---",
+      "# Old machine report",
+      ANNUAL_REVIEW_END_MARKER,
+    ].join("\n");
+    const { app, files } = createReportWriterMockApp([
+      ["Annual Reviews/2026 Annual Review.md", existingReport],
+    ]);
+
+    await writeAnnualReviewOutput(
+      app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
+      "Annual Reviews",
+      2026,
+      ["---", "year: 2026", "---", "# 2026 Annual Review"].join("\n"),
+      [],
+    );
+
+    const reportContent =
+      files.get("Annual Reviews/2026 Annual Review.md")?.content ?? "";
+    expect(reportContent.split(/\r?\n/u).slice(0, 3)).toEqual([
+      "---",
+      "year: 2026",
+      "---",
+    ]);
+    expect(reportContent).toMatch(
+      /^---\nyear: 2026\n---\n\n<!-- time-range-review:generated:start -->/u,
+    );
+    expect(reportContent).not.toContain("# Old machine report");
+  });
+
   it("creates a full backup before converting a legacy annual report without markers", async () => {
     const legacyReport = [
       "# 2026 Annual Review",
