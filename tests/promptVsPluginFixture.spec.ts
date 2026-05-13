@@ -305,6 +305,8 @@ describe("AI provider", () => {
 
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research.md");
-    expect(context.evidencePackage.evidenceNotes[0]?.links).toEqual(["Projects/Research.md"]);
+    expect(context.evidencePackage.evidenceNotes[0]?.links).toEqual([
+      "Projects/Research.md",
+    ]);
   });
 });

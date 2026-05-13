@@ -49,13 +49,13 @@ otherwise confirms it in Review Board.
 
 ## Core Concepts
 
-| Concept          | Meaning                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| Review Session   | One review's time range, scan scope, privacy settings, AI settings, state, and report path.      |
-| Evidence Note    | A source note included in the evidence pack, with path, title, excerpt, links, and time signals. |
-| Evidence Cluster | A group of evidence notes that may support the same theme.                                       |
-| Theme Hypothesis | A proposed theme line based on evidence. It is a reviewable hypothesis, not a user conclusion.   |
-| Theme Decision   | The user's accept, rename, merge, or ignore decision for a theme hypothesis.                     |
+| Concept          | Meaning                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Review Session   | One review's time range, scan scope, privacy settings, AI settings, state, and report path.                       |
+| Evidence Note    | A source note included in the evidence pack, with path, title, excerpt, links, and time signals.                  |
+| Evidence Cluster | A group of evidence notes that may support the same theme.                                                        |
+| Theme Hypothesis | A proposed theme line based on evidence. It is a reviewable hypothesis, not a user conclusion.                    |
+| Theme Decision   | The user's accept, rename, merge, or ignore decision for a theme hypothesis.                                      |
 | Review Report    | The narrative Markdown report written to the vault, containing only confirmed themes and representative evidence. |
 
 Project leads, task leads, action items, and archive judgments may return as

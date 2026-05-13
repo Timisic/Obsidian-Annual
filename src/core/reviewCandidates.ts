@@ -160,13 +160,10 @@ function buildReviewCandidates(
   }
 
   const candidates = aggregate.topicEvolution.topTopics
-    .flatMap((topic, index) =>
-      topicCandidate(aggregate, topic, index, options.language),
-    )
+    .flatMap((topic, index) => topicCandidate(aggregate, topic, index, options.language))
     .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
   return {
-    candidates:
-      options.aiConfigured && options.aiAttempted ? [] : candidates,
+    candidates: options.aiConfigured && options.aiAttempted ? [] : candidates,
     localFallbackCandidates:
       options.aiConfigured && options.aiAttempted ? candidates : [],
     themeGeneration: {

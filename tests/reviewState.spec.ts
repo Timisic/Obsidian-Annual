@@ -62,7 +62,6 @@ describe("review state", () => {
     );
   });
 
-
   it("centralizes Review Board queue and report inclusion rules", () => {
     const pending = candidate("pending");
     const accepted = { ...candidate("accepted"), status: "accepted" as const };
@@ -71,20 +70,13 @@ describe("review state", () => {
     const ignored = { ...candidate("ignored"), status: "ignored" as const };
 
     expect(isPendingReviewQueueCandidate(pending)).toBe(true);
-    expect([pending, accepted, renamed, ignored].map(isReviewBoardQueueCandidate)).toEqual([
-      true,
-      true,
-      true,
-      true,
-    ]);
+    expect(
+      [pending, accepted, renamed, ignored].map(isReviewBoardQueueCandidate),
+    ).toEqual([true, true, true, true]);
     expect(isReviewBoardQueueCandidate(merged)).toBe(false);
-    expect([pending, accepted, renamed, merged, ignored].map(isReviewReportCandidate)).toEqual([
-      false,
-      true,
-      true,
-      false,
-      false,
-    ]);
+    expect(
+      [pending, accepted, renamed, merged, ignored].map(isReviewReportCandidate),
+    ).toEqual([false, true, true, false, false]);
 
     expect(shouldIncludeReviewDecisionInReport("accept", "candidate")).toBe(true);
     expect(shouldIncludeReviewDecisionInReport("ignore", "candidate")).toBe(false);
@@ -528,15 +520,13 @@ describe("review state", () => {
       reviewSession: ignored,
     });
 
-    expect(markdown).toContain("[[accepted-note|Accepted Note]]");
-    expect(markdown).toContain("**AI summary**: AI summary for Accepted Note");
-    expect(markdown).toContain("**Why this theme exists**: Reason for Accepted Note");
+    expect(markdown).toContain("### Accepted Note");
+    expect(markdown).toContain("AI summary for Accepted Note");
+    expect(markdown).toContain("Reason for Accepted Note");
+    expect(markdown).toContain("Accepted Note connects multiple evidence notes.");
+    expect(markdown).not.toContain("**Local signals**");
     expect(markdown).toContain(
-      "**Connection explanation**: Accepted Note connects multiple evidence notes.",
-    );
-    expect(markdown).toContain("**Local signals**: Accepted Note has local evidence");
-    expect(markdown).toContain(
-      "- [[accepted-note]] — Source note supports the candidate.",
+      "- [[accepted-note|Accepted Note]]: Source note supports the candidate.",
     );
     expect(markdown).not.toContain("[[ignored-note|Ignored Note]]");
     expect(markdown).not.toContain("Turn accepted evidence into a follow-up review");

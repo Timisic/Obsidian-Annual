@@ -256,7 +256,10 @@ export function applyReviewAction(
           action: "accept",
           label: displayCandidateTitle(candidate),
           evidence: candidate.evidence,
-          includeInReport: shouldIncludeReviewDecisionInReport("accept", candidate.status),
+          includeInReport: shouldIncludeReviewDecisionInReport(
+            "accept",
+            candidate.status,
+          ),
           at: action.at,
         }),
       );
@@ -274,7 +277,10 @@ export function applyReviewAction(
           label: displayCandidateTitle(candidate),
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: shouldIncludeReviewDecisionInReport("ignore", candidate.status),
+          includeInReport: shouldIncludeReviewDecisionInReport(
+            "ignore",
+            candidate.status,
+          ),
           at: action.at,
         }),
       );
@@ -302,7 +308,10 @@ export function applyReviewAction(
           label: candidate.userTitle,
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: shouldIncludeReviewDecisionInReport("rename", candidate.status),
+          includeInReport: shouldIncludeReviewDecisionInReport(
+            "rename",
+            candidate.status,
+          ),
           at: action.at,
         }),
       );

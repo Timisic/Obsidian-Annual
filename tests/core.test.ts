@@ -918,13 +918,13 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Reviewed theme hypotheses");
+    expect(markdown).toContain("## Main Themes");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
-    expect(markdown).toContain("# Review Report: 2026 Annual Review");
+    expect(markdown).toContain("# 2026 Annual Review");
     expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026/u);
     expect(markdown).toContain("cssclasses:\n  - p-indent");
     expect(markdown).toContain('growth_data_source: "current-vault inference"');
@@ -932,21 +932,21 @@ describe("aggregation and rendering", () => {
       'activity_date_sources: "frontmatter date: 0; path/filename date: 2; filesystem timestamp: 2"',
     );
     expect(markdown).toContain('report_language: "en"');
-    expect(markdown).toContain("- Generated:");
+    expect(markdown).not.toContain("- Generated:");
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## Review Range",
-      "## Activity Evidence",
-      "## Reviewed theme hypotheses",
-      "## Rediscovered Notes",
-      "## Hidden Connections",
-      "## Reflection Prompts",
-      "## Data Methodology",
+      "## Overview",
+      "## Activity Rhythm",
+      "## Main Themes",
+      "## Worth Rereading",
+      "## Reflection Questions",
+      "## User Reflection",
+      "## Methodology",
     ]);
-    expect(markdown).toContain("| Total new words |");
-    expect(markdown).toContain("| Writing days |");
-    expect(markdown).toContain("| Longest writing streak |");
+    expect(markdown).toContain("Activity Evidence shows");
+    expect(markdown).not.toContain("| Writing days |");
+    expect(markdown).not.toContain("| Longest writing streak |");
     expect(markdown).toContain("### Cumulative Growth");
     expect(markdown).toContain(
       'class="annual-review-chart annual-review-daily-cumulative"',
@@ -956,7 +956,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-heatmap"');
     expect(markdown).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(markdown).toContain("<rect");
-    expect(markdown).toContain("| Month | Words | Active days | Peak day |");
+    expect(markdown).not.toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("Legend: . = 0 words");
     expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).not.toContain("## Word Growth Trend");
@@ -975,9 +975,9 @@ describe("aggregation and rendering", () => {
     );
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
     expect(markdown).not.toContain("### Feedback Signals");
-    expect(markdown).toContain("### Activity Reading");
-    expect(markdown).toContain("Writing appeared on");
-    expect(markdown).toContain("Writing volume is concentrated");
+    expect(markdown).not.toContain("### Activity Reading");
+    expect(markdown).not.toContain("Writing appeared on");
+    expect(markdown).not.toContain("Writing volume is concentrated");
     expect(markdown).not.toContain("Tasks completed");
     expect(markdown).not.toContain("## Tasks And Project Notes");
     expect(markdown).not.toContain("## Year Totals");
@@ -985,9 +985,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Reviewed theme hypotheses");
-    expect(markdown).toContain("No reviewed Theme Hypotheses are ready");
-    expect(markdown).not.toContain("### Reviewed theme hypotheses");
+    expect(markdown).toContain("## Main Themes");
+    expect(markdown).toContain("No Review Board state is available");
+    expect(markdown).not.toContain("### Main Themes");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
@@ -1007,11 +1007,11 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("score");
     expect(markdown).not.toContain("## Representative Notes");
     expect(markdown).not.toContain("Representative notes are selected deterministically");
-    expect(markdown).toContain("## Data Methodology");
+    expect(markdown).toContain("## Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
-    expect(markdown).toContain("## Reflection Prompts");
-    expect(markdown).toContain("- Create a compact index");
-    expect(markdown).toContain("- No extra theme-hypothesis prompt is available");
+    expect(markdown).toContain("## Reflection Questions");
+    expect(markdown).toContain("Which Evidence Notes now seem more worth rereading");
+    expect(markdown).not.toContain("- Create a compact index");
   });
 
   it("warns when annual activity dates are filesystem-only", () => {
@@ -1030,9 +1030,9 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
 
     expect(markdown).toContain(
-      "- 活动日期来源: frontmatter date: 0; 路径/文件名日期: 0; 文件系统时间戳: 1",
+      'activity_date_sources: "frontmatter date: 0; 路径/文件名日期: 0; 文件系统时间戳: 1"',
     );
-    expect(markdown).toContain(
+    expect(markdown).not.toContain(
       "本次活动日期只能使用文件系统 ctime/mtime。如果这些文件经过复制、checkout 或批量部署",
     );
   });
@@ -1042,9 +1042,9 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
 
     expect(markdown).toContain('growth_data_source: "current-vault inference"');
-    expect(markdown).toContain("Data Methodology");
-    expect(markdown).toContain("current vault inference");
-    expect(markdown).toContain("not a historical word-count delta");
+    expect(markdown).toContain("Methodology");
+    expect(markdown).toContain("Activity rhythm comes from Markdown Evidence Notes");
+    expect(markdown).toContain("complete Evidence Audit material stays");
   });
 
   it("renders historical snapshot statistics when comparable snapshots are available", async () => {
@@ -1072,8 +1072,8 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
 
     expect(markdown).toContain('growth_data_source: "historical snapshot statistics"');
-    expect(markdown).toContain("Growth data source: historical snapshot statistics");
-    expect(markdown).toContain("- Snapshot word delta:");
+    expect(markdown).toContain("Activity rhythm uses plugin snapshots");
+    expect(markdown).not.toContain("- Snapshot word delta:");
     expect(markdown).not.toContain("Snapshot baseline");
     expect(markdown).not.toContain("Current snapshot");
     expect(markdown).not.toContain("2026-01-01T00:00:00.000Z");
@@ -1094,15 +1094,15 @@ describe("aggregation and rendering", () => {
     );
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
     expect(markdown).toContain('report_language: "zh"');
-    expect(markdown).toContain("# 回顾报告：2026 年度回顾");
+    expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## 回顾范围",
-      "## 活动证据",
-      "## 已复核主题假设",
-      "## 重新发现的笔记",
-      "## 隐藏连接",
-      "## 复盘提示",
-      "## 数据口径",
+      "## 总览",
+      "## 年度节奏",
+      "## 主要主线",
+      "## 值得重读的笔记",
+      "## 留给自己的问题",
+      "## 我的补充",
+      "## 方法与数据口径",
     ]);
     expect(markdown).toContain("### 累计增长");
     expect(markdown).toContain(
@@ -1114,11 +1114,11 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).toContain("### 主题信号图");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 已复核主题假设");
-    expect(markdown).toContain("还没有可写入年报的主题假设");
+    expect(markdown).toContain("## 主要主线");
+    expect(markdown).toContain("还没有 Review Board 状态可确认主题");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
-    expect(markdown).toContain("## 复盘提示");
+    expect(markdown).toContain("## 留给自己的问题");
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
@@ -1154,18 +1154,18 @@ describe("aggregation and rendering", () => {
     });
 
     expect(markdown).toContain("### Theme Signal Chart");
-    expect(markdown).toContain("## Hidden Connections");
+    expect(markdown).toContain("## Reflection Questions");
     expect(markdown).toContain("Research review loop");
-    expect(markdown).toContain("[[Daily/2026-01-01]]");
+    expect(markdown).not.toContain("[[Daily/2026-01-01]]");
     expect(markdown).not.toContain("| Theme |");
     expect(markdown).not.toContain(
       "| Note | Type | AI value reason | Suggested action |",
     );
-    expect(markdown).toContain("#### [[Projects/Research|Research]]");
-    expect(markdown).toContain(
+    expect(markdown).not.toContain("#### [[Projects/Research|Research]]");
+    expect(markdown).not.toContain(
       "This note links source evidence back to the project synthesis",
     );
-    expect(markdown).toContain("- Create a review hub from [[Projects/Research]].");
+    expect(markdown).not.toContain("- Create a review hub from [[Projects/Research]].");
     expect(markdown).not.toContain("### Feedback Signals");
   });
 
@@ -1188,7 +1188,7 @@ describe("aggregation and rendering", () => {
       "![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]",
     );
     expect(markdown).not.toContain("<svg");
-    expect(markdown).toContain("| Month | Words | Active days | Peak day |");
+    expect(markdown).not.toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
 
     expect(chartAssets).toHaveLength(5);
@@ -1404,7 +1404,7 @@ describe("aggregation and rendering", () => {
       ],
     });
 
-    expect(markdown).toContain("No reviewed Theme Hypotheses are ready");
+    expect(markdown).toContain("No Review Board state is available");
     expect(markdown).not.toContain(
       "No auditable evidence was generated for this candidate",
     );
@@ -1418,31 +1418,25 @@ describe("aggregation and rendering", () => {
     const reviewSession = reviewSessionFixture();
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
-    expect(markdown).toContain("### Reviewed theme hypotheses");
-    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
-    expect(markdown).toContain("**Decision**: Accepted proposal.");
-    expect(markdown).toContain("#### [[Projects/Renamed|Renamed Topic]]");
-    expect(markdown).toContain("**Decision**: Renamed proposal.");
+    expect(markdown).toContain("## Main Themes");
+    expect(markdown).toContain("### Accepted Topic");
+    expect(markdown).toContain("### Renamed Topic");
     expect(markdown).toContain(
-      "**Why this theme exists**: Accepted Topic appeared across representative evidence during this review period.",
+      "Accepted Topic appeared across representative evidence during this review period.",
     );
     expect(markdown).toContain(
-      "**Connection explanation**: Accepted Topic has enough local writing activity to deserve review.",
+      "Accepted Topic has enough local writing activity to deserve review.",
     );
-    expect(markdown).toContain(
-      "**Review caution**: Only one evidence note currently supports this hypothesis",
-    );
+    expect(markdown).not.toContain("**Review caution**");
     expect(markdown).not.toContain("supports this theme");
-    expect(markdown).toContain("Evidence notes:");
+    expect(markdown).toContain("Representative evidence:");
     expect(markdown).toContain(
-      "- [[Projects/Accepted]] — Accepted Topic is a representative evidence note.",
+      "- [[Projects/Accepted|Accepted Topic]]: Accepted Topic is a representative evidence note.",
     );
-    expect(markdown).toContain("Merged from:");
-    expect(markdown).toContain(
-      "- [[Projects/Merged|Merged Topic]] — Merged Topic appeared across representative evidence during this review period.",
-    );
+    expect(markdown).not.toContain("Merged source themes do not appear independently:");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("#### [[Projects/Merged|Merged Topic]]");
+    expect(markdown).not.toContain("### Merged Topic");
     expect(markdown).not.toContain("Unreviewed Topic");
     expect(markdown).not.toContain("These 4 reviewed candidates are included");
     expect(markdown).not.toContain("Manual confirmation:");
@@ -1488,17 +1482,13 @@ describe("aggregation and rendering", () => {
       reviewSession: reviewSessionFixture(),
     });
 
-    expect(markdown).toContain("### 已复核主题假设");
-    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
-    expect(markdown).toContain("**决策**：已采纳提案。");
-    expect(markdown).toContain("**决策**：重命名提案。");
-    expect(markdown).toContain("证据笔记:");
-    expect(markdown).toContain("合并来源:");
-    expect(markdown).toContain(
-      "- [[Projects/Merged|Merged Topic]] — Merged Topic appeared across representative evidence during this review period.",
-    );
+    expect(markdown).toContain("## 主要主线");
+    expect(markdown).toContain("### Accepted Topic");
+    expect(markdown).toContain("代表证据:");
+    expect(markdown).not.toContain("合并来源");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
-    expect(markdown).not.toContain("#### [[Projects/Merged|Merged Topic]]");
+    expect(markdown).not.toContain("### Merged Topic");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
   });
@@ -1528,11 +1518,9 @@ describe("aggregation and rendering", () => {
       language: "zh",
       reviewSession,
     });
-    const reviewSection = sectionBetween(markdown, "## 已复核主题假设", "## 数据口径");
+    const reviewSection = sectionBetween(markdown, "## 主要主线", "## 值得重读的笔记");
 
-    expect(reviewSection).toContain(
-      "#### [[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]]",
-    );
+    expect(reviewSection).toContain("### Clippings");
     expect(reviewSection).not.toContain("|[[Clippings]]");
     expect(reviewSection).not.toMatch(/\[\[[^\]|]+\|\[\[/u);
     expect(
@@ -1629,9 +1617,9 @@ describe("aggregation and rendering", () => {
       { reviewSession: session },
     );
 
-    expect(markdown).toContain("[[Projects/Linked|Research]]");
-    expect(markdown).toContain("[[Projects/Year-folder|2026 Monthly Review Notes]]");
-    expect(markdown).toContain("[[Projects/Month-folder|April Review Notes]]");
+    expect(markdown).toContain("### Research");
+    expect(markdown).toContain("### 2026 Monthly Review Notes");
+    expect(markdown).toContain("### April Review Notes");
     expect(markdown).not.toContain("Linked thread:");
     expect(markdown).not.toContain("[[Projects/Month-folder|4月]]");
   });
@@ -2151,7 +2139,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      ["---", "year: 2026", "---", "# Review Report: 2026 Annual Review"].join("\n"),
+      ["---", "year: 2026", "---", "# 2026 Annual Review"].join("\n"),
       [
         {
           kind: "daily-word-heatmap",
@@ -2179,7 +2167,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
-        "# Review Report: 2026 Annual Review",
+        "# 2026 Annual Review",
         ANNUAL_REVIEW_END_MARKER,
         "",
         REVIEW_USER_REFLECTION_START_MARKER,
@@ -2211,7 +2199,7 @@ describe("Obsidian vault adapter", () => {
       "User preface stays exactly.",
       "",
       ANNUAL_REVIEW_START_MARKER,
-      "# Review Report: 2026 Annual Review",
+      "# 2026 Annual Review",
       "Old machine section.",
       ANNUAL_REVIEW_END_MARKER,
       "",
@@ -2225,13 +2213,9 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      [
-        "---",
-        "year: 2026",
-        "---",
-        "# Review Report: 2026 Annual Review",
-        "New machine section.",
-      ].join("\n"),
+      ["---", "year: 2026", "---", "# 2026 Annual Review", "New machine section."].join(
+        "\n",
+      ),
       [],
     );
 
@@ -2244,7 +2228,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
-        "# Review Report: 2026 Annual Review",
+        "# 2026 Annual Review",
         "New machine section.",
         ANNUAL_REVIEW_END_MARKER,
         "",
@@ -2262,7 +2246,7 @@ describe("Obsidian vault adapter", () => {
   it("preserves user reflection blocks when regenerating a marked annual report", async () => {
     const existingReport = [
       ANNUAL_REVIEW_START_MARKER,
-      "# Review Report: 2026 Annual Review",
+      "# 2026 Annual Review",
       "Old machine section.",
       ANNUAL_REVIEW_END_MARKER,
       "",
@@ -2280,7 +2264,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      "# Review Report: 2026 Annual Review\nNew machine section.",
+      "# 2026 Annual Review\nNew machine section.",
       [],
     );
 
@@ -2299,7 +2283,7 @@ describe("Obsidian vault adapter", () => {
 
   it("creates a full backup before converting a legacy annual report without markers", async () => {
     const legacyReport = [
-      "# Review Report: 2026 Annual Review",
+      "# 2026 Annual Review",
       "",
       "User summary that must be recoverable.",
     ].join("\n");
@@ -2315,7 +2299,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "year: 2026",
         "---",
-        "# Review Report: 2026 Annual Review",
+        "# 2026 Annual Review",
         "Regenerated machine section.",
       ].join("\n"),
       [],
@@ -2337,7 +2321,7 @@ describe("Obsidian vault adapter", () => {
         "---",
         "",
         ANNUAL_REVIEW_START_MARKER,
-        "# Review Report: 2026 Annual Review",
+        "# 2026 Annual Review",
         "Regenerated machine section.",
         ANNUAL_REVIEW_END_MARKER,
         "",
@@ -2356,7 +2340,7 @@ describe("Obsidian vault adapter", () => {
       "---",
       "",
       ANNUAL_REVIEW_START_MARKER,
-      "# Review Report: 2026 Annual Review",
+      "# 2026 Annual Review",
       "Old machine section.",
       ANNUAL_REVIEW_END_MARKER,
       "",
@@ -2370,13 +2354,7 @@ describe("Obsidian vault adapter", () => {
       app as unknown as Parameters<typeof writeAnnualReviewOutput>[0],
       "Annual Reviews",
       2026,
-      [
-        "---",
-        "year: 2026",
-        "old: false",
-        "---",
-        "# Review Report: 2026 Annual Review",
-      ].join("\n"),
+      ["---", "year: 2026", "old: false", "---", "# 2026 Annual Review"].join("\n"),
       [],
     );
 

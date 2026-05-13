@@ -92,16 +92,20 @@ function mergeAnnualReviewContent(
   nextMachineContent: string,
 ): string {
   const section = findMachineSection(existingContent);
+  const preservedUserReflection = extractUserReflectionBlock(existingContent);
+  const nextContent = preservedUserReflection
+    ? replaceOrAppendUserReflectionBlock(nextMachineContent, preservedUserReflection)
+    : nextMachineContent;
   if (!section) {
-    return formatReportDocument(nextMachineContent);
+    return formatReportDocument(nextContent);
   }
 
   const managedStartIndex = machineSectionStartIndex(existingContent, section.startIndex);
   return ensureUserReflectionBlock(
     appendUserContent(
-      formatMachineSection(nextMachineContent),
-      existingContent.slice(0, managedStartIndex),
-      existingContent.slice(section.endIndex),
+      formatMachineSection(nextContent),
+      removeUserReflectionBlock(existingContent.slice(0, managedStartIndex)),
+      removeUserReflectionBlock(existingContent.slice(section.endIndex)),
     ),
   );
 }
@@ -215,6 +219,42 @@ function ensureUserReflectionBlock(content: string): string {
   }
 
   return `${content.trimEnd()}\n\n${REVIEW_USER_REFLECTION_START_MARKER}\n\n${REVIEW_USER_REFLECTION_END_MARKER}`;
+}
+
+function extractUserReflectionBlock(content: string): string | null {
+  const section = findDelimitedSection(
+    content,
+    REVIEW_USER_REFLECTION_START_MARKER,
+    REVIEW_USER_REFLECTION_END_MARKER,
+  );
+  return section ? content.slice(section.startIndex, section.endIndex) : null;
+}
+
+function replaceOrAppendUserReflectionBlock(content: string, block: string): string {
+  const section = findDelimitedSection(
+    content,
+    REVIEW_USER_REFLECTION_START_MARKER,
+    REVIEW_USER_REFLECTION_END_MARKER,
+  );
+  if (!section) {
+    return `${content.trimEnd()}\n\n${block}`;
+  }
+  return `${content.slice(0, section.startIndex)}${block}${content.slice(section.endIndex)}`;
+}
+
+function removeUserReflectionBlock(content: string): string {
+  const section = findDelimitedSection(
+    content,
+    REVIEW_USER_REFLECTION_START_MARKER,
+    REVIEW_USER_REFLECTION_END_MARKER,
+  );
+  if (!section) {
+    return content;
+  }
+  const before = content
+    .slice(0, section.startIndex)
+    .replace(/\n{0,2}## (?:User Reflection|我的补充)\s*\n{2}$/u, "");
+  return `${before}${content.slice(section.endIndex)}`;
 }
 
 async function createLegacyBackup(

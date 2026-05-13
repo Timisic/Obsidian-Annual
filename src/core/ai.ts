@@ -97,15 +97,15 @@ export async function renderAiReportEnhancements(
       model: options.settings.chatGptModel.trim() || "gpt-5.5",
       instructions: [
         "You enrich an Obsidian review from a bounded ReviewSession evidence package.",
-        "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
+        "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be reflection questions, not task assignments.",
         "Use the embedded Obsidian CLI/Markdown handoff as binding output guidance.",
-        "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+        "Write for a Narrative Review Report: theme-first prose, readable evidence aliases, sparing lists, and no self-referential AI/process wording.",
         "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
         "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
         "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
         "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
         "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
-        "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
+        "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path; report prose may use readable wikilink aliases while keeping exact targets.",
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
       input: buildAiPrompt(options.aggregate, options.files, options.settings),
@@ -173,8 +173,8 @@ export function buildCodexPrompt(
     "You are generating structured Obsidian annual review enrichment.",
     "Use the embedded Obsidian CLI/Markdown handoff as binding guidance.",
     "Use only the supplied JSON context; do not read or request any vault files outside this bounded evidence package.",
-    "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
-    "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+    "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be reflection questions, not task assignments.",
+    "Write for a Narrative Review Report: theme-first prose, readable evidence aliases, sparing lists, and no self-referential AI/process wording.",
     "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
     "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
     "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
@@ -207,7 +207,7 @@ function buildCodexContext(
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
         "path-specific recommendation rationale and optional review prompts for evidence notes",
-      nextActions: "3 grounded optional reflection prompts",
+      nextActions: "3 grounded reflection questions, not action items",
     },
     obsidianSkillHandoff: obsidianSkillHandoff(),
     contextPolicy: {
@@ -502,12 +502,12 @@ function fallbackHighValueActionZh(
 ): string {
   const target = theme || title;
   if (note.kind === "输出候选") {
-    return `补一段“当前判断”和 3 条证据链接，把它改成「${target}」的可输出草稿。`;
+    return `重读这篇时，哪一段最能说明「${target}」在本期发生了什么变化？`;
   }
   if (note.kind === "孤立潜力") {
-    return `先补 2-3 个上下文双链，再写一段它和「${target}」的关系说明。`;
+    return `这篇为什么会在「${target}」之外显得孤立，它缺少的是证据、关系，还是命名？`;
   }
-  return `在文末加一个「关联笔记 / 当前结论 / 下一步问题」小节，让它成为「${target}」的复盘入口。`;
+  return `如果把它作为「${target}」的入口，最值得保留的原始判断是什么？`;
 }
 
 function fallbackHighValueReasonEn(
@@ -545,12 +545,12 @@ function fallbackHighValueActionEn(
 ): string {
   const target = theme || title;
   if (note.kind === "孤立潜力") {
-    return `Add 2-3 contextual wikilinks, then write one paragraph explaining how it belongs to ${target}.`;
+    return `Why does this note still feel isolated from ${target}: missing evidence, missing relationships, or unclear naming?`;
   }
   if (note.kind === "输出候选") {
-    return `Add a current-judgment section and three evidence links so it can become an output draft for ${target}.`;
+    return `Which passage best explains what changed around ${target} during this range?`;
   }
-  return `Add related notes, current hypothesis, and next question sections so it can serve as a review entry for ${target}.`;
+  return `If this note becomes an entry point for ${target}, which original judgment is most worth preserving?`;
 }
 
 function relatedTheme(
@@ -624,8 +624,8 @@ function obsidianSkillHandoff(): Record<string, unknown> {
       "When citing evidence, use exact vault-relative note paths supplied in context.",
     ],
     obsidianMarkdown: [
-      "Use Obsidian wikilinks for internal evidence and preserve paths without inventing aliases.",
-      "Avoid raw pipes inside Markdown table cells; table wikilinks should use plain [[path]] form.",
+      "Use Obsidian wikilinks for internal evidence; readable report prose should use [[exact/path|faithful alias]] so the target remains traceable.",
+      "Avoid raw pipes inside Markdown table cells; table wikilinks should use plain [[path]] form if a table is unavoidable.",
       "Generated prose should be valid Obsidian Flavored Markdown and readable as an editable note.",
     ],
   };
