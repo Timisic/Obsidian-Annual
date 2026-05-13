@@ -4,48 +4,41 @@
 <line x1="62" y1="286" x2="664" y2="286" stroke="#d0d7de" stroke-width="1" />
 <text x="54" y="290" font-size="10" text-anchor="end" fill="currentColor">0</text>
 <line x1="62" y1="157" x2="664" y2="157" stroke="#d0d7de" stroke-width="1" />
-<text x="54" y="161" font-size="10" text-anchor="end" fill="currentColor">2500</text>
+<text x="54" y="161" font-size="10" text-anchor="end" fill="currentColor">1000</text>
 <line x1="62" y1="28" x2="664" y2="28" stroke="#d0d7de" stroke-width="1" />
-<text x="54" y="32" font-size="10" text-anchor="end" fill="currentColor">5000</text>
+<text x="54" y="32" font-size="10" text-anchor="end" fill="currentColor">2000</text>
 <line x1="62" y1="28" x2="62" y2="286" stroke="#57606a" stroke-width="1" />
 <line x1="62" y1="286" x2="664" y2="286" stroke="#57606a" stroke-width="1" />
 <text x="18" y="157" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 157)">新增字数</text>
-<rect x="62" y="280.84" width="144.50" height="5.16" fill="#d98c46"><title>2026-01: 关系靠近后的边界与回味 100 字词</title></rect>
-<rect x="62" y="275.68" width="144.50" height="5.16" fill="#c75f7a"><title>2026-01: 金钱波动中的自由感、风险感与消费尺度 100 字词</title></rect>
-<rect x="62" y="270.52" width="144.50" height="5.16" fill="#6f8f2f"><title>2026-01: 科研去向与课题组选择的现实盘算 100 字词</title></rect>
-<text x="134.25" y="312" font-size="10" text-anchor="middle" fill="currentColor">01</text>
-<rect x="214.50" y="280.84" width="144.50" height="5.16" fill="#4f7cac"><title>2026-02: 从技术兴奋走向理解焦虑 100 字词</title></rect>
-<rect x="214.50" y="275.68" width="144.50" height="5.16" fill="#4f9d69"><title>2026-02: AI 杠杆下的自主感重建 100 字词</title></rect>
-<rect x="214.50" y="270.52" width="144.50" height="5.16" fill="#8a6fbd"><title>2026-02: 亲密关系里的靠近、上头与边界感 100 字词</title></rect>
-<text x="286.75" y="312" font-size="10" text-anchor="middle" fill="currentColor">02</text>
-<rect x="367" y="280.84" width="144.50" height="5.16" fill="#d98c46"><title>2026-03: 关系靠近后的边界与回味 100 字词</title></rect>
-<rect x="367" y="275.68" width="144.50" height="5.16" fill="#8a6fbd"><title>2026-03: 亲密关系里的靠近、上头与边界感 100 字词</title></rect>
-<rect x="367" y="270.52" width="144.50" height="5.16" fill="#c75f7a"><title>2026-03: 金钱波动中的自由感、风险感与消费尺度 100 字词</title></rect>
-<rect x="367" y="265.36" width="144.50" height="5.16" fill="#b07d3c"><title>2026-03: 兴奋、疲惫、焦虑之间的调节能力 100 字词</title></rect>
-<text x="439.25" y="312" font-size="10" text-anchor="middle" fill="currentColor">03</text>
-<rect x="519.50" y="270.52" width="144.50" height="15.48" fill="#4f7cac"><title>2026-04: 从技术兴奋走向理解焦虑 300 字词</title></rect>
-<rect x="519.50" y="255.04" width="144.50" height="15.48" fill="#d98c46"><title>2026-04: 关系靠近后的边界与回味 300 字词</title></rect>
-<rect x="519.50" y="239.56" width="144.50" height="15.48" fill="#4f9d69"><title>2026-04: AI 杠杆下的自主感重建 300 字词</title></rect>
-<rect x="519.50" y="224.08" width="144.50" height="15.48" fill="#8a6fbd"><title>2026-04: 亲密关系里的靠近、上头与边界感 300 字词</title></rect>
-<rect x="519.50" y="208.60" width="144.50" height="15.48" fill="#c75f7a"><title>2026-04: 金钱波动中的自由感、风险感与消费尺度 300 字词</title></rect>
-<rect x="519.50" y="193.12" width="144.50" height="15.48" fill="#6f8f2f"><title>2026-04: 科研去向与课题组选择的现实盘算 300 字词</title></rect>
-<rect x="519.50" y="177.64" width="144.50" height="15.48" fill="#b07d3c"><title>2026-04: 兴奋、疲惫、焦虑之间的调节能力 300 字词</title></rect>
-<rect x="519.50" y="157.00" width="144.50" height="20.64" fill="#6f7782"><title>2026-04: 玩乐、聊天与社群氛围提供的生活能量 400 字词</title></rect>
-<text x="591.75" y="312" font-size="10" text-anchor="middle" fill="currentColor">04</text>
+<rect x="62" y="273.10" width="114" height="12.90" fill="#4f7cac"><title>2026-01: 在 AI 加速中寻找自己的主导权 100 字词</title></rect>
+<rect x="62" y="260.20" width="114" height="12.90" fill="#4f9d69"><title>2026-01: 金钱波动改变消费、自由感与风险感 100 字词</title></rect>
+<rect x="62" y="247.30" width="114" height="12.90" fill="#8a6fbd"><title>2026-01: 科研路径选择中的现实风险评估 100 字词</title></rect>
+<rect x="62" y="234.40" width="114" height="12.90" fill="#c75f7a"><title>2026-01: 开放回路带来的焦虑、兴奋与疲惫 100 字词</title></rect>
+<text x="119" y="312" font-size="10" text-anchor="middle" fill="currentColor">01</text>
+<rect x="184" y="273.10" width="114" height="12.90" fill="#4f7cac"><title>2026-02: 在 AI 加速中寻找自己的主导权 100 字词</title></rect>
+<rect x="184" y="260.20" width="114" height="12.90" fill="#d98c46"><title>2026-02: 亲密关系中的靠近、服软与失落处理 100 字词</title></rect>
+<text x="241" y="312" font-size="10" text-anchor="middle" fill="currentColor">02</text>
+<rect x="306" y="273.10" width="114" height="12.90" fill="#4f7cac"><title>2026-03: 在 AI 加速中寻找自己的主导权 100 字词</title></rect>
+<rect x="306" y="260.20" width="114" height="12.90" fill="#d98c46"><title>2026-03: 亲密关系中的靠近、服软与失落处理 100 字词</title></rect>
+<rect x="306" y="247.30" width="114" height="12.90" fill="#4f9d69"><title>2026-03: 金钱波动改变消费、自由感与风险感 100 字词</title></rect>
+<rect x="306" y="234.40" width="114" height="12.90" fill="#c75f7a"><title>2026-03: 开放回路带来的焦虑、兴奋与疲惫 100 字词</title></rect>
+<text x="363" y="312" font-size="10" text-anchor="middle" fill="currentColor">03</text>
+<rect x="428" y="260.20" width="114" height="25.80" fill="#4f7cac"><title>2026-04: 在 AI 加速中寻找自己的主导权 200 字词</title></rect>
+<rect x="428" y="208.60" width="114" height="51.60" fill="#d98c46"><title>2026-04: 亲密关系中的靠近、服软与失落处理 400 字词</title></rect>
+<rect x="428" y="169.90" width="114" height="38.70" fill="#4f9d69"><title>2026-04: 金钱波动改变消费、自由感与风险感 300 字词</title></rect>
+<rect x="428" y="131.20" width="114" height="38.70" fill="#8a6fbd"><title>2026-04: 科研路径选择中的现实风险评估 300 字词</title></rect>
+<rect x="428" y="92.50" width="114" height="38.70" fill="#c75f7a"><title>2026-04: 开放回路带来的焦虑、兴奋与疲惫 300 字词</title></rect>
+<text x="485" y="312" font-size="10" text-anchor="middle" fill="currentColor">04</text>
+<rect x="550" y="273.10" width="114" height="12.90" fill="#4f7cac"><title>2026-05: 在 AI 加速中寻找自己的主导权 100 字词</title></rect>
+<text x="607" y="312" font-size="10" text-anchor="middle" fill="currentColor">05</text>
 <rect x="688" y="36" width="10" height="10" fill="#4f7cac" />
-<text x="704" y="46" font-size="11" fill="currentColor">从技术兴奋走向理解焦虑</text>
+<text x="704" y="46" font-size="11" fill="currentColor">在 AI 加速中寻找自己的主导权</text>
 <rect x="688" y="54" width="10" height="10" fill="#d98c46" />
-<text x="704" y="64" font-size="11" fill="currentColor">关系靠近后的边界与回味</text>
+<text x="704" y="64" font-size="11" fill="currentColor">亲密关系中的靠近、服软与失落处理</text>
 <rect x="688" y="72" width="10" height="10" fill="#4f9d69" />
-<text x="704" y="82" font-size="11" fill="currentColor">AI 杠杆下的自主感重建</text>
+<text x="704" y="82" font-size="11" fill="currentColor">金钱波动改变消费、自由感与风险感</text>
 <rect x="688" y="90" width="10" height="10" fill="#8a6fbd" />
-<text x="704" y="100" font-size="11" fill="currentColor">亲密关系里的靠近、上头与边界感</text>
+<text x="704" y="100" font-size="11" fill="currentColor">科研路径选择中的现实风险评估</text>
 <rect x="688" y="108" width="10" height="10" fill="#c75f7a" />
-<text x="704" y="118" font-size="11" fill="currentColor">金钱波动中的自由感、风险感与消费尺度</text>
-<rect x="688" y="126" width="10" height="10" fill="#6f8f2f" />
-<text x="704" y="136" font-size="11" fill="currentColor">科研去向与课题组选择的现实盘算</text>
-<rect x="688" y="144" width="10" height="10" fill="#b07d3c" />
-<text x="704" y="154" font-size="11" fill="currentColor">兴奋、疲惫、焦虑之间的调节能力</text>
-<rect x="688" y="162" width="10" height="10" fill="#6f7782" />
-<text x="704" y="172" font-size="11" fill="currentColor">玩乐、聊天与社群氛围提供的生活能量</text>
+<text x="704" y="118" font-size="11" fill="currentColor">开放回路带来的焦虑、兴奋与疲惫</text>
 </svg>

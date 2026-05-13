@@ -8,7 +8,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 它帮助用户在 Annual、Quarterly、Monthly 或 Custom Range 中找回被遗忘的关键笔记，
 由 AI 基于受控证据包生成可复核的 Theme Hypotheses / 主题假设，
 解释支撑这些主题的 Evidence Notes / 证据笔记之间的细微关系，
-并在用户确认后输出可追溯、可编辑、可重复生成的 Markdown 复盘报告。
+并在用户确认后输出可追溯、可编辑、可重复生成的叙事型 Markdown 复盘报告。
 
 ## 定位转换
 
@@ -20,7 +20,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 - 核心输出不是自动总结，而是用户复核后的主题主线和证据。
 - AI 是核心分析层，用于基于证据包生成语义主题假设和关系解释，不是替用户下结论。
 - Review Board 只把 Theme Hypothesis 当作需要用户复核的假设。
-- Markdown 报告沉淀用户确认后的主题、证据、连接解释、活动证据图表和个人补充。
+- Markdown 报告把用户确认后的主题写成段落式复盘叙事，并保留代表证据、活动证据图表、留给自己的问题和个人补充。
 
 ## 第一性原理
 
@@ -30,7 +30,8 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 4. AI 受控优先：用户显式选择 provider 或 local CLI path，AI 只处理有限证据包，避免不受控的全 vault 总结。
 5. 用户判断优先：Theme Hypothesis 是待复核假设；最终主题名称、价值判断和报告内容由用户确认。
 6. 图表证据优先：图表说明 activity rhythm、writing bursts、dormant periods 和主题形成背景，不替代主题复核。
-7. 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
+7. 叙事报告优先：默认报告服务于未来重读和理解，不是 Review Board 的完整审计导出。
+8. 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
 
 ## 核心用户痛点
 
@@ -55,7 +56,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 大模型可以写出漂亮总结，但用户很难判断它看了什么、漏了什么、有没有编造关系。
 
 插件需要让每条主题假设都绑定证据笔记、连接解释和不确定性说明。
-用户必须能接受、改名、合并或忽略；最终报告必须区分插件生成内容、AI 辅助草稿和用户确认内容。
+用户必须能接受、改名、合并或忽略；Review Board 保留完整复核材料，最终报告只把用户确认后的主题写成可读叙事。
 
 ### 复盘范围不止一年
 
@@ -75,11 +76,12 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 
 用户完成一次复盘后，应获得：
 
-- 3-7 个用户确认后的主题主线。
-- 每个主题背后的 Evidence Notes、摘录和连接解释。
-- 被重新发现的关键旧笔记。
+- 默认 3-5 个用户确认后的强主题主线；短月度或自定义范围可以更少，但不应硬凑弱主题。
+- 每个主题的段落式叙事、2-4 条带 alias 的代表 Evidence Note 链接，以及必要的不确定性表达。
+- 值得重读的关键旧笔记，而不是自动任务建议。
 - 活动节奏、写作爆发、沉寂阶段和主题形成背景的图表证据。
-- 本次复盘的方法说明：时间范围、扫描范围、排除范围、是否使用 AI、发送了哪些上下文类型。
+- 留给自己的反思问题，而不是 action items。
+- 极短方法说明：时间范围、证据来源、AI 使用边界和主题需用户确认。
 - 一份可继续编辑、可重新生成、可 diff 的 Markdown 复盘报告。
 
 ## 核心对象
@@ -91,7 +93,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 | Evidence Cluster            | 一组可能相关、共同支撑同一条主题主线的证据笔记。                  | 核心     |
 | Theme Hypothesis / 主题假设 | 基于证据簇提出的主题解释。它需要用户复核，不能直接当作结论。      | 核心     |
 | Theme Decision              | 用户对主题假设的接受、改名、合并或忽略。                          | 核心     |
-| Review Report               | 保存在 vault 内的 Markdown 复盘报告，只写入用户确认后的内容。     | 核心     |
+| Review Report               | 保存在 vault 内的叙事型 Markdown 复盘报告，只写入用户确认后的主题和代表证据。 | 核心     |
 
 项目线索、任务线索、行动项和归档判断是后续可能扩展的复盘辅助能力。
 它们不属于当前 MVP 的核心对象，也不应出现在 README 首屏承诺中。
@@ -103,7 +105,7 @@ AI 是核心分析层，可以：
 - 基于受控 Evidence Package 提出 semantic Theme Hypotheses。
 - 解释 Evidence Notes 之间细微但可追溯的关系。
 - 标注不确定性、遗漏风险和需要用户重点复核的证据。
-- 在用户确认后辅助组织报告文字。
+- 在用户确认后把成立的主题组织成段落式复盘叙事。
 
 插件必须：
 
@@ -119,6 +121,7 @@ AI 不应该：
 - 默认访问网络。
 - 把未经复核的主题假设写成用户结论。
 - 替用户做价值判断、取舍或最终命名。
+- 把完整本地信号、合并来源、隐藏连接和所有证据笔记默认塞进 Review Report 正文或普通附录。
 
 ## 插件与完整提示词的差异
 
@@ -144,6 +147,7 @@ AI 不应该：
 - 使用本地规则或用户显式启用的 AI 生成 Theme Hypotheses。
 - 帮用户在 Review Board 中复核、改名、合并或忽略主题假设。
 - 把用户确认后的内容写入 Markdown 复盘报告。
+- 把完整证据和本地信号留在 Review Board 或显式审计导出中。
 
 插件不应该：
 
@@ -160,6 +164,6 @@ AI 不应该：
 - 用户能创建 Annual / Quarterly / Monthly / Custom Range Review Session。
 - 每个 Theme Hypothesis 都有 Evidence Notes、连接解释和不确定性说明。
 - 文档明确 Theme Hypothesis / 主题假设需要用户复核。
-- 复盘报告能清楚区分插件生成内容、AI 辅助内容和用户确认内容，并保留活动证据图表。
+- 复盘报告以主题优先的段落式叙事呈现用户确认内容，保留活动证据图表、代表证据链接、值得重读的笔记、留给自己的问题和用户手写区。
 - 默认模式无网络请求。
 - 重新生成不会抹掉用户手写内容。

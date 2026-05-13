@@ -8,7 +8,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 
 它是一个本地优先、证据约束的 Obsidian 时间范围复盘插件。用户可以选择年度、季度、月度或自定义时间范围，
 让插件编译源笔记证据包，用 AI 生成可复核的语义主题假设和连接解释，
-再把用户确认后的主题、证据和说明写入 vault 内的 Markdown 复盘报告。
+再把用户确认后的主题写成 vault 内可追溯、可重读的叙事型 Markdown 复盘报告。
 
 它解决四个问题：
 
@@ -43,7 +43,7 @@ Annual Review 只是一个 preset；同一套产品定义也覆盖 Quarterly Rev
 | Evidence Cluster            | 一组可能互相关联、共同支撑某条主题假设的证据笔记。                |
 | Theme Hypothesis / 主题假设 | 插件基于证据簇提出的主题主线。它是待复核假设，不是用户结论。      |
 | Theme Decision              | 用户对主题假设的接受、改名、合并或忽略。                          |
-| Review Report               | 写入 vault 的 Markdown 复盘报告，只沉淀用户确认后的内容和证据。   |
+| Review Report               | 写入 vault 的叙事型 Markdown 复盘报告，只沉淀用户确认后的主题和代表证据。 |
 
 项目线索、任务线索、行动项和归档判断相关能力会作为后续扩展重新评估，
 但不属于当前 MVP 的核心对象或首屏承诺。
@@ -60,7 +60,7 @@ Annual Review 只是一个 preset；同一套产品定义也覆盖 Quarterly Rev
 - 用户操作：Accept、Rename、Merge、Ignore、Open Source Note。
 
 主题假设需要用户复核。插件可以提示“这些笔记可能共同表达了什么”，
-但最终报告只写入用户确认过的主题名称、解释、证据和用户补充。
+但最终报告只把用户确认过的主题写成段落式复盘叙事，并保留代表证据、活动图表、留给自己的问题和用户补充。
 
 ## 可信主题复核保障
 
@@ -70,7 +70,7 @@ Review Board 是 Theme Decision 的保护层，而不只是 AI 输出预览。�
 - **去重而不是堆叠主题**：同一组 Evidence Notes 生成出多个相近 provider 输出时，默认压缩成一条 Review Candidate，让用户少复核重复卡片。
 - **多样化 Evidence Selection**：Provider-visible Evidence Package 优先覆盖不同时间段、文件夹、连接簇和长尾线索，而不是只取最高分笔记；本地 fallback 和 provider 生成共享这套受控证据边界。
 - **安全 evidence 引用**：AI 输出应引用稳定 Evidence Note id；路径、wikilink 或标题只能作为兼容引用。重复标题、无效引用和歧义引用不会被静默绑定到任意笔记，无法追溯到证据的主题不会进入 Review Board。
-- **确认后才入报告**：Review Report 只包含用户确认后的 accepted / renamed themes；candidate、ignored 和 merged source 不会作为独立主题进入报告。
+- **确认后才入报告**：Review Report 只包含用户确认后的 accepted / renamed themes；candidate、ignored 和 merged source 不会作为独立主题进入报告，完整本地信号和合并来源留在 Review Board 或显式审计导出中。
 - **集中 Review Board 规则**：队列可见性、允许操作、下一条选择、merge target 和 Report inclusion 规则集中在可测试模块中，避免后续交互扩展时规则漂移。
 
 这些能力对应最近完成的可信复核基础任务：
@@ -97,7 +97,7 @@ AI 是核心分析层中的 **主题假设生成器和关系解释器**，不是
 - 它解释 Evidence Notes 之间细微但可追溯的连接。
 - 它必须把输出绑定到源笔记、摘录、路径和用户可复核的理由。
 - 它标注不确定性和需要用户重点复核的地方。
-- 它可以在用户确认主题后辅助整理报告文字，但不能替代证据复核和主题判断。
+- 它可以在用户确认主题后辅助组织段落式报告文字，但不能替代证据复核和主题判断。
 
 用户必须显式选择 AI provider 或本地 CLI 路径，并在发送前确认时间范围、摘录数量、排除范围和目标边界。
 插件应避免不受控的全 vault 总结：它先编译范围内证据包，再把有限上下文交给 AI 或本地规则生成可复核假设。
@@ -113,6 +113,8 @@ AI 是核心分析层中的 **主题假设生成器和关系解释器**，不是
 - theme formation context / 主题形成的时间背景。
 
 图表支持主题复盘和证据解释，但不主导产品身份；核心仍是证据包、AI 主题假设、用户复核和 Markdown 报告。
+
+默认 Review Report 不是 Review Board 的审计导出。报告正文采用主题优先的叙事结构：总览、活动节奏图表、3-5 条强主线（短范围可以更少）、值得重读的笔记、留给自己的问题、用户手写区和极短方法说明。主题标题不用 wikilink，正文证据链接使用可读 alias；完整证据列表、本地信号、隐藏连接和合并来源保留在 Review Board 或显式审计导出中。
 
 ## 和完整提示词的差异
 
@@ -226,7 +228,7 @@ npm run dev:deploy-smoke
 4. 打开 Review Board，确认 Theme Hypotheses、Evidence Notes、Connection Explanation 和复核操作可见。
 5. 接受、改名、合并或忽略若干主题假设。
 6. 运行 `Annual Review: Generate report`。
-7. 确认报告只包含用户确认后的主题、证据链接、方法说明和用户手写区，并且源笔记可回链打开。
+7. 确认报告以段落式叙事呈现用户确认后的主题，保留活动图表、带 alias 的代表证据链接、极短方法说明和用户手写区，并且源笔记可回链打开。
 
 ## 更多文档
 
