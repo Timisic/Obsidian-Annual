@@ -1955,8 +1955,11 @@ describe("AI provider", () => {
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain('"evidencePackage"');
     expect(prompt).toContain('"localSignals"');
+    expect(prompt).toContain("reportNarrative");
+    expect(prompt).toContain("500-800 Chinese characters");
+    expect(prompt).toContain("[[exact/path|alias without leading date]]");
     expect(prompt).toContain('"backlinks"');
-    expect(prompt.length).toBeLessThan(24_000);
+    expect(prompt.length).toBeLessThan(26_000);
   });
 
   it("calls the OpenAI Responses API and renders returned ChatGPT content", async () => {
@@ -2049,6 +2052,8 @@ describe("AI provider", () => {
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research");
     expect(prompt).toContain('"evidencePackage"');
+    expect(prompt).toContain('"reportWritingContract"');
+    expect(prompt).toContain("readable alias without leading date prefix");
     expect(prompt).toContain('"relatedNotes"');
     expect(prompt).toContain("Review Fixtures/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");

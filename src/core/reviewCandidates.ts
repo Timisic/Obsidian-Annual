@@ -235,7 +235,7 @@ function themeCandidate(
     type: "theme-hypothesis",
     title,
     reason: theme.summary,
-    aiSummary: theme.summary,
+    aiSummary: theme.reportNarrative || theme.summary,
     connectionExplanation: theme.connectionExplanation,
     localSignals,
     uncertainty: theme.uncertainty,

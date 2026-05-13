@@ -288,7 +288,13 @@ describe("theme evidence", () => {
     const prompt = JSON.parse(buildThemeHypothesisPrompt(evidencePackage)) as {
       inputPolicy: { allowedInput: string; weakSignalRule: string };
       evidencePackage: { evidenceNotes: Array<{ id: string; excerpt: string }> };
-      outputSchema: { themeHypotheses: Array<{ evidenceNoteIds: string[] }> };
+      outputSchema: {
+        themeHypotheses: Array<{
+          evidenceNoteIds: string[];
+          reportNarrative: string;
+        }>;
+      };
+      acceptanceRules: string[];
     };
 
     expect(prompt.inputPolicy.allowedInput).toContain("structured evidence package");
@@ -297,6 +303,12 @@ describe("theme evidence", () => {
     expect(prompt.evidencePackage.evidenceNotes[0]?.excerpt).not.toContain("---");
     expect(prompt.outputSchema.themeHypotheses[0]?.evidenceNoteIds[0]).toContain(
       "evidence note ids",
+    );
+    expect(prompt.outputSchema.themeHypotheses[0]?.reportNarrative).toContain(
+      "500-800 Chinese characters",
+    );
+    expect(prompt.acceptanceRules).toContain(
+      "reportNarrative should connect 2-4 representative evidence notes into a first-pass story, using [[exact/path|readable alias]] links with aliases that remove leading date slugs.",
     );
   });
 
@@ -407,6 +419,8 @@ describe("theme evidence", () => {
             id: "theme-ai-local-loop",
             title: "Local evidence loop",
             summary: "The notes connect AI review work to local evidence.",
+            reportNarrative:
+              "A report-ready narrative connects [[Projects/Research|Research]] with [[Daily/2026-02-01|Daily evidence]] and keeps the target paths exact.",
             evidenceNoteIds: ["note:projects-research-md", "note:daily-2026-02-01-md"],
             connectionExplanation:
               "Both notes share the local evidence loop phrase and cross-link through AI Systems.",
@@ -435,6 +449,7 @@ describe("theme evidence", () => {
     expect(parsed[0]).toMatchObject({
       id: "theme-ai-local-loop",
       source: "ai",
+      reportNarrative: expect.stringContaining("report-ready narrative"),
       evidenceNoteIds: ["note:projects-research-md", "note:daily-2026-02-01-md"],
     });
     expect(parsed[0]?.connectionExplanation).toContain("cross-link");

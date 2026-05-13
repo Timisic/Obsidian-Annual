@@ -186,6 +186,9 @@ describe("AI provider", () => {
     expect(prompt).toContain('"highValueNotes"');
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain('"evidencePackage"');
+    expect(prompt).toContain("reportNarrative");
+    expect(prompt).toContain("500-800 Chinese characters");
+    expect(prompt).toContain("[[exact/path|alias without leading date]]");
     expect(prompt).toContain('"backlinks"');
     expect(prompt.length).toBeLessThan(26_000);
   });
@@ -221,6 +224,10 @@ describe("AI provider", () => {
       "Bearer test-key",
     );
     expect(String(calls[0]?.init.body)).toContain('"model":"gpt-test"');
+    expect(String(calls[0]?.init.body)).toContain("reportNarrative");
+    expect(String(calls[0]?.init.body)).toContain("500-800 Chinese characters");
+    expect(String(calls[0]?.init.body)).toContain("alias without leading date");
+    expect(String(calls[0]?.init.body)).toContain('"max_output_tokens":9000');
     expect(section).toBe("Use [[Daily/2026-01-01]] as evidence.");
     expect(section).toContain("[[Daily/2026-01-01]]");
     expect(section).not.toContain("Provider:");
@@ -280,6 +287,8 @@ describe("AI provider", () => {
     expect(prompt).toContain('"topLinks"');
     expect(prompt).toContain("Projects/Research");
     expect(prompt).toContain('"evidencePackage"');
+    expect(prompt).toContain('"reportWritingContract"');
+    expect(prompt).toContain("readable alias without leading date prefix");
     expect(prompt).toContain('"evidenceNotes"');
     expect(prompt).toContain("Review Fixtures/2026-01-01.md");
     expect(prompt).toContain("Linked to [[Projects/Research]]");

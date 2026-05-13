@@ -134,6 +134,8 @@ export function buildThemeHypothesisPrompt(
             id: "stable short id",
             title: "synthesized theme title",
             summary: "short evidence-grounded summary",
+            reportNarrative:
+              "reader-facing draft for the default Narrative Review Report; 500-800 Chinese characters or 280-450 English words; use 2-4 exact-path wikilinks with readable aliases and no date prefixes",
             evidenceNoteIds: ["exact evidence note ids"],
             connectionExplanation:
               "why these evidence notes belong together; cite local signals",
@@ -146,6 +148,8 @@ export function buildThemeHypothesisPrompt(
       acceptanceRules: [
         "Each theme must have at least two evidenceNoteIds unless uncertainty explicitly marks low confidence.",
         "Each theme must include connectionExplanation.",
+        "Each strong theme should include reportNarrative that can be used directly in the Review Report after user acceptance.",
+        "reportNarrative should connect 2-4 representative evidence notes into a first-pass story, using [[exact/path|readable alias]] links with aliases that remove leading date slugs.",
         "Tags are weak signals only.",
         "Prefer 5-15 independent themes; merge overlapping themes instead of repeating a local signal.",
         "Theme titles and summaries must be natural semantic interpretations, not raw local metadata.",
@@ -610,6 +614,10 @@ function toThemeHypothesis(
   const record = value as Record<string, unknown>;
   const title = stringValue(record.title);
   const summary = stringValue(record.summary) || stringValue(record.synthesis);
+  const reportNarrative =
+    stringValue(record.reportNarrative) ||
+    stringValue(record.narrativeDraft) ||
+    stringValue(record.reportDraft);
   const connectionExplanation =
     stringValue(record.connectionExplanation) || stringValue(record.connections);
   if (!title || !summary || !connectionExplanation) {
@@ -635,6 +643,7 @@ function toThemeHypothesis(
     id: stringValue(record.id) || `theme:ai:${index + 1}`,
     title,
     summary,
+    reportNarrative: reportNarrative || undefined,
     evidenceNoteIds,
     connectionExplanation,
     localSignals:

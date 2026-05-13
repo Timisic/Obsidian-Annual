@@ -32,6 +32,14 @@ const LOCAL_CODEX_PATH_ENTRIES = [
 ];
 const ABSOLUTE_CODEX_COMMAND_EXAMPLE =
   "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
+const NARRATIVE_THEME_CONTRACT = [
+  "For each strong themeHypothesis, include reportNarrative: a first-pass reader-facing section for the default Narrative Review Report.",
+  "reportNarrative should be 500-800 Chinese characters for zh or 280-450 English words for en when evidence is sufficient; sparse short ranges may be shorter but must not pad weak claims.",
+  "reportNarrative must connect 2-4 representative evidence notes into prose using exact-path Obsidian wikilinks with readable aliases, e.g. [[exact/path|alias without leading date]].",
+  "Use aliases that remove date prefixes such as 2026-02-22, folder noise, and .md while preserving exact link targets.",
+  "Absorb connectionExplanation into the prose; do not emit report field labels such as AI summary, why this theme exists, local signals, review caution, merged from, or evidence notes.",
+  "Write like a thoughtful review draft, not a task list, audit export, or generic template.",
+];
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;
@@ -106,10 +114,11 @@ export async function renderAiReportEnhancements(
         "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
         "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
         "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path; report prose may use readable wikilink aliases while keeping exact targets.",
+        ...NARRATIVE_THEME_CONTRACT,
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
       input: buildAiPrompt(options.aggregate, options.files, options.settings),
-      max_output_tokens: 2600,
+      max_output_tokens: 9000,
     }),
   });
 
@@ -180,6 +189,7 @@ export function buildCodexPrompt(
     "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
     "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
     "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
+    ...NARRATIVE_THEME_CONTRACT,
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
   ].join("\n");
@@ -202,7 +212,7 @@ function buildCodexContext(
       periodJudgment:
         "2-4 evidence-backed review overview sentences; no heading, no bullet list",
       themeHypotheses:
-        "5-15 mutually distinct semantic themes with id, title, summary, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
+        "5-15 mutually distinct semantic themes with id, title, summary, reportNarrative, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
       themeInsights:
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
@@ -214,6 +224,29 @@ function buildCodexContext(
       noteCoverage: `${evidencePackage.evidenceNotes.length} bounded evidence notes include short excerpts and local signals for the selected ReviewSession.`,
       evidenceSources:
         "Use only evidencePackage ids, listed note paths, short excerpts, related notes, and local signals.",
+    },
+    reportWritingContract: {
+      narrativeThemeContract: NARRATIVE_THEME_CONTRACT,
+      reportNarrative:
+        "Default Review Report prose for a user-accepted theme. It should already read like a useful first draft before renderer fallback.",
+      evidenceLinks:
+        "Use [[exact evidenceNotes[].path without .md|readable alias without leading date prefix]] when citing evidence inside reportNarrative.",
+      forbiddenReportLabels: [
+        "AI summary",
+        "why this theme exists",
+        "connection explanation",
+        "local signals",
+        "review caution",
+        "merged from",
+        "evidence notes",
+        "AI 总结",
+        "为什么这个主题存在",
+        "连接解释",
+        "本地信号",
+        "复核提示",
+        "合并来源",
+        "证据笔记",
+      ],
     },
     evidencePackage,
     reviewSession: {
@@ -873,6 +906,7 @@ function themeInsightToHypothesis(
     id: `theme:ai:insight:${index + 1}`,
     title: insight.title,
     summary: insight.synthesis,
+    reportNarrative: insight.synthesis,
     evidenceNoteIds,
     connectionExplanation: insight.connections,
     localSignals,
@@ -893,7 +927,7 @@ function themeHypothesisToInsight(
   );
   return {
     title: theme.title,
-    synthesis: theme.summary,
+    synthesis: theme.reportNarrative || theme.summary,
     connections: theme.connectionExplanation,
     evidenceNotes: theme.evidenceNoteIds.map((id) => pathById.get(id) ?? id),
     nextQuestion: "",
