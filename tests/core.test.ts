@@ -1010,7 +1010,10 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain("## Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
     expect(markdown).toContain("## Reflection Questions");
-    expect(markdown).toContain("Which Evidence Notes now seem more worth rereading");
+    expect(markdown).toContain(
+      "What boundary would you set before the next similar situation",
+    );
+    expect(markdown).not.toContain("Which Evidence Notes now seem more worth rereading");
     expect(markdown).not.toContain("- Create a compact index");
   });
 
@@ -1122,6 +1125,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
+    expect(markdown).not.toContain("补 2-3 个上下文链接后整理成输出草稿");
+    expect(markdown).not.toContain("作为本范围的代表笔记重新检查");
   });
 
   it("renders AI-synthesized themes and review-candidate reasons when AI enhancements are present", async () => {
@@ -1430,9 +1435,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("**Review caution**");
     expect(markdown).not.toContain("supports this theme");
     expect(markdown).toContain("Representative evidence:");
-    expect(markdown).toContain(
-      "- [[Projects/Accepted|Accepted Topic]]: Accepted Topic is a representative evidence note.",
-    );
+    expect(markdown).toContain("- [[Projects/Accepted|Accepted Topic]]");
+    expect(markdown).not.toContain("is a representative evidence note.");
     expect(markdown).not.toContain("Merged source themes do not appear independently:");
     expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
@@ -1961,6 +1965,8 @@ describe("AI provider", () => {
     expect(prompt).toContain("underlying tension");
     expect(prompt).toContain("Structure reportNarrative as a small argument");
     expect(prompt).toContain("Avoid generic report-meta sentences");
+    expect(prompt).toContain("uncomfortable, concrete self-review questions");
+    expect(prompt).toContain("avoid generic questions about which notes to reread");
     expect(prompt).toContain('"backlinks"');
     expect(prompt.length).toBeLessThan(26_000);
   });

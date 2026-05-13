@@ -1650,23 +1650,20 @@ function reviewCandidateEvidenceReason(
   language: ResolvedAnnualReviewLanguage,
 ): string {
   const reason = sanitizeCandidateInline(candidate, evidence.reason, language);
-  if (reason && !isTechnicalEvidenceReason(reason)) {
+  if (reason && !isTechnicalEvidenceReason(reason) && !isGenericEvidenceReason(reason)) {
     return reason;
   }
-  const alias = readableEvidenceAlias(
-    evidence.label,
-    evidence.sourcePath || evidence.target,
-  );
-  const title = sanitizeHeading(
-    reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
-  );
-  return language === "zh"
-    ? `把「${title}」落到“${alias}”这个具体切面，适合回看原文里的语气和判断。`
-    : `Grounds ${title} in the concrete angle of “${alias},” worth rereading for the original tone and judgment.`;
+  return "";
 }
 
 function isTechnicalEvidenceReason(reason: string): boolean {
   return /(?:created in review range|modified in review range|backlinks?|outbound links?|shared links?|entities?:|frontmatter context present|tags present as weak signals|cross-folder links?|contains reviewable questions|创建于回顾范围|修改于回顾范围|反向链接|出链|共享链接|实体：|存在属性上下文|标签仅作为弱信号|跨文件夹链接|包含可复核问题)/iu.test(
+    reason,
+  );
+}
+
+function isGenericEvidenceReason(reason: string): boolean {
+  return /(?:representative evidence note|代表证据|适合回看原文|original tone and judgment|原始语气)/iu.test(
     reason,
   );
 }
@@ -1849,10 +1846,22 @@ function renderWorthRereading(
   if (notes.length === 0) {
     return `- ${REPORT_TEXT[language].noDataFound}`;
   }
-  return notes
-    .map((note) => {
+  const rows = notes.map((note) => ({
+    note,
+    reason: worthRereadingReason(note, language),
+  }));
+  const reasonCounts = rows.reduce((counts, row) => {
+    const key = normalizeRepeatedReportText(row.reason);
+    if (key) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, new Map<string, number>());
+  return rows
+    .map(({ note, reason }) => {
       const link = wikiLink(note.path, readableEvidenceAlias(note.title, note.path));
-      return `- ${link}: ${worthRereadingReason(note, language)}`;
+      const repeated = (reasonCounts.get(normalizeRepeatedReportText(reason)) ?? 0) > 1;
+      return `- ${link}${reason && !repeated ? `: ${reason}` : ""}`;
     })
     .join("\n");
 }
@@ -1861,10 +1870,28 @@ function worthRereadingReason(
   note: { path: string; title?: string; suggestedAction?: string },
   language: ResolvedAnnualReviewLanguage,
 ): string {
-  const title = sanitizeInlineMarkdown(note.title) || noteTitle(note.path);
-  return language === "zh"
-    ? `它在本期证据中重新浮现，适合回看其中的原始语气、关系和未解决问题。`
-    : `${title} resurfaced in this range's evidence and is worth rereading for its original language, relationships, and unresolved questions.`;
+  const suggestedAction = sanitizeInlineMarkdown(note.suggestedAction);
+  const representativeFallback =
+    language === "zh"
+      ? "作为本范围的代表笔记重新检查。"
+      : "Revisit as a representative note from this range.";
+  if (
+    suggestedAction === representativeFallback ||
+    isGenericWorthRereadingReason(suggestedAction)
+  ) {
+    return "";
+  }
+  return suggestedAction;
+}
+
+function isGenericWorthRereadingReason(reason: string): boolean {
+  return /(?:补\s*2-3\s*个上下文链接后整理成输出草稿|revisit as a representative note|representative note from this range|it resurfaced in this range|重新浮现|原始语气、关系和未解决问题)/iu.test(
+    reason,
+  );
+}
+
+function normalizeRepeatedReportText(value: string): string {
+  return value.trim().replace(/\s+/gu, " ").toLocaleLowerCase();
 }
 
 function renderReflectionQuestions(
@@ -1894,22 +1921,35 @@ function renderReflectionQuestions(
     themes[0] ||
     aggregate.topicEvolution.topTopics[0]?.name ||
     (language === "zh" ? "本期最明显的主题" : "the clearest theme in this range");
-  const fallback =
-    language === "zh"
-      ? [
-          `这段时间里，${topic} 真正改变了什么？`,
-          "哪些 Evidence Notes 现在看起来比当时更值得重读？",
-          "还有哪些张力只是被看见了，但没有被自己真正解释清楚？",
-        ]
-      : [
-          `What actually changed around ${topic} during this range?`,
-          "Which Evidence Notes now seem more worth rereading than they did at the time?",
-          "Which tension has been noticed but not yet understood in your own words?",
-        ];
+  const fallback = reflectionFallbackQuestions(themes, topic, language);
   return [...aiQuestions, ...fallback]
     .slice(0, 5)
     .map((question) => `- ${question}`)
     .join("\n");
+}
+
+function reflectionFallbackQuestions(
+  themes: string[],
+  topic: string,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const secondTheme = themes.find((theme) => theme !== topic);
+  if (language === "zh") {
+    return [
+      `围绕「${topic}」，今年真正变化的是你的判断标准、行动节奏，还是只是多了一套解释自己的语言？`,
+      secondTheme
+        ? `「${topic}」和「${secondTheme}」背后是否有同一个模式：你把安全感交给了工具、关系、金钱、平台或他人反馈中的哪一个？`
+        : `「${topic}」背后最难承认的取舍是什么：你想获得什么，同时又害怕失去什么？`,
+      "下次类似情境再次出现时，你要提前设定哪一个边界，才不会只在事后复盘里理解自己？",
+    ];
+  }
+  return [
+    `Around ${topic}, did your actual standards and rhythms change, or did you mostly gain a better explanation for the same behavior?`,
+    secondTheme
+      ? `Do ${topic} and ${secondTheme} share one deeper pattern: where are you outsourcing safety to tools, relationships, money, platforms, or feedback?`
+      : `What is the hardest tradeoff behind ${topic}: what are you trying to gain, and what are you afraid to lose?`,
+    "What boundary would you set before the next similar situation, so the lesson does not only appear during the retrospective?",
+  ];
 }
 
 function isReflectionQuestion(value: string): boolean {

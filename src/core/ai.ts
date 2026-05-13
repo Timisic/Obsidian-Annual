@@ -109,6 +109,7 @@ export async function renderAiReportEnhancements(
       instructions: [
         "You enrich an Obsidian review from a bounded ReviewSession evidence package.",
         "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be reflection questions, not task assignments.",
+        "nextActions should be uncomfortable, concrete self-review questions tied to the strongest theme tensions; avoid generic questions about which notes to reread.",
         "Use the embedded Obsidian CLI/Markdown handoff as binding output guidance.",
         "Write for a Narrative Review Report: theme-first prose, readable evidence aliases, sparing lists, and no self-referential AI/process wording.",
         "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
@@ -186,6 +187,7 @@ export function buildCodexPrompt(
     "Use the embedded Obsidian CLI/Markdown handoff as binding guidance.",
     "Use only the supplied JSON context; do not read or request any vault files outside this bounded evidence package.",
     "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be reflection questions, not task assignments.",
+    "nextActions should be uncomfortable, concrete self-review questions tied to the strongest theme tensions; avoid generic questions about which notes to reread.",
     "Write for a Narrative Review Report: theme-first prose, readable evidence aliases, sparing lists, and no self-referential AI/process wording.",
     "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
     "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
@@ -220,7 +222,8 @@ function buildCodexContext(
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
         "path-specific recommendation rationale and optional review prompts for evidence notes",
-      nextActions: "3 grounded reflection questions, not action items",
+      nextActions:
+        "3 grounded, uncomfortable, concrete self-review questions tied to the strongest theme tensions; not action items and not generic note-rereading prompts",
     },
     obsidianSkillHandoff: obsidianSkillHandoff(),
     contextPolicy: {
