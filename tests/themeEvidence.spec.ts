@@ -307,8 +307,17 @@ describe("theme evidence", () => {
     expect(prompt.outputSchema.themeHypotheses[0]?.reportNarrative).toContain(
       "500-800 Chinese characters",
     );
+    expect(prompt.outputSchema.themeHypotheses[0]?.reportNarrative).toContain(
+      "underlying tension",
+    );
     expect(prompt.acceptanceRules).toContain(
       "reportNarrative should connect 2-4 representative evidence notes into a first-pass story, using [[exact/path|readable alias]] links with aliases that remove leading date slugs.",
+    );
+    expect(prompt.acceptanceRules).toContain(
+      "reportNarrative must make a deeper synthesis argument: what changed across the evidence notes, what pattern or contradiction it reveals, why it mattered in the review period, and what remains unresolved.",
+    );
+    expect(prompt.acceptanceRules).toContain(
+      "Avoid generic report-meta sentences such as 'this theme should be treated as an early interpretation' or 'these notes preserve the original tone, judgment, and hesitation'.",
     );
   });
 

@@ -1342,7 +1342,7 @@ function sanitizeInlineMarkdown(markdown?: string): string {
   if (!markdown) {
     return "";
   }
-  const body = softenFormulaicContrast(markdown)
+  const body = normalizeGeneratedMarkdown(markdown)
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
@@ -1367,7 +1367,7 @@ function sanitizeParagraphMarkdown(markdown?: string): string {
   if (!markdown) {
     return "";
   }
-  return softenFormulaicContrast(markdown)
+  return normalizeGeneratedMarkdown(markdown)
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
@@ -1387,16 +1387,8 @@ function sanitizeParagraphMarkdown(markdown?: string): string {
     .slice(0, 900);
 }
 
-function softenFormulaicContrast(markdown: string): string {
-  return markdown
-    .replace(/不再只是[^，。；]+，而是/gu, "更具体地说，是")
-    .replace(/并不只是[^，。；]+，而是/gu, "更关键的是")
-    .replace(/并不只是/gu, "除了")
-    .replace(/不只是[^，。；]+，而是/gu, "更关键的是")
-    .replace(/不是[^，。；]+，而是/gu, "更关键的是")
-    .replace(/，而不是/gu, "，避免")
-    .replace(/not just [^,.;]+, but /giu, "")
-    .replace(/not only [^,.;]+, but also /giu, "");
+function normalizeGeneratedMarkdown(markdown: string): string {
+  return markdown.trim();
 }
 
 function sanitizeHeading(markdown?: string): string {
@@ -1512,8 +1504,6 @@ function reviewCandidateNarrativeParagraphs(
     summary,
     reviewCandidateConnection(candidate, language),
     reviewCandidateReason(candidate, language),
-    reviewCandidateEvidenceArc(candidate, language),
-    reviewCandidateInterpretation(candidate, language),
     uncertainty,
   ]);
   return paragraphs;
@@ -1612,68 +1602,6 @@ function reviewCandidateConnection(
   return language === "zh"
     ? "在判断这个提案是否成为主题前，请先一起复核这些代表证据。"
     : "Review the linked evidence notes together before deciding whether this proposal is a real theme.";
-}
-
-function reviewCandidateEvidenceArc(
-  candidate: ReviewCandidate,
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  const links = traceableEvidence(candidate)
-    .slice(0, 6)
-    .map((evidence) => {
-      const target = evidence.sourcePath || evidence.target;
-      return target
-        ? wikiLink(target, readableEvidenceAlias(evidence.label, target))
-        : sanitizeCandidateInline(candidate, evidence.label, language);
-    })
-    .filter(Boolean);
-  if (links.length < 2) {
-    return "";
-  }
-  const title = sanitizeHeading(
-    reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
-  );
-  const first = links[0] ?? "";
-  const second = links[1] ?? "";
-  const middle = links.slice(2, -1);
-  const last = links[links.length - 1] ?? "";
-  if (language === "zh") {
-    const middleText =
-      middle.length > 0
-        ? `中段的 ${formatInlineList(middle, language)} 又把这条线落到更具体的事件、关系和判断里，`
-        : "";
-    return `把这些代表笔记串起来看，${first} 提供了这条主线的入口，${second} 把问题继续往前推，${middleText}${last} 则让前面的判断有了回声。它们共同说明「${title}」不是一个孤立标签，而是一段反复出现的思考轨迹：一开始只是某个场景里的感觉，后来逐渐变成资源、关系、选择、风险或情绪之间的连接。这样的写法保留了源笔记的具体入口，也把分散记录先穿成一条可以继续重读的线。`;
-  }
-  const middleText =
-    middle.length > 0
-      ? ` The middle evidence, ${formatInlineList(middle, language)}, grounds the theme in more specific events, relationships, and judgments.`
-      : "";
-  return `Read together, ${first} gives this theme an entry point, ${second} pushes the question forward, and ${last} lets the earlier judgment echo later in the range.${middleText} These notes show that ${title} is not just a label for related files; it is a recurring line of attention that moves from a local feeling into choices, constraints, relationships, risks, or emotional residue.`;
-}
-
-function reviewCandidateInterpretation(
-  candidate: ReviewCandidate,
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  const title = sanitizeHeading(
-    reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
-  );
-  const aliases = traceableEvidence(candidate)
-    .slice(0, 4)
-    .map((evidence) =>
-      readableEvidenceAlias(evidence.label, evidence.sourcePath || evidence.target),
-    )
-    .filter(Boolean);
-  const evidenceText =
-    aliases.length > 0
-      ? formatQuotedList(aliases)
-      : language === "zh"
-        ? "这些笔记"
-        : "these notes";
-  if (language === "zh") {
-    return `因此，这条主线在报告里应该被当作一个初步成形的解释，而不是一组待办或一串证据清单。${evidenceText} 的价值在于，它们把当时的语气、判断和迟疑留下来了：有些地方已经很明确，有些地方仍然停在感受层面。现在回看时，可以先承认这条线已经足够强，值得进入 Review Report；同时也保留一个开放位置，等后续笔记继续回答它到底会沉淀成稳定选择、生活方式、关系模式还是阶段性波动。`;
-  }
-  return `For the report, this theme should be treated as an early interpretation rather than a task list or a full audit trail. ${evidenceText} matters because the notes preserve the original tone, judgment, and hesitation: some parts are already clear, while others still live closer to felt experience. The theme is strong enough to enter the Review Report, but it should remain open to later notes that clarify whether it becomes a stable direction, a relationship pattern, a working method, or a temporary fluctuation.`;
 }
 
 function traceableEvidence(candidate: ReviewCandidate): ReviewCandidate["evidence"] {

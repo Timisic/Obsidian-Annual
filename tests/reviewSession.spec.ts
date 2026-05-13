@@ -1005,6 +1005,8 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
+    expect(markdown).not.toContain("因此，这条主线在报告里应该被当作一个初步成形的解释");
+    expect(markdown).not.toContain("把这些代表笔记串起来看");
   });
 
   it("uses long AI report narratives without adding generic fallback prose", async () => {

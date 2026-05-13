@@ -135,7 +135,7 @@ export function buildThemeHypothesisPrompt(
             title: "synthesized theme title",
             summary: "short evidence-grounded summary",
             reportNarrative:
-              "reader-facing draft for the default Narrative Review Report; 500-800 Chinese characters or 280-450 English words; use 2-4 exact-path wikilinks with readable aliases and no date prefixes",
+              "reader-facing draft for the default Narrative Review Report; 500-800 Chinese characters or 280-450 English words; use 2-4 exact-path wikilinks with readable aliases and no date prefixes; go beyond topical grouping into the underlying tension, value shift, fear/desire, tradeoff, contradiction, or recurring decision pattern",
             evidenceNoteIds: ["exact evidence note ids"],
             connectionExplanation:
               "why these evidence notes belong together; cite local signals",
@@ -150,6 +150,8 @@ export function buildThemeHypothesisPrompt(
         "Each theme must include connectionExplanation.",
         "Each strong theme should include reportNarrative that can be used directly in the Review Report after user acceptance.",
         "reportNarrative should connect 2-4 representative evidence notes into a first-pass story, using [[exact/path|readable alias]] links with aliases that remove leading date slugs.",
+        "reportNarrative must make a deeper synthesis argument: what changed across the evidence notes, what pattern or contradiction it reveals, why it mattered in the review period, and what remains unresolved.",
+        "Avoid generic report-meta sentences such as 'this theme should be treated as an early interpretation' or 'these notes preserve the original tone, judgment, and hesitation'.",
         "Tags are weak signals only.",
         "Prefer 5-15 independent themes; merge overlapping themes instead of repeating a local signal.",
         "Theme titles and summaries must be natural semantic interpretations, not raw local metadata.",

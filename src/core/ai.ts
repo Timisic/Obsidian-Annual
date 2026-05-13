@@ -22,7 +22,7 @@ import type {
 
 const MAX_AI_CONTEXT_EXCERPT_CHARS = 700;
 const MAX_CODEX_CONTEXT_NOTES = 28;
-const MAX_PROVIDER_CONTEXT_EXCERPT_CHARS = 240;
+const MAX_PROVIDER_CONTEXT_EXCERPT_CHARS = 700;
 const MAX_LINKED_NOTE_CONTEXT = 4;
 const LOCAL_CODEX_TIMEOUT_MS = 300_000;
 const LOCAL_CODEX_PATH_ENTRIES = [
@@ -36,8 +36,11 @@ const NARRATIVE_THEME_CONTRACT = [
   "For each strong themeHypothesis, include reportNarrative: a first-pass reader-facing section for the default Narrative Review Report.",
   "reportNarrative should be 500-800 Chinese characters for zh or 280-450 English words for en when evidence is sufficient; sparse short ranges may be shorter but must not pad weak claims.",
   "reportNarrative must connect 2-4 representative evidence notes into prose using exact-path Obsidian wikilinks with readable aliases, e.g. [[exact/path|alias without leading date]].",
+  "Go beyond obvious topical grouping: identify the underlying tension, value shift, fear/desire, tradeoff, contradiction, or recurring decision pattern that the notes reveal together.",
+  "Structure reportNarrative as a small argument: what changed across the evidence notes, what deeper pattern it reveals, why it mattered in this review period, and what remains unresolved.",
   "Use aliases that remove date prefixes such as 2026-02-22, folder noise, and .md while preserving exact link targets.",
   "Absorb connectionExplanation into the prose; do not emit report field labels such as AI summary, why this theme exists, local signals, review caution, merged from, or evidence notes.",
+  "Avoid generic report-meta sentences such as 'this theme should be treated as an early interpretation' or 'these notes preserve the original tone, judgment, and hesitation'.",
   "Write like a thoughtful review draft, not a task list, audit export, or generic template.",
 ];
 

@@ -189,6 +189,9 @@ describe("AI provider", () => {
     expect(prompt).toContain("reportNarrative");
     expect(prompt).toContain("500-800 Chinese characters");
     expect(prompt).toContain("[[exact/path|alias without leading date]]");
+    expect(prompt).toContain("underlying tension");
+    expect(prompt).toContain("Structure reportNarrative as a small argument");
+    expect(prompt).toContain("Avoid generic report-meta sentences");
     expect(prompt).toContain('"backlinks"');
     expect(prompt.length).toBeLessThan(26_000);
   });
@@ -227,6 +230,8 @@ describe("AI provider", () => {
     expect(String(calls[0]?.init.body)).toContain("reportNarrative");
     expect(String(calls[0]?.init.body)).toContain("500-800 Chinese characters");
     expect(String(calls[0]?.init.body)).toContain("alias without leading date");
+    expect(String(calls[0]?.init.body)).toContain("underlying tension");
+    expect(String(calls[0]?.init.body)).toContain("Avoid generic report-meta sentences");
     expect(String(calls[0]?.init.body)).toContain('"max_output_tokens":9000');
     expect(section).toBe("Use [[Daily/2026-01-01]] as evidence.");
     expect(section).toContain("[[Daily/2026-01-01]]");
