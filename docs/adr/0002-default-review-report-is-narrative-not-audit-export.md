@@ -1,0 +1,3 @@
+# Default Review Report is narrative, not an audit export
+
+The default Review Report should be a theme-first narrative artifact for rereading a time range, not a field-by-field export of Review Board state. Complete evidence lists, local signals, merge sources, hidden connection clusters, and machine audit details remain in Review Board or an explicit Evidence Audit export, while the report keeps activity charts, confirmed-theme prose, representative evidence links, reflection questions, a protected user writing area, and short methodology. This trades maximum inline trace detail for a report that people can actually read without losing the trusted review loop.

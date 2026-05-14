@@ -9,7 +9,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 It is a local-first, evidence-constrained Obsidian review plugin for annual,
 quarterly, monthly, and custom ranges. It compiles source-note evidence packages,
 uses AI to generate reviewable semantic theme hypotheses and connection
-explanations, and writes only user-confirmed themes, evidence, and notes into a
+explanations, and turns user-confirmed themes into a traceable narrative
 Markdown review report inside the vault.
 
 It is built around four pains:
@@ -49,14 +49,14 @@ otherwise confirms it in Review Board.
 
 ## Core Concepts
 
-| Concept          | Meaning                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| Review Session   | One review's time range, scan scope, privacy settings, AI settings, state, and report path.      |
-| Evidence Note    | A source note included in the evidence pack, with path, title, excerpt, links, and time signals. |
-| Evidence Cluster | A group of evidence notes that may support the same theme.                                       |
-| Theme Hypothesis | A proposed theme line based on evidence. It is a reviewable hypothesis, not a user conclusion.   |
-| Theme Decision   | The user's accept, rename, merge, or ignore decision for a theme hypothesis.                     |
-| Review Report    | The Markdown report written to the vault, containing only confirmed themes and evidence.         |
+| Concept          | Meaning                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Review Session   | One review's time range, scan scope, privacy settings, AI settings, state, and report path.                       |
+| Evidence Note    | A source note included in the evidence pack, with path, title, excerpt, links, and time signals.                  |
+| Evidence Cluster | A group of evidence notes that may support the same theme.                                                        |
+| Theme Hypothesis | A proposed theme line based on evidence. It is a reviewable hypothesis, not a user conclusion.                    |
+| Theme Decision   | The user's accept, rename, merge, or ignore decision for a theme hypothesis.                                      |
+| Review Report    | The narrative Markdown report written to the vault, containing only confirmed themes and representative evidence. |
 
 Project leads, task leads, action items, and archive judgments may return as
 later extensions, but they are not MVP core objects or first-screen promises.
@@ -74,8 +74,9 @@ Hypothesis queue. Each theme card shows:
 - User actions: Accept, Rename, Merge, Ignore, Open Source Note.
 
 Theme Hypotheses require user review. The plugin can say "these notes may form
-this theme," but the final report only includes user-confirmed titles,
-explanations, evidence, and additions.
+this theme," but the final report turns user-confirmed themes into prose-led
+review narrative with representative evidence, activity charts, reflection
+questions, and user additions.
 
 ## Trusted Theme Review Safeguards
 
@@ -103,7 +104,8 @@ explicit rules:
   Board.
 - **Confirmed themes only**: the Review Report includes only user-confirmed
   accepted or renamed themes; candidates, ignored themes, and merged sources do
-  not appear as independent report themes.
+  not appear as independent report themes. Complete local signals and merge
+  sources stay in Review Board or an explicit audit export.
 - **Centralized Review Board rules**: queue visibility, allowed actions, next
   selection, merge-target rules, and report inclusion live in testable modules
   so future interaction changes do not drift.
@@ -162,6 +164,14 @@ understand:
 Charts support review and evidence interpretation, but they do not define the
 product. The core loop remains evidence packages, AI theme hypotheses, user
 review, and Markdown reports.
+
+The default Review Report is not a Review Board audit export. It is structured
+as a theme-first narrative: overview, activity rhythm charts, 3-5 strong themes
+(fewer for sparse short ranges), worth-rereading notes, reflection questions, a
+protected user-writing section, and a very short methodology note. Theme titles
+are plain Markdown headings; evidence links in the body use readable aliases.
+Complete evidence lists, local signals, hidden connection clusters, and merge
+sources stay in Review Board or an explicit audit export.
 
 ## Plugin vs. Full Prompt
 
@@ -293,5 +303,7 @@ Manual smoke checks:
    Explanation, and review actions are visible.
 5. Accept, rename, merge, or ignore several Theme Hypotheses.
 6. Run `Annual Review: Generate report`.
-7. Confirm the report includes only user-confirmed themes, evidence links,
-   methodology, and user-written sections, and that source notes can be opened.
+7. Confirm the report presents user-confirmed themes as prose-led narrative,
+   keeps activity charts, aliased representative evidence links, a very short
+   methodology note, and user-written sections, and that source notes can be
+   opened.

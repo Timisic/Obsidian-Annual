@@ -1,0 +1,242 @@
+{
+  "vaultRoot": "tests/fixtures/obsidian-smoke-vault",
+  "excluded": [".obsidian", "Templates", "Archive", "Attachments", "Annual Reviews"],
+  "sourceFileCount": 47,
+  "files": [
+    {
+      "path": "2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
+      "chars": 813,
+      "wordsApprox": 44
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-07 近期稳中向好.md",
+      "chars": 404,
+      "wordsApprox": 15
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-13 诚实说这周放纵.md",
+      "chars": 446,
+      "wordsApprox": 22
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-15 不清楚的需求及标准.md",
+      "chars": 722,
+      "wordsApprox": 27
+    },
+    {
+      "path": "2026月复盘/1月/2026-01-19 边报告变学习.md",
+      "chars": 743,
+      "wordsApprox": 37
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-05 环境促进想法转变.md",
+      "chars": 1575,
+      "wordsApprox": 37
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-07 刷完美女容易空虚.md",
+      "chars": 510,
+      "wordsApprox": 20
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-10 人的行为容易受他人影响.md",
+      "chars": 244,
+      "wordsApprox": 17
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-22 AI越来越快.md",
+      "chars": 1598,
+      "wordsApprox": 75
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-25 AI时代的基建.md",
+      "chars": 488,
+      "wordsApprox": 22
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-25 关系中的服软.md",
+      "chars": 851,
+      "wordsApprox": 37
+    },
+    {
+      "path": "2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
+      "chars": 1857,
+      "wordsApprox": 73
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-01 Linya不去北京了.md",
+      "chars": 1036,
+      "wordsApprox": 42
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-04 ALL-in-AI.md",
+      "chars": 520,
+      "wordsApprox": 30
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+      "chars": 836,
+      "wordsApprox": 37
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md",
+      "chars": 693,
+      "wordsApprox": 38
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-16 OpenClaw的两次分享.md",
+      "chars": 612,
+      "wordsApprox": 32
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-16 兴奋但是支棱不起来.md",
+      "chars": 534,
+      "wordsApprox": 29
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-23 亏得有点影响现实.md",
+      "chars": 426,
+      "wordsApprox": 25
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-23 组内学生氛围很不错.md",
+      "chars": 586,
+      "wordsApprox": 19
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-26 或许要步入科研期.md",
+      "chars": 775,
+      "wordsApprox": 23
+    },
+    {
+      "path": "2026月复盘/3月/2026-03-29 怀柔区比赛.md",
+      "chars": 1110,
+      "wordsApprox": 18
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+      "chars": 2290,
+      "wordsApprox": 76
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-06 夹杂兴奋疲惫与焦虑.md",
+      "chars": 908,
+      "wordsApprox": 37
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-07 不正常的焦虑态.md",
+      "chars": 505,
+      "wordsApprox": 16
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-08 心情有点不错，收钱有情感.md",
+      "chars": 419,
+      "wordsApprox": 20
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md",
+      "chars": 1084,
+      "wordsApprox": 20
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-11 幸福的烦恼，交往的边界.md",
+      "chars": 937,
+      "wordsApprox": 21
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-11 有钱之后.md",
+      "chars": 762,
+      "wordsApprox": 14
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+      "chars": 1382,
+      "wordsApprox": 59
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-14 偷鸡流告一段落.md",
+      "chars": 560,
+      "wordsApprox": 18
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-15 脱裤子放屁的活.md",
+      "chars": 564,
+      "wordsApprox": 23
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-18 玩乐和未来.md",
+      "chars": 2051,
+      "wordsApprox": 42
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-19 科研启动时.md",
+      "chars": 832,
+      "wordsApprox": 32
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-22 精准的表达很有感染力.md",
+      "chars": 564,
+      "wordsApprox": 27
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-24 夜半散步.md",
+      "chars": 1961,
+      "wordsApprox": 27
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-26 业界实习.md",
+      "chars": 837,
+      "wordsApprox": 36
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md",
+      "chars": 760,
+      "wordsApprox": 27
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-30 叉院终是二次选拔了，但我别有一番滋味.md",
+      "chars": 889,
+      "wordsApprox": 28
+    },
+    {
+      "path": "2026月复盘/4月/2026-04-30 课题组的局限.md",
+      "chars": 565,
+      "wordsApprox": 18
+    },
+    {
+      "path": "2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
+      "chars": 649,
+      "wordsApprox": 18
+    },
+    {
+      "path": "2026月复盘/5月/2026-05-03 AI混沌感暴露了什么.md",
+      "chars": 723,
+      "wordsApprox": 33
+    },
+    {
+      "path": "2026月复盘/5月/2026-05-05 封号被卡脖子了.md",
+      "chars": 369,
+      "wordsApprox": 21
+    },
+    {
+      "path": "Projects/Legacy.md",
+      "chars": 247,
+      "wordsApprox": 37
+    },
+    {
+      "path": "Projects/Research.md",
+      "chars": 213,
+      "wordsApprox": 27
+    },
+    {
+      "path": "Review Fixtures/2026-01-01.md",
+      "chars": 484,
+      "wordsApprox": 75
+    },
+    {
+      "path": "Review Fixtures/2026-01-02.md",
+      "chars": 276,
+      "wordsApprox": 39
+    }
+  ]
+}

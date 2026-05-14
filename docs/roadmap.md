@@ -15,7 +15,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 - AI-assisted Theme Hypotheses：把受控证据包交给 AI 或本地规则，为每个证据簇生成语义主题假设、连接解释、代表证据和不确定性说明。
 - Theme Review Board：展示主题假设和证据笔记，并支持 Accept、Rename、Merge、Ignore、Open evidence、Re-explain。
 - 用户复核要求：主题假设必须被用户接受、改名或合并后才能进入报告。
-- Review Report：写入已确认主题、Evidence Notes、Connection Explanation、Methodology 和用户手写区。
+- Review Report：把已确认主题写成主题优先的段落式复盘叙事，保留代表 Evidence Notes、活动图表、值得重读的笔记、留给自己的问题、极短 Methodology 和用户手写区。
 - Activity Evidence Charts：保留活动节奏、写作爆发、沉寂阶段和主题形成背景的图表证据，但不扩展成泛用统计产品。
 - 用户编辑保护：生成区块和用户手写区块分离，重新生成不覆盖手写内容。
 - 默认隐私边界：无网络、无外部 provider、无 telemetry；用户必须显式选择 AI provider 或 local CLI path，并确认上下文范围。
@@ -35,6 +35,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 - 发送前 AI 上下文预览：仅在用户显式启用 AI 时展示 provider 或 local CLI path、时间范围、摘录数量和排除范围。
 - 字段级隐私控制：允许从 AI 或主题上下文中排除特定路径、标签或 frontmatter 字段。
 - 报告再生成记录：记录每次生成的范围、主题数量、证据数量和用户确认数量。
+- Evidence Audit 导出：如果用户需要完整 Evidence Notes、本地信号、隐藏连接簇和合并来源，生成独立审计导出；默认 Review Report 不承担这个角色。
 - 历史 Review Session：允许继续上次未完成的年度、季度、月度或自定义范围复盘。
 - 手动补充证据笔记：用户可以把任意源笔记加入本次复盘证据包。
 - Prompt-vs-Plugin Benchmark：用同一测试 vault 对比强提示词和插件在 missed important notes、evidence accuracy、theme stability、user reviewability、Obsidian navigation、privacy/context control 和 regeneration consistency 上的差异。

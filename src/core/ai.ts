@@ -4,6 +4,14 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
+import {
+  buildEvidenceReferenceIndex,
+  linkTargetMatches,
+  normalizeEvidenceReference,
+  normalizeLinkIdentity,
+  resolveLinkTarget,
+  titleFromPath,
+} from "./noteIdentity";
 import { reviewSessionContainsDate } from "./reviewSession";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
 import { buildThemeEvidencePackage, parseThemeHypotheses } from "./themeEvidence";
@@ -22,7 +30,7 @@ import type {
 
 const MAX_AI_CONTEXT_EXCERPT_CHARS = 700;
 const MAX_CODEX_CONTEXT_NOTES = 28;
-const MAX_PROVIDER_CONTEXT_EXCERPT_CHARS = 240;
+const MAX_PROVIDER_CONTEXT_EXCERPT_CHARS = 700;
 const MAX_LINKED_NOTE_CONTEXT = 4;
 const LOCAL_CODEX_TIMEOUT_MS = 300_000;
 const LOCAL_CODEX_PATH_ENTRIES = [
@@ -32,6 +40,17 @@ const LOCAL_CODEX_PATH_ENTRIES = [
 ];
 const ABSOLUTE_CODEX_COMMAND_EXAMPLE =
   "$HOME/.npm-global/bin/codex exec --color never --sandbox read-only --skip-git-repo-check -c 'features.hooks=false' --output-last-message \"$CODEX_ANNUAL_REVIEW_OUTPUT\" -";
+const NARRATIVE_THEME_CONTRACT = [
+  "For each strong themeHypothesis, include reportNarrative: a first-pass reader-facing section for the default Narrative Review Report.",
+  "reportNarrative should be 500-800 Chinese characters for zh or 280-450 English words for en when evidence is sufficient; sparse short ranges may be shorter but must not pad weak claims.",
+  "reportNarrative must connect 2-4 representative evidence notes into prose using exact-path Obsidian wikilinks with readable aliases, e.g. [[exact/path|alias without leading date]].",
+  "Go beyond obvious topical grouping: identify the underlying tension, value shift, fear/desire, tradeoff, contradiction, or recurring decision pattern that the notes reveal together.",
+  "Structure reportNarrative as a small argument: what changed across the evidence notes, what deeper pattern it reveals, why it mattered in this review period, and what remains unresolved.",
+  "Use aliases that remove date prefixes such as 2026-02-22, folder noise, and .md while preserving exact link targets.",
+  "Absorb connectionExplanation into the prose; do not emit report field labels such as AI summary, why this theme exists, local signals, review caution, merged from, or evidence notes.",
+  "Avoid generic report-meta sentences such as 'this theme should be treated as an early interpretation' or 'these notes preserve the original tone, judgment, and hesitation'.",
+  "Write like a thoughtful review draft, not a task list, audit export, or generic template.",
+];
 
 export interface ChatGptReportOptions {
   aggregate: YearAggregate;
@@ -97,19 +116,21 @@ export async function renderAiReportEnhancements(
       model: options.settings.chatGptModel.trim() || "gpt-5.5",
       instructions: [
         "You enrich an Obsidian review from a bounded ReviewSession evidence package.",
-        "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
+        "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be reflection questions, not task assignments.",
+        "nextActions should be uncomfortable, concrete self-review questions tied to the strongest theme tensions; avoid generic questions about which notes to reread.",
         "Use the embedded Obsidian CLI/Markdown handoff as binding output guidance.",
-        "Write in an annual-review voice: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+        "Write for a Narrative Review Report: theme-first prose, readable evidence aliases, sparing lists, and no self-referential AI/process wording.",
         "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
         "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
         "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
         "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
         "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
-        "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path.",
+        "Preserve source note paths exactly when using evidenceNotes or highValueNotes.path; report prose may use readable wikilink aliases while keeping exact targets.",
+        ...NARRATIVE_THEME_CONTRACT,
         "Do not invent private facts that are not present in the context.",
       ].join(" "),
       input: buildAiPrompt(options.aggregate, options.files, options.settings),
-      max_output_tokens: 2600,
+      max_output_tokens: 9000,
     }),
   });
 
@@ -173,13 +194,15 @@ export function buildCodexPrompt(
     "You are generating structured Obsidian annual review enrichment.",
     "Use the embedded Obsidian CLI/Markdown handoff as binding guidance.",
     "Use only the supplied JSON context; do not read or request any vault files outside this bounded evidence package.",
-    "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be optional reflection prompts, not task assignments.",
-    "Write like a human annual review: cohesive paragraphs, sparing lists, and no self-referential AI/process wording.",
+    "Return JSON only with periodJudgment, themeHypotheses, themeInsights, highValueNotes, and nextActions; nextActions must be reflection questions, not task assignments.",
+    "nextActions should be uncomfortable, concrete self-review questions tied to the strongest theme tensions; avoid generic questions about which notes to reread.",
+    "Write for a Narrative Review Report: theme-first prose, readable evidence aliases, sparing lists, and no self-referential AI/process wording.",
     "Avoid formulaic contrast phrasing such as 'not X but Y' or '不是...而是...'.",
     "Write generated periodJudgment, theme titles, summaries, connection explanations, uncertainty, and prompts in the requested reportLanguage.",
     "Generate 5-15 mutually distinct theme hypotheses when enough evidence exists; merge overlapping ideas instead of repeating local signals.",
     "Theme titles must be synthesized content themes, not raw tags, frontmatter fields, folders, months, repeated entities, links, or specific document names.",
     "Evidence-note reasons must be distinct for each note and grounded in evidencePackage excerpts, backlinks, linked notes, and local signals.",
+    ...NARRATIVE_THEME_CONTRACT,
     "",
     JSON.stringify(buildCodexContext(aggregate, files, settings)),
   ].join("\n");
@@ -202,18 +225,42 @@ function buildCodexContext(
       periodJudgment:
         "2-4 evidence-backed review overview sentences; no heading, no bullet list",
       themeHypotheses:
-        "5-15 mutually distinct semantic themes with id, title, summary, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
+        "5-15 mutually distinct semantic themes with id, title, summary, reportNarrative, connectionExplanation, evidenceNoteIds, localSignals, uncertainty, source",
       themeInsights:
         "3-5 synthesized content themes with title, synthesis, connections, evidenceNotes, nextQuestion",
       highValueNotes:
         "path-specific recommendation rationale and optional review prompts for evidence notes",
-      nextActions: "3 grounded optional reflection prompts",
+      nextActions:
+        "3 grounded, uncomfortable, concrete self-review questions tied to the strongest theme tensions; not action items and not generic note-rereading prompts",
     },
     obsidianSkillHandoff: obsidianSkillHandoff(),
     contextPolicy: {
       noteCoverage: `${evidencePackage.evidenceNotes.length} bounded evidence notes include short excerpts and local signals for the selected ReviewSession.`,
       evidenceSources:
         "Use only evidencePackage ids, listed note paths, short excerpts, related notes, and local signals.",
+    },
+    reportWritingContract: {
+      narrativeThemeContract: NARRATIVE_THEME_CONTRACT,
+      reportNarrative:
+        "Default Review Report prose for a user-accepted theme. It should already read like a useful first draft before renderer fallback.",
+      evidenceLinks:
+        "Use [[exact evidenceNotes[].path without .md|readable alias without leading date prefix]] when citing evidence inside reportNarrative.",
+      forbiddenReportLabels: [
+        "AI summary",
+        "why this theme exists",
+        "connection explanation",
+        "local signals",
+        "review caution",
+        "merged from",
+        "evidence notes",
+        "AI 总结",
+        "为什么这个主题存在",
+        "连接解释",
+        "本地信号",
+        "复核提示",
+        "合并来源",
+        "证据笔记",
+      ],
     },
     evidencePackage,
     reviewSession: {
@@ -502,12 +549,12 @@ function fallbackHighValueActionZh(
 ): string {
   const target = theme || title;
   if (note.kind === "输出候选") {
-    return `补一段“当前判断”和 3 条证据链接，把它改成「${target}」的可输出草稿。`;
+    return `重读这篇时，哪一段最能说明「${target}」在本期发生了什么变化？`;
   }
   if (note.kind === "孤立潜力") {
-    return `先补 2-3 个上下文双链，再写一段它和「${target}」的关系说明。`;
+    return `这篇为什么会在「${target}」之外显得孤立，它缺少的是证据、关系，还是命名？`;
   }
-  return `在文末加一个「关联笔记 / 当前结论 / 下一步问题」小节，让它成为「${target}」的复盘入口。`;
+  return `如果把它作为「${target}」的入口，最值得保留的原始判断是什么？`;
 }
 
 function fallbackHighValueReasonEn(
@@ -545,12 +592,12 @@ function fallbackHighValueActionEn(
 ): string {
   const target = theme || title;
   if (note.kind === "孤立潜力") {
-    return `Add 2-3 contextual wikilinks, then write one paragraph explaining how it belongs to ${target}.`;
+    return `Why does this note still feel isolated from ${target}: missing evidence, missing relationships, or unclear naming?`;
   }
   if (note.kind === "输出候选") {
-    return `Add a current-judgment section and three evidence links so it can become an output draft for ${target}.`;
+    return `Which passage best explains what changed around ${target} during this range?`;
   }
-  return `Add related notes, current hypothesis, and next question sections so it can serve as a review entry for ${target}.`;
+  return `If this note becomes an entry point for ${target}, which original judgment is most worth preserving?`;
 }
 
 function relatedTheme(
@@ -583,39 +630,6 @@ function relatedTheme(
   );
 }
 
-function titleFromPath(path: string): string {
-  return path.split("/").pop()?.replace(/\.md$/iu, "") ?? path;
-}
-
-function linkTargetMatches(link: string, path: string): boolean {
-  return (
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(path) ||
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(path.replace(/\.md$/iu, ""))
-  );
-}
-
-function resolveLinkTarget(
-  link: string,
-  noteByPath: Map<string, { file: SourceFile; note: NoteStats }>,
-): string {
-  const normalized = normalizeLinkIdentity(link);
-  for (const path of noteByPath.keys()) {
-    if (
-      normalizeLinkIdentity(path) === normalized ||
-      normalizeLinkIdentity(path.replace(/\.md$/iu, "")) === normalized ||
-      normalizeLinkIdentity(path.split("/").pop()?.replace(/\.md$/iu, "") ?? path) ===
-        normalized
-    ) {
-      return path;
-    }
-  }
-  return link;
-}
-
-function normalizeLinkIdentity(value: string): string {
-  return value.trim().replace(/\.md$/iu, "").replace(/\\/gu, "/").toLocaleLowerCase();
-}
-
 function obsidianSkillHandoff(): Record<string, unknown> {
   return {
     invokedSkills: ["obsidian-cli", "obsidian-markdown"],
@@ -624,8 +638,8 @@ function obsidianSkillHandoff(): Record<string, unknown> {
       "When citing evidence, use exact vault-relative note paths supplied in context.",
     ],
     obsidianMarkdown: [
-      "Use Obsidian wikilinks for internal evidence and preserve paths without inventing aliases.",
-      "Avoid raw pipes inside Markdown table cells; table wikilinks should use plain [[path]] form.",
+      "Use Obsidian wikilinks for internal evidence; readable report prose should use [[exact/path|faithful alias]] so the target remains traceable.",
+      "Avoid raw pipes inside Markdown table cells; table wikilinks should use plain [[path]] form if a table is unavoidable.",
       "Generated prose should be valid Obsidian Flavored Markdown and readable as an editable note.",
     ],
   };
@@ -855,7 +869,7 @@ function themeInsightToHypothesis(
   const evidenceNoteIds = [
     ...new Set(
       insight.evidenceNotes
-        .map((note) => idByReference.get(normalizeLinkIdentity(note)))
+        .map((note) => idByReference.get(normalizeEvidenceReference(note)))
         .filter((id): id is string => Boolean(id)),
     ),
   ];
@@ -873,6 +887,7 @@ function themeInsightToHypothesis(
     id: `theme:ai:insight:${index + 1}`,
     title: insight.title,
     summary: insight.synthesis,
+    reportNarrative: insight.synthesis,
     evidenceNoteIds,
     connectionExplanation: insight.connections,
     localSignals,
@@ -893,7 +908,7 @@ function themeHypothesisToInsight(
   );
   return {
     title: theme.title,
-    synthesis: theme.summary,
+    synthesis: theme.reportNarrative || theme.summary,
     connections: theme.connectionExplanation,
     evidenceNotes: theme.evidenceNoteIds.map((id) => pathById.get(id) ?? id),
     nextQuestion: "",
@@ -920,33 +935,6 @@ function parseJsonObject(content: string): Record<string, unknown> | null {
     }
   }
   return null;
-}
-
-function buildEvidenceReferenceIndex(notes: ThemeEvidenceNote[]): Map<string, string> {
-  const references = new Map<string, string>();
-  const ambiguous = new Set<string>();
-  const add = (reference: string, id: string) => {
-    const normalized = normalizeLinkIdentity(reference);
-    if (!normalized || ambiguous.has(normalized)) {
-      return;
-    }
-    const existing = references.get(normalized);
-    if (existing && existing !== id) {
-      references.delete(normalized);
-      ambiguous.add(normalized);
-      return;
-    }
-    references.set(normalized, id);
-  };
-
-  for (const note of notes) {
-    add(note.id, note.id);
-    add(note.path, note.id);
-    add(note.path.replace(/\.md$/iu, ""), note.id);
-    add(note.title, note.id);
-  }
-
-  return references;
 }
 
 function toThemeInsight(value: unknown): AiThemeInsight | null {

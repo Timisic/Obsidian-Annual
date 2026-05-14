@@ -62,7 +62,6 @@ describe("review state", () => {
     );
   });
 
-
   it("centralizes Review Board queue and report inclusion rules", () => {
     const pending = candidate("pending");
     const accepted = { ...candidate("accepted"), status: "accepted" as const };
@@ -71,20 +70,13 @@ describe("review state", () => {
     const ignored = { ...candidate("ignored"), status: "ignored" as const };
 
     expect(isPendingReviewQueueCandidate(pending)).toBe(true);
-    expect([pending, accepted, renamed, ignored].map(isReviewBoardQueueCandidate)).toEqual([
-      true,
-      true,
-      true,
-      true,
-    ]);
+    expect(
+      [pending, accepted, renamed, ignored].map(isReviewBoardQueueCandidate),
+    ).toEqual([true, true, true, true]);
     expect(isReviewBoardQueueCandidate(merged)).toBe(false);
-    expect([pending, accepted, renamed, merged, ignored].map(isReviewReportCandidate)).toEqual([
-      false,
-      true,
-      true,
-      false,
-      false,
-    ]);
+    expect(
+      [pending, accepted, renamed, merged, ignored].map(isReviewReportCandidate),
+    ).toEqual([false, true, true, false, false]);
 
     expect(shouldIncludeReviewDecisionInReport("accept", "candidate")).toBe(true);
     expect(shouldIncludeReviewDecisionInReport("ignore", "candidate")).toBe(false);
@@ -362,6 +354,42 @@ describe("review state", () => {
     );
   });
 
+  it("uses identity signatures before overlap heuristics when a provider changes wording and evidence volume", () => {
+    const stored = applyReviewAction(
+      sessionWith([
+        {
+          ...candidate("old-ai-theme", [
+            evidenceForPath("old-ai-theme", "Daily/2026-01-01.md"),
+          ]),
+          identitySignature: "review-candidate:stable-evidence-cluster",
+        },
+      ]),
+      {
+        type: "accept",
+        candidateId: "old-ai-theme",
+        at,
+      },
+    );
+    const rescanned = {
+      ...candidate("new-provider-wording", [
+        evidenceForPath("new-provider-wording", "Daily/2026-01-01.md"),
+      ]),
+      identitySignature: "review-candidate:stable-evidence-cluster",
+      title: "Provider found the same cluster",
+      reason: "Provider changed the label and supplied less evidence.",
+    };
+
+    const merged = mergeScannedCandidates(stored, [rescanned], "scan-2", at);
+
+    expect(merged.candidates).toHaveLength(1);
+    expect(merged.candidates[0]).toMatchObject({
+      id: "old-ai-theme",
+      status: "accepted",
+      title: "Provider found the same cluster",
+      reason: "Provider changed the label and supplied less evidence.",
+    });
+  });
+
   it("does not bind a reviewed decision to a reworded theme with only incidental evidence overlap", () => {
     const stored = applyReviewAction(
       sessionWith([
@@ -528,15 +556,13 @@ describe("review state", () => {
       reviewSession: ignored,
     });
 
-    expect(markdown).toContain("[[accepted-note|Accepted Note]]");
-    expect(markdown).toContain("**AI summary**: AI summary for Accepted Note");
-    expect(markdown).toContain("**Why this theme exists**: Reason for Accepted Note");
+    expect(markdown).toContain("### Accepted Note");
+    expect(markdown).toContain("AI summary for Accepted Note");
+    expect(markdown).toContain("Reason for Accepted Note");
+    expect(markdown).toContain("Accepted Note connects multiple evidence notes.");
+    expect(markdown).not.toContain("**Local signals**");
     expect(markdown).toContain(
-      "**Connection explanation**: Accepted Note connects multiple evidence notes.",
-    );
-    expect(markdown).toContain("**Local signals**: Accepted Note has local evidence");
-    expect(markdown).toContain(
-      "- [[accepted-note]] — Source note supports the candidate.",
+      "- [[accepted-note|Accepted Note]]: Source note supports the candidate.",
     );
     expect(markdown).not.toContain("[[ignored-note|Ignored Note]]");
     expect(markdown).not.toContain("Turn accepted evidence into a follow-up review");
@@ -571,6 +597,11 @@ function candidate(
     connectionExplanation: `${id} connects multiple evidence notes.`,
     localSignals: [`${id} has local evidence`],
     source: "ai",
+    provenance: {
+      generationMode: "ai",
+      source: "ai",
+      seam: "theme-evidence-package",
+    },
     reasons: [reasonFor(id)],
     status: "candidate",
     evidence,

@@ -20,7 +20,7 @@ export function normalizeReviewSessions(
 }
 
 function normalizeReviewSession(session: ReviewSessionState): ReviewSessionState {
-  const hasAiPrimary = session.candidates.some((candidate) => candidate.source === "ai");
+  const hasAiPrimary = session.candidates.some(isAiReviewCandidate);
   const mixedLocalPrimary = session.candidates.filter((candidate) =>
     isLocalReviewCandidate(candidate),
   );
@@ -52,5 +52,20 @@ function normalizeReviewSession(session: ReviewSessionState): ReviewSessionState
 function isLocalReviewCandidate(
   candidate: ReviewSessionState["candidates"][number],
 ): boolean {
+  if (candidate.provenance) {
+    return (
+      candidate.provenance.generationMode === "local" ||
+      candidate.provenance.generationMode === "degraded-local"
+    );
+  }
   return candidate.source === "local" || candidate.source === "local-fallback";
+}
+
+function isAiReviewCandidate(
+  candidate: ReviewSessionState["candidates"][number],
+): boolean {
+  return (
+    candidate.provenance?.generationMode === "ai" ||
+    (!candidate.provenance && candidate.source === "ai")
+  );
 }

@@ -332,6 +332,7 @@ export interface ThemeHypothesis {
   id: string;
   title: string;
   summary: string;
+  reportNarrative?: string;
   evidenceNoteIds: string[];
   connectionExplanation: string;
   localSignals: string[];

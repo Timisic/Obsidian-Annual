@@ -1,7 +1,23 @@
 import { toTopicEvolutionJson } from "./topics";
+import {
+  activePeriodDays,
+  activePeriodMonths,
+  renderDailyCumulativeWordsSvg,
+  renderDailyHeatmapSvg,
+  renderMonthlyCreatedNotesSvg,
+  renderTopicEvolutionSvg,
+} from "./chartSvg";
 import { reviewCandidateDisplayTitle } from "./reviewTitle";
-import { reviewSessionPathLabel } from "./reviewSession";
-import type { ReviewCandidate, ReviewSessionState } from "./reviewState";
+import {
+  REVIEW_USER_REFLECTION_END_MARKER,
+  REVIEW_USER_REFLECTION_START_MARKER,
+} from "./reportBoundary";
+import { buildAnnualReviewChartPaths, type AnnualReviewChartKind } from "./reportPaths";
+import {
+  isReviewReportCandidate,
+  type ReviewCandidate,
+  type ReviewSessionState,
+} from "./reviewState";
 import type {
   AiHighValueNoteInsight,
   AiReportEnhancements,
@@ -13,8 +29,9 @@ import type {
   RankedMetric,
   RankedNote,
   ResolvedAnnualReviewLanguage,
+  ThemeEvidenceNote,
+  ThemeEvidencePackage,
   TopicEvolutionData,
-  TopicMonthlyBucket,
   TopTopic,
   YearAggregate,
 } from "./types";
@@ -26,15 +43,13 @@ interface RenderOptions {
   aiEnhancements?: AiReportEnhancements;
   aiEnabled?: boolean;
   reviewSession?: ReviewSessionState;
+  themeEvidencePackage?: ThemeEvidencePackage;
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
-export type AnnualReviewChartKind =
-  | "daily-cumulative-words"
-  | "daily-word-heatmap"
-  | "word-growth-trend"
-  | "topic-evolution"
-  | "topic-evolution-data";
+
+export type { AnnualReviewChartKind };
+export { buildAnnualReviewChartPaths };
 
 export interface AnnualReviewChartAsset {
   kind: AnnualReviewChartKind;
@@ -42,30 +57,12 @@ export interface AnnualReviewChartAsset {
   content: string;
 }
 
-export function buildAnnualReviewChartPaths(
-  reportFolder: string,
-  labelOrYear: string | number,
-): Record<AnnualReviewChartKind, string> {
-  const folder = normalizeReportFolder(reportFolder || "Annual Reviews");
-  const label =
-    typeof labelOrYear === "number"
-      ? `${labelOrYear} Annual Review`
-      : reviewSessionPathLabel(labelOrYear);
-  const assetFolder = `${folder}/${label} Assets`;
-  return {
-    "daily-cumulative-words": `${assetFolder}/daily-cumulative-words.svg`,
-    "daily-word-heatmap": `${assetFolder}/daily-word-heatmap.svg`,
-    "word-growth-trend": `${assetFolder}/word-growth-trend.svg`,
-    "topic-evolution": `${assetFolder}/topic-evolution.svg`,
-    "topic-evolution-data": `${assetFolder}/topic-evolution.json`,
-  };
-}
-
 export function buildAnnualReviewChartAssets(
   aggregate: YearAggregate,
   options: RenderOptions = {},
 ): AnnualReviewChartAsset[] {
   const language = options.language ?? "en";
+  const text = REPORT_TEXT[language];
   const paths =
     options.chartPaths ??
     buildAnnualReviewChartPaths("Annual Reviews", aggregate.session.label);
@@ -78,6 +75,7 @@ export function buildAnnualReviewChartAssets(
       content: renderDailyCumulativeWordsSvg(
         activePeriodDays(aggregate.dayBuckets),
         language,
+        text,
       ),
     });
   }
@@ -86,7 +84,11 @@ export function buildAnnualReviewChartAssets(
     assets.push({
       kind: "daily-word-heatmap",
       path: paths["daily-word-heatmap"],
-      content: renderDailyHeatmapSvg(activePeriodDays(aggregate.dayBuckets), language),
+      content: renderDailyHeatmapSvg(
+        activePeriodDays(aggregate.dayBuckets),
+        language,
+        text,
+      ),
     });
   }
 
@@ -97,6 +99,7 @@ export function buildAnnualReviewChartAssets(
       content: renderMonthlyCreatedNotesSvg(
         activePeriodMonths(aggregate.monthBuckets),
         language,
+        text,
       ),
     });
   }
@@ -108,7 +111,7 @@ export function buildAnnualReviewChartAssets(
     assets.push({
       kind: "topic-evolution",
       path: paths["topic-evolution"],
-      content: renderTopicEvolutionSvg(topicEvolution, language),
+      content: renderTopicEvolutionSvg(topicEvolution, language, text),
     });
   }
 
@@ -233,78 +236,24 @@ const REPORT_TEXT = {
     needsAttention: (topics: string[]) =>
       `Needs attention: ${formatQuotedList(topics)} has had no new content in recent active months; decide whether to archive or restart it.`,
     noDecliningDirection: "Needs attention: no clearly dormant topic signal yet.",
-    nextTopicAction:
-      "Next-period suggestion: turn the leading theme into a small index page with evidence notes and open questions.",
     topTags: "Top Tags",
     topFolders: "Top Folders",
     topLinks: "Top Links",
     highValueNotes: "Theme Hypotheses",
-    aiValueReason: "Recommendation rationale",
-    topHighValueNotes: "Reviewed theme hypotheses",
-    mergedFrom: "Merged from",
-    confirmedDecision: "Decision",
-    confirmedByAccept: "Accepted proposal",
-    confirmedByRename: "Renamed proposal",
-    aiSummary: "AI summary",
-    whyThemeExists: "Why this theme exists",
-    connectionExplanation: "Connection explanation",
-    localSignals: "Local signals",
     uncertainty: "Uncertainty",
-    reviewCaution: "Review caution",
-    evidenceNotes: "Evidence notes",
     userNote: "User note",
     missingEvidence: "missing after rescan",
     outputReadyNotes: "Output-ready notes",
     maintenanceNotes: "Notes needing maintenance",
     noOutputReadyNotes: "No output-ready notes found.",
     noMaintenanceNotes: "No maintenance-needed notes found.",
-    highValueNotesSummary: (count: number) =>
-      `These ${count} evidence notes may support theme hypotheses because their content, links, or activity signals give concrete reasons to inspect them.`,
-    highValueNote: "Note",
-    highValueType: "Suggestion label",
-    highValueReason: "Recommendation rationale",
-    highValueReasonList: "Auditable reasons",
-    highValueEvidence: "Evidence",
-    highValueSourceNote: "Source note",
-    highValueRelatedNotes: "Related notes",
-    highValueStatField: "Stat field",
-    highValueNoAuditableEvidence:
-      "No auditable evidence was generated for this evidence note; review the source note before treating it as a recommendation.",
-    suggestedAction: "Review prompt",
-    manualConfirmation: "Manual confirmation",
-    manualConfirmationInstruction:
-      "Confirm, rename, merge, or ignore this theme hypothesis before including it in the annual report.",
-    highValueFeedback: "Evidence Note Reading",
-    priorityNotes: (notes: string) =>
-      `Evidence notes to inspect first: ${notes}. Use them to confirm or refine theme hypotheses manually.`,
-    outputReadySignal: (count: number) =>
-      `${count} notes have enough structure to be shaped into an article, index, or review memo.`,
-    staleCoreSignal: (count: number) =>
-      `${count} core notes have not been updated for more than 90 days and should be reviewed next period.`,
     noHighValueNotes: "No theme-hypothesis evidence signals found.",
     noReviewedCandidates:
       "No reviewed Theme Hypotheses are ready for the report yet. Accept or rename proposals in Review Board before including them here.",
     nextPeriodActions: "Reflection Prompts",
     aiNextActions: "Reflection Prompts",
-    mocAction: (topic: string) =>
-      `Create a compact index for ${topic}: evidence notes, current hypothesis, and one next question.`,
-    isolatedNotesAction: (count: number) =>
-      `Optional review prompt: inspect ${count} isolated potential note${count === 1 ? "" : "s"} if they help explain a theme.`,
-    noIsolatedNotesAction:
-      "No isolated-potential evidence note needs review for the current report.",
-    highValuePushAction: (notes: string) =>
-      `Optional review prompt: compare ${notes} against the reviewed theme hypotheses.`,
-    noHighValuePushAction:
-      "No extra theme-hypothesis prompt is available from the current signals.",
-    nextPeriodSuggestion: "Reflection Prompt",
-    highValueNextStep:
-      "Review these evidence notes with their rationale before changing the report narrative.",
-    representativeNotes: "Representative Notes",
-    representativeNotesDescription:
-      "Representative notes are selected deterministically: each active month contributes the highest-volume note from that month's created notes, or from modified notes when the note was created in another year. Ranking uses counted words, then characters, then path as the tie-breaker. This stable evidence set can be reused by later AI summaries.",
     writingAndActivityRhythm: "Writing And Activity Rhythm",
     noDataFound: "No data found.",
-    noRepresentativeNotes: "No representative notes found.",
     noteStats: (words: number, characters: number) =>
       `${words} words, ${characters} chars`,
     noActivity: "No activity was found for the selected year.",
@@ -418,74 +367,24 @@ const REPORT_TEXT = {
     needsAttention: (topics: string[]) =>
       `需要关注：${formatQuotedList(topics)}最近多个活跃月份没有新增内容，可以判断是否归档或重启。`,
     noDecliningDirection: "需要关注：暂未出现明显沉寂的主题。",
-    nextTopicAction:
-      "下期建议：把领先主题整理成一页小索引，列出证据笔记、当前判断和下一步问题。",
     topTags: "高频标签",
     topFolders: "高频文件夹",
     topLinks: "高频链接",
     highValueNotes: "主题假设",
-    aiValueReason: "推荐理由",
-    topHighValueNotes: "已复核主题假设",
-    mergedFrom: "合并来源",
-    confirmedDecision: "决策",
-    confirmedByAccept: "已采纳提案",
-    confirmedByRename: "重命名提案",
-    aiSummary: "AI 总结",
-    whyThemeExists: "为什么这个主题存在",
-    connectionExplanation: "连接解释",
-    localSignals: "本地信号",
     uncertainty: "不确定性",
-    reviewCaution: "复核提示",
-    evidenceNotes: "证据笔记",
     userNote: "用户备注",
     missingEvidence: "重新扫描后缺失",
     outputReadyNotes: "可输出笔记",
     maintenanceNotes: "需维护笔记",
     noOutputReadyNotes: "未找到可输出笔记。",
     noMaintenanceNotes: "未找到需维护笔记。",
-    highValueNotesSummary: (count: number) =>
-      `下面 ${count} 篇笔记因为内容、链接或活动信号而被建议回看。请逐篇人工确认或否决，再把它们视为年度代表内容。`,
-    highValueNote: "笔记",
-    highValueType: "建议标签",
-    highValueReason: "推荐理由",
-    highValueReasonList: "可审计理由",
-    highValueEvidence: "证据",
-    highValueSourceNote: "源笔记",
-    highValueRelatedNotes: "相关笔记",
-    highValueStatField: "统计字段",
-    highValueNoAuditableEvidence:
-      "此候选项没有生成可审计证据；请先打开源笔记复核，不要把它当作确定推荐。",
-    suggestedAction: "复盘提示",
-    manualConfirmation: "人工确认",
-    manualConfirmationInstruction: "请人工确认、重命名、合并或忽略主题假设后再写入年报。",
-    highValueFeedback: "证据笔记解读",
-    priorityNotes: (notes: string) =>
-      `建议优先检查的证据笔记：${notes}。用它们人工确认或修正主题假设。`,
-    outputReadySignal: (count: number) =>
-      `有 ${count} 篇笔记已经具备整理成文章、索引页或复盘备忘的条件。`,
-    staleCoreSignal: (count: number) =>
-      `有 ${count} 篇核心笔记超过 90 天未更新，建议下期回看维护。`,
     noHighValueNotes: "未找到主题假设证据信号。",
     noReviewedCandidates:
       "还没有可写入年报的主题假设。请先在 Review Board 接受或重命名主题假设。",
     nextPeriodActions: "复盘提示",
     aiNextActions: "复盘提示",
-    mocAction: (topic: string) =>
-      `围绕「${topic}」整理一页小索引：证据笔记、当前判断和一个下一步问题。`,
-    isolatedNotesAction: (count: number) =>
-      `可选复盘提示：检查 ${count} 篇孤立潜力笔记，看它们是否能解释某个主题。`,
-    noIsolatedNotesAction: "当前报告没有需要额外回看的孤立证据笔记。",
-    highValuePushAction: (notes: string) =>
-      `可选复盘提示：把 ${notes} 与已复核主题假设对照检查。`,
-    noHighValuePushAction: "当前主题假设信号不足，暂无额外复盘提示。",
-    nextPeriodSuggestion: "复盘提示",
-    highValueNextStep: "结合推荐理由人工确认这些证据笔记，再决定是否改写报告叙事。",
-    representativeNotes: "代表笔记",
-    representativeNotesDescription:
-      "代表笔记采用确定性规则选择：每个活跃月份选出该月新建笔记中内容量最高的一篇；如果笔记不是当年新建但在该月被修改，也会参与该月选择。排序依次比较计数字词、字符数和路径。这个稳定证据集可供后续 AI 总结复用。",
     writingAndActivityRhythm: "写作与活动节奏",
     noDataFound: "未找到数据。",
-    noRepresentativeNotes: "未找到代表笔记。",
     noteStats: (words: number, characters: number) => `${words} 字词，${characters} 字符`,
     noActivity: "所选年份未找到活动。",
     strongestMonth: (month: string, words: number) =>
@@ -493,78 +392,73 @@ const REPORT_TEXT = {
   },
 } as const;
 
-const TOPIC_COLORS = [
-  "#4f7cac",
-  "#d98c46",
-  "#4f9d69",
-  "#8a6fbd",
-  "#c75f7a",
-  "#6f8f2f",
-  "#b07d3c",
-  "#6f7782",
-  "#9aa0a6",
-];
-const OTHER_TOPIC = "其他";
-
 export function renderAnnualReview(
   aggregate: YearAggregate,
   options: RenderOptions = {},
 ): string {
   const language = options.language ?? "en";
-  const text = REPORT_TEXT[language];
   const aiEnhancements = hasAiEnhancements(options.aiEnhancements)
     ? options.aiEnhancements
     : undefined;
   const aiEnabled = options.aiEnabled || Boolean(aiEnhancements);
+  const reviewSession = options.reviewSession;
   return [
     renderMetadata(aggregate, language),
     "",
     `# ${reportHeading(aggregate, language)}`,
     "",
-    `## ${language === "zh" ? "回顾范围" : "Review Range"}`,
+    `## ${language === "zh" ? "总览" : "Overview"}`,
     "",
-    renderReviewRange(aggregate, language),
+    renderOverview(
+      aggregate,
+      language,
+      options.periodJudgment ?? aiEnhancements?.periodJudgment,
+      reviewSession,
+    ),
     "",
-    `## ${language === "zh" ? "活动证据" : "Activity Evidence"}`,
+    `## ${language === "zh" ? "年度节奏" : "Activity Rhythm"}`,
     "",
     renderWritingGrowth(aggregate, language, options.chartPaths, options.reviewSession),
     "",
-    `## ${text.topHighValueNotes}`,
+    `## ${language === "zh" ? "主要主线" : "Main Themes"}`,
     "",
     renderHighValueNotes(
       aggregate,
       language,
       aiEnhancements?.highValueNotes,
       aiEnabled,
-      options.reviewSession,
+      reviewSession,
     ),
     "",
-    `## ${language === "zh" ? "重新发现的笔记" : "Rediscovered Notes"}`,
+    `## ${language === "zh" ? "值得重读的笔记" : "Worth Rereading"}`,
     "",
-    renderRediscoveredNotes(aggregate, language, options.reviewSession),
-    "",
-    `## ${language === "zh" ? "隐藏连接" : "Hidden Connections"}`,
-    "",
-    renderHiddenConnections(
+    renderWorthRereading(
       aggregate,
       language,
-      aiEnhancements?.themeInsights,
-      options.reviewSession,
+      reviewSession,
+      options.themeEvidencePackage,
     ),
     "",
-    `## ${text.nextPeriodActions}`,
+    `## ${language === "zh" ? "留给自己的问题" : "Reflection Questions"}`,
     "",
-    renderNextPeriodActions(
+    renderReflectionQuestions(
       aggregate,
       language,
       aiEnhancements?.nextActions,
       aiEnhancements?.themeInsights,
-      options.reviewSession,
+      reviewSession,
+      options.themeEvidencePackage,
     ),
     "",
-    `## ${text.dataMethodology}`,
+    `## ${language === "zh" ? "我的补充" : "User Reflection"}`,
     "",
-    renderDataMethodology(aggregate, language),
+    REVIEW_USER_REFLECTION_START_MARKER,
+    "",
+    REVIEW_USER_REFLECTION_END_MARKER,
+    "",
+    `## ${language === "zh" ? "方法与数据口径" : "Methodology"}`,
+    "",
+    renderDataMethodology(aggregate, language, aiEnabled),
     "",
   ].join("\n");
 }
@@ -599,8 +493,57 @@ function reportHeading(
   aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
 ): string {
-  const title = reportTitle(aggregate, language);
-  return language === "zh" ? `回顾报告：${title}` : `Review Report: ${title}`;
+  return reportTitle(aggregate, language);
+}
+
+function renderOverview(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+  periodJudgment?: string,
+  reviewSession?: ReviewSessionState,
+): string {
+  const confirmedThemes = reviewSession ? reportIncludedCandidates(reviewSession) : [];
+  const hasConfirmedThemes = confirmedThemes.length > 0;
+  const overview =
+    hasConfirmedThemes && !periodJudgment
+      ? renderCompactPeriodJudgment(aggregate, language)
+      : renderPeriodJudgment(aggregate, language, periodJudgment);
+  const range =
+    language === "zh"
+      ? `本次 Review Session 覆盖 ${aggregate.session.startDate} 到 ${aggregate.session.endDate}（${aggregate.session.preset}）。`
+      : `This Review Session covers ${aggregate.session.startDate} to ${aggregate.session.endDate} (${aggregate.session.preset}).`;
+  const themeSentence = hasConfirmedThemes
+    ? language === "zh"
+      ? `这版只保留 Review Board 已确认主题：${formatInlineList(
+          confirmedThemes.map((candidate) =>
+            sanitizeHeading(
+              reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+            ),
+          ),
+          language,
+        )}。`
+      : `This version keeps only Review Board-confirmed themes: ${formatInlineList(
+          confirmedThemes.map((candidate) =>
+            sanitizeHeading(
+              reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+            ),
+          ),
+          language,
+        )}.`
+    : language === "zh"
+      ? "当前还没有已接受或重命名的主题进入报告；可以先把这一版当作活动节奏和待复核证据的阅读底稿。"
+      : "No accepted or renamed themes have entered the report yet; use this version as activity context until Review Board decisions are made.";
+
+  return [range, overview, themeSentence].join("\n\n");
+}
+
+function renderCompactPeriodJudgment(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  return language === "zh"
+    ? `新增 ${formatInteger(aggregate.totalWords)} 个字词，分布在 ${aggregate.activeDays} 个写作日；重点不是活动量本身，而是这些笔记怎样把反复出现的判断、场景、风险、关系和状态线索串成可复核的主线。`
+    : `${formatInteger(aggregate.totalWords)} new words across ${aggregate.activeDays} writing days; the useful signal is not volume alone, but how repeated judgments, contexts, risks, relationships, and state changes become reviewable themes.`;
 }
 
 function renderReviewRange(
@@ -648,44 +591,118 @@ function renderWritingGrowth(
   const topicEvolution =
     reviewSessionTopicEvolution(reviewSession) ?? aggregate.topicEvolution;
   return [
-    `| ${text.metric} | ${text.value} |`,
-    "| --- | ---: |",
-    ...renderSnapshotMetricRows(aggregate, language),
-    `| ${text.totalNewWords} | ${formatInteger(aggregate.totalWords)} |`,
-    `| ${text.notesCreated} | ${aggregate.createdCount} |`,
-    `| ${text.notesModified} | ${aggregate.modifiedCount} |`,
-    `| ${text.writingDays} | ${aggregate.activeDays} |`,
-    `| ${text.longestWritingStreak} | ${aggregate.longestStreak} |`,
+    renderActivityRhythmOverview(aggregate, language),
     "",
     `### ${text.dailyCumulativeGrowth}`,
+    "",
+    renderCumulativeGrowthInterpretation(aggregate, language),
     "",
     renderDailyCumulativeWords(days, language, chartPaths?.["daily-cumulative-words"]),
     "",
     `### ${text.monthlyGrowthChart}`,
     "",
+    renderMonthlyGrowthInterpretation(months, language),
+    "",
     renderMonthlyCreatedNotes(months, language, chartPaths?.["word-growth-trend"]),
     "",
     `### ${text.heatmap}`,
     "",
+    renderHeatmapInterpretation(days, language),
+    "",
     renderDailyHeatmap(days, language, chartPaths?.["daily-word-heatmap"]),
-    "",
-    `### ${text.growthFeedback}`,
-    "",
-    ...renderGrowthFeedback(aggregate, language),
     ...(topicEvolution.topTopics.length > 0
       ? [
           "",
           `### ${language === "zh" ? "主题信号图" : "Theme Signal Chart"}`,
+          "",
+          renderTopicEvolutionInterpretation(topicEvolution, language),
           "",
           chartPaths?.["topic-evolution"]
             ? renderChartReference(
                 chartPaths["topic-evolution"],
                 text.topicEvolutionChart,
               )
-            : renderTopicEvolutionSvg(topicEvolution, language),
+            : renderTopicEvolutionSvg(topicEvolution, language, text),
         ]
       : []),
   ].join("\n");
+}
+
+function renderActivityRhythmOverview(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const activeMonths = aggregate.monthBuckets.filter((month) => month.words > 0).length;
+  return language === "zh"
+    ? `活动证据显示，本期新增 ${formatInteger(aggregate.totalWords)} 个字词，分布在 ${aggregate.activeDays} 个写作日和 ${activeMonths} 个活跃月份里。下面的图表保留节奏证据，用来解释写作峰值、间隔和主题形成背景。`
+    : `Activity Evidence shows ${formatInteger(aggregate.totalWords)} new words across ${aggregate.activeDays} writing days and ${activeMonths} active months. The charts stay here as rhythm evidence for bursts, gaps, and theme-formation context.`;
+}
+
+function renderCumulativeGrowthInterpretation(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  return language === "zh"
+    ? `累计曲线用来观察本期内容是在少数爆发日完成，还是沿着多个写作日逐步累积；最长连续写作为 ${aggregate.longestStreak} 天。`
+    : `Use the cumulative curve to see whether the range grew through a few bursts or through repeated writing days; the longest streak is ${aggregate.longestStreak} day${aggregate.longestStreak === 1 ? "" : "s"}.`;
+}
+
+function hasMonthData(month: MonthBucket): boolean {
+  return (
+    month.created > 0 || month.modified > 0 || month.words > 0 || month.characters > 0
+  );
+}
+
+function renderMonthlyGrowthInterpretation(
+  months: MonthBucket[],
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const active = months.filter(hasMonthData);
+  const strongest = [...active].sort(
+    (a, b) =>
+      b.created - a.created || b.words - a.words || a.month.localeCompare(b.month),
+  )[0];
+  if (!strongest) {
+    return language === "zh"
+      ? "本期没有足够的月度新增笔记信号。"
+      : "This range has no clear monthly new-note signal.";
+  }
+  return language === "zh"
+    ? `${strongest.month} 是新增笔记最明显的阶段；它提供了理解本期节奏的一个入口，而不是完整结论。`
+    : `${strongest.month} has the clearest new-note signal; treat it as an entry point into the range's rhythm, not as the whole conclusion.`;
+}
+
+function renderHeatmapInterpretation(
+  days: DayBucket[],
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const activeDays = days.filter((day) => day.words > 0);
+  const peak = [...activeDays].sort(
+    (a, b) => b.words - a.words || a.date.localeCompare(b.date),
+  )[0];
+  if (!peak) {
+    return language === "zh"
+      ? "热力图没有显示明确的每日字数活动。"
+      : "The heatmap does not show a clear daily word-activity pattern.";
+  }
+  return language === "zh"
+    ? `热力图突出每日写作密度；${peak.date} 是本期最明显的高峰日。`
+    : `The heatmap highlights daily writing density; ${peak.date} is the clearest peak day in this range.`;
+}
+
+function renderTopicEvolutionInterpretation(
+  data: TopicEvolutionData,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const topics = data.topTopics.slice(0, 3).map((topic) => topic.name);
+  if (topics.length === 0) {
+    return language === "zh"
+      ? "主题图没有足够数据形成稳定主线。"
+      : "The topic chart does not have enough data to suggest stable threads.";
+  }
+  return language === "zh"
+    ? `主题图只作为背景节奏：${formatQuotedList(topics)} 是本期较明显的内容信号，仍需以已确认主题为准。`
+    : `The topic chart is background rhythm: ${formatQuotedList(topics)} are visible content signals, while confirmed themes remain the report authority.`;
 }
 
 function renderGrowthFeedback(
@@ -746,41 +763,41 @@ function renderMetadata(
 function renderDataMethodology(
   aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
+  aiEnabled = false,
 ): string {
-  const text = REPORT_TEXT[language];
   const comparison = aggregate.snapshotComparison;
-  const methodology =
+  const dataBoundary =
     comparison.source === "historical-snapshot"
       ? language === "zh"
-        ? "增长数据来自插件自有 snapshot 的字数差异；只统计字数实际变化，避免把批量 mtime 变化写成年增长。"
-        : "Growth data comes from word-count differences in plugin-owned snapshots; only real word-count changes are counted, avoiding mtime-only batch edits."
+        ? "活动节奏参考插件 snapshot 与当前笔记统计；只把真实字数变化作为增长证据。"
+        : "Activity rhythm uses plugin snapshots alongside current note statistics; only real word-count changes count as growth evidence."
       : comparison.source === "scope-mismatch"
         ? language === "zh"
-          ? "本次扫描范围与历史 snapshot 不一致，因此只展示当前 vault 推断，避免跨范围比较。"
-          : "The scan scope differs from the historical snapshot, so this report uses current-vault inference instead of mixing incompatible ranges."
-        : text.methodologyFallback;
-
-  const scopeLabel = language === "zh" ? "范围" : "Scope";
-  const excludedLabel = language === "zh" ? "排除" : "excluded";
-  const patternsLabel = language === "zh" ? "排除模式" : "patterns";
-  const reportFolderLabel = language === "zh" ? "报告目录" : "report folder";
+          ? "历史 snapshot 与本次范围不一致，因此活动节奏按当前 Review Session 的证据解释。"
+          : "The historical snapshot scope differs, so rhythm evidence is interpreted within the current Review Session only."
+        : language === "zh"
+          ? "活动节奏来自当前 Review Session 内可读取的 Markdown Evidence Notes。"
+          : "Activity rhythm comes from Markdown Evidence Notes readable within the current Review Session.";
+  const aiBoundary = aiEnabled
+    ? language === "zh"
+      ? "AI 只可基于本次 Evidence Package 辅助生成 Theme Hypotheses 和文字组织。"
+      : "AI may only use this Evidence Package to assist Theme Hypotheses and prose organization."
+    : language === "zh"
+      ? "未启用 AI 时，主题候选来自本地证据信号。"
+      : "When AI is disabled, theme candidates come from local evidence signals.";
+  const confirmationBoundary =
+    language === "zh"
+      ? "只有用户在 Review Board 接受或重命名的主题会进入 Narrative Review Report；完整 Evidence Audit 留在 Review Board 或未来显式导出中。"
+      : "Only themes accepted or renamed in Review Board enter the Narrative Review Report; complete Evidence Audit material stays in Review Board or a future explicit export.";
 
   return [
-    `- ${text.growthDataSource}: ${growthDataSourceLabel(aggregate, language)}`,
-    `- ${language === "zh" ? "回顾范围" : "Review range"}: ${aggregate.session.startDate} to ${aggregate.session.endDate} (${aggregate.session.preset})`,
-    `- ${text.activityDateSources}: ${activityDateSourceSummary(aggregate, language)}`,
-    ...renderFilesystemDateWarning(aggregate, language),
-    ...(comparison.source === "historical-snapshot"
-      ? [`- ${text.snapshotWordDelta}: ${formatSignedInteger(comparison.wordDelta)}`]
-      : []),
-    `- ${scopeLabel}: ${formatScope(aggregate.scope.includeFolders, text.allMarkdownFiles)}; ${excludedLabel}: ${formatScope(aggregate.scope.excludeFolders, text.none)}; ${patternsLabel}: ${formatScope(aggregate.scope.excludePatterns, text.none)}; ${reportFolderLabel}: ${aggregate.scope.reportFolder}`,
-    `- ${
-      language === "zh"
-        ? "AI 使用：仅使用本范围 evidence package 和有限摘录；主题必须保留来源笔记链接。"
-        : "AI use: limited to this range's evidence package and bounded excerpts; theme proposals must keep source-note links."
-    }`,
-    `- ${methodology}`,
-  ].join("\n");
+    dataBoundary,
+    language === "zh"
+      ? `回顾范围：${aggregate.session.startDate} 到 ${aggregate.session.endDate}（${aggregate.session.preset}）。`
+      : `Review range: ${aggregate.session.startDate} to ${aggregate.session.endDate} (${aggregate.session.preset}).`,
+    aiBoundary,
+    confirmationBoundary,
+  ].join("\n\n");
 }
 
 function activityDateSourceSummary(
@@ -866,32 +883,9 @@ function renderDailyHeatmap(
   if (days.length === 0) {
     return text.dailyWordHeatmapEmpty;
   }
-
-  const monthRows = new Map<string, DayBucket[]>();
-  for (const day of days) {
-    const month = monthRows.get(day.month) ?? [];
-    month.push(day);
-    monthRows.set(day.month, month);
-  }
-
-  return [
-    chartPath
-      ? renderChartReference(chartPath, text.dailyWordHeatmap)
-      : renderDailyHeatmapSvg(days, language),
-    "",
-    `| ${text.month} | ${text.words} | ${text.activeDays} | ${text.peakDay} |`,
-    "| --- | ---: | ---: | --- |",
-    ...[...monthRows.entries()].map(([month, monthDays]) => {
-      const totalWords = monthDays.reduce((sum, day) => sum + day.words, 0);
-      const activeDays = monthDays.filter((day) => day.words > 0).length;
-      const peak = [...monthDays].sort(
-        (a, b) => b.words - a.words || a.date.localeCompare(b.date),
-      )[0];
-      const peakLabel =
-        peak && peak.words > 0 ? `${peak.date} (${peak.words})` : text.notAvailable;
-      return `| ${month} | ${totalWords} | ${activeDays} | ${peakLabel} |`;
-    }),
-  ].join("\n");
+  return chartPath
+    ? renderChartReference(chartPath, text.dailyWordHeatmap)
+    : renderDailyHeatmapSvg(days, language, text);
 }
 
 function renderDailyCumulativeWords(
@@ -905,7 +899,7 @@ function renderDailyCumulativeWords(
   }
   return chartPath
     ? renderChartReference(chartPath, text.dailyCumulativeGrowth)
-    : renderDailyCumulativeWordsSvg(days, language);
+    : renderDailyCumulativeWordsSvg(days, language, text);
 }
 
 function renderMonthlyCreatedNotes(
@@ -921,372 +915,7 @@ function renderMonthlyCreatedNotes(
   return [
     chartPath
       ? renderChartReference(chartPath, text.wordGrowthTrend)
-      : renderMonthlyCreatedNotesSvg(months, language),
-  ].join("\n");
-}
-
-function renderTopicEvolution(
-  data: TopicEvolutionData,
-  language: ResolvedAnnualReviewLanguage,
-  chartPath?: string,
-  aiThemes: AiThemeInsight[] = [],
-  aiEnabled = false,
-): string {
-  const text = REPORT_TEXT[language];
-  if (aiThemes.length > 0) {
-    return renderAiThemeEvolution(data, language, aiThemes);
-  }
-
-  if (data.topTopics.length === 0) {
-    return `- ${text.topicEvolutionEmpty}`;
-  }
-
-  const rows = [
-    text.topicEvolutionNeedsSynthesis,
-    "",
-    chartPath
-      ? renderChartReference(chartPath, text.topicEvolutionChart)
-      : renderTopicEvolutionSvg(data, language),
-  ];
-
-  return rows.join("\n");
-}
-
-function renderTopicTableRow(topic: TopTopic): string {
-  const representativeNotes =
-    topic.representativeNotes.map(wikiLinkPlain).join(", ") || "n/a";
-  return tableRow([
-    topic.name,
-    formatInteger(topic.addedWords),
-    String(topic.newNotes),
-    representativeNotes,
-  ]);
-}
-
-function renderAiThemeEvolution(
-  _data: TopicEvolutionData,
-  language: ResolvedAnnualReviewLanguage,
-  themes: AiThemeInsight[],
-): string {
-  const text = REPORT_TEXT[language];
-  const themeNames = themes.slice(0, 3).map((theme) => theme.title);
-  return [
-    text.aiThemeSummary(themeNames),
-    "",
-    `### ${text.aiThemeSynthesis}`,
-    "",
-    ...themes.flatMap((theme) => renderAiThemeSection(theme, text)),
-  ].join("\n");
-}
-
-function renderAiThemeSection(
-  theme: AiThemeInsight,
-  text: (typeof REPORT_TEXT)[ResolvedAnnualReviewLanguage],
-): string[] {
-  const rows = [
-    `#### ${sanitizeHeading(theme.title)}`,
-    "",
-    sanitizeParagraphMarkdown(theme.synthesis) || text.noDataFound,
-  ];
-  if (theme.connections) {
-    rows.push(
-      "",
-      `${text.aiThemeConnections}: ${sanitizeParagraphMarkdown(theme.connections)}`,
-    );
-  }
-  if (theme.nextQuestion) {
-    rows.push(
-      "",
-      `${text.aiThemeNextQuestion}: ${sanitizeInlineMarkdown(theme.nextQuestion)}`,
-    );
-  }
-  if (theme.evidenceNotes.length > 0) {
-    rows.push(
-      "",
-      `- ${text.representativeNotes}:`,
-      ...theme.evidenceNotes.map((note) => `  - ${wikiLinkPlain(note)}`),
-    );
-  }
-  rows.push("");
-  return rows;
-}
-
-function renderDailyCumulativeWordsSvg(
-  days: DayBucket[],
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  const text = REPORT_TEXT[language];
-  const width = 820;
-  const height = 280;
-  const left = 62;
-  const right = 26;
-  const top = 24;
-  const bottom = 48;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const cumulativeDays = days.reduce<Array<DayBucket & { cumulativeWords: number }>>(
-    (acc, day) => {
-      const previous = acc[acc.length - 1];
-      const cumulativeWords = (previous?.cumulativeWords ?? 0) + day.words;
-      acc.push({ ...day, cumulativeWords });
-      return acc;
-    },
-    [],
-  );
-  const maxWords = niceMax(
-    Math.max(1, ...cumulativeDays.map((day) => day.cumulativeWords)),
-  );
-  const xScale = (index: number) =>
-    left + (plotWidth * index) / Math.max(1, cumulativeDays.length - 1);
-  const yScale = (value: number) => top + plotHeight - (value / maxWords) * plotHeight;
-  const ticks = [0, maxWords / 2, maxWords];
-
-  const grid = ticks
-    .map((tick) => {
-      const y = yScale(tick);
-      return [
-        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
-        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
-      ].join("\n");
-    })
-    .join("\n");
-  const path = cumulativeDays
-    .map(
-      (day, index) =>
-        `${index === 0 ? "M" : "L"} ${formatNumber(xScale(index))} ${formatNumber(yScale(day.cumulativeWords))}`,
-    )
-    .join(" ");
-  const monthLabels = cumulativeDays
-    .filter((day, index) => index === 0 || day.dayOfMonth === 1)
-    .map((day, index) => {
-      const dayIndex = cumulativeDays.indexOf(day);
-      const anchor = index === 0 ? "start" : "middle";
-      return `<text x="${formatNumber(xScale(dayIndex))}" y="${height - 20}" font-size="10" text-anchor="${anchor}" fill="currentColor">${escapeHtml(day.month.slice(5))}</text>`;
-    })
-    .join("\n");
-
-  return [
-    `<svg class="annual-review-chart annual-review-daily-cumulative" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.dailyCumulativeGrowth)}">`,
-    `<title>${escapeHtml(text.dailyCumulativeGrowth)}</title>`,
-    grid,
-    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
-    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
-    `<text x="18" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 ${top + plotHeight / 2})">${escapeHtml(text.dailyCumulativeWords)}</text>`,
-    `<path d="${path}" fill="none" stroke="#4f7cac" stroke-width="3" stroke-linejoin="round" />`,
-    ...cumulativeDays.map((day, index) => {
-      const title = `${day.date}: ${day.cumulativeWords} ${text.cumulativeWords}`;
-      return `<circle cx="${formatNumber(xScale(index))}" cy="${formatNumber(yScale(day.cumulativeWords))}" r="2.6" fill="#4f7cac"><title>${escapeHtml(title)}</title></circle>`;
-    }),
-    monthLabels,
-    "</svg>",
-  ].join("\n");
-}
-
-function renderDailyHeatmapSvg(
-  days: DayBucket[],
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  const text = REPORT_TEXT[language];
-  const cell = 10;
-  const gap = 3;
-  const left = 34;
-  const top = 26;
-  const maxWeek = Math.max(0, ...days.map((day) => day.week));
-  const width = left + (maxWeek + 1) * (cell + gap) + 24;
-  const height = top + 7 * (cell + gap) + 30;
-  const maxWords = Math.max(1, ...days.map((day) => day.words));
-  const firstMonthDays = days.filter((day) => day.dayOfMonth === 1);
-  const weekdayLabels =
-    language === "zh"
-      ? ["日", "一", "二", "三", "四", "五", "六"]
-      : ["S", "M", "T", "W", "T", "F", "S"];
-
-  const monthLabels = firstMonthDays
-    .map(
-      (day) =>
-        `<text x="${left + day.week * (cell + gap)}" y="14" font-size="10" fill="currentColor">${escapeHtml(day.month.slice(5))}</text>`,
-    )
-    .join("\n");
-  const weekdays = weekdayLabels
-    .map(
-      (label, index) =>
-        `<text x="8" y="${top + index * (cell + gap) + 9}" font-size="9" fill="currentColor">${escapeHtml(label)}</text>`,
-    )
-    .join("\n");
-  const cells = days
-    .map((day) => {
-      const x = left + day.week * (cell + gap);
-      const y = top + day.weekday * (cell + gap);
-      const title = `${day.date}: ${day.words} ${text.words}, ${day.created} ${text.created}, ${day.modified} ${text.modified}`;
-      return `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="2" fill="${heatColor(day.words, maxWords)}"><title>${escapeHtml(title)}</title></rect>`;
-    })
-    .join("\n");
-
-  return [
-    `<svg class="annual-review-chart annual-review-heatmap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.dailyWordHeatmap)}">`,
-    `<title>${escapeHtml(text.dailyWordHeatmap)}</title>`,
-    `<desc>${escapeHtml(text.dailyWordHeatmapLegend)}</desc>`,
-    monthLabels,
-    weekdays,
-    cells,
-    "</svg>",
-  ].join("\n");
-}
-
-function renderMonthlyCreatedNotesSvg(
-  months: MonthBucket[],
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  const text = REPORT_TEXT[language];
-  const width = 760;
-  const height = 280;
-  const left = 58;
-  const right = 22;
-  const top = 20;
-  const bottom = 44;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const maxGrowth = niceMax(Math.max(1, ...months.map((bucket) => bucket.created)));
-  const ticks = [0, maxGrowth / 2, maxGrowth];
-  const barGap = 8;
-  const barWidth = Math.max(
-    16,
-    (plotWidth - barGap * Math.max(0, months.length - 1)) / Math.max(1, months.length),
-  );
-  const xScale = (index: number) => left + index * (barWidth + barGap);
-  const yScale = (value: number) => (value / maxGrowth) * plotHeight;
-
-  const grid = ticks
-    .map((tick) => {
-      const y = top + plotHeight - (tick / maxGrowth) * plotHeight;
-      return [
-        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
-        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
-      ].join("\n");
-    })
-    .join("\n");
-
-  const bars = months
-    .map((bucket, index) => {
-      const label = bucket.month.slice(5);
-      const value = bucket.created;
-      const barHeight = yScale(value);
-      const x = xScale(index);
-      const y = top + plotHeight - barHeight;
-      const title = `${bucket.month}: ${value} ${text.wordGrowth}`;
-      return [
-        value > 0
-          ? `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(barWidth)}" height="${formatNumber(barHeight)}" rx="3" fill="#b95e43"><title>${escapeHtml(title)}</title></rect>`
-          : "",
-        `<text x="${formatNumber(x + barWidth / 2)}" y="${height - 24}" font-size="10" text-anchor="middle" fill="currentColor">${escapeHtml(label)}</text>`,
-      ]
-        .filter(Boolean)
-        .join("\n");
-    })
-    .join("\n");
-
-  return [
-    `<svg class="annual-review-chart annual-review-growth" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.wordGrowthTrend)}">`,
-    `<title>${escapeHtml(text.wordGrowthTrend)}</title>`,
-    `<desc>${escapeHtml(text.wordGrowthYAxis)}</desc>`,
-    grid,
-    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
-    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
-    `<text x="16" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 16 ${top + plotHeight / 2})">${escapeHtml(text.wordGrowth)}</text>`,
-    bars,
-    "</svg>",
-  ].join("\n");
-}
-
-function renderTopicEvolutionSvg(
-  data: TopicEvolutionData,
-  language: ResolvedAnnualReviewLanguage,
-): string {
-  const text = REPORT_TEXT[language];
-  const width = 820;
-  const height = 340;
-  const left = 62;
-  const right = 156;
-  const top = 28;
-  const bottom = 54;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const activeBuckets = data.monthlyBuckets.filter((bucket) =>
-    Object.values(bucket.topics).some((words) => words > 0),
-  );
-  const buckets = activeBuckets.length > 0 ? activeBuckets : data.monthlyBuckets;
-  const topicNames = chartTopicNames(data);
-  const maxWords = niceMax(
-    Math.max(1, ...buckets.map((bucket) => sumTopicWords(bucket))),
-  );
-  const barGap = 8;
-  const barWidth = Math.max(
-    12,
-    (plotWidth - barGap * Math.max(0, buckets.length - 1)) / Math.max(1, buckets.length),
-  );
-  const yScale = (words: number) => (words / maxWords) * plotHeight;
-  const colors = topicNames.map(
-    (name, index) =>
-      [name, TOPIC_COLORS[index % TOPIC_COLORS.length] ?? TOPIC_COLORS[0]] as const,
-  );
-  const colorByTopic = new Map(colors);
-
-  const grid = [0, maxWords / 2, maxWords]
-    .map((tick) => {
-      const y = top + plotHeight - yScale(tick);
-      return [
-        `<line x1="${left}" y1="${formatNumber(y)}" x2="${width - right}" y2="${formatNumber(y)}" stroke="#d0d7de" stroke-width="1" />`,
-        `<text x="${left - 8}" y="${formatNumber(y + 4)}" font-size="10" text-anchor="end" fill="currentColor">${Math.round(tick)}</text>`,
-      ].join("\n");
-    })
-    .join("\n");
-
-  const bars = buckets
-    .map((bucket, index) => {
-      const x = left + index * (barWidth + barGap);
-      let y = top + plotHeight;
-      const segments = topicNames
-        .map((topic) => {
-          const words = bucket.topics[topic] ?? 0;
-          if (words <= 0) {
-            return "";
-          }
-          const segmentHeight = Math.max(1, yScale(words));
-          y -= segmentHeight;
-          const title = `${bucket.month}: ${topic} ${words} ${text.words}`;
-          return `<rect x="${formatNumber(x)}" y="${formatNumber(y)}" width="${formatNumber(barWidth)}" height="${formatNumber(segmentHeight)}" fill="${colorByTopic.get(topic)}"><title>${escapeHtml(title)}</title></rect>`;
-        })
-        .filter(Boolean)
-        .join("\n");
-      return [
-        segments,
-        `<text x="${formatNumber(x + barWidth / 2)}" y="${height - 28}" font-size="10" text-anchor="middle" fill="currentColor">${escapeHtml(bucket.month.slice(5))}</text>`,
-      ].join("\n");
-    })
-    .join("\n");
-
-  const legend = topicNames
-    .map((topic, index) => {
-      const x = width - right + 24;
-      const y = top + 18 + index * 18;
-      return [
-        `<rect x="${x}" y="${y - 10}" width="10" height="10" fill="${colorByTopic.get(topic)}" />`,
-        `<text x="${x + 16}" y="${y}" font-size="11" fill="currentColor">${escapeHtml(topic)}</text>`,
-      ].join("\n");
-    })
-    .join("\n");
-
-  return [
-    `<svg class="annual-review-chart annual-review-topic-evolution" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="auto" role="img" aria-label="${escapeHtml(text.topicEvolutionChart)}">`,
-    `<title>${escapeHtml(text.topicEvolutionChart)}</title>`,
-    `<desc>${escapeHtml(text.topicEvolutionLegend)}</desc>`,
-    grid,
-    `<line x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
-    `<line x1="${left}" y1="${top + plotHeight}" x2="${width - right}" y2="${top + plotHeight}" stroke="#57606a" stroke-width="1" />`,
-    `<text x="18" y="${top + plotHeight / 2}" font-size="11" text-anchor="middle" fill="currentColor" transform="rotate(-90 18 ${top + plotHeight / 2})">${escapeHtml(text.addedWords)}</text>`,
-    bars,
-    legend,
-    "</svg>",
+      : renderMonthlyCreatedNotesSvg(months, language, text),
   ].join("\n");
 }
 
@@ -1321,44 +950,36 @@ function reviewSessionTopicEvolution(
     ),
   ].sort();
   const months = monthKeys.length > 0 ? monthKeys : [fallbackMonth];
-  const topTopics = semanticCandidates.slice(0, 8).map((candidate) => ({
-    name: reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
-    addedWords:
-      Math.max(1, candidatePaths.get(candidate.id)?.length ?? candidate.evidence.length) *
-      100,
-    newNotes: candidatePaths.get(candidate.id)?.length ?? 0,
-    updatedNotes: candidatePaths.get(candidate.id)?.length ?? 0,
-    representativeNotes: (candidatePaths.get(candidate.id) ?? []).slice(0, 2),
+  const topCandidates = semanticCandidates.slice(0, 8);
+  const topTopics = topCandidates.map((candidate) => {
+    const paths = candidatePaths.get(candidate.id) ?? [];
+    return {
+      name: reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+      addedWords: Math.max(1, paths.length || candidate.evidence.length) * 100,
+      newNotes: paths.length,
+      updatedNotes: paths.length,
+      representativeNotes: paths.slice(0, 4),
+    };
+  });
+  const monthlyBuckets = months.map((month) => ({
+    month,
+    topics: Object.fromEntries(
+      topCandidates.map((candidate) => {
+        const name = reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
+        const paths = candidatePaths.get(candidate.id) ?? [];
+        const matchingPaths = paths.filter(
+          (path) => reviewCandidatePathMonth(path, fallbackMonth) === month,
+        );
+        return [name, matchingPaths.length * 100];
+      }),
+    ),
   }));
-  const monthlyBuckets = months.map(
-    (month): TopicMonthlyBucket => ({
-      month,
-      topics: Object.fromEntries(
-        topTopics.map((topic) => {
-          const candidate = semanticCandidates.find(
-            (item) =>
-              reviewCandidateDisplayTitle(item.title, item.userTitle) === topic.name,
-          );
-          const paths = candidate ? (candidatePaths.get(candidate.id) ?? []) : [];
-          const count =
-            paths.length > 0
-              ? paths.filter(
-                  (path) => reviewCandidatePathMonth(path, fallbackMonth) === month,
-                ).length
-              : month === fallbackMonth
-                ? 1
-                : 0;
-          return [topic.name, count > 0 ? count * 100 : 0];
-        }),
-      ),
-    }),
-  );
   return {
     topTopics,
     emergingTopics: topTopics.slice(0, 3).map((topic) => topic.name),
     decliningTopics: [],
     monthlyBuckets,
-    noteAssignments: semanticCandidates.flatMap((candidate) =>
+    noteAssignments: topCandidates.flatMap((candidate) =>
       (candidatePaths.get(candidate.id) ?? []).map((path) => ({
         path,
         topics: [reviewCandidateDisplayTitle(candidate.title, candidate.userTitle)],
@@ -1404,38 +1025,6 @@ function renderChartReference(path: string, alt: string): string {
   return `![[${path}|${alt}|900]]`;
 }
 
-function normalizeReportFolder(folder: string): string {
-  return (
-    folder
-      .trim()
-      .replace(/^\/+|\/+$/gu, "")
-      .replace(/\/{2,}/gu, "/") || "Annual Reviews"
-  );
-}
-
-function heatColor(words: number, maxWords: number): string {
-  if (words <= 0) {
-    return "#ebedf0";
-  }
-  const colors = ["#9be9a8", "#40c463", "#30a14e", "#216e39"];
-  const index = Math.min(
-    colors.length - 1,
-    Math.ceil((words / maxWords) * colors.length) - 1,
-  );
-  return colors[index] ?? colors[0];
-}
-
-function niceMax(value: number): number {
-  const power = 10 ** Math.floor(Math.log10(value));
-  const scaled = value / power;
-  const niceScaled = scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
-  return niceScaled * power;
-}
-
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
-}
-
 function formatInteger(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
@@ -1451,7 +1040,7 @@ function sanitizeInlineMarkdown(markdown?: string): string {
   if (!markdown) {
     return "";
   }
-  const body = softenFormulaicContrast(markdown)
+  const body = normalizeGeneratedMarkdown(markdown)
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
@@ -1460,6 +1049,11 @@ function sanitizeInlineMarkdown(markdown?: string): string {
     .replace(
       /\[\[([^\]|#\]]+?)\.md((?:#[^\]|]+)?(?:\|[^\]]+)?)?\]\]/giu,
       (_match, path: string, suffix = "") => `[[${path}${suffix}]]`,
+    )
+    .replace(
+      /\[\[([^\]|#\]]+)(#[^\]|]+)?\]\]/gu,
+      (_match, target: string, heading = "") =>
+        wikiLinkWithAlias(target, heading, cleanEvidenceAlias(target)),
     )
     .replace(/\s+/gu, " ")
     .trim();
@@ -1471,7 +1065,7 @@ function sanitizeParagraphMarkdown(markdown?: string): string {
   if (!markdown) {
     return "";
   }
-  return softenFormulaicContrast(markdown)
+  return normalizeGeneratedMarkdown(markdown)
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
@@ -1481,49 +1075,26 @@ function sanitizeParagraphMarkdown(markdown?: string): string {
       /\[\[([^\]|#\]]+?)\.md((?:#[^\]|]+)?(?:\|[^\]]+)?)?\]\]/giu,
       (_match, path: string, suffix = "") => `[[${path}${suffix}]]`,
     )
+    .replace(
+      /\[\[([^\]|#\]]+)(#[^\]|]+)?\]\]/gu,
+      (_match, target: string, heading = "") =>
+        wikiLinkWithAlias(target, heading, cleanEvidenceAlias(target)),
+    )
     .replace(/\s+/gu, " ")
     .trim()
     .slice(0, 900);
 }
 
-function softenFormulaicContrast(markdown: string): string {
-  return markdown
-    .replace(/不再只是[^，。；]+，而是/gu, "更具体地说，是")
-    .replace(/并不只是[^，。；]+，而是/gu, "更关键的是")
-    .replace(/并不只是/gu, "除了")
-    .replace(/不只是[^，。；]+，而是/gu, "更关键的是")
-    .replace(/不是[^，。；]+，而是/gu, "更关键的是")
-    .replace(/，而不是/gu, "，避免")
-    .replace(/not just [^,.;]+, but /giu, "")
-    .replace(/not only [^,.;]+, but also /giu, "");
+function normalizeGeneratedMarkdown(markdown: string): string {
+  return markdown.trim();
 }
 
 function sanitizeHeading(markdown?: string): string {
   return sanitizeInlineMarkdown(markdown).replace(/^#+\s*/u, "") || "Untitled";
 }
 
-function chartTopicNames(data: TopicEvolutionData): string[] {
-  const names = data.topTopics.map((topic) => topic.name);
-  const hasOther = data.monthlyBuckets.some((bucket) =>
-    Object.prototype.hasOwnProperty.call(bucket.topics, OTHER_TOPIC),
-  );
-  return hasOther ? [...names, OTHER_TOPIC] : names;
-}
-
-function sumTopicWords(bucket: TopicMonthlyBucket): number {
-  return Object.values(bucket.topics).reduce((sum, words) => sum + words, 0);
-}
-
 function noteTitle(path: string): string {
   return path.split("/").pop()?.replace(/\.md$/u, "") ?? path;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function renderMetricList(
@@ -1538,44 +1109,18 @@ function renderMetricList(
 }
 
 function renderHighValueNotes(
-  aggregate: YearAggregate,
+  _aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
-  aiNotes: AiHighValueNoteInsight[] = [],
-  aiEnabled = false,
+  _aiNotes: AiHighValueNoteInsight[] = [],
+  _aiEnabled = false,
   reviewSession?: ReviewSessionState,
 ): string {
-  const text = REPORT_TEXT[language];
   if (reviewSession) {
     return renderReviewedCandidates(reviewSession, language);
   }
-  if (!aiEnabled) {
-    return `- ${text.noReviewedCandidates}`;
-  }
-  const aiNoteMap = new Map(aiNotes.map((note) => [normalizeNotePath(note.path), note]));
-  const topNotes =
-    aggregate.highValueNotes.length > 0
-      ? aiEnabled
-        ? aggregate.highValueNotes.flatMap((note) =>
-            renderHighValueNoteSection(
-              note,
-              aiNoteMap.get(normalizeNotePath(note.path)),
-              text,
-            ),
-          )
-        : aggregate.highValueNotes.flatMap((note) =>
-            renderHighValueNoteSection(note, undefined, text),
-          )
-      : [`- ${text.noHighValueNotes}`];
-  const rows = [
-    ...(aggregate.highValueNotes.length > 0
-      ? [text.highValueNotesSummary(aggregate.highValueNotes.length), ""]
-      : []),
-    `### ${text.topHighValueNotes}`,
-    "",
-    ...topNotes,
-  ];
-
-  return rows.join("\n");
+  return language === "zh"
+    ? "- 还没有 Review Board 状态可确认主题；默认报告不会把未复核 Theme Hypotheses 写成结论。"
+    : "- No Review Board state is available to confirm themes; the default report does not turn unreviewed Theme Hypotheses into conclusions.";
 }
 
 function renderReviewedCandidates(
@@ -1585,70 +1130,105 @@ function renderReviewedCandidates(
   const text = REPORT_TEXT[language];
   const candidates = reportIncludedCandidates(reviewSession);
   if (candidates.length === 0) {
-    return `- ${text.noReviewedCandidates}`;
+    return language === "zh"
+      ? "- 还没有已接受或重命名的主题进入报告。请先在 Review Board 复核 Theme Hypotheses。"
+      : "- No accepted or renamed themes are ready for the report yet. Review Theme Hypotheses in Review Board first.";
   }
-  return [
-    `### ${text.topHighValueNotes}`,
-    "",
-    ...candidates.flatMap((candidate) =>
-      renderReviewedCandidate(candidate, reviewSession, language),
-    ),
-  ].join("\n");
+  return candidates
+    .flatMap((candidate) => renderReviewedCandidate(candidate, reviewSession, language))
+    .join("\n");
 }
 
 function renderReviewedCandidate(
   candidate: ReviewCandidate,
-  reviewSession: ReviewSessionState,
+  _reviewSession: ReviewSessionState,
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
-  const text = REPORT_TEXT[language];
-  const decision =
-    candidate.status === "renamed" ? text.confirmedByRename : text.confirmedByAccept;
-  const summary = reviewCandidateSummary(candidate, language);
-  const reason = reviewCandidateReason(candidate, language);
-  const connection = reviewCandidateConnection(candidate, language);
+  const paragraphs = reviewCandidateNarrativeParagraphs(candidate, language);
+  const title = sanitizeHeading(
+    reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+  );
   const rows = [
-    `#### ${reviewCandidateLink(candidate)}`,
+    `### ${title}`,
     "",
-    reportFieldLine(language, text.confirmedDecision, decision, { sentence: true }),
-    "",
-    reportFieldLine(language, text.aiSummary, summary),
-    "",
-    reportFieldLine(language, text.whyThemeExists, reason),
-    "",
-    reportFieldLine(language, text.connectionExplanation, connection),
-    ...renderReviewCandidateLocalSignals(candidate, language),
-    ...renderReviewCandidateUncertainty(candidate, language),
-    "",
-    reportFieldLine(
-      language,
-      text.reviewCaution,
-      reviewCandidateCaution(candidate, language),
-    ),
-    "",
-    `${text.evidenceNotes}:`,
+    ...(paragraphs.length > 0
+      ? paragraphs.flatMap((paragraph) => [paragraph, ""])
+      : [
+          language === "zh"
+            ? "这条主线已经由用户确认，但还需要回到 Representative Evidence 中重新补充叙事。"
+            : "This theme has been confirmed by the user, but its narrative still needs to be reread against the Representative Evidence.",
+          "",
+        ]),
+    `${language === "zh" ? "代表证据" : "Representative evidence"}:`,
     ...renderReviewCandidateEvidence(candidate, language),
   ];
   if (candidate.userNote?.trim()) {
-    rows.push(
-      "",
-      reportFieldLine(
-        language,
-        text.userNote,
-        sanitizeParagraphMarkdown(candidate.userNote),
-      ),
-    );
-  }
-  const mergedSources = mergedSourceCandidates(candidate, reviewSession);
-  if (mergedSources.length > 0) {
-    rows.push(
-      "",
-      `${text.mergedFrom}:`,
-      ...mergedSources.flatMap((source) => renderMergedSourceCandidate(source, language)),
-    );
+    rows.push("", sanitizeParagraphMarkdown(candidate.userNote));
   }
   rows.push("");
   return rows;
+}
+
+function reviewCandidateNarrativeParagraphs(
+  candidate: ReviewCandidate,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const summary = reviewCandidateSummary(candidate, language);
+  const uncertainty = reviewCandidateUncertainty(candidate, language);
+  if (isReportReadyNarrative(summary, language)) {
+    return uniqueParagraphs([summary, uncertainty]);
+  }
+  const paragraphs = uniqueParagraphs([
+    summary,
+    reviewCandidateConnection(candidate, language),
+    reviewCandidateReason(candidate, language),
+    uncertainty,
+  ]);
+  return paragraphs;
+}
+
+function isReportReadyNarrative(
+  paragraph: string,
+  language: ResolvedAnnualReviewLanguage,
+): boolean {
+  const plainText = plainNarrativeText(paragraph);
+  if (!plainText) {
+    return false;
+  }
+  const wikilinkCount = (paragraph.match(/\[\[[^\]]+\]\]/gu) ?? []).length;
+  if (language === "zh") {
+    const plainCharacters = Array.from(plainText.replace(/\s+/gu, "")).length;
+    const rawCharacters = Array.from(paragraph.replace(/\s+/gu, "")).length;
+    return (
+      (plainCharacters >= 180 || rawCharacters >= 240) &&
+      (wikilinkCount >= 2 || plainCharacters >= 650)
+    );
+  }
+  const words = plainText.match(/[\p{L}\p{N}'-]+/gu)?.length ?? 0;
+  return words >= 90 && (wikilinkCount >= 2 || words >= 260);
+}
+
+function plainNarrativeText(markdown: string): string {
+  return markdown
+    .replace(/\[\[[^\]|#\]]+(?:#[^\]|]+)?\|([^\]]+)\]\]/gu, "$1")
+    .replace(/\[\[([^\]|#\]]+)(?:#[^\]|]+)?\]\]/gu, "$1")
+    .replace(/[`*_~>#-]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function uniqueParagraphs(paragraphs: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const paragraph of paragraphs.map((item) => item.trim()).filter(Boolean)) {
+    const identity = paragraph.toLocaleLowerCase();
+    if (seen.has(identity)) {
+      continue;
+    }
+    seen.add(identity);
+    result.push(paragraph);
+  }
+  return result;
 }
 
 function reviewCandidateSummary(
@@ -1698,105 +1278,114 @@ function reviewCandidateConnection(
     return evidenceReasons.join(" ");
   }
   return language === "zh"
-    ? "在判断这个提案是否成为主题前，请先一起复核这些证据笔记。"
+    ? "在判断这个提案是否成为主题前，请先一起复核这些代表证据。"
     : "Review the linked evidence notes together before deciding whether this proposal is a real theme.";
 }
 
-function renderReviewCandidateLocalSignals(
-  candidate: ReviewCandidate,
-  language: ResolvedAnnualReviewLanguage,
-): string[] {
-  const signals = (candidate.localSignals ?? [])
-    .map((signal) => sanitizeCandidateInline(candidate, signal, language))
-    .filter(Boolean)
-    .slice(0, 5);
-  if (signals.length === 0) {
-    return [];
-  }
-  return [
-    "",
-    reportFieldLine(
-      language,
-      REPORT_TEXT[language].localSignals,
-      signals.join(language === "zh" ? "；" : "; "),
-    ),
-  ];
+function traceableEvidence(candidate: ReviewCandidate): ReviewCandidate["evidence"] {
+  return candidate.evidence.filter((evidence) => !evidence.missing);
 }
 
-function renderReviewCandidateUncertainty(
-  candidate: ReviewCandidate,
-  language: ResolvedAnnualReviewLanguage,
-): string[] {
-  const uncertainty = sanitizeCandidateParagraph(
-    candidate,
-    candidate.uncertainty,
-    language,
-  );
-  return uncertainty
-    ? ["", reportFieldLine(language, REPORT_TEXT[language].uncertainty, uncertainty)]
-    : [];
-}
-
-function reportFieldLine(
-  language: ResolvedAnnualReviewLanguage,
-  label: string,
-  value: string,
-  options: { sentence?: boolean } = {},
-): string {
-  const separator = language === "zh" ? "：" : ": ";
-  const sentenceSuffix = options.sentence ? (language === "zh" ? "。" : ".") : "";
-  return `**${label}**${separator}${value}${sentenceSuffix}`;
-}
-
-function reviewCandidateCaution(
+function reviewCandidateUncertainty(
   candidate: ReviewCandidate,
   language: ResolvedAnnualReviewLanguage,
 ): string {
-  const missingCount = candidate.evidence.filter((evidence) => evidence.missing).length;
-  if (missingCount === candidate.evidence.length && candidate.evidence.length > 0) {
-    return language === "zh"
-      ? "所有已保存证据在重新扫描后都缺失；采纳前需要重新打开源笔记确认。"
-      : "All saved evidence is missing after the latest rescan; reopen source notes before relying on this proposal.";
-  }
-  if (missingCount > 0) {
-    return language === "zh"
-      ? "部分证据在重新扫描后缺失；请确认剩余源笔记仍能支撑这个假设。"
-      : "Some evidence is missing after the latest rescan; confirm the remaining source notes still support this hypothesis.";
-  }
-  if (candidate.evidence.length <= 1) {
-    return language === "zh"
-      ? "当前只有一条证据笔记支撑这个假设，适合作为弱信号复核。"
-      : "Only one evidence note currently supports this hypothesis, so treat it as a weak local signal until reviewed.";
-  }
-  return language === "zh"
-    ? "这是根据本地证据形成的主题假设，这不是最终结论；请保留可追溯证据并按需要继续改名或合并。"
-    : "This is an evidence-backed theme hypothesis, not a conclusion; keep the source links attached and rename or merge it if the framing is still rough.";
+  return sanitizeCandidateParagraph(candidate, candidate.uncertainty, language);
 }
 
 function renderReviewCandidateEvidence(
   candidate: ReviewCandidate,
   language: ResolvedAnnualReviewLanguage,
 ): string[] {
-  const rows = candidate.evidence.slice(0, 6).map((evidence) => {
-    const target = evidence.sourcePath || evidence.target;
-    const link = target ? wikiLinkPlain(target) : sanitizeInlineMarkdown(evidence.label);
-    const reason = sanitizeCandidateInline(candidate, evidence.reason, language);
-    const comment = sanitizeCandidateInline(candidate, evidence.userComment, language);
-    const missing = evidence.missing ? ` (${REPORT_TEXT[language].missingEvidence})` : "";
-    const commentText = comment
-      ? language === "zh"
-        ? `；评论：${comment}`
-        : `; comment: ${comment}`
-      : "";
-    return `- ${link}${missing}${reason ? ` — ${reason}` : ""}${commentText}`;
-  });
+  const rows = traceableEvidence(candidate)
+    .slice(0, 4)
+    .map((evidence) => {
+      const target = evidence.sourcePath || evidence.target;
+      const link = target
+        ? wikiLink(target, readableEvidenceAlias(evidence.label, target))
+        : sanitizeInlineMarkdown(evidence.label);
+      const reason = reviewCandidateEvidenceReason(candidate, evidence, language);
+      const comment = sanitizeCandidateInline(candidate, evidence.userComment, language);
+      const commentText = comment
+        ? language === "zh"
+          ? `；${comment}`
+          : `; comment: ${comment}`
+        : "";
+      return `- ${link}${reason ? `: ${reason}` : ""}${commentText}`;
+    });
   return rows.length > 0
     ? rows
     : [
         language === "zh"
-          ? "- 没有可追溯证据；请回到 Review Board 重新复核。"
-          : "- No traceable evidence is available; return to Review Board before relying on this proposal.",
+          ? "- 暂无可追溯的 Representative Evidence；请回到 Review Board 重新复核。"
+          : "- No traceable Representative Evidence is available; return to Review Board before relying on this theme.",
       ];
+}
+
+function reviewCandidateEvidenceReason(
+  candidate: ReviewCandidate,
+  evidence: ReviewCandidate["evidence"][number],
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const reason = sanitizeCandidateInline(candidate, evidence.reason, language);
+  if (reason && !isTechnicalEvidenceReason(reason) && !isGenericEvidenceReason(reason)) {
+    return reason;
+  }
+  return "";
+}
+
+function isTechnicalEvidenceReason(reason: string): boolean {
+  return /(?:created in review range|modified in review range|backlinks?|outbound links?|shared links?|entities?:|frontmatter context present|tags present as weak signals|cross-folder links?|contains reviewable questions|创建于回顾范围|修改于回顾范围|反向链接|出链|共享链接|实体：|存在属性上下文|标签仅作为弱信号|跨文件夹链接|包含可复核问题)/iu.test(
+    reason,
+  );
+}
+
+function isGenericEvidenceReason(reason: string): boolean {
+  return /(?:representative evidence note|代表证据|适合回看原文|original tone and judgment|原始语气)/iu.test(
+    reason,
+  );
+}
+
+function readableEvidenceAlias(label: string | undefined, path: string): string {
+  const alias = cleanEvidenceAlias(label);
+  return alias || cleanEvidenceAlias(noteTitle(path)) || noteTitle(path);
+}
+
+function cleanEvidenceAlias(value: string | undefined): string {
+  const alias = (value ?? "")
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !/^#{1,6}\s/u.test(line) && !/^>/u.test(line))
+    .map((line) => line.replace(/^[-*]\s+/u, "").replace(/^\d+\.\s+/u, ""))
+    .join(" ")
+    .replace(/\[\[/gu, "")
+    .replace(/\]\]/gu, "")
+    .split("|")
+    .pop()
+    ?.split("/")
+    .pop()
+    ?.replace(/\.md$/iu, "")
+    ?.trim();
+  if (!alias) {
+    return "";
+  }
+  const normalized = reviewCandidateDisplayTitle(stripLeadingDatePrefix(alias));
+  if (/^[a-z0-9][a-z0-9 _-]*$/u.test(normalized) && /[a-z]/u.test(normalized)) {
+    return normalized
+      .replace(/[_-]+/gu, " ")
+      .replace(/\s+/gu, " ")
+      .replace(/\b[a-z]/gu, (char) => char.toLocaleUpperCase());
+  }
+  return normalized;
+}
+
+function stripLeadingDatePrefix(value: string): string {
+  return value
+    .replace(
+      /^(?:19|20)\d{2}[-_.年\s]+(?:1[0-2]|0?[1-9])[-_.月\s]+(?:3[01]|[12]\d|0?[1-9])日?\s*/u,
+      "",
+    )
+    .trim();
 }
 
 function sanitizeCandidateParagraph(
@@ -1843,11 +1432,11 @@ function localizeReviewCandidateText(
     )
     .replace(
       /^Only one evidence note is available for this local clue, so it should be reviewed before being promoted into a theme\.$/u,
-      "这个本地线索目前只有一条证据笔记，提升为主题前需要先复核。",
+      "这个本地线索目前只有一条代表证据，提升为主题前需要先复核。",
     )
     .replace(
       /^Low confidence: fewer than two evidence notes support (this clue|this hypothesis)\.$/u,
-      "低置信度：少于两条证据笔记支撑这个假设。",
+      "低置信度：少于两条代表证据支撑这个假设。",
     )
     .replace(/topTags:/gu, "高频标签：")
     .replace(/tags present as weak signals/gu, "标签仅作为弱信号")
@@ -1876,94 +1465,21 @@ function replaceCandidateRawTitle(candidate: ReviewCandidate, value: string): st
   if (!rawTitle || rawTitle === displayTitle) {
     return value;
   }
-  return value.replaceAll(rawTitle, displayTitle);
-}
-
-function renderMergedSourceCandidate(
-  candidate: ReviewCandidate,
-  language: ResolvedAnnualReviewLanguage,
-): string[] {
-  return [
-    `- ${reviewCandidateLink(candidate)} — ${reviewCandidateReason(candidate, language)}`,
-    ...renderReviewCandidateEvidence(candidate, language).map((row) => `  ${row}`),
-  ];
+  let normalized = value.replaceAll(rawTitle, displayTitle);
+  const rawWikilinkTarget = rawTitle.match(
+    /^\[\[([^\]|#\]]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]$/u,
+  )?.[1];
+  if (rawWikilinkTarget) {
+    normalized = normalized.replaceAll(
+      wikiLinkWithAlias(rawWikilinkTarget, "", cleanEvidenceAlias(rawWikilinkTarget)),
+      displayTitle,
+    );
+  }
+  return normalized;
 }
 
 function reportIncludedCandidates(reviewSession: ReviewSessionState): ReviewCandidate[] {
-  return reviewSession.candidates.filter((candidate) => {
-    if (candidate.status === "ignored" || candidate.status === "merged") {
-      return false;
-    }
-    return candidate.status === "accepted" || candidate.status === "renamed";
-  });
-}
-
-function mergedSourceCandidates(
-  candidate: ReviewCandidate,
-  reviewSession: ReviewSessionState,
-): ReviewCandidate[] {
-  const mergedSourceIds = new Set(candidate.mergedSourceIds ?? []);
-  if (mergedSourceIds.size === 0) {
-    return [];
-  }
-  return reviewSession.candidates.filter((item) => mergedSourceIds.has(item.id));
-}
-
-function reviewCandidateLink(candidate: ReviewCandidate): string {
-  const title = reviewCandidateDisplayTitle(candidate.title, candidate.userTitle);
-  const path = candidate.sourcePaths[0];
-  return path ? wikiLink(path, title) : sanitizeHeading(title);
-}
-
-function renderHighValueNoteSection(
-  note: HighValueNote,
-  aiNote?: AiHighValueNoteInsight,
-  text?: (typeof REPORT_TEXT)[ResolvedAnnualReviewLanguage],
-): string[] {
-  const labels = text ?? REPORT_TEXT.en;
-  const traceableReasons = note.reasons.filter(reasonHasEvidence);
-  const reason = sanitizeParagraphMarkdown(aiNote?.reason || note.reason);
-  const action = sanitizeInlineMarkdown(aiNote?.suggestedAction || note.suggestedAction);
-  if (traceableReasons.length === 0) {
-    return [
-      `#### ${wikiLink(note.path, note.title)}`,
-      "",
-      `${labels.highValueType}: ${note.suggestionLabel}。${labels.highValueNoAuditableEvidence}`,
-      "",
-    ];
-  }
-  return [
-    `#### ${wikiLink(note.path, note.title)}`,
-    "",
-    `${labels.highValueType}: ${note.suggestionLabel}。${labels.highValueReason}: ${reason}`,
-    "",
-    `${labels.highValueReasonList}:`,
-    ...traceableReasons.flatMap((candidateReason) =>
-      renderExplanationReason(candidateReason, labels),
-    ),
-    "",
-    `${labels.suggestedAction}: ${action}`,
-    "",
-  ];
-}
-
-function renderExplanationReason(
-  reason: ExplanationReason,
-  labels: (typeof REPORT_TEXT)[ResolvedAnnualReviewLanguage],
-): string[] {
-  const evidence = [
-    reason.sourcePath
-      ? `${labels.highValueSourceNote}: ${wikiLinkPlain(reason.sourcePath)}`
-      : "",
-    reason.relatedPaths && reason.relatedPaths.length > 0
-      ? `${labels.highValueRelatedNotes}: ${reason.relatedPaths.map(wikiLinkPlain).join(", ")}`
-      : "",
-    reason.statField ? `${labels.highValueStatField}: \`${reason.statField}\`` : "",
-  ].filter(Boolean);
-  return [
-    `- ${sanitizeInlineMarkdown(reason.label)}`,
-    `  - ${labels.highValueEvidence}: ${evidence.join("; ")}`,
-  ];
+  return reviewSession.candidates.filter(isReviewReportCandidate);
 }
 
 function reasonHasEvidence(reason: ExplanationReason): boolean {
@@ -1974,25 +1490,11 @@ function reasonHasEvidence(reason: ExplanationReason): boolean {
   );
 }
 
-function renderHighValueFeedback(
-  aggregate: YearAggregate,
-  language: ResolvedAnnualReviewLanguage,
-): string[] {
-  const text = REPORT_TEXT[language];
-  const priorityLinks = aggregate.highValueNotes
-    .slice(0, 3)
-    .map((note) => wikiLink(note.path, note.title));
-  return [
-    `- ${text.priorityNotes(formatInlineList(priorityLinks, language))}`,
-    `- ${text.outputReadySignal(aggregate.highValueFeedback.outputReadyCount)}`,
-    `- ${text.staleCoreSignal(aggregate.highValueFeedback.staleCoreCount)}`,
-  ];
-}
-
-function renderRediscoveredNotes(
+function renderWorthRereading(
   aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
   reviewSession?: ReviewSessionState,
+  themeEvidencePackage?: ThemeEvidencePackage,
 ): string {
   const blockedPaths = new Set(
     reviewSession?.candidates
@@ -2001,123 +1503,390 @@ function renderRediscoveredNotes(
       )
       .flatMap((candidate) => candidate.sourcePaths) ?? [],
   );
-  const notes = [
-    ...aggregate.maintenanceNotes,
-    ...aggregate.isolatedPotentialNotes,
-    ...aggregate.representativeNotes.map((note) => ({
-      path: note.path,
-      title: note.title,
-      suggestedAction:
-        language === "zh"
-          ? "作为本范围的代表笔记重新检查。"
-          : "Revisit as a representative note from this range.",
-    })),
-  ]
-    .filter((note) => !blockedPaths.has(note.path))
-    .slice(0, 6);
+  const confirmedThemeReasons = reviewSessionWorthRereadingReasons(
+    reviewSession,
+    language,
+  );
+  const evidenceTargets = evidencePackageReviewTargets(
+    themeEvidencePackage,
+    reviewSession,
+    language,
+  );
+  const notes = prioritizedWorthRereadingNotes(
+    [
+      ...aggregate.maintenanceNotes,
+      ...aggregate.isolatedPotentialNotes,
+      ...aggregate.representativeNotes.map((note) => ({
+        path: note.path,
+        title: note.title,
+        suggestedAction:
+          language === "zh"
+            ? "作为本范围的代表笔记重新检查。"
+            : "Revisit as a representative note from this range.",
+      })),
+      ...evidenceTargets,
+    ].filter((note) => !blockedPaths.has(note.path)),
+    confirmedThemeReasons,
+  ).slice(0, 6);
   if (notes.length === 0) {
     return `- ${REPORT_TEXT[language].noDataFound}`;
   }
-  return notes
-    .map((note) => `- ${wikiLink(note.path, note.title)}: ${note.suggestedAction}`)
+  const rows = notes.map((note) => ({
+    note,
+    reason: worthRereadingReason(note, language, confirmedThemeReasons.get(note.path)),
+  }));
+  const reasonCounts = rows.reduce((counts, row) => {
+    const key = normalizeRepeatedReportText(row.reason);
+    if (key) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, new Map<string, number>());
+  return rows
+    .map(({ note, reason }) => {
+      const link = wikiLink(note.path, readableEvidenceAlias(note.title, note.path));
+      const repeated =
+        (reasonCounts.get(normalizeRepeatedReportText(reason)) ?? 0) > 1 &&
+        !isConfirmedThemeWorthRereadingReason(reason);
+      return `- ${link}${reason && !repeated ? `: ${reason}` : ""}`;
+    })
     .join("\n");
 }
 
-function renderHiddenConnections(
-  aggregate: YearAggregate,
+function prioritizedWorthRereadingNotes(
+  notes: Array<{ path: string; title?: string; suggestedAction?: string }>,
+  confirmedThemeReasons: Map<string, string>,
+): Array<{ path: string; title?: string; suggestedAction?: string }> {
+  const firstSeen = new Map<string, number>();
+  const unique = notes.filter((note, index) => {
+    if (firstSeen.has(note.path)) {
+      return false;
+    }
+    firstSeen.set(note.path, index);
+    return true;
+  });
+  return unique.sort(
+    (a, b) =>
+      worthRereadingPriority(b, confirmedThemeReasons) -
+        worthRereadingPriority(a, confirmedThemeReasons) ||
+      (firstSeen.get(a.path) ?? 0) - (firstSeen.get(b.path) ?? 0),
+  );
+}
+
+function worthRereadingPriority(
+  note: { path: string; suggestedAction?: string },
+  confirmedThemeReasons: Map<string, string>,
+): number {
+  let priority = 0;
+  if (confirmedThemeReasons.has(note.path)) {
+    priority += 30;
+  }
+  const action = sanitizeInlineMarkdown(note.suggestedAction);
+  if (action && !isGenericWorthRereadingReason(action)) {
+    priority += action.includes("手动复核") || /manual review/iu.test(action) ? 35 : 10;
+  }
+  return priority;
+}
+
+function worthRereadingReason(
+  note: { path: string; title?: string; suggestedAction?: string },
   language: ResolvedAnnualReviewLanguage,
-  aiThemes: AiThemeInsight[] = [],
-  reviewSession?: ReviewSessionState,
+  confirmedThemeReason = "",
 ): string {
-  if (reviewSession) {
-    const candidates = reportIncludedCandidates(reviewSession);
-    if (candidates.length > 0) {
-      return (
-        candidates
-          .flatMap((candidate) => {
-            const evidence = candidate.evidence
-              .filter((item) => !item.missing)
-              .map((item) => item.sourcePath || item.target)
-              .filter(Boolean);
-            return evidence.length >= 2
-              ? [
-                  `- ${reviewCandidateLink(candidate)}: ${evidence
-                    .slice(0, 4)
-                    .map(wikiLinkPlain)
-                    .join(", ")}`,
-                ]
-              : [];
-          })
-          .join("\n") || `- ${REPORT_TEXT[language].noDataFound}`
-      );
+  const suggestedAction = sanitizeInlineMarkdown(note.suggestedAction);
+  const representativeFallback =
+    language === "zh"
+      ? "作为本范围的代表笔记重新检查。"
+      : "Revisit as a representative note from this range.";
+  if (
+    suggestedAction === representativeFallback ||
+    isGenericWorthRereadingReason(suggestedAction)
+  ) {
+    return confirmedThemeReason;
+  }
+  return suggestedAction || confirmedThemeReason;
+}
+
+function isGenericWorthRereadingReason(reason: string): boolean {
+  return /(?:补\s*2-3\s*个上下文链接后整理成输出草稿|revisit as a representative note|representative note from this range|it resurfaced in this range|重新浮现|原始语气、关系和未解决问题)/iu.test(
+    reason,
+  );
+}
+
+function isConfirmedThemeWorthRereadingReason(reason: string): boolean {
+  return /(?:支撑已确认主线|supports the confirmed theme)/iu.test(reason);
+}
+
+function reviewSessionWorthRereadingReasons(
+  reviewSession: ReviewSessionState | undefined,
+  language: ResolvedAnnualReviewLanguage,
+): Map<string, string> {
+  const reasons = new Map<string, string>();
+  if (!reviewSession) {
+    return reasons;
+  }
+  for (const candidate of reportIncludedCandidates(reviewSession).filter(
+    (item) => item.source !== "local",
+  )) {
+    const title = sanitizeInlineMarkdown(
+      reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+    );
+    const themeReason =
+      sanitizeCandidateInline(candidate, candidate.reason, language) ||
+      sanitizeCandidateInline(candidate, candidate.connectionExplanation, language);
+    const reason = worthRereadingThemeReason(title, themeReason, language);
+    if (!reason) {
+      continue;
+    }
+    for (const path of traceableReviewCandidatePaths(candidate)) {
+      if (!reasons.has(path)) {
+        reasons.set(path, reason);
+      }
     }
   }
-  if (aiThemes.length > 0) {
-    return aiThemes
-      .filter((theme) => theme.connections || theme.evidenceNotes.length > 0)
-      .slice(0, 5)
-      .map((theme) => {
-        const notes = theme.evidenceNotes.slice(0, 4).map(wikiLinkPlain).join(", ");
-        return `- ${sanitizeInlineMarkdown(theme.title)}: ${sanitizeParagraphMarkdown(
-          theme.connections,
-        )}${notes ? ` (${notes})` : ""}`;
-      })
-      .join("\n");
-  }
-  const links = aggregate.topLinks.slice(0, 5);
-  if (links.length === 0) {
-    return `- ${REPORT_TEXT[language].noDataFound}`;
-  }
-  return links.map((link) => `- ${wikiLinkPlain(link.name)}: ${link.count}`).join("\n");
+  return reasons;
 }
 
-function renderHighValueActionList(notes: HighValueNote[], emptyText: string): string {
-  if (notes.length === 0) {
-    return `- ${emptyText}`;
+function evidencePackageReviewTargets(
+  evidencePackage: ThemeEvidencePackage | undefined,
+  reviewSession: ReviewSessionState | undefined,
+  language: ResolvedAnnualReviewLanguage,
+): Array<{ path: string; title?: string; suggestedAction?: string }> {
+  if (!evidencePackage) {
+    return [];
   }
-  return notes
-    .map((note) => `- ${wikiLink(note.path, note.title)}: ${note.suggestedAction}`)
-    .join("\n");
+  const confirmedPaths = new Set(
+    reviewSession
+      ? reportIncludedCandidates(reviewSession).flatMap(traceableReviewCandidatePaths)
+      : [],
+  );
+  return evidencePackage.evidenceNotes
+    .filter((note) => !confirmedPaths.has(note.path))
+    .filter(isManualReviewEvidenceTarget)
+    .sort(sortManualReviewEvidenceTargets)
+    .slice(0, 3)
+    .map((note) => ({
+      path: note.path,
+      title: note.title,
+      suggestedAction: manualReviewTargetReason(note, language),
+    }));
 }
 
-function renderNextPeriodActions(
+function isManualReviewEvidenceTarget(note: ThemeEvidenceNote): boolean {
+  return (
+    isBackgroundEvidenceNote(note) ||
+    isProjectLikeEvidenceNote(note) ||
+    note.relatedNotes.length >= 3 ||
+    note.crossFolderLinks.length > 0
+  );
+}
+
+function isBackgroundEvidenceNote(note: ThemeEvidenceNote): boolean {
+  return note.dateSignals.length === 0 && hasRelationshipSignal(note);
+}
+
+function isProjectLikeEvidenceNote(note: ThemeEvidenceNote): boolean {
+  return /(?:^|\/)(?:projects?|areas?|resources?|reference|research|archive)\//iu.test(
+    note.path,
+  );
+}
+
+function hasRelationshipSignal(note: ThemeEvidenceNote): boolean {
+  return (
+    note.backlinks.length > 0 ||
+    note.links.length > 0 ||
+    note.commonLinks.length > 0 ||
+    note.relatedNotes.length > 0 ||
+    note.crossFolderLinks.length > 0
+  );
+}
+
+function sortManualReviewEvidenceTargets(
+  a: ThemeEvidenceNote,
+  b: ThemeEvidenceNote,
+): number {
+  return (
+    manualReviewEvidenceScore(b) - manualReviewEvidenceScore(a) ||
+    a.path.localeCompare(b.path)
+  );
+}
+
+function manualReviewEvidenceScore(note: ThemeEvidenceNote): number {
+  return (
+    (isBackgroundEvidenceNote(note) ? 30 : 0) +
+    (isProjectLikeEvidenceNote(note) ? 20 : 0) +
+    note.backlinks.length * 3 +
+    note.crossFolderLinks.length * 2 +
+    note.relatedNotes.length
+  );
+}
+
+function manualReviewTargetReason(
+  note: ThemeEvidenceNote,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const relationship = manualReviewRelationshipSummary(note, language);
+  if (language === "zh") {
+    return `手动复核：${relationship}，确认它只是背景，还是漏掉了一条应进入主线的关系。`;
+  }
+  return `Manual review: ${relationship}; decide whether this is only background context or a missed relationship that should enter the main themes.`;
+}
+
+function manualReviewRelationshipSummary(
+  note: ThemeEvidenceNote,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const signals: string[] = [];
+  if (note.dateSignals.length === 0) {
+    signals.push(
+      language === "zh"
+        ? "它不是本期直接活动笔记"
+        : "it was not directly active in this range",
+    );
+  }
+  if (note.backlinks.length > 0) {
+    signals.push(
+      language === "zh"
+        ? `被 ${note.backlinks.length} 条本期证据链接回来`
+        : `it is linked back from ${note.backlinks.length} evidence note${note.backlinks.length === 1 ? "" : "s"}`,
+    );
+  }
+  if (note.crossFolderLinks.length > 0 || isProjectLikeEvidenceNote(note)) {
+    signals.push(
+      language === "zh"
+        ? "承担跨文件夹/项目上下文"
+        : "it carries cross-folder or project context",
+    );
+  }
+  return signals.length > 0
+    ? signals.join(language === "zh" ? "，" : ", ")
+    : language === "zh"
+      ? "它带有未进入已确认主线的关系信号"
+      : "it carries relationship signals not yet used by confirmed themes";
+}
+
+function worthRereadingThemeReason(
+  title: string,
+  reason: string,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  if (!title) {
+    return "";
+  }
+  const prefix =
+    language === "zh"
+      ? `支撑已确认主线「${title}」`
+      : `Supports the confirmed theme “${title}”`;
+  if (!reason) {
+    return language === "zh"
+      ? `${prefix}，适合回到原文复核。`
+      : `${prefix}; revisit the source note to verify the evidence.`;
+  }
+  return `${prefix}: ${truncateInlineReason(reason, language === "zh" ? 72 : 120)}`;
+}
+
+function truncateInlineReason(reason: string, maxCharacters: number): string {
+  const normalized = reason.trim().replace(/\s+/gu, " ");
+  const characters = Array.from(normalized);
+  if (characters.length <= maxCharacters) {
+    return normalized;
+  }
+  return `${characters
+    .slice(0, maxCharacters - 1)
+    .join("")
+    .trim()}…`;
+}
+
+function normalizeRepeatedReportText(value: string): string {
+  return value.trim().replace(/\s+/gu, " ").toLocaleLowerCase();
+}
+
+function renderReflectionQuestions(
   aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
   aiActions: string[] = [],
   aiThemes: AiThemeInsight[] = [],
   reviewSession?: ReviewSessionState,
+  themeEvidencePackage?: ThemeEvidencePackage,
 ): string {
-  if (aiActions.length > 0) {
-    return aiActions.map((action) => `- ${action}`).join("\n");
-  }
-  const text = REPORT_TEXT[language];
-  const topTopic =
-    aiThemes[0]?.title ||
+  const aiQuestions = aiActions
+    .map((action) => sanitizeInlineMarkdown(action))
+    .filter((action) => isReflectionQuestion(action));
+  const themes =
+    reviewSession && reportIncludedCandidates(reviewSession).length > 0
+      ? reportIncludedCandidates(reviewSession)
+          .slice(0, 3)
+          .map((candidate) =>
+            sanitizeHeading(
+              reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+            ),
+          )
+      : aiThemes
+          .slice(0, 3)
+          .map((theme) => sanitizeHeading(theme.title))
+          .filter(Boolean);
+  const topic =
+    themes[0] ||
     aggregate.topicEvolution.topTopics[0]?.name ||
-    (language === "zh" ? "增长最快主题" : "the fastest-growing topic");
-  const highValueFocus = reviewSession
-    ? reportIncludedCandidates(reviewSession).slice(0, 2).map(reviewCandidateLink)
-    : [];
-  return [
-    `- ${text.mocAction(topTopic)}`,
-    `- ${aggregate.isolatedPotentialNotes.length > 0 ? text.isolatedNotesAction(aggregate.isolatedPotentialNotes.length) : text.noIsolatedNotesAction}`,
-    `- ${highValueFocus.length > 0 ? text.highValuePushAction(formatInlineList(highValueFocus, language)) : text.noHighValuePushAction}`,
-  ].join("\n");
+    (language === "zh" ? "本期最明显的主题" : "the clearest theme in this range");
+  const manualQuestions = manualReviewReflectionQuestions(
+    themeEvidencePackage,
+    reviewSession,
+    topic,
+    language,
+  );
+  const fallback = reflectionFallbackQuestions(themes, topic, language);
+  return [...aiQuestions, ...manualQuestions, ...fallback]
+    .slice(0, 5)
+    .map((question) => `- ${question}`)
+    .join("\n");
 }
 
-function renderNoteList(
-  notes: RankedNote[],
+function manualReviewReflectionQuestions(
+  evidencePackage: ThemeEvidencePackage | undefined,
+  reviewSession: ReviewSessionState | undefined,
+  _topic: string,
   language: ResolvedAnnualReviewLanguage,
-): string {
-  if (notes.length === 0) {
-    return `- ${REPORT_TEXT[language].noRepresentativeNotes}`;
+): string[] {
+  return evidencePackageReviewTargets(evidencePackage, reviewSession, language)
+    .slice(0, 2)
+    .map((note) => {
+      const link = wikiLink(note.path, readableEvidenceAlias(note.title, note.path));
+      return language === "zh"
+        ? `回到 ${link} 看：它只是本期已确认主线背后的背景索引，还是说明还有一条没有被写进主线的关系？`
+        : `Return to ${link}: is it only background context behind the confirmed themes, or does it point to a relationship that still has not made it into the main themes?`;
+    });
+}
+
+function reflectionFallbackQuestions(
+  themes: string[],
+  topic: string,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  const secondTheme = themes.find((theme) => theme !== topic);
+  if (language === "zh") {
+    return [
+      `围绕「${topic}」，今年真正变化的是你的判断标准、行动节奏，还是只是多了一套解释自己的语言？`,
+      secondTheme
+        ? `「${topic}」和「${secondTheme}」背后是否有同一个模式：你把安全感交给了工具、关系、金钱、平台或他人反馈中的哪一个？`
+        : `「${topic}」背后最难承认的取舍是什么：你想获得什么，同时又害怕失去什么？`,
+      "下次类似情境再次出现时，你要提前设定哪一个边界，才不会只在事后复盘里理解自己？",
+    ];
   }
-  return notes
-    .map(
-      (note) =>
-        `- ${wikiLink(note.path, note.title)} (${REPORT_TEXT[language].noteStats(note.words, note.characters)})`,
-    )
-    .join("\n");
+  return [
+    `Around ${topic}, did your actual standards and rhythms change, or did you mostly gain a better explanation for the same behavior?`,
+    secondTheme
+      ? `Do ${topic} and ${secondTheme} share one deeper pattern: where are you outsourcing safety to tools, relationships, money, platforms, or feedback?`
+      : `What is the hardest tradeoff behind ${topic}: what are you trying to gain, and what are you afraid to lose?`,
+    "What boundary would you set before the next similar situation, so the lesson does not only appear during the retrospective?",
+  ];
+}
+
+function isReflectionQuestion(value: string): boolean {
+  return (
+    /[?？]$/u.test(value) &&
+    !/^(?:create|add|write|turn|inspect|compare|整理|补|检查|创建|写)/iu.test(value)
+  );
 }
 
 function renderRhythm(
@@ -2135,38 +1904,13 @@ function renderRhythm(
   return text.strongestMonth(strongest?.month ?? "n/a", strongest?.words ?? 0);
 }
 
-function hasMonthData(month: MonthBucket): boolean {
-  return (
-    month.created > 0 || month.modified > 0 || month.words > 0 || month.characters > 0
-  );
-}
-
-function activePeriodMonths(months: MonthBucket[]): MonthBucket[] {
-  const lastActiveIndex = lastIndexOf(months, hasMonthData);
-  return lastActiveIndex >= 0 ? months.slice(0, lastActiveIndex + 1) : [];
-}
-
-function activePeriodDays(days: DayBucket[]): DayBucket[] {
-  const lastActiveIndex = lastIndexOf(days, hasDayData);
-  return lastActiveIndex >= 0 ? days.slice(0, lastActiveIndex + 1) : [];
-}
-
-function hasDayData(day: DayBucket): boolean {
-  return day.created > 0 || day.modified > 0 || day.words > 0 || day.characters > 0;
-}
-
-function lastIndexOf<T>(items: T[], predicate: (item: T) => boolean): number {
-  for (let index = items.length - 1; index >= 0; index -= 1) {
-    const item = items[index];
-    if (item !== undefined && predicate(item)) {
-      return index;
-    }
-  }
-  return -1;
-}
-
 function wikiLink(path: string, title: string): string {
   return `[[${path.replace(/\.md$/u, "")}|${title}]]`;
+}
+
+function wikiLinkWithAlias(target: string, heading: string, alias: string): string {
+  const normalizedTarget = `${target}${heading}`.replace(/\.md(?=#|$)/iu, "");
+  return `[[${normalizedTarget}|${alias || noteTitle(target)}]]`;
 }
 
 function normalizeNotePath(path: string): string {

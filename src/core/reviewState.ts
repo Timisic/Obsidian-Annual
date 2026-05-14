@@ -1,3 +1,4 @@
+import { assertExplanationReasonsTraceable } from "./explanationReasons";
 import type { ExplanationReason } from "./types";
 import type { ReviewSession } from "./types";
 
@@ -42,9 +43,19 @@ export interface ReviewDecision {
   createdAt: string;
 }
 
+export type ReviewCandidateGenerationMode = "ai" | "local" | "degraded-local";
+
+export interface ReviewCandidateProvenance {
+  generationMode: ReviewCandidateGenerationMode;
+  source: "ai" | "local" | "mixed" | "legacy-topic";
+  seam: "theme-evidence-package" | "topic-evolution-fallback";
+}
+
 export interface ReviewCandidate {
   id: string;
   type: ReviewCandidateType;
+  identitySignature?: string;
+  provenance?: ReviewCandidateProvenance;
   title: string;
   reason: string;
   aiSummary?: string;
@@ -173,22 +184,7 @@ export function assertCandidateHasEvidence(candidate: ReviewCandidate): void {
       `Review candidate ${candidate.id} must include at least one evidence source.`,
     );
   }
-  if (candidate.reasons.length === 0) {
-    throw new Error(
-      `Review candidate ${candidate.id} must include at least one explanation reason.`,
-    );
-  }
-  for (const reason of candidate.reasons) {
-    if (
-      !reason.sourcePath &&
-      !reason.statField &&
-      (!reason.relatedPaths || reason.relatedPaths.length === 0)
-    ) {
-      throw new Error(
-        `Review candidate ${candidate.id} has an explanation reason without traceable evidence.`,
-      );
-    }
-  }
+  assertExplanationReasonsTraceable(candidate.id, candidate.reasons);
 }
 
 export function applyReviewAction(
@@ -256,7 +252,10 @@ export function applyReviewAction(
           action: "accept",
           label: displayCandidateTitle(candidate),
           evidence: candidate.evidence,
-          includeInReport: shouldIncludeReviewDecisionInReport("accept", candidate.status),
+          includeInReport: shouldIncludeReviewDecisionInReport(
+            "accept",
+            candidate.status,
+          ),
           at: action.at,
         }),
       );
@@ -274,7 +273,10 @@ export function applyReviewAction(
           label: displayCandidateTitle(candidate),
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: shouldIncludeReviewDecisionInReport("ignore", candidate.status),
+          includeInReport: shouldIncludeReviewDecisionInReport(
+            "ignore",
+            candidate.status,
+          ),
           at: action.at,
         }),
       );
@@ -302,7 +304,10 @@ export function applyReviewAction(
           label: candidate.userTitle,
           note: action.note,
           evidence: candidate.evidence,
-          includeInReport: shouldIncludeReviewDecisionInReport("rename", candidate.status),
+          includeInReport: shouldIncludeReviewDecisionInReport(
+            "rename",
+            candidate.status,
+          ),
           at: action.at,
         }),
       );
@@ -336,9 +341,7 @@ export function mergeScannedCandidates(
   themeGeneration?: ReviewSessionState["themeGeneration"],
   availableSourcePaths: string[] = [],
 ): ReviewSessionState {
-  const scanHasAiThemes = scannedCandidates.some(
-    (candidate) => candidate.source === "ai",
-  );
+  const scanHasAiThemes = scannedCandidates.some(isAiGeneratedReviewCandidate);
   const availableEvidencePaths = new Set(
     [
       ...scannedCandidates.flatMap((candidate) => traceableCandidatePaths(candidate)),
@@ -358,7 +361,7 @@ export function mergeScannedCandidates(
       if (!scanned) {
         return storedCandidate.status === "candidate" ||
           isLegacyThinCandidate(storedCandidate) ||
-          (scanHasAiThemes && storedCandidate.source !== "ai")
+          (scanHasAiThemes && !isAiGeneratedReviewCandidate(storedCandidate))
           ? undefined
           : markMissingEvidence(storedCandidate, updatedAt, availableEvidencePaths);
       }
@@ -513,6 +516,11 @@ function findEvidenceOverlapMatch(
   storedCandidate: ReviewCandidate,
   scannedById: Map<string, ReviewCandidate>,
 ): ReviewCandidate | undefined {
+  const signatureMatch = findIdentitySignatureMatch(storedCandidate, scannedById);
+  if (signatureMatch) {
+    return signatureMatch;
+  }
+
   let bestMatch: ReviewCandidate | undefined;
   let bestScore = 0;
   let hasAmbiguousBestMatch = false;
@@ -538,6 +546,30 @@ function findEvidenceOverlapMatch(
   }
 
   return hasAmbiguousBestMatch ? undefined : bestMatch;
+}
+
+function findIdentitySignatureMatch(
+  storedCandidate: ReviewCandidate,
+  scannedById: Map<string, ReviewCandidate>,
+): ReviewCandidate | undefined {
+  if (!storedCandidate.identitySignature) {
+    return undefined;
+  }
+
+  let match: ReviewCandidate | undefined;
+  for (const scannedCandidate of scannedById.values()) {
+    if (
+      storedCandidate.type !== scannedCandidate.type ||
+      storedCandidate.identitySignature !== scannedCandidate.identitySignature
+    ) {
+      continue;
+    }
+    if (match) {
+      return undefined;
+    }
+    match = scannedCandidate;
+  }
+  return match;
 }
 
 function evidencePathOverlap(
@@ -654,5 +686,12 @@ function isLegacyThinCandidate(candidate: ReviewCandidate): boolean {
     !candidate.aiSummary &&
     !candidate.connectionExplanation &&
     (!candidate.localSignals || candidate.localSignals.length === 0)
+  );
+}
+
+function isAiGeneratedReviewCandidate(candidate: ReviewCandidate): boolean {
+  return (
+    candidate.provenance?.generationMode === "ai" ||
+    (!candidate.provenance && candidate.source === "ai")
   );
 }

@@ -10,7 +10,7 @@ Obsidian Time Range Review is an AI-assisted review plugin that helps users redi
 它支持 Annual、Quarterly、Monthly 和 Custom Range Review Session，
 从用户指定范围内的 Markdown 笔记中编译 Evidence Package，
 由 AI 或本地规则生成需要用户复核的 semantic Theme Hypotheses，
-并把用户确认后的主题、证据、连接解释和活动证据写入可追溯、可编辑、可重复生成的 Markdown Review Report。
+并把用户确认后的主题写成可追溯、可编辑、可重复生成的叙事型 Markdown Review Report。
 
 核心体验是 Theme Review Workflow，不是统计面板，也不是一次性 AI 自动总结生成器。
 AI 是核心分析层：它基于受控证据包提出主题假设、解释跨笔记关系、标注不确定性；
@@ -25,6 +25,7 @@ AI 是核心分析层：它基于受控证据包提出主题假设、解释跨�
 - AI 受控优先：AI 只能处理用户确认范围内的证据包、provider 或本地 CLI 路径必须显式选择，避免不受控的全 vault 总结。
 - 图表证据优先：图表用于说明 activity rhythm、writing bursts、dormant periods 和主题形成的时间背景，不作为产品主身份。
 - 用户判断优先：主题假设需要用户复核；未经确认不得写成用户结论。
+- 叙事报告优先：默认 Review Report 是面向重读的段落式复盘，不是 Review Board 审计导出或字段式 AI 报告。
 - 本地与可回滚优先：默认无网络；不覆盖用户编辑；生成内容可备份、可 diff、可复核。
 
 ## 3. 目标用户与痛点
@@ -179,16 +180,30 @@ Annual Reviews/2026-03 Review.md
 Annual Reviews/2026-03-01 to 2026-04-15 Review.md
 ```
 
-报告结构：
+默认报告形态是 Narrative Review Report / 叙事型复盘报告。它适用于 Annual、Quarterly、Monthly 和 Custom Range；范围越短，主题数量可以越少，但不得为凑数把弱线索包装成主线。
 
-- YAML frontmatter：preset、startDate、endDate、生成时间、扫描范围、隐私模式、插件版本。
-- Methodology：本次扫描了什么、排除了什么、是否使用 AI、哪些内容由用户确认。
-- Confirmed Themes：用户接受或改名后的主题，包含解释和 Evidence Notes。
-- Rediscovered Notes：被重新带回眼前的关键证据笔记。
-- Connection Explanations：主题内笔记关系说明。
-- User Reflection：用户手写区，保留给个人叙事和补充。
-- Activity Evidence Charts：活动节奏、写作爆发、沉寂阶段和主题形成背景的图表证据。
-- Regeneration Notes：说明哪些区块可再生、哪些区块由用户维护。
+推荐结构：
+
+- YAML frontmatter：preset、startDate、endDate、生成时间、隐私模式、插件版本等机器可读元数据。
+- Overview / 总览：用 2-4 段说明这个时间范围的总体变化、主要张力和最值得记住的东西。
+- Activity Rhythm / 年度节奏或阶段节奏：保留累计增长、月度/阶段增长、热力图和主题演化等图表；每张图只配一句人话解释。
+- Main Themes / 主要主线：默认 3-5 条强主线；月度或短自定义范围可以少于 3 条。每条主线使用段落式叙事，保留源笔记的语气和关键词，但必须有清楚逻辑。
+- Representative Evidence / 代表证据：每条主线只保留 2-4 条代表 Evidence Note 链接，每条链接使用人话 alias 和极短说明。
+- Worth Rereading / 值得重读的笔记：3-7 条被重新带回眼前的关键笔记，说明为什么值得重读；不得写成自动任务建议。
+- Reflection Questions / 留给自己的问题：3-5 个继续思考的问题，不写成 action items 或下一步待办。
+- User Reflection / 我的补充：用户手写区，保留给个人补记，重新生成不得覆盖。
+- Methodology / 方法与数据口径：只保留极短人话说明，解释时间范围、证据来源、AI 使用边界和主题需用户确认；不列出扫描目录、排除目录、snapshot、语言或 frontmatter 计数等详细技术口径。
+
+主题渲染规则：
+
+- 主题标题使用普通 Markdown 标题，不使用 wikilink；标题优先来自用户在 Review Board 中接受或重命名后的名称。
+- 正文使用克制、自然、解释性的复盘叙事；可以少量出现“我”，但不伪装成用户亲手写的全文自述。
+- 不出现字段式标签：`AI 总结`、`为什么这个主题存在`、`连接解释`、`本地信号`、`复核提示`、`合并来源`。
+- Connection Explanation 应吸收到主题段落里，而不是作为独立字段。
+- 可以少量吸收原笔记短语来保留文字气质；默认不做大段原文摘录。
+- 正文中的 Obsidian wikilinks 必须带可读 alias；目标路径必须准确，alias 可以为报告语境生成，但不得把证据笔记改写成过度结论。
+- 标准报告默认可以保留人名、关系、金钱等敏感细节；只有显式隐私选择才做去标识化或摘要化处理。
+- 完整 Evidence Notes、本地信号、隐藏连接簇、合并来源、创建/修改时间、实体、反链和出链属于 Evidence Audit；默认保留在 Review Board 或插件状态中，不写入普通报告，也不作为普通附录。
 
 AI 是主题假设和关系解释的核心分析层，但必须受证据包和用户选择的 provider / local CLI path 约束。
 AI 输出需要绑定源笔记、摘录和可复核理由；它可以在用户确认后帮助组织报告文字，
@@ -352,6 +367,8 @@ candidate
 
 <!-- review:generated:end section="confirmed-themes" -->
 
+## 我的补充
+
 <!-- review:user:start section="reflection" -->
 
 用户写作区
@@ -378,6 +395,7 @@ candidate
 - 不读取 vault 外部文件。
 - 不扫描排除范围。
 - 不把生成出的报告再次作为下一轮输入。
+- 不默认改写或删除源证据中的人名、关系和金钱细节；这些细节是复盘真实性的一部分。
 
 AI opt-in 模式：
 
@@ -390,17 +408,17 @@ AI opt-in 模式：
 
 ## 9. 失败场景
 
-| 场景                     | 风险              | 处理                                   |
-| ------------------------ | ----------------- | -------------------------------------- |
-| vault 很大导致扫描慢     | 用户以为卡死      | 展示进度、允许取消、保留已扫描结果     |
-| include/exclude 配置错误 | 主题不可信        | 在报告方法说明中列出扫描范围和排除范围 |
-| metadata cache 不完整    | 链接/标签证据缺失 | 标注证据来源，允许重建索引             |
-| 证据簇质量差             | 主题假设牵强      | 展示信号来源、不确定性和忽略操作       |
-| 重复主题过多             | 审核成本高        | 支持合并、改名和批量忽略               |
-| AI 输出失败或不可解析    | 主题生成中断      | 回退本地规则或保留证据等待重试         |
-| 重新生成遇到用户编辑     | 内容丢失          | 只替换 generated 区块，必要时写副本    |
-| 目标文件被外部同步修改   | 覆盖冲突          | 比较 mtime/hash，提示 diff 或新副本    |
-| 源笔记被删除或移动       | 证据链接失效      | 标注 missing evidence，允许重新扫描    |
+| 场景                     | 风险              | 处理                                                                  |
+| ------------------------ | ----------------- | --------------------------------------------------------------------- |
+| vault 很大导致扫描慢     | 用户以为卡死      | 展示进度、允许取消、保留已扫描结果                                    |
+| include/exclude 配置错误 | 主题不可信        | 在 Review Board / session metadata 中暴露范围配置，报告只保留短版口径 |
+| metadata cache 不完整    | 链接/标签证据缺失 | 标注证据来源，允许重建索引                                            |
+| 证据簇质量差             | 主题假设牵强      | 展示信号来源、不确定性和忽略操作                                      |
+| 重复主题过多             | 审核成本高        | 支持合并、改名和批量忽略                                              |
+| AI 输出失败或不可解析    | 主题生成中断      | 回退本地规则或保留证据等待重试                                        |
+| 重新生成遇到用户编辑     | 内容丢失          | 只替换 generated 区块，必要时写副本                                   |
+| 目标文件被外部同步修改   | 覆盖冲突          | 比较 mtime/hash，提示 diff 或新副本                                   |
+| 源笔记被删除或移动       | 证据链接失效      | 标注 missing evidence，允许重新扫描                                   |
 
 ## 10. 非目标
 
@@ -445,6 +463,6 @@ npm run release:check
 2. 运行重建索引。
 3. 查看 Theme Hypotheses、Evidence Notes、Connection Explanation 和不确定性说明。
 4. 接受、改名、合并或忽略若干主题假设。
-5. 生成 Review Report，确认报告包含方法说明、证据链接、已确认主题和用户手写区。
+5. 生成 Review Report，确认报告以段落式叙事呈现已确认主题，包含活动图表、带 alias 的代表证据链接、极短方法说明和用户手写区。
 6. 编辑用户手写区，重新生成，确认手写内容仍在。
 7. 默认设置下确认没有外部网络请求。

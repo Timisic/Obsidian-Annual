@@ -480,13 +480,13 @@ describe("aggregation and rendering", () => {
 
     const markdown = renderAnnualReview(aggregate);
     expect(markdown).not.toContain("- [[Projects/Research.md]]: 4");
-    expect(markdown).toContain("## Reviewed theme hypotheses");
+    expect(markdown).toContain("## Main Themes");
   });
 
   it("renders the annual review with required plain Markdown sections", async () => {
     const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
     const markdown = renderAnnualReview(aggregate);
-    expect(markdown).toContain("# Review Report: 2026 Annual Review");
+    expect(markdown).toContain("# 2026 Annual Review");
     expect(markdown).toMatch(/^---\ngenerated: ".+"\nyear: 2026/u);
     expect(markdown).toContain("cssclasses:\n  - p-indent");
     expect(markdown).toContain('growth_data_source: "current-vault inference"');
@@ -497,17 +497,17 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("Included scope:");
     expect(markdown).not.toContain("Excluded scope:");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## Review Range",
-      "## Activity Evidence",
-      "## Reviewed theme hypotheses",
-      "## Rediscovered Notes",
-      "## Hidden Connections",
-      "## Reflection Prompts",
-      "## Data Methodology",
+      "## Overview",
+      "## Activity Rhythm",
+      "## Main Themes",
+      "## Worth Rereading",
+      "## Reflection Questions",
+      "## User Reflection",
+      "## Methodology",
     ]);
-    expect(markdown).toContain("| Total new words |");
-    expect(markdown).toContain("| Writing days |");
-    expect(markdown).toContain("| Longest writing streak |");
+    expect(markdown).toContain("Activity Evidence shows");
+    expect(markdown).not.toContain("| Writing days |");
+    expect(markdown).not.toContain("| Longest writing streak |");
     expect(markdown).toContain("### Cumulative Growth");
     expect(markdown).toContain(
       'class="annual-review-chart annual-review-daily-cumulative"',
@@ -517,7 +517,7 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-heatmap"');
     expect(markdown).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(markdown).toContain("<rect");
-    expect(markdown).toContain("| Month | Words | Active days | Peak day |");
+    expect(markdown).not.toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("Legend: . = 0 words");
     expect(markdown).not.toMatch(/[░▒▓█]/u);
     expect(markdown).not.toContain("## Word Growth Trend");
@@ -534,9 +534,9 @@ describe("aggregation and rendering", () => {
     );
     expect(markdown).not.toContain("| Topic | Added words | New notes | Updated notes |");
     expect(markdown).not.toContain("### Feedback Signals");
-    expect(markdown).toContain("### Activity Reading");
-    expect(markdown).toContain("Writing appeared on");
-    expect(markdown).toContain("Writing volume is concentrated");
+    expect(markdown).not.toContain("### Activity Reading");
+    expect(markdown).not.toContain("Writing appeared on");
+    expect(markdown).not.toContain("Writing volume is concentrated");
     expect(markdown).not.toContain("Tasks completed");
     expect(markdown).not.toContain("## Tasks And Project Notes");
     expect(markdown).not.toContain("## Year Totals");
@@ -544,9 +544,9 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("## Top Tags");
     expect(markdown).not.toContain("## Top Links");
     expect(markdown).not.toContain("## Top Folders");
-    expect(markdown).toContain("## Reviewed theme hypotheses");
-    expect(markdown).toContain("No reviewed Theme Hypotheses are ready");
-    expect(markdown).not.toContain("### Reviewed theme hypotheses");
+    expect(markdown).toContain("## Main Themes");
+    expect(markdown).toContain("No Review Board state is available");
+    expect(markdown).not.toContain("### Main Themes");
     expect(markdown).not.toContain("### Output-ready notes");
     expect(markdown).not.toContain("### Notes needing maintenance");
     expect(markdown).not.toContain("| Note | Type | Value reason | Suggested action |");
@@ -566,11 +566,15 @@ describe("aggregation and rendering", () => {
     expect(markdown).not.toContain("score");
     expect(markdown).not.toContain("## Representative Notes");
     expect(markdown).not.toContain("Representative notes are selected deterministically");
-    expect(markdown).toContain("## Data Methodology");
+    expect(markdown).toContain("## Methodology");
     expect(markdown).not.toContain("## Suggested Next-Year Actions");
-    expect(markdown).toContain("## Reflection Prompts");
-    expect(markdown).toContain("- Create a compact index");
-    expect(markdown).toContain("- No extra theme-hypothesis prompt is available");
+    expect(markdown).toContain("## Reflection Questions");
+    expect(markdown).toContain(
+      "What boundary would you set before the next similar situation",
+    );
+    expect(markdown).not.toContain("Which Evidence Notes now seem more worth rereading");
+    expect(markdown).not.toContain("- Create a compact index");
+    expect(markdown).not.toContain("- No extra theme-hypothesis prompt is available");
   });
 
   it("warns when annual activity dates are filesystem-only", () => {
@@ -589,9 +593,9 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
 
     expect(markdown).toContain(
-      "- 活动日期来源: frontmatter date: 0; 路径/文件名日期: 0; 文件系统时间戳: 1",
+      'activity_date_sources: "frontmatter date: 0; 路径/文件名日期: 0; 文件系统时间戳: 1"',
     );
-    expect(markdown).toContain(
+    expect(markdown).not.toContain(
       "本次活动日期只能使用文件系统 ctime/mtime。如果这些文件经过复制、checkout 或批量部署",
     );
   });
@@ -601,9 +605,9 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
 
     expect(markdown).toContain('growth_data_source: "current-vault inference"');
-    expect(markdown).toContain("Data Methodology");
-    expect(markdown).toContain("current vault inference");
-    expect(markdown).toContain("not a historical word-count delta");
+    expect(markdown).toContain("Methodology");
+    expect(markdown).toContain("Activity rhythm comes from Markdown Evidence Notes");
+    expect(markdown).toContain("complete Evidence Audit material stays");
   });
 
   it("renders historical snapshot statistics when comparable snapshots are available", async () => {
@@ -631,8 +635,8 @@ describe("aggregation and rendering", () => {
     const markdown = renderAnnualReview(aggregate);
 
     expect(markdown).toContain('growth_data_source: "historical snapshot statistics"');
-    expect(markdown).toContain("Growth data source: historical snapshot statistics");
-    expect(markdown).toContain("- Snapshot word delta:");
+    expect(markdown).toContain("Activity rhythm uses plugin snapshots");
+    expect(markdown).not.toContain("- Snapshot word delta:");
     expect(markdown).not.toContain("Snapshot baseline");
     expect(markdown).not.toContain("Current snapshot");
     expect(markdown).not.toContain("2026-01-01T00:00:00.000Z");
@@ -653,15 +657,15 @@ describe("aggregation and rendering", () => {
     );
     const markdown = renderAnnualReview(aggregate, { language: "zh" });
     expect(markdown).toContain('report_language: "zh"');
-    expect(markdown).toContain("# 回顾报告：2026 年度回顾");
+    expect(markdown).toContain("# 2026 年度回顾");
     expect(markdown.match(/^## .+$/gmu)).toEqual([
-      "## 回顾范围",
-      "## 活动证据",
-      "## 已复核主题假设",
-      "## 重新发现的笔记",
-      "## 隐藏连接",
-      "## 复盘提示",
-      "## 数据口径",
+      "## 总览",
+      "## 年度节奏",
+      "## 主要主线",
+      "## 值得重读的笔记",
+      "## 留给自己的问题",
+      "## 我的补充",
+      "## 方法与数据口径",
     ]);
     expect(markdown).toContain("### 累计增长");
     expect(markdown).toContain(
@@ -673,14 +677,16 @@ describe("aggregation and rendering", () => {
     expect(markdown).toContain('class="annual-review-chart annual-review-growth"');
     expect(markdown).not.toContain("## 主题演化");
     expect(markdown).not.toContain("### 反馈信号");
-    expect(markdown).toContain("## 已复核主题假设");
-    expect(markdown).toContain("还没有可写入年报的主题假设");
+    expect(markdown).toContain("## 主要主线");
+    expect(markdown).toContain("还没有 Review Board 状态可确认主题");
     expect(markdown).not.toContain("### 可输出笔记");
     expect(markdown).not.toContain("### 需维护笔记");
-    expect(markdown).toContain("## 复盘提示");
+    expect(markdown).toContain("## 留给自己的问题");
     expect(markdown).not.toContain("## 年度统计");
     expect(markdown).not.toContain("## 月度时间线");
     expect(markdown).not.toContain("代表笔记采用确定性规则选择");
+    expect(markdown).not.toContain("补 2-3 个上下文链接后整理成输出草稿");
+    expect(markdown).not.toContain("作为本范围的代表笔记重新检查");
   });
 
   it("renders AI-synthesized themes and review-candidate reasons when AI enhancements are present", async () => {
@@ -712,18 +718,18 @@ describe("aggregation and rendering", () => {
       },
     });
 
-    expect(markdown).toContain("## Hidden Connections");
+    expect(markdown).toContain("## Reflection Questions");
     expect(markdown).toContain("Research review loop");
-    expect(markdown).toContain("[[Daily/2026-01-01]]");
+    expect(markdown).not.toContain("[[Daily/2026-01-01]]");
     expect(markdown).not.toContain("| Theme |");
     expect(markdown).not.toContain(
       "| Note | Type | AI value reason | Suggested action |",
     );
-    expect(markdown).toContain("#### [[Projects/Research|Research]]");
-    expect(markdown).toContain(
+    expect(markdown).not.toContain("#### [[Projects/Research|Research]]");
+    expect(markdown).not.toContain(
       "This note links source evidence back to the project synthesis",
     );
-    expect(markdown).toContain("- Create a review hub from [[Projects/Research]].");
+    expect(markdown).not.toContain("- Create a review hub from [[Projects/Research]].");
     expect(markdown).not.toContain("### Feedback Signals");
   });
 
@@ -746,7 +752,7 @@ describe("aggregation and rendering", () => {
       "![[Annual Reviews/2026 Annual Review Assets/topic-evolution.svg|Topic evolution|900]]",
     );
     expect(markdown).not.toContain("<svg");
-    expect(markdown).toContain("| Month | Words | Active days | Peak day |");
+    expect(markdown).not.toContain("| Month | Words | Active days | Peak day |");
     expect(markdown).not.toContain("| Month | Word growth | Cumulative words |");
 
     expect(chartAssets).toHaveLength(5);
@@ -962,7 +968,7 @@ describe("aggregation and rendering", () => {
       ],
     });
 
-    expect(markdown).toContain("No reviewed Theme Hypotheses are ready");
+    expect(markdown).toContain("No Review Board state is available");
     expect(markdown).not.toContain(
       "No auditable evidence was generated for this candidate",
     );
@@ -976,10 +982,11 @@ describe("aggregation and rendering", () => {
     const reviewSession = reviewSessionFixture();
     const markdown = renderAnnualReview(aggregate, { reviewSession });
 
-    expect(markdown).toContain("### Reviewed theme hypotheses");
-    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
-    expect(markdown).toContain("#### [[Projects/Renamed|Renamed Topic]]");
-    expect(markdown).toContain("Merged from:");
+    expect(markdown).toContain("## Main Themes");
+    expect(markdown).toContain("### Accepted Topic");
+    expect(markdown).toContain("### Renamed Topic");
+    expect(markdown).not.toContain("Merged source themes do not appear independently:");
+    expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]]");
     expect(markdown).not.toContain("Ignored Topic");
     expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("Unreviewed Topic");
@@ -996,13 +1003,234 @@ describe("aggregation and rendering", () => {
       reviewSession: reviewSessionFixture(),
     });
 
-    expect(markdown).toContain("### 已复核主题假设");
-    expect(markdown).toContain("#### [[Projects/Accepted|Accepted Topic]]");
-    expect(markdown).toContain("合并来源:");
+    expect(markdown).toContain("## 主要主线");
+    expect(markdown).toContain("### Accepted Topic");
+    expect(markdown).not.toContain("合并来源");
     expect(markdown).not.toContain("Ignored Topic");
     expect(markdown).not.toContain("[[Projects/Merged|Merged Topic]] (merged)");
     expect(markdown).not.toContain("下面 4 个已审核候选");
     expect(markdown).not.toContain("人工确认:");
+    expect(markdown).not.toContain("因此，这条主线在报告里应该被当作一个初步成形的解释");
+    expect(markdown).not.toContain("把这些代表笔记串起来看");
+  });
+
+  it("uses long AI report narratives without adding generic fallback prose", async () => {
+    const evidencePaths = [
+      "2026月复盘/2月/2026-02-22 AI越来越快.md",
+      "2026月复盘/3月/2026-03-04 ALL-in-AI.md",
+      "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+      "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+    ];
+    const aggregate = buildYearAggregate(
+      evidencePaths.map((path, index) =>
+        sourceFrom({
+          path,
+          ctime: `2026-0${Math.min(index + 2, 4)}-0${index + 1}T08:00:00.000Z`,
+          mtime: `2026-0${Math.min(index + 2, 4)}-0${index + 1}T10:00:00.000Z`,
+          content: "AI agency tools pressure workflow context ".repeat(80),
+        }),
+      ),
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const aiReportNarrative =
+      "这一条主线关注的是自己如何在 AI 加速里重新夺回主导权。" +
+      "[[2026月复盘/2月/2026-02-22 AI越来越快|AI越来越快]] 先把 AI 放在长期变量里，提醒自己不能只把它当成临时工具，而要看见它会持续改变学习、写作、编码和判断方式。" +
+      "到 [[2026月复盘/3月/2026-03-04 ALL-in-AI|ALL in AI]]，这种观察已经转成投入姿态：愿意把时间、注意力和试错额度都压到这个方向上。" +
+      "但 [[2026月复盘/4月/2026-04-04 懵逼同时有AI压力感|懵逼同时有AI压力感]] 又把另一面写出来，工具越强，越容易让人被速度、信息密度和新范式推着走。" +
+      "[[2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能|探索期有充足额度才有更多可能]] 则把问题推进到资源、额度、账号稳定性和实验空间。" +
+      "把这些笔记放在一起看，年度主线不是简单的工具热情，而是一次关于判断流程、上下文管理和工作边界的训练：既要拥抱 AI 带来的放大效应，也要避免把安全感完全交给工具速度。" +
+      "后续报告可以继续追问这种主导权是否真的变成了可复用的工作流：例如怎样拆任务、怎样保存上下文、怎样判断模型输出是否值得相信，以及怎样把一次次尝试沉淀成项目资产。" +
+      "这样写既保留了四篇证据笔记里的现场感，也把年度复盘从“我用过哪些 AI 工具”推进到“我如何重新组织自己的学习和生产系统”。";
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("ai", "AI 主导权", "accepted", {
+        aiSummary: aiReportNarrative,
+        connectionExplanation: "这些笔记共同呈现 AI 工具投入、压力和资源边界。",
+        reason: "AI 工具从机会变成压力，也迫使自己重新设计判断流程。",
+        uncertainty: "后续是否沉淀成稳定工作流仍需继续观察。",
+        evidence: evidencePaths.map((path) => ({
+          id: path,
+          kind: "note",
+          label: path.split("/").pop()?.replace(/\.md$/u, "") ?? path,
+          target: path,
+          sourcePath: path,
+        })),
+        sourcePaths: evidencePaths,
+      }),
+    ];
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const reviewSection = sectionBetween(markdown, "## 主要主线", "## 值得重读的笔记");
+
+    expect(reviewSection).toContain("### AI 主导权");
+    expect(reviewSection).toContain(
+      "这一条主线关注的是自己如何在 AI 加速里重新夺回主导权。",
+    );
+    expect(reviewSection).toContain("后续是否沉淀成稳定工作流仍需继续观察。");
+    expect(reviewSection).not.toContain("把这些代表笔记串起来看");
+    expect(reviewSection).not.toContain("因此，这条主线在报告里应该");
+    expect(reviewSection).not.toContain("这些笔记共同呈现 AI 工具投入、压力和资源边界");
+    expect(reviewSection).not.toContain("AI 工具从机会变成压力");
+  });
+
+  it("uses compact link-rich AI narratives without adding field-style scaffolding", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("compact", "AI 主导权", "accepted", {
+        aiSummary:
+          "这条主线不是简单记录工具使用，而是在问自己能否重新拿回判断权。" +
+          "[[Review Fixtures/2026-01-01|第一篇证据]] 先把 AI 当作效率入口，说明自己正在寻找更稳的工作流；" +
+          "[[Projects/Research|研究项目]] 又把问题推进到真实项目里，提醒自己不能只依赖模型给出的功能清单。" +
+          "两篇放在一起看，重要变化是从追工具转向追问标准、边界和人的取舍。" +
+          "它已经足够像一段报告正文，因为它说明了变化、张力和未完成的问题，而不是只列出标签。" +
+          "后续仍要验证这些想法是否能沉淀为可复用流程。",
+        connectionExplanation: "这些笔记共同呈现 AI 工具投入、压力和资源边界。",
+        reason: "AI 工具从机会变成压力，也迫使自己重新设计判断流程。",
+        uncertainty: "后续是否沉淀成稳定工作流仍需继续观察。",
+      }),
+    ];
+
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const reviewSection = sectionBetween(markdown, "## 主要主线", "## 值得重读的笔记");
+
+    expect(reviewSection).toContain("这条主线不是简单记录工具使用");
+    expect(reviewSection).toContain("后续是否沉淀成稳定工作流仍需继续观察。");
+    expect(reviewSection).not.toContain("这些笔记共同呈现 AI 工具投入、压力和资源边界");
+    expect(reviewSection).not.toContain("AI 工具从机会变成压力");
+    expect(markdown).toContain("这版只保留 Review Board 已确认主题");
+    expect(markdown).not.toContain("如果启用总结生成");
+  });
+
+  it("explains worth-rereading notes with confirmed theme context", () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "Projects/AI工作流.md",
+          ctime: "2026-02-01T08:00:00.000Z",
+          mtime: "2026-04-01T08:00:00.000Z",
+          content:
+            "# AI工作流\n[[Projects/标准判断]]\nAI 工具、主导权和判断标准反复出现。\n" +
+            repeatedWords(360),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("ai", "AI 主导权", "accepted", {
+        reason: "AI 压力和标准判断在多篇笔记间反复出现。",
+        source: "ai",
+        evidence: [
+          {
+            id: "ai-evidence",
+            kind: "note",
+            label: "AI工作流",
+            target: "Projects/AI工作流.md",
+            sourcePath: "Projects/AI工作流.md",
+          },
+        ],
+        sourcePaths: ["Projects/AI工作流.md"],
+      }),
+    ];
+
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const worthRereadingSection = sectionBetween(
+      markdown,
+      "## 值得重读的笔记",
+      "## 留给自己的问题",
+    );
+
+    expect(worthRereadingSection).toContain("[[Projects/AI工作流|AI工作流]]");
+    expect(worthRereadingSection).toContain("支撑已确认主线「AI 主导权」");
+    expect(worthRereadingSection).toContain("AI 压力和标准判断");
+  });
+
+  it("surfaces linked-context evidence notes as manual review targets", () => {
+    const files = [
+      sourceFrom({
+        path: "Daily/2026-02-01.md",
+        ctime: "2026-02-01T08:00:00.000Z",
+        mtime: "2026-02-01T09:00:00.000Z",
+        content:
+          "# Daily\n今天的研究判断重新指向 [[Projects/Research]]，但主线报告只确认了当日记录。",
+      }),
+      sourceFrom({
+        path: "Projects/Research.md",
+        ctime: "2025-10-01T08:00:00.000Z",
+        mtime: "2025-10-02T08:00:00.000Z",
+        content:
+          "---\ntags: [project, research]\n---\n# Research\n这个旧项目笔记解释了研究路径背后的背景和跨文件夹证据。",
+      }),
+      sourceFrom({
+        path: "Projects/Legacy.md",
+        ctime: "2026-05-08T08:00:00.000Z",
+        mtime: "2026-05-08T09:00:00.000Z",
+        content:
+          "---\ntags: [project]\n---\n# Legacy\n这个项目笔记在本期有活动，但还没有被任何确认主题使用。",
+      }),
+    ];
+    const session = buildCustomReviewSession({
+      startDate: "2026-01-01",
+      endDate: "2026-05-10",
+      settings: DEFAULT_SETTINGS,
+    });
+    const aggregate = buildReviewAggregate(files, session, DEFAULT_SETTINGS);
+    const themeEvidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.session = session;
+    reviewSession.candidates = [
+      reviewCandidateFixture("daily", "研究路径", "accepted", {
+        reason: "当日笔记说明研究判断正在重新聚焦。",
+        source: "ai",
+        evidence: [
+          {
+            id: "daily-evidence",
+            kind: "note",
+            label: "Daily",
+            target: "Daily/2026-02-01.md",
+            sourcePath: "Daily/2026-02-01.md",
+          },
+        ],
+        sourcePaths: ["Daily/2026-02-01.md"],
+      }),
+    ];
+
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+      themeEvidencePackage,
+    });
+    const worthRereadingSection = sectionBetween(
+      markdown,
+      "## 值得重读的笔记",
+      "## 留给自己的问题",
+    );
+    const reflectionSection = sectionBetween(
+      markdown,
+      "## 留给自己的问题",
+      "## 我的补充",
+    );
+
+    expect(worthRereadingSection).toContain("[[Projects/Research|Research]]");
+    expect(worthRereadingSection).toContain("手动复核");
+    expect(worthRereadingSection).toContain("它不是本期直接活动笔记");
+    expect(reflectionSection).toContain("[[Projects/Research|Research]]");
+    expect(reflectionSection).toContain("没有被写进主线的关系");
   });
 
   it("renders wikilink-shaped Review Board topic titles as clean report aliases", async () => {
@@ -1030,20 +1258,53 @@ describe("aggregation and rendering", () => {
       language: "zh",
       reviewSession,
     });
-    const reviewSection = sectionBetween(
-      markdown,
-      "## 已复核主题假设",
-      "## 重新发现的笔记",
-    );
+    const reviewSection = sectionBetween(markdown, "## 主要主线", "## 值得重读的笔记");
 
-    expect(reviewSection).toContain(
-      "#### [[Daily/Clippings/为什么我劝你自己搭一个 Agent，哪怕现有的已经够好了|Clippings]]",
-    );
+    expect(reviewSection).toContain("### Clippings");
     expect(reviewSection).not.toContain("|[[Clippings]]");
     expect(reviewSection).not.toMatch(/\[\[[^\]|]+\|\[\[/u);
     expect(
       parseObsidianWikilinks(reviewSection).some((link) => link.target === "Clippings"),
     ).toBe(false);
+  });
+
+  it("uses readable evidence aliases without date prefixes", async () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "2026月复盘/2月/2026-02-22 AI越来越快.md",
+          ctime: "2026-02-22T08:00:00.000Z",
+          mtime: "2026-02-22T10:00:00.000Z",
+          content: "AI tools and agency ".repeat(80),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("ai", "AI 主导权", "accepted", {
+        evidence: [
+          {
+            id: "ai-evidence",
+            kind: "note",
+            label: "2026-02-22 AI越来越快",
+            target: "2026月复盘/2月/2026-02-22 AI越来越快.md",
+            sourcePath: "2026月复盘/2月/2026-02-22 AI越来越快.md",
+            reason: "created in review range: 2026-02-22; frontmatter context present",
+          },
+        ],
+        sourcePaths: ["2026月复盘/2月/2026-02-22 AI越来越快.md"],
+      }),
+    ];
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+
+    expect(markdown).toContain("[[2026月复盘/2月/2026-02-22 AI越来越快|AI越来越快]]");
+    expect(markdown).not.toContain("|2026-02-22 AI越来越快");
+    expect(markdown).not.toContain("|2026 02 22 AI越来越快");
   });
 
   it("normalizes wikilink-shaped topic names before they enter Review Board state", async () => {

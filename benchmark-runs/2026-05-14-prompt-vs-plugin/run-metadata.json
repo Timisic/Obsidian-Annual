@@ -1,0 +1,32 @@
+{
+  "date": "2026-05-14",
+  "repoCommit": "uncommitted working tree",
+  "pluginVersion": "0.1.0",
+  "vaultSnapshot": "tests/fixtures/obsidian-smoke-vault",
+  "dateRange": {
+    "startDate": "2026-01-01",
+    "endDate": "2026-05-10"
+  },
+  "promptModel": "Codex Direct Prompt Agent in this session",
+  "pluginAiProviderModel": {
+    "provider": "benchmark provider output using optimized Evidence Package",
+    "model": "gpt-4.1"
+  },
+  "includedFolders": ["all source Markdown outside excluded folders"],
+  "excludedFolders": [
+    ".obsidian",
+    "Templates",
+    "Archive",
+    "Attachments",
+    "Annual Reviews"
+  ],
+  "generatedArtifacts": [
+    "inputs/vault-manifest.json",
+    "inputs/source-scope.md",
+    "inputs/plugin-settings.json",
+    "plugin/evidence-package.json",
+    "plugin/review-state.json",
+    "plugin/review-report.md",
+    "plugin/run-notes.md"
+  ]
+}
