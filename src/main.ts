@@ -402,6 +402,7 @@ export default class AnnualReviewPlugin extends Plugin {
         aiEnhancements,
         aiEnabled: settings.aiProvider !== "none",
         reviewSession,
+        themeEvidencePackage: evidencePackage,
       });
       progress?.update(text.progressWriting, 92);
       const report = await writeAnnualReviewOutput(

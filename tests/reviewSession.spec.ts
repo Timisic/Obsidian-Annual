@@ -1076,6 +1076,163 @@ describe("aggregation and rendering", () => {
     expect(reviewSection).not.toContain("AI 工具从机会变成压力");
   });
 
+  it("uses compact link-rich AI narratives without adding field-style scaffolding", async () => {
+    const aggregate = buildYearAggregate(await fixtureVault(), 2026, DEFAULT_SETTINGS);
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("compact", "AI 主导权", "accepted", {
+        aiSummary:
+          "这条主线不是简单记录工具使用，而是在问自己能否重新拿回判断权。" +
+          "[[Review Fixtures/2026-01-01|第一篇证据]] 先把 AI 当作效率入口，说明自己正在寻找更稳的工作流；" +
+          "[[Projects/Research|研究项目]] 又把问题推进到真实项目里，提醒自己不能只依赖模型给出的功能清单。" +
+          "两篇放在一起看，重要变化是从追工具转向追问标准、边界和人的取舍。" +
+          "它已经足够像一段报告正文，因为它说明了变化、张力和未完成的问题，而不是只列出标签。" +
+          "后续仍要验证这些想法是否能沉淀为可复用流程。",
+        connectionExplanation: "这些笔记共同呈现 AI 工具投入、压力和资源边界。",
+        reason: "AI 工具从机会变成压力，也迫使自己重新设计判断流程。",
+        uncertainty: "后续是否沉淀成稳定工作流仍需继续观察。",
+      }),
+    ];
+
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const reviewSection = sectionBetween(markdown, "## 主要主线", "## 值得重读的笔记");
+
+    expect(reviewSection).toContain("这条主线不是简单记录工具使用");
+    expect(reviewSection).toContain("后续是否沉淀成稳定工作流仍需继续观察。");
+    expect(reviewSection).not.toContain("这些笔记共同呈现 AI 工具投入、压力和资源边界");
+    expect(reviewSection).not.toContain("AI 工具从机会变成压力");
+    expect(markdown).toContain("这版只保留 Review Board 已确认主题");
+    expect(markdown).not.toContain("如果启用总结生成");
+  });
+
+  it("explains worth-rereading notes with confirmed theme context", () => {
+    const aggregate = buildYearAggregate(
+      [
+        sourceFrom({
+          path: "Projects/AI工作流.md",
+          ctime: "2026-02-01T08:00:00.000Z",
+          mtime: "2026-04-01T08:00:00.000Z",
+          content:
+            "# AI工作流\n[[Projects/标准判断]]\nAI 工具、主导权和判断标准反复出现。\n" +
+            repeatedWords(360),
+        }),
+      ],
+      2026,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.candidates = [
+      reviewCandidateFixture("ai", "AI 主导权", "accepted", {
+        reason: "AI 压力和标准判断在多篇笔记间反复出现。",
+        source: "ai",
+        evidence: [
+          {
+            id: "ai-evidence",
+            kind: "note",
+            label: "AI工作流",
+            target: "Projects/AI工作流.md",
+            sourcePath: "Projects/AI工作流.md",
+          },
+        ],
+        sourcePaths: ["Projects/AI工作流.md"],
+      }),
+    ];
+
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+    });
+    const worthRereadingSection = sectionBetween(
+      markdown,
+      "## 值得重读的笔记",
+      "## 留给自己的问题",
+    );
+
+    expect(worthRereadingSection).toContain("[[Projects/AI工作流|AI工作流]]");
+    expect(worthRereadingSection).toContain("支撑已确认主线「AI 主导权」");
+    expect(worthRereadingSection).toContain("AI 压力和标准判断");
+  });
+
+  it("surfaces linked-context evidence notes as manual review targets", () => {
+    const files = [
+      sourceFrom({
+        path: "Daily/2026-02-01.md",
+        ctime: "2026-02-01T08:00:00.000Z",
+        mtime: "2026-02-01T09:00:00.000Z",
+        content:
+          "# Daily\n今天的研究判断重新指向 [[Projects/Research]]，但主线报告只确认了当日记录。",
+      }),
+      sourceFrom({
+        path: "Projects/Research.md",
+        ctime: "2025-10-01T08:00:00.000Z",
+        mtime: "2025-10-02T08:00:00.000Z",
+        content:
+          "---\ntags: [project, research]\n---\n# Research\n这个旧项目笔记解释了研究路径背后的背景和跨文件夹证据。",
+      }),
+      sourceFrom({
+        path: "Projects/Legacy.md",
+        ctime: "2026-05-08T08:00:00.000Z",
+        mtime: "2026-05-08T09:00:00.000Z",
+        content:
+          "---\ntags: [project]\n---\n# Legacy\n这个项目笔记在本期有活动，但还没有被任何确认主题使用。",
+      }),
+    ];
+    const session = buildCustomReviewSession({
+      startDate: "2026-01-01",
+      endDate: "2026-05-10",
+      settings: DEFAULT_SETTINGS,
+    });
+    const aggregate = buildReviewAggregate(files, session, DEFAULT_SETTINGS);
+    const themeEvidencePackage = buildThemeEvidencePackage(
+      aggregate,
+      files,
+      DEFAULT_SETTINGS,
+    );
+    const reviewSession = reviewSessionFixture();
+    reviewSession.session = session;
+    reviewSession.candidates = [
+      reviewCandidateFixture("daily", "研究路径", "accepted", {
+        reason: "当日笔记说明研究判断正在重新聚焦。",
+        source: "ai",
+        evidence: [
+          {
+            id: "daily-evidence",
+            kind: "note",
+            label: "Daily",
+            target: "Daily/2026-02-01.md",
+            sourcePath: "Daily/2026-02-01.md",
+          },
+        ],
+        sourcePaths: ["Daily/2026-02-01.md"],
+      }),
+    ];
+
+    const markdown = renderAnnualReview(aggregate, {
+      language: "zh",
+      reviewSession,
+      themeEvidencePackage,
+    });
+    const worthRereadingSection = sectionBetween(
+      markdown,
+      "## 值得重读的笔记",
+      "## 留给自己的问题",
+    );
+    const reflectionSection = sectionBetween(
+      markdown,
+      "## 留给自己的问题",
+      "## 我的补充",
+    );
+
+    expect(worthRereadingSection).toContain("[[Projects/Research|Research]]");
+    expect(worthRereadingSection).toContain("手动复核");
+    expect(worthRereadingSection).toContain("它不是本期直接活动笔记");
+    expect(reflectionSection).toContain("[[Projects/Research|Research]]");
+    expect(reflectionSection).toContain("没有被写进主线的关系");
+  });
+
   it("renders wikilink-shaped Review Board topic titles as clean report aliases", async () => {
     const aggregate = buildYearAggregate(
       [

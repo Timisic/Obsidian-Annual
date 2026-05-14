@@ -13,6 +13,8 @@ import type {
   RankedMetric,
   RankedNote,
   ResolvedAnnualReviewLanguage,
+  ThemeEvidenceNote,
+  ThemeEvidencePackage,
   TopicEvolutionData,
   TopicMonthlyBucket,
   TopTopic,
@@ -26,6 +28,7 @@ interface RenderOptions {
   aiEnhancements?: AiReportEnhancements;
   aiEnabled?: boolean;
   reviewSession?: ReviewSessionState;
+  themeEvidencePackage?: ThemeEvidencePackage;
 }
 
 type MonthMetric = "created" | "modified" | "words" | "characters";
@@ -447,7 +450,12 @@ export function renderAnnualReview(
     "",
     `## ${language === "zh" ? "值得重读的笔记" : "Worth Rereading"}`,
     "",
-    renderWorthRereading(aggregate, language, reviewSession),
+    renderWorthRereading(
+      aggregate,
+      language,
+      reviewSession,
+      options.themeEvidencePackage,
+    ),
     "",
     `## ${language === "zh" ? "留给自己的问题" : "Reflection Questions"}`,
     "",
@@ -457,6 +465,7 @@ export function renderAnnualReview(
       aiEnhancements?.nextActions,
       aiEnhancements?.themeInsights,
       reviewSession,
+      options.themeEvidencePackage,
     ),
     "",
     `## ${language === "zh" ? "我的补充" : "User Reflection"}`,
@@ -512,35 +521,47 @@ function renderOverview(
   reviewSession?: ReviewSessionState,
 ): string {
   const confirmedThemes = reviewSession ? reportIncludedCandidates(reviewSession) : [];
-  const overview = renderPeriodJudgment(aggregate, language, periodJudgment);
+  const hasConfirmedThemes = confirmedThemes.length > 0;
+  const overview =
+    hasConfirmedThemes && !periodJudgment
+      ? renderCompactPeriodJudgment(aggregate, language)
+      : renderPeriodJudgment(aggregate, language, periodJudgment);
   const range =
     language === "zh"
       ? `本次 Review Session 覆盖 ${aggregate.session.startDate} 到 ${aggregate.session.endDate}（${aggregate.session.preset}）。`
       : `This Review Session covers ${aggregate.session.startDate} to ${aggregate.session.endDate} (${aggregate.session.preset}).`;
-  const themeSentence =
-    confirmedThemes.length > 0
-      ? language === "zh"
-        ? `Review Report 只写入已在 Review Board 中确认的主题；本次进入叙事正文的是 ${formatInlineList(
-            confirmedThemes.map((candidate) =>
-              sanitizeHeading(
-                reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
-              ),
+  const themeSentence = hasConfirmedThemes
+    ? language === "zh"
+      ? `这版只保留 Review Board 已确认主题：${formatInlineList(
+          confirmedThemes.map((candidate) =>
+            sanitizeHeading(
+              reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
             ),
-            language,
-          )}。`
-        : `The Review Report includes only themes confirmed in Review Board; this narrative carries ${formatInlineList(
-            confirmedThemes.map((candidate) =>
-              sanitizeHeading(
-                reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
-              ),
+          ),
+          language,
+        )}。`
+      : `This version keeps only Review Board-confirmed themes: ${formatInlineList(
+          confirmedThemes.map((candidate) =>
+            sanitizeHeading(
+              reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
             ),
-            language,
-          )}.`
-      : language === "zh"
-        ? "当前还没有已接受或重命名的主题进入报告；可以先把这一版当作活动节奏和待复核证据的阅读底稿。"
-        : "No accepted or renamed themes have entered the report yet; use this version as activity context until Review Board decisions are made.";
+          ),
+          language,
+        )}.`
+    : language === "zh"
+      ? "当前还没有已接受或重命名的主题进入报告；可以先把这一版当作活动节奏和待复核证据的阅读底稿。"
+      : "No accepted or renamed themes have entered the report yet; use this version as activity context until Review Board decisions are made.";
 
   return [range, overview, themeSentence].join("\n\n");
+}
+
+function renderCompactPeriodJudgment(
+  aggregate: YearAggregate,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  return language === "zh"
+    ? `新增 ${formatInteger(aggregate.totalWords)} 个字词，分布在 ${aggregate.activeDays} 个写作日；重点不是活动量本身，而是这些笔记怎样把反复出现的判断、场景、风险、关系和状态线索串成可复核的主线。`
+    : `${formatInteger(aggregate.totalWords)} new words across ${aggregate.activeDays} writing days; the useful signal is not volume alone, but how repeated judgments, contexts, risks, relationships, and state changes become reviewable themes.`;
 }
 
 function renderReviewRange(
@@ -1522,12 +1543,12 @@ function isReportReadyNarrative(
     const plainCharacters = Array.from(plainText.replace(/\s+/gu, "")).length;
     const rawCharacters = Array.from(paragraph.replace(/\s+/gu, "")).length;
     return (
-      (plainCharacters >= 400 || rawCharacters >= 500) &&
+      (plainCharacters >= 180 || rawCharacters >= 240) &&
       (wikilinkCount >= 2 || plainCharacters >= 650)
     );
   }
   const words = plainText.match(/[\p{L}\p{N}'-]+/gu)?.length ?? 0;
-  return words >= 180 && (wikilinkCount >= 2 || words >= 260);
+  return words >= 90 && (wikilinkCount >= 2 || words >= 260);
 }
 
 function plainNarrativeText(markdown: string): string {
@@ -1821,6 +1842,7 @@ function renderWorthRereading(
   aggregate: YearAggregate,
   language: ResolvedAnnualReviewLanguage,
   reviewSession?: ReviewSessionState,
+  themeEvidencePackage?: ThemeEvidencePackage,
 ): string {
   const blockedPaths = new Set(
     reviewSession?.candidates
@@ -1829,26 +1851,37 @@ function renderWorthRereading(
       )
       .flatMap((candidate) => candidate.sourcePaths) ?? [],
   );
-  const notes = [
-    ...aggregate.maintenanceNotes,
-    ...aggregate.isolatedPotentialNotes,
-    ...aggregate.representativeNotes.map((note) => ({
-      path: note.path,
-      title: note.title,
-      suggestedAction:
-        language === "zh"
-          ? "作为本范围的代表笔记重新检查。"
-          : "Revisit as a representative note from this range.",
-    })),
-  ]
-    .filter((note) => !blockedPaths.has(note.path))
-    .slice(0, 6);
+  const confirmedThemeReasons = reviewSessionWorthRereadingReasons(
+    reviewSession,
+    language,
+  );
+  const evidenceTargets = evidencePackageReviewTargets(
+    themeEvidencePackage,
+    reviewSession,
+    language,
+  );
+  const notes = prioritizedWorthRereadingNotes(
+    [
+      ...aggregate.maintenanceNotes,
+      ...aggregate.isolatedPotentialNotes,
+      ...aggregate.representativeNotes.map((note) => ({
+        path: note.path,
+        title: note.title,
+        suggestedAction:
+          language === "zh"
+            ? "作为本范围的代表笔记重新检查。"
+            : "Revisit as a representative note from this range.",
+      })),
+      ...evidenceTargets,
+    ].filter((note) => !blockedPaths.has(note.path)),
+    confirmedThemeReasons,
+  ).slice(0, 6);
   if (notes.length === 0) {
     return `- ${REPORT_TEXT[language].noDataFound}`;
   }
   const rows = notes.map((note) => ({
     note,
-    reason: worthRereadingReason(note, language),
+    reason: worthRereadingReason(note, language, confirmedThemeReasons.get(note.path)),
   }));
   const reasonCounts = rows.reduce((counts, row) => {
     const key = normalizeRepeatedReportText(row.reason);
@@ -1860,15 +1893,53 @@ function renderWorthRereading(
   return rows
     .map(({ note, reason }) => {
       const link = wikiLink(note.path, readableEvidenceAlias(note.title, note.path));
-      const repeated = (reasonCounts.get(normalizeRepeatedReportText(reason)) ?? 0) > 1;
+      const repeated =
+        (reasonCounts.get(normalizeRepeatedReportText(reason)) ?? 0) > 1 &&
+        !isConfirmedThemeWorthRereadingReason(reason);
       return `- ${link}${reason && !repeated ? `: ${reason}` : ""}`;
     })
     .join("\n");
 }
 
+function prioritizedWorthRereadingNotes(
+  notes: Array<{ path: string; title?: string; suggestedAction?: string }>,
+  confirmedThemeReasons: Map<string, string>,
+): Array<{ path: string; title?: string; suggestedAction?: string }> {
+  const firstSeen = new Map<string, number>();
+  const unique = notes.filter((note, index) => {
+    if (firstSeen.has(note.path)) {
+      return false;
+    }
+    firstSeen.set(note.path, index);
+    return true;
+  });
+  return unique.sort(
+    (a, b) =>
+      worthRereadingPriority(b, confirmedThemeReasons) -
+        worthRereadingPriority(a, confirmedThemeReasons) ||
+      (firstSeen.get(a.path) ?? 0) - (firstSeen.get(b.path) ?? 0),
+  );
+}
+
+function worthRereadingPriority(
+  note: { path: string; suggestedAction?: string },
+  confirmedThemeReasons: Map<string, string>,
+): number {
+  let priority = 0;
+  if (confirmedThemeReasons.has(note.path)) {
+    priority += 30;
+  }
+  const action = sanitizeInlineMarkdown(note.suggestedAction);
+  if (action && !isGenericWorthRereadingReason(action)) {
+    priority += action.includes("手动复核") || /manual review/iu.test(action) ? 35 : 10;
+  }
+  return priority;
+}
+
 function worthRereadingReason(
   note: { path: string; title?: string; suggestedAction?: string },
   language: ResolvedAnnualReviewLanguage,
+  confirmedThemeReason = "",
 ): string {
   const suggestedAction = sanitizeInlineMarkdown(note.suggestedAction);
   const representativeFallback =
@@ -1879,15 +1950,199 @@ function worthRereadingReason(
     suggestedAction === representativeFallback ||
     isGenericWorthRereadingReason(suggestedAction)
   ) {
-    return "";
+    return confirmedThemeReason;
   }
-  return suggestedAction;
+  return suggestedAction || confirmedThemeReason;
 }
 
 function isGenericWorthRereadingReason(reason: string): boolean {
   return /(?:补\s*2-3\s*个上下文链接后整理成输出草稿|revisit as a representative note|representative note from this range|it resurfaced in this range|重新浮现|原始语气、关系和未解决问题)/iu.test(
     reason,
   );
+}
+
+function isConfirmedThemeWorthRereadingReason(reason: string): boolean {
+  return /(?:支撑已确认主线|supports the confirmed theme)/iu.test(reason);
+}
+
+function reviewSessionWorthRereadingReasons(
+  reviewSession: ReviewSessionState | undefined,
+  language: ResolvedAnnualReviewLanguage,
+): Map<string, string> {
+  const reasons = new Map<string, string>();
+  if (!reviewSession) {
+    return reasons;
+  }
+  for (const candidate of reportIncludedCandidates(reviewSession).filter(
+    (item) => item.source !== "local",
+  )) {
+    const title = sanitizeInlineMarkdown(
+      reviewCandidateDisplayTitle(candidate.title, candidate.userTitle),
+    );
+    const themeReason =
+      sanitizeCandidateInline(candidate, candidate.reason, language) ||
+      sanitizeCandidateInline(candidate, candidate.connectionExplanation, language);
+    const reason = worthRereadingThemeReason(title, themeReason, language);
+    if (!reason) {
+      continue;
+    }
+    for (const path of traceableReviewCandidatePaths(candidate)) {
+      if (!reasons.has(path)) {
+        reasons.set(path, reason);
+      }
+    }
+  }
+  return reasons;
+}
+
+function evidencePackageReviewTargets(
+  evidencePackage: ThemeEvidencePackage | undefined,
+  reviewSession: ReviewSessionState | undefined,
+  language: ResolvedAnnualReviewLanguage,
+): Array<{ path: string; title?: string; suggestedAction?: string }> {
+  if (!evidencePackage) {
+    return [];
+  }
+  const confirmedPaths = new Set(
+    reviewSession
+      ? reportIncludedCandidates(reviewSession).flatMap(traceableReviewCandidatePaths)
+      : [],
+  );
+  return evidencePackage.evidenceNotes
+    .filter((note) => !confirmedPaths.has(note.path))
+    .filter(isManualReviewEvidenceTarget)
+    .sort(sortManualReviewEvidenceTargets)
+    .slice(0, 3)
+    .map((note) => ({
+      path: note.path,
+      title: note.title,
+      suggestedAction: manualReviewTargetReason(note, language),
+    }));
+}
+
+function isManualReviewEvidenceTarget(note: ThemeEvidenceNote): boolean {
+  return (
+    isBackgroundEvidenceNote(note) ||
+    isProjectLikeEvidenceNote(note) ||
+    note.relatedNotes.length >= 3 ||
+    note.crossFolderLinks.length > 0
+  );
+}
+
+function isBackgroundEvidenceNote(note: ThemeEvidenceNote): boolean {
+  return note.dateSignals.length === 0 && hasRelationshipSignal(note);
+}
+
+function isProjectLikeEvidenceNote(note: ThemeEvidenceNote): boolean {
+  return /(?:^|\/)(?:projects?|areas?|resources?|reference|research|archive)\//iu.test(
+    note.path,
+  );
+}
+
+function hasRelationshipSignal(note: ThemeEvidenceNote): boolean {
+  return (
+    note.backlinks.length > 0 ||
+    note.links.length > 0 ||
+    note.commonLinks.length > 0 ||
+    note.relatedNotes.length > 0 ||
+    note.crossFolderLinks.length > 0
+  );
+}
+
+function sortManualReviewEvidenceTargets(
+  a: ThemeEvidenceNote,
+  b: ThemeEvidenceNote,
+): number {
+  return (
+    manualReviewEvidenceScore(b) - manualReviewEvidenceScore(a) ||
+    a.path.localeCompare(b.path)
+  );
+}
+
+function manualReviewEvidenceScore(note: ThemeEvidenceNote): number {
+  return (
+    (isBackgroundEvidenceNote(note) ? 30 : 0) +
+    (isProjectLikeEvidenceNote(note) ? 20 : 0) +
+    note.backlinks.length * 3 +
+    note.crossFolderLinks.length * 2 +
+    note.relatedNotes.length
+  );
+}
+
+function manualReviewTargetReason(
+  note: ThemeEvidenceNote,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const relationship = manualReviewRelationshipSummary(note, language);
+  if (language === "zh") {
+    return `手动复核：${relationship}，确认它只是背景，还是漏掉了一条应进入主线的关系。`;
+  }
+  return `Manual review: ${relationship}; decide whether this is only background context or a missed relationship that should enter the main themes.`;
+}
+
+function manualReviewRelationshipSummary(
+  note: ThemeEvidenceNote,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  const signals: string[] = [];
+  if (note.dateSignals.length === 0) {
+    signals.push(
+      language === "zh"
+        ? "它不是本期直接活动笔记"
+        : "it was not directly active in this range",
+    );
+  }
+  if (note.backlinks.length > 0) {
+    signals.push(
+      language === "zh"
+        ? `被 ${note.backlinks.length} 条本期证据链接回来`
+        : `it is linked back from ${note.backlinks.length} evidence note${note.backlinks.length === 1 ? "" : "s"}`,
+    );
+  }
+  if (note.crossFolderLinks.length > 0 || isProjectLikeEvidenceNote(note)) {
+    signals.push(
+      language === "zh"
+        ? "承担跨文件夹/项目上下文"
+        : "it carries cross-folder or project context",
+    );
+  }
+  return signals.length > 0
+    ? signals.join(language === "zh" ? "，" : ", ")
+    : language === "zh"
+      ? "它带有未进入已确认主线的关系信号"
+      : "it carries relationship signals not yet used by confirmed themes";
+}
+
+function worthRereadingThemeReason(
+  title: string,
+  reason: string,
+  language: ResolvedAnnualReviewLanguage,
+): string {
+  if (!title) {
+    return "";
+  }
+  const prefix =
+    language === "zh"
+      ? `支撑已确认主线「${title}」`
+      : `Supports the confirmed theme “${title}”`;
+  if (!reason) {
+    return language === "zh"
+      ? `${prefix}，适合回到原文复核。`
+      : `${prefix}; revisit the source note to verify the evidence.`;
+  }
+  return `${prefix}: ${truncateInlineReason(reason, language === "zh" ? 72 : 120)}`;
+}
+
+function truncateInlineReason(reason: string, maxCharacters: number): string {
+  const normalized = reason.trim().replace(/\s+/gu, " ");
+  const characters = Array.from(normalized);
+  if (characters.length <= maxCharacters) {
+    return normalized;
+  }
+  return `${characters
+    .slice(0, maxCharacters - 1)
+    .join("")
+    .trim()}…`;
 }
 
 function normalizeRepeatedReportText(value: string): string {
@@ -1900,6 +2155,7 @@ function renderReflectionQuestions(
   aiActions: string[] = [],
   aiThemes: AiThemeInsight[] = [],
   reviewSession?: ReviewSessionState,
+  themeEvidencePackage?: ThemeEvidencePackage,
 ): string {
   const aiQuestions = aiActions
     .map((action) => sanitizeInlineMarkdown(action))
@@ -1921,11 +2177,33 @@ function renderReflectionQuestions(
     themes[0] ||
     aggregate.topicEvolution.topTopics[0]?.name ||
     (language === "zh" ? "本期最明显的主题" : "the clearest theme in this range");
+  const manualQuestions = manualReviewReflectionQuestions(
+    themeEvidencePackage,
+    reviewSession,
+    topic,
+    language,
+  );
   const fallback = reflectionFallbackQuestions(themes, topic, language);
-  return [...aiQuestions, ...fallback]
+  return [...aiQuestions, ...manualQuestions, ...fallback]
     .slice(0, 5)
     .map((question) => `- ${question}`)
     .join("\n");
+}
+
+function manualReviewReflectionQuestions(
+  evidencePackage: ThemeEvidencePackage | undefined,
+  reviewSession: ReviewSessionState | undefined,
+  _topic: string,
+  language: ResolvedAnnualReviewLanguage,
+): string[] {
+  return evidencePackageReviewTargets(evidencePackage, reviewSession, language)
+    .slice(0, 2)
+    .map((note) => {
+      const link = wikiLink(note.path, readableEvidenceAlias(note.title, note.path));
+      return language === "zh"
+        ? `回到 ${link} 看：它只是本期已确认主线背后的背景索引，还是说明还有一条没有被写进主线的关系？`
+        : `Return to ${link}: is it only background context behind the confirmed themes, or does it point to a relationship that still has not made it into the main themes?`;
+    });
 }
 
 function reflectionFallbackQuestions(
