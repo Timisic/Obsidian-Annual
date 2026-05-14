@@ -143,6 +143,74 @@ describe("theme evidence", () => {
     );
   });
 
+  it("keeps same-day non-Latin evidence note ids distinct", () => {
+    const files = [
+      sourceFrom({
+        path: "2026月复盘/4月/2026-04-11 有钱之后.md",
+        ctime: "2026-04-11T08:00:00.000Z",
+        mtime: "2026-04-11T09:00:00.000Z",
+        content:
+          "---\ncreate: 2026-04-11\n---\n有钱之后，消费、自由和风险感都变得更明显。",
+      }),
+      sourceFrom({
+        path: "2026月复盘/4月/2026-04-11 幸福的烦恼，交往的边界.md",
+        ctime: "2026-04-11T10:00:00.000Z",
+        mtime: "2026-04-11T11:00:00.000Z",
+        content:
+          "---\ncreate: 2026-04-11\n---\n幸福的烦恼来自亲密关系、边界和落寞时的依赖。",
+      }),
+    ];
+    const aggregate = buildReviewAggregate(
+      files,
+      buildCustomReviewSession({
+        startDate: "2026-04-01",
+        endDate: "2026-04-30",
+        settings: DEFAULT_SETTINGS,
+      }),
+      DEFAULT_SETTINGS,
+    );
+
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
+
+    expect(evidencePackage.evidenceNotes.map((note) => note.path)).toEqual([
+      "2026月复盘/4月/2026-04-11 幸福的烦恼，交往的边界.md",
+      "2026月复盘/4月/2026-04-11 有钱之后.md",
+    ]);
+    expect(new Set(evidencePackage.evidenceNotes.map((note) => note.id)).size).toBe(2);
+  });
+
+  it("includes non-active notes linked from review-range evidence as context", () => {
+    const files = [
+      sourceFrom({
+        path: "Daily/2026-02-01.md",
+        ctime: "2026-02-01T08:00:00.000Z",
+        mtime: "2026-02-01T09:00:00.000Z",
+        content: "Today connected the old project back to [[Projects/Research]].",
+      }),
+      sourceFrom({
+        path: "Projects/Research.md",
+        ctime: "2025-10-01T08:00:00.000Z",
+        mtime: "2025-10-02T08:00:00.000Z",
+        content:
+          "---\ntags: [project, research]\n---\n# Research\nThis older project note explains the background.",
+      }),
+    ];
+    const aggregate = buildReviewAggregate(
+      files,
+      buildQuarterlyReviewSession(2026, 1, DEFAULT_SETTINGS),
+      DEFAULT_SETTINGS,
+    );
+
+    const evidencePackage = buildThemeEvidencePackage(aggregate, files, DEFAULT_SETTINGS);
+
+    const research = evidencePackage.evidenceNotes.find(
+      (note) => note.path === "Projects/Research.md",
+    );
+    expect(research?.dateSignals).toEqual([]);
+    expect(research?.backlinks).toContain("Daily/2026-02-01.md");
+    expect(research?.whyIncluded).toContain("backlinks");
+  });
+
   it("selects provider-visible evidence notes through one diverse entry point", () => {
     const notes = [
       evidenceNote("note:jan-alpha", "Projects/Alpha.md", {

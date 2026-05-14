@@ -36,18 +36,35 @@ export function buildThemeEvidencePackage(
   files: SourceFile[],
   settings: AnnualReviewSettings,
 ): ThemeEvidencePackage {
-  const activeEntries = files
+  const includedEntries = files
     .filter((file) => shouldIncludePath(file.path, settings))
     .map((file) => ({ file, note: extractNoteStats(file, settings) }))
-    .filter((entry) => isActiveInReviewRange(entry.note, aggregate))
     .sort((a, b) => a.note.path.localeCompare(b.note.path));
-  const noteByPath = new Map(activeEntries.map((entry) => [entry.note.path, entry]));
-  const backlinksByPath = buildBacklinkIndex(activeEntries);
-  const commonLinks = buildCommonLinkIndex(activeEntries);
-  const repeatedPhrases = buildRepeatedPhraseIndex(activeEntries);
+  const includedNoteByPath = new Map(
+    includedEntries.map((entry) => [entry.note.path, entry]),
+  );
+  const activeEntries = includedEntries.filter((entry) =>
+    isActiveInReviewRange(entry.note, aggregate),
+  );
+  const activePaths = new Set(activeEntries.map((entry) => entry.note.path));
+  const activeLinkedContextPaths = new Set(
+    activeEntries.flatMap((entry) =>
+      Object.keys(entry.note.linkCounts).map((link) =>
+        resolveLinkTarget(link, includedNoteByPath),
+      ),
+    ),
+  );
+  const evidenceEntries = includedEntries.filter(
+    (entry) =>
+      activePaths.has(entry.note.path) || activeLinkedContextPaths.has(entry.note.path),
+  );
+  const noteByPath = new Map(evidenceEntries.map((entry) => [entry.note.path, entry]));
+  const backlinksByPath = buildBacklinkIndex(evidenceEntries);
+  const commonLinks = buildCommonLinkIndex(evidenceEntries);
+  const repeatedPhrases = buildRepeatedPhraseIndex(evidenceEntries);
 
   const evidenceNotes = selectDiverseEvidenceNotes(
-    activeEntries.map((entry) =>
+    evidenceEntries.map((entry) =>
       buildEvidenceNote(
         entry,
         aggregate,
@@ -937,7 +954,7 @@ function slug(value: string): string {
     value
       .toLocaleLowerCase()
       .normalize("NFKD")
-      .replace(/[^a-z0-9]+/gu, "-")
+      .replace(/[^\p{L}\p{N}]+/gu, "-")
       .replace(/^-+|-+$/gu, "")
       .slice(0, 80) || stableHash(value)
   );
