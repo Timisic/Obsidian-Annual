@@ -1,0 +1,1694 @@
+{
+  "reviewRange": "2026-01-01 to 2026-05-10",
+  "evidenceNotes": [
+    {
+      "id": "note:2026月复盘-4月-2026-04-10-和馨玉玩了一天-md",
+      "path": "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md",
+      "title": "2026-04-10 和馨玉玩了一天",
+      "dateSignals": [
+        "created in review range: 2026-04-09",
+        "modified in review range: 2026-04-09"
+      ],
+      "excerpt": "今天总的来说也是玩得巨爽的一天。白天跟师姐[[纪馨玉]]从湖里开始一直聊天，聊了一整路，然后中午去吃了趟潮牛。 我怎么样形容这种爽度呢？从一开始跟师姐聊天，感觉还挺有意思的，就是聊了一整天，聊到我现在都有点回忆不起来我们具体都讲了些什么内容。如果说要分段去看的话，在车上，也是真的有点忘了。午饭的时间。聊了一些以前的事情，自己的兴趣爱好等等，然后开开玩笑，感觉两个人也算是熟络了起来。中间聊到什么程度呢？差不多又看以前组里的一些照片嘛，包括他自己以前的一些照片，确实是很有颜值，但是可能现在到了读博的期间，头发也有点稀了吧哈哈。或者说，可能没有之前装扮那么好。吃完潮牛的时候，我在犹豫是离开还是自己去玩，还是去所里跟他一块玩。既然去了所里，肯定就是去到所里办公室四零三。然后就发现一个人都没有，所以我就和师姐两个人在那聊天聊了一下午。但是她八卦了什么呢？八卦了我以前两段比较重要的情感史，[[姚依林|01]] 和 [[路欣宇|02]]。当然，我也八卦了她一点点情感史以及以前的一些事情吧。不过，知道的细节肯定是没有那么多的。 再就是两个人聊到了[[叉院转博|叉院]]的一些事情。这个我感觉可能是免不了的吧，我确实稍微定了点方向。然后也知道了，查阅了更多的一些消息吧，就是如果我真的确定去的话，最稳妥的方式肯定是去那个老师的地方，先去熟悉熟悉，实习实习这样子。再就是茶园管理混乱。我之前非常疑惑的一个事情是，叉院是怎么叉起来的？据他所说，其实是没有叉起来，因为只有一个主导师，其他的小导，就是企业导师和一个小的导师，几乎没有任何的作用。 然后聊到下午，之后等到艾竹来了，就一块儿去吃饭。所以说师姐她就请...",
+      "links": ["叉院转博", "姚依林", "纪馨玉", "路欣宇"],
+      "backlinks": [
+        "2026月复盘/4月/2026-04-11 有钱之后.md",
+        "2026月复盘/4月/2026-04-18 玩乐和未来.md",
+        "2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md"
+      ],
+      "commonLinks": ["叉院转博", "姚依林", "纪馨玉"],
+      "frontmatterSignals": [
+        "create: 2026-04-10T23:21:00",
+        "cssclasses: p-indent",
+        "weak tags: ccpl",
+        "emotion: excite"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "叉院转博",
+        "姚依林",
+        "纪馨玉",
+        "路欣宇",
+        "2026-04-10T23:21:00",
+        "p-indent",
+        "excite"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:ccpl"],
+      "localSignals": [
+        "created in review range: 2026-04-09",
+        "modified in review range: 2026-04-09",
+        "3 backlinks",
+        "4 outbound links",
+        "shared links: 叉院转博, 姚依林, 纪馨玉",
+        "entities: 叉院转博, 姚依林, 纪馨玉",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-11 有钱之后.md",
+        "2026月复盘/4月/2026-04-18 玩乐和未来.md",
+        "2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md",
+        "叉院转博",
+        "姚依林",
+        "纪馨玉",
+        "路欣宇"
+      ],
+      "whyIncluded": "created in review range: 2026-04-09; modified in review range: 2026-04-09; 3 backlinks; 4 outbound links; shared links: 叉院转博, 姚依林, 纪馨玉"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-04-懵逼同时有ai压力感-md",
+      "path": "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+      "title": "2026-04-04 懵逼同时有AI压力感",
+      "dateSignals": [
+        "created in review range: 2026-04-03",
+        "modified in review range: 2026-04-03"
+      ],
+      "excerpt": "## 近期一月 Agent Coding 有感 今儿是 4 月 4 号了，哎呀，已经开学了整整一个月吧。就这一个月呢，嗯，啊，我也不知道我收获了什么，哎，也不知道规划了什么。可能就是我确实在追逐很多 Vibe Coding 的这个热点。但体现到我当前的这么一个工作流来的话，其实进展不大。要说思考呢？就是有关于各个方面，哎，关于以后工作，Vibe Coding 的思考。有，但是非常的零散，就是不成体系，而且我这是我总感觉我处在一种状态，他是这是一种混沌状态。我一段时间做这个，一段时间做那个，没有没有一条主线。 就是这造成了个什么结果呢？哎呀，虽然说我现在其实已经启动了算是半只脚踏入了科研吧。但是整个人也是心里有点烦烦的。因为知道自己确实借助了当前 AI 的力量，但是自己好像没有那个能力去进行一些决策，有点力不从心的感觉。就是我的知识基础好像不足以撑起我使用 AI，它的能力太强了，所以我完全分不清它输出的内容是真是假，是否可靠，完全只能被拽着鼻子走。所以每次我向上面汇报，向他人汇报的时候，我都会有些忐忑。我的我我忐忑原因就是就是觉得好像自己借助 AI 太多了，自己的这个知识储备有点太少了。自己知识储备太少的话，就是意味着可被替代性是非常的强。我自己又没有没有那种怎么说呢？**知识壁垒。** 我悔恨吗？倒也没有吧。就是确实对自己有一点点的担心，就自己好像不在状态已经有一段时间了。虽然说我每天好像都，哎，非常专注的我在做一些什么事情，在 Vibe Coding，在去搞这个科研。但是我好像就是一头扎进去，不知所措啊，不知所措。就是不知道自己在 coding 个什么事。他对我而言来说，就是...",
+      "links": [],
+      "backlinks": [
+        "2026月复盘/4月/2026-04-06 夹杂兴奋疲惫与焦虑.md",
+        "2026月复盘/4月/2026-04-07 不正常的焦虑态.md",
+        "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md"
+      ],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-04-04 16:20",
+        "cssclasses: p-indent",
+        "weak tags: Future",
+        "weak tags: AI",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [
+        "## 近期一月 Agent Coding 有感 今儿是 4 月 4 号了，哎呀，已经开学了整整一个月吧。就这一个月呢，嗯，啊，我也不知道我收获了什么，哎，也不知道规划了什么。可能就是我确实在追逐很多 Vibe Coding 的这个热点。但体现到我当前的这么一个工作流来的话，其实进展不大。要说思考呢？就是有关于各个方面，哎，关于以后工作，Vibe Coding",
+        "只说读书肯定是不现实的。然后现在，哎，现在我非常苦恼，各种视频、文字层出不穷，我该看什么？我真的每天已经被海量的信息包围了。像最近几天又加上生病，只能说，哎，自己也是，心里有点疲惫，有点累。所以下面，哎，下面我不好去再多想些什么了。就是，我先把我当前最想做的一件事情给它做了吧，就是知识的管理。知识管理呢，就是不止说明，不仅仅只说明我过去的那些复盘呀、新学到的"
+      ],
+      "entities": [
+        "Future",
+        "Agent Coding",
+        "Vibe Coding",
+        "Obsidian",
+        "Twitter",
+        "Karpathy",
+        "2026-04-04 16:20",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:AI", "tag:Future"],
+      "localSignals": [
+        "created in review range: 2026-04-03",
+        "modified in review range: 2026-04-03",
+        "3 backlinks",
+        "contains reviewable questions",
+        "entities: Future, Agent Coding, Vibe Coding",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-06 夹杂兴奋疲惫与焦虑.md",
+        "2026月复盘/4月/2026-04-07 不正常的焦虑态.md",
+        "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md"
+      ],
+      "whyIncluded": "created in review range: 2026-04-03; modified in review range: 2026-04-03; 3 backlinks; contains reviewable questions; entities: Future, Agent Coding, Vibe Coding"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-18-玩乐和未来-md",
+      "path": "2026月复盘/4月/2026-04-18 玩乐和未来.md",
+      "title": "2026-04-18 玩乐和未来",
+      "dateSignals": [
+        "created in review range: 2026-04-17",
+        "modified in review range: 2026-04-17"
+      ],
+      "excerpt": "关于师姐和今日玩乐，认真思考未来相关的，以及组内大小事。 就可能还挺奇怪的，其实和[[纪馨玉|馨玉]] 也就一共见了四次面，就好像熟了非常久一样。第一次不太熟，纯纯新生和师姐一块儿吃个饭见个面；第二次就是组里一块儿去聚餐，到处吃饭，到处聊。也能发现这个组里的氛围感觉还不错。也不至于说摸透，但是对每个人大概都有一些了解，知道他们的处事方式。第三次的话，就是我主动约[[纪馨玉|师姐]]去吃了个饭。那么详细的内容其实[[2026-04-10 和馨玉玩了一天|上次]]我记录了七七八八，确实是打开了一些新世界吧。那么这一次的感受其实就更不一样了，因为这一次整体来说是三个人的玩乐和聚餐。 这一次的话，我不知道是否有更多的了解了一些东西。但是可以发现她们确实担得起博士的这个名号，思考肯定是更多更充分的。毕竟也是算是比我多待了三年四年的样子吧。 ### 流水帐 上午我可能是八点半起床，八点半坐的小火车进的城，十点左右去中关村做了一个髋部的运动康复。然后就开始去联系馨玉。时间应该是十一点半，我就跟她讲我大约十二点到所里。她说她一会儿就到。然后我到了之后跟艾竹聊了半个多小时，她才姗姗来迟。 然后就决定一块儿去吃那个牛排家嘛。说实话，全场比较好吃的是那个虾。三文鱼也还可以，牛排就是非常不起眼的一点吧，又柴又咸，又不是那么好吃，感觉不如家里自己腌的那种十块钱的牛排。 吃完牛排家可能在那边聊了非常久，聊到了三点半。但如果现在让我回忆的话，我回忆不起来大致的内容了。可能就是说知道了师姐要去多伦多。但是信息可能会被国家公派的那个机关稍微卡住了，机票没买，还要换汇，各种事情。然后也提到了她晚睡打游戏，被思仪听...",
+      "links": ["2026-04-10 和馨玉玩了一天", "对科研超过四小时的警惕", "纪馨玉"],
+      "backlinks": ["2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md"],
+      "commonLinks": ["2026-04-10 和馨玉玩了一天", "纪馨玉"],
+      "frontmatterSignals": [
+        "create: 2026-04-18T16:11:00",
+        "cssclasses: p-indent",
+        "weak tags: ccpl",
+        "emotion: excite"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-10 和馨玉玩了一天",
+        "对科研超过四小时的警惕",
+        "纪馨玉",
+        "Future",
+        "2026-04-18T16:11:00",
+        "p-indent",
+        "excite"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:ccpl"],
+      "localSignals": [
+        "created in review range: 2026-04-17",
+        "modified in review range: 2026-04-17",
+        "1 backlinks",
+        "3 outbound links",
+        "shared links: 2026-04-10 和馨玉玩了一天, 纪馨玉",
+        "entities: 2026-04-10 和馨玉玩了一天, 对科研超过四小时的警惕, 纪馨玉",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md",
+        "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md",
+        "对科研超过四小时的警惕",
+        "纪馨玉"
+      ],
+      "whyIncluded": "created in review range: 2026-04-17; modified in review range: 2026-04-17; 1 backlinks; 3 outbound links; shared links: 2026-04-10 和馨玉玩了一天, 纪馨玉"
+    },
+    {
+      "id": "note:review-fixtures-2026-01-01-md",
+      "path": "Review Fixtures/2026-01-01.md",
+      "title": "2026-01-01",
+      "dateSignals": [
+        "created in review range: 2025-12-31",
+        "modified in review range: 2025-12-31"
+      ],
+      "excerpt": "# Morning #writing This synthetic review fixture note records the first writing session for the annual review tests. Linked to [[Projects/Research]] so the aggregate can verify project evidence, backlinks, and topic signals without depending on private user notes. - [x] Capture baseline research evidence - [ ] Turn the fixture note into a review input The note keeps enough body text for deterministic word, tag, task, heading, and link extraction.",
+      "links": ["Projects/Research"],
+      "backlinks": ["Projects/Research.md"],
+      "commonLinks": ["Projects/Research"],
+      "frontmatterSignals": ["weak tags: journal", "weak tags: 中文"],
+      "repeatedPhrases": ["synthetic review fixture", "review fixture note"],
+      "questionSentences": [],
+      "entities": ["Research", "Morning", "Linked", "Projects", "Capture", "Turn"],
+      "crossFolderLinks": ["Projects/Research.md"],
+      "weakSignals": ["tag:journal", "tag:writing", "tag:中文"],
+      "localSignals": [
+        "created in review range: 2025-12-31",
+        "modified in review range: 2025-12-31",
+        "1 backlinks",
+        "1 outbound links",
+        "shared links: Projects/Research",
+        "repeated phrases: synthetic review fixture, review fixture note",
+        "entities: Research, Morning, Linked",
+        "cross-folder links: Projects/Research.md",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["Projects/Research.md"],
+      "whyIncluded": "created in review range: 2025-12-31; modified in review range: 2025-12-31; 1 backlinks; 1 outbound links; shared links: Projects/Research"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-26-缓了一天才能收拾情绪-md",
+      "path": "2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md",
+      "title": "2026-04-26 缓了一天才能收拾情绪",
+      "dateSignals": [
+        "created in review range: 2026-04-25",
+        "modified in review range: 2026-04-25"
+      ],
+      "excerpt": "其实没有和[[纪馨玉|馨玉]]熟到非常熟，我们线下聊天也就两次比较长的时间，一次可能 [[2026-04-10 和馨玉玩了一天|4小时]]，另一次 [[2026-04-24 夜半散步|6小时]]，还有一次是[[2026-04-18 玩乐和未来|玩乐居多]]。虽有这种心理准备和前期的经历，但我依旧惊讶于两三次的长时间相处就能熟到相互开玩笑到这种程度。 可能是师姐真的太温柔了，这几年的时间应该让她放开了很多所，没有像之前那般设防。所以能相互开得起玩笑，有话会说会张嘴，撒娇高智扮委屈信手拈来。虽说有些内向文静，但整体内心应该还是很丰富的。 不过她去加拿大公派留学一年了，就是今天中午离开。我的 sad 并不是什么遗憾什么爱上她了，而是在我们建立了友谊之后她便离开了，尽管我们友谊没有急转直下，但由于本身我们是线下居多的而非线上，因此我感受到分别感受到一种强烈的落差，也是我主要的不适感来源。 我需要收拾宿舍、外出散步、骑车四处逛荡才能缓解这种情绪上的不适... 部分可能也源于对未来的未知的无措感。 在所里呆到2点甚至考虑住在城内也是想多和她相处一会，我能感受到自己有强烈的和她单独相处的欲望。同时也发现自己，在打德扑的时候很自觉的就不停和她互动打闹。当局者迷。我能感觉到艾竹也在有意无意帮我和馨玉安排到坐一块。我还想了理由说只有我和馨玉是电灯泡我不找她找你们互动吗？哈哈这可有点牵强了。 其实我也若隐隐觉得她也多在和我互动玩闹，包括来湖里后一直和我在一块而没有他人，甚至说了一句来湖里也不光是为了拿行李还有为了找我玩。",
+      "links": [
+        "2026-04-10 和馨玉玩了一天",
+        "2026-04-18 玩乐和未来",
+        "2026-04-24 夜半散步",
+        "纪馨玉"
+      ],
+      "backlinks": [],
+      "commonLinks": ["2026-04-10 和馨玉玩了一天", "纪馨玉"],
+      "frontmatterSignals": [
+        "create: 2026-04-26T11:12:00",
+        "cssclasses: p-indent",
+        "emotion: sad"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-10 和馨玉玩了一天",
+        "2026-04-18 玩乐和未来",
+        "2026-04-24 夜半散步",
+        "纪馨玉",
+        "2026-04-26T11:12:00",
+        "p-indent",
+        "sad"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-25",
+        "modified in review range: 2026-04-25",
+        "4 outbound links",
+        "shared links: 2026-04-10 和馨玉玩了一天, 纪馨玉",
+        "entities: 2026-04-10 和馨玉玩了一天, 2026-04-18 玩乐和未来, 2026-04-24 夜半散步",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md",
+        "2026月复盘/4月/2026-04-18 玩乐和未来.md",
+        "2026月复盘/4月/2026-04-24 夜半散步.md",
+        "纪馨玉"
+      ],
+      "whyIncluded": "created in review range: 2026-04-25; modified in review range: 2026-04-25; 4 outbound links; shared links: 2026-04-10 和馨玉玩了一天, 纪馨玉; entities: 2026-04-10 和馨玉玩了一天, 2026-04-18 玩乐和未来, 2026-04-24 夜半散步"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-12-探索期有充足额度才有更多可能-md",
+      "path": "2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+      "title": "2026-04-12 探索期有充足额度才有更多可能",
+      "dateSignals": [
+        "created in review range: 2026-04-11",
+        "modified in review range: 2026-04-11"
+      ],
+      "excerpt": "怎么说呢，今天有足够的 Codex。这个一百道的破案之后才发现，其实做什么事情都可以非常肆意地去解决。就是我有很多探索的机会，去看看自己的工作流中到底出现了哪些问题。就比如说晚上可能做了一个非常简单的、有关 obsidian word history tool 的这么一个类似于 star history 的项目之后呢，就发现自己可能在主要的架构上没有去把握好，导致反复去跑通流程。虽然这个 Codex 5.4 执行的还可以，整体效果还是可以的，但是我因为在源头上可能出现了一些决策上的偏差，这个方向有点乱套了，导致迟迟无法去推进。 所以，这一个晚上其实没有消耗我多少的额度，我就觉得是时候去改进一下前期的决策工作了。肯定是要想清楚再去做某件事情，至少要先探讨清楚。就像我当时把当前 obsidian 仓库改成 [[Steph Ango Kepano|kepano]] 推荐的方式时，非常谨慎地研究了一下人家的工作流程，以及我如何改造才不会破坏当前一些重要的笔记和结构。 所以不光是我对待我自己的笔记要这样，更是要对待我每一个项目都要这样，其实就是磨刀不误砍柴工。整体来说，人还是要把握好大的方向，才能指导你的小弟更好干活，他的执行能力确实很强。 这确实是一种工作套利。我肯定要花费大量的时间琢磨怎么更好地使用这个工具。所以量大管饱肯定是我所需要的。**我既不会白白费钱去做一些无关紧要的工作，也不会为了省钱而错过这么大的机遇。** 那么接下来思考的是，我有这么多额度之后，怎么样去操作才能快速地把能用的额度尽可能用光，并且高效地设计一套流程让它执行。然后消费这个额度，而不是再让这个额度在那空跑，没...",
+      "links": [
+        "2026-04-04 懵逼同时有AI压力感",
+        "Don't Delegate Understanding",
+        "Steph Ango Kepano"
+      ],
+      "backlinks": ["2026月复盘/5月/2026-05-05 封号被卡脖子了.md"],
+      "commonLinks": ["2026-04-04 懵逼同时有AI压力感"],
+      "frontmatterSignals": ["create: 2026-04-12T23:53:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-04 懵逼同时有AI压力感",
+        "Don't Delegate Understanding",
+        "Steph Ango Kepano",
+        "Codex",
+        "Don",
+        "Delegate Understanding",
+        "2026-04-12T23:53:00",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-11",
+        "modified in review range: 2026-04-11",
+        "1 backlinks",
+        "3 outbound links",
+        "shared links: 2026-04-04 懵逼同时有AI压力感",
+        "entities: 2026-04-04 懵逼同时有AI压力感, Don't Delegate Understanding, Steph Ango Kepano",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [
+        "2026月复盘/5月/2026-05-05 封号被卡脖子了.md",
+        "2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md",
+        "Don't Delegate Understanding",
+        "Steph Ango Kepano"
+      ],
+      "whyIncluded": "created in review range: 2026-04-11; modified in review range: 2026-04-11; 1 backlinks; 3 outbound links; shared links: 2026-04-04 懵逼同时有AI压力感"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-11-有钱之后-md",
+      "path": "2026月复盘/4月/2026-04-11 有钱之后.md",
+      "title": "2026-04-11 有钱之后",
+      "dateSignals": [
+        "created in review range: 2026-04-10",
+        "modified in review range: 2026-04-10"
+      ],
+      "excerpt": "这周可能在周二周三，那段时间赚了很多的钱，可能总计下来有两万五六。我就非常想去消费，但是似乎又没有这种渠道去消费。虽然我有了这些钱，但是拿着稍稍有点不踏实，不真实。我的消费能力没有提上来，因为面对于像简单的打车或者吃饭这个事情，其实我依旧保持着能省则省，因为我不太喜欢去做冤大头，我也会去力争自己每一分钱。 同时我也在思考，有钱确实可以做很多事情。比如说我想给人送礼的时候，可以针对对方的需求去送相关的礼物，更精致、更贵一点，其实也更符合我自己的心意。第二就是请客吃饭上，不需要花太多的认知消耗。因为以前我吃饭会纠结于请对方吃什么、吃多少钱的比较合适：太贵的东西我负担不起，太便宜的东西我自己其实也吃不下去。所以这方面可能慢慢就好一点了。 但是对于有钱会不会变坏这个事情，我其实是不太清楚的，因为我当前手里这钱拿着不踏实。因为有点[[2026-03-04 亏钱自是烦恼|偷鸡取巧]]的意思。所以我个人没有稳定的赚钱能力，所以谈不上有钱的底气。我觉得**有钱和没钱最大的一个根源就来源于你有没有能持续赚钱的能力，所以说可能这也是我现在一个畏畏缩缩的主要原因吧。** ^119a18 我以前想到的一句话，不知不觉就说出来了。但我觉得说出来挺不好的，因为[[2026-04-10 和馨玉玩了一天|饭桌上师姐问我]]：“如果再给你五百块钱，让你去做一个分享，你愿不愿意去？”我的回答是我不愿意去，因为我每天赚的钱比这多多了。但是，因为这个有点灰色，所以谈不上自己的能力以及底气的来源。如果我真的有这种能力和底气的话，我说实话，每天赚两千块钱，难道这不比大多数家庭滋润。有这能力，我还读什么研，读什么博呀。",
+      "links": ["2026-03-04 亏钱自是烦恼", "2026-04-10 和馨玉玩了一天"],
+      "backlinks": ["2026月复盘/4月/2026-04-14 偷鸡流告一段落.md"],
+      "commonLinks": ["2026-03-04 亏钱自是烦恼", "2026-04-10 和馨玉玩了一天"],
+      "frontmatterSignals": ["create: 2026-04-11T21:46:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-03-04 亏钱自是烦恼",
+        "2026-04-10 和馨玉玩了一天",
+        "2026-04-11T21:46:00",
+        "p-indent"
+      ],
+      "crossFolderLinks": ["2026月复盘/3月/2026-03-04 亏钱自是烦恼.md"],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-10",
+        "modified in review range: 2026-04-10",
+        "1 backlinks",
+        "2 outbound links",
+        "shared links: 2026-03-04 亏钱自是烦恼, 2026-04-10 和馨玉玩了一天",
+        "entities: 2026-03-04 亏钱自是烦恼, 2026-04-10 和馨玉玩了一天, 2026-04-11T21:46:00",
+        "cross-folder links: 2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-14 偷鸡流告一段落.md",
+        "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+        "2026月复盘/4月/2026-04-10 和馨玉玩了一天.md"
+      ],
+      "whyIncluded": "created in review range: 2026-04-10; modified in review range: 2026-04-10; 1 backlinks; 2 outbound links; shared links: 2026-03-04 亏钱自是烦恼, 2026-04-10 和馨玉玩了一天"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-25-关系中的服软-md",
+      "path": "2026月复盘/2月/2026-02-25 关系中的服软.md",
+      "title": "2026-02-25 关系中的服软",
+      "dateSignals": [
+        "created in review range: 2026-02-24",
+        "modified in review range: 2026-02-24"
+      ],
+      "excerpt": "[[高中恋爱02—路欣宇|路]] [[一个萦绕已久的心结——路|路]] 就在 2025 年的国庆，我因为去她学校玩的时间没有沟通清楚，语言上好像产生了一些小误会。那之后我们基本上就没有联系了。我当时也是因为这个事情，觉得她那么说话肯定是不对的，所以也不准备以后再跟她联系。 到了 2026 年新春的时候，也就是新年期间，她还是给我发了消息。内容大概是一个新年祝福，然后讲了一下她自己最近的情况，也在群里说了一些她个人的近况。但是本着之前的态度，我就不想再主动去和她联系了。包括给我发新春祝福的时候，其实有在为 10 月的事情给我道歉。而且就他在群里讲的话来看，能看出来他的睡眠比以前更少，压力应该也是非常大的。 因为她之前跟我道过歉，我就觉得这其实也不是什么大事。有压力的情况下，一些小拌嘴在朋友之间也都会有，都是可以接受的。 所以在 2 月 24 号晚上，当她提出自己睡不着、想聊一会儿的时候，我还是跟她聊了聊。我们大概聊了一些在学校的近况、目前的处境，包括一部分未来的规划。 我个人认为，我这么个行为并不是打破了自己的原则。我不会因为对方是我的“白月光”就特殊对待，而只是单纯地站在一个普通朋友的视角来看待。我们之间有个小拌嘴，后面加一个道歉，这是一个非常可以接受的事情。只要不是原则上的问题，或者说有什么误会解释清楚了，也都是可以接受的。 --- [[姚依林|姚]] 这其实让我想到了 2025 年 2 月底这段时间。姚是怎么做的？我的那群朋友们，他是怎么做的？就是截然不同的行为，会导致截然不同的结果。路的行为虽然不会让我跟他关系有多近，但是也能当做普通朋友来相处，时不时可以聊个天儿。但是我...",
+      "links": ["一个萦绕已久的心结——路", "姚依林", "高中恋爱02—路欣宇"],
+      "backlinks": [],
+      "commonLinks": ["姚依林"],
+      "frontmatterSignals": [
+        "create: 2026-02-25 10:51",
+        "cssclasses: p-indent",
+        "weak tags: 亲密关系/lxy",
+        "emotion: Calm"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "一个萦绕已久的心结——路",
+        "姚依林",
+        "高中恋爱02—路欣宇",
+        "Calm",
+        "2026-02-25 10:51",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:亲密关系/lxy"],
+      "localSignals": [
+        "created in review range: 2026-02-24",
+        "modified in review range: 2026-02-24",
+        "3 outbound links",
+        "shared links: 姚依林",
+        "entities: 一个萦绕已久的心结——路, 姚依林, 高中恋爱02—路欣宇",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["一个萦绕已久的心结——路", "姚依林", "高中恋爱02—路欣宇"],
+      "whyIncluded": "created in review range: 2026-02-24; modified in review range: 2026-02-24; 3 outbound links; shared links: 姚依林; entities: 一个萦绕已久的心结——路, 姚依林, 高中恋爱02—路欣宇"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-06-夹杂兴奋疲惫与焦虑-md",
+      "path": "2026月复盘/4月/2026-04-06 夹杂兴奋疲惫与焦虑.md",
+      "title": "2026-04-06 夹杂兴奋疲惫与焦虑",
+      "dateSignals": [
+        "created in review range: 2026-04-05",
+        "modified in review range: 2026-04-05"
+      ],
+      "excerpt": "我不好说这两天是种什么样的精神状态，但是这种状态除去一些潜在 Anxiety之外还挺好的吧。 兴奋的来源在于，自己可能说每天有一些输入并且输出，还挺享受这种感受的。但是俺咋也得的话就是疲态。一方面是生理上，可能自己的大病还未痊愈；那么另一方面就是任务有点压着我的心头，让人有点不爽。就是因为那个[[步态任务]]本身不是那么喜欢去做，自己有点懵懵的。 所以事实说明，我在[[2026-04-04 懵逼同时有AI压力感|四月四号]]当天出门晒太阳还挺有效果的。怎么说呢，让自己静一下，冷静一下，去 thinking 思考一下吧。 好吧，我可以详细说一下兴奋的点在哪里。兴奋点就是思考本身。这两天我大量在刷 YouTube、Twitter 还有小红书近几个月来的一些前沿观点，包括人和 agent 写作的方式。这个可能是能让我坚持走下去的一个基础设施吧。 至于说兴奋的话，肯定就是我这两天有所得、有收获。并且我也确实坚信，如果我这么去做下去的话，可能用不了多久，一个月两个月就会见效，非常快。当然肯定还有很多需要去优化的地方，这个肯定是没什么好质疑的，慢慢去探索这么一个优化的方式。充实我自己的这么一个线下的生活的话，就是让人不会觉得你的时间是在白白流失的。 那么 Obsidian 的话，我近期去给它做了一次更新，那这次更新放入的 base 文件其实也可以收集我近期写的笔记。也确实能发现我这个输出是越来越多了。那么当前我总仓库的文字量大概在二十八万字，我想着可能说我一周输出的内容至少得在一万以上吧。所以后面这个字数的话可能会长得非常的快。 GitHub 上有个仓库，它是记录 [star histor...",
+      "links": ["2026-04-04 懵逼同时有AI压力感", "步态任务"],
+      "backlinks": [],
+      "commonLinks": ["2026-04-04 懵逼同时有AI压力感"],
+      "frontmatterSignals": [
+        "create: 2026-04-06T23:14:00",
+        "cssclasses: p-indent",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-04 懵逼同时有AI压力感",
+        "步态任务",
+        "Anxiety",
+        "Twitter",
+        "Obsidian",
+        "2026-04-06T23:14:00",
+        "p-indent",
+        "anxiety"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-05",
+        "modified in review range: 2026-04-05",
+        "2 outbound links",
+        "shared links: 2026-04-04 懵逼同时有AI压力感",
+        "entities: 2026-04-04 懵逼同时有AI压力感, 步态任务, Anxiety",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md", "步态任务"],
+      "whyIncluded": "created in review range: 2026-04-05; modified in review range: 2026-04-05; 2 outbound links; shared links: 2026-04-04 懵逼同时有AI压力感; entities: 2026-04-04 懵逼同时有AI压力感, 步态任务, Anxiety"
+    },
+    {
+      "id": "note:review-fixtures-2026-01-02-md",
+      "path": "Review Fixtures/2026-01-02.md",
+      "title": "2026-01-02",
+      "dateSignals": [
+        "created in review range: 2026-01-01",
+        "modified in review range: 2026-01-01"
+      ],
+      "excerpt": "# Follow-up This synthetic review fixture note continues the fixture sequence and references [[Projects/Research]] once more. It exists so the test vault has a three-day January activity streak through its configured created and modified timestamps.",
+      "links": ["Projects/Research"],
+      "backlinks": [],
+      "commonLinks": ["Projects/Research"],
+      "frontmatterSignals": ["weak tags: journal"],
+      "repeatedPhrases": ["synthetic review fixture", "review fixture note"],
+      "questionSentences": [],
+      "entities": ["Research", "Follow", "Projects", "January"],
+      "crossFolderLinks": ["Projects/Research.md"],
+      "weakSignals": ["tag:journal"],
+      "localSignals": [
+        "created in review range: 2026-01-01",
+        "modified in review range: 2026-01-01",
+        "1 outbound links",
+        "shared links: Projects/Research",
+        "repeated phrases: synthetic review fixture, review fixture note",
+        "entities: Research, Follow, Projects",
+        "cross-folder links: Projects/Research.md",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["Projects/Research.md"],
+      "whyIncluded": "created in review range: 2026-01-01; modified in review range: 2026-01-01; 1 outbound links; shared links: Projects/Research; repeated phrases: synthetic review fixture, review fixture note"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-11-幸福的烦恼-交往的边界-md",
+      "path": "2026月复盘/4月/2026-04-11 幸福的烦恼，交往的边界.md",
+      "title": "2026-04-11 幸福的烦恼，交往的边界",
+      "dateSignals": [
+        "created in review range: 2026-04-10",
+        "modified in review range: 2026-04-10"
+      ],
+      "excerpt": "说实话，不知道自己是对什么上瘾啊。就是每次呢，可能就是尤其跟女孩子去单独聊天、单独相处很久之后，就会有那么一点点上头的感觉。就是当，比如说一天结束之后，自己就会稍微有点回味，而且有点落寞的这种感受。很奇怪的，也人之常情吧。 就是每当这种时候，就需要考虑一个问题，就是自己到底，就我不知道这个边界在哪里，就是自己是想要迫切地找一个另一半啊？还是说当前自己的任务不太能支撑自己独立的生活？就也就是说自己的生活依旧没有非常的充实，才需要去找另一半。我所说的这个边界呢，就是我如何能分清自己是真的看上了对方，还是说只是自己落寞时依赖上了对方？这还是需要严格区分一下。 所以现在我的情况就是有点那个词叫怎么说？成瘾之后的那个那个，成瘾之后又失去了那个东西，叫什么呢？没错，就是戒断反应。 但说实话，我是认为自己是对什么上瘾？对和其他人进行长时间的聊天这个事情上瘾。嗯，主要是因为自己本身身边没有很多人可以进行这样的事情吧。没有人，也没有条件。同时我发现基本上我每次更为上头的时候，是跟好吧，男生女生应该都有。男生的话一般是好朋友，女生的话至少是认识的人。但是就我个人的情况而言，女生应该是更多的。 哎，但是吧，昨天和[[纪馨玉|馨玉]] 师姐聊完之后，确实又引发了自己的一些各种各样的情绪吧。因为读研之后，我不管是她是在，我不管我是在湖里还是在还在城里，是在研究所还是在学校的场景下，对我而言，我的圈子就那么大，我就是就是个打羽毛球的，就是几乎很少有其他的圈子能认识到新的人，新的群体。所以我又开始为我的未来的寻找到那种亲密关系而开始担忧了。就是不知道什么场景下我能看到能认识到、接触到更多的人。 --- 我又...",
+      "links": ["2025-06-26 该长大了", "纪馨玉"],
+      "backlinks": [],
+      "commonLinks": ["纪馨玉"],
+      "frontmatterSignals": [
+        "create: 2026-04-11T13:23:00",
+        "cssclasses: p-indent",
+        "weak tags: 亲密关系",
+        "emotion: excite"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [
+        "说实话，不知道自己是对什么上瘾啊。就是每次呢，可能就是尤其跟女孩子去单独聊天、单独相处很久之后，就会有那么一点点上头的感觉。就是当，比如说一天结束之后，自己就会稍微有点回味，而且有点落寞的这种感受。很奇怪的，也人之常情吧。 就是每当这种时候，就需要考虑一个问题，就是自己到底，就我不知道这个边界在哪里，就是自己是想要迫切地找一个另一半啊？还是说当前自己的任务不"
+      ],
+      "entities": [
+        "2025-06-26 该长大了",
+        "纪馨玉",
+        "2026-04-11T13:23:00",
+        "p-indent",
+        "excite"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:亲密关系"],
+      "localSignals": [
+        "created in review range: 2026-04-10",
+        "modified in review range: 2026-04-10",
+        "2 outbound links",
+        "shared links: 纪馨玉",
+        "contains reviewable questions",
+        "entities: 2025-06-26 该长大了, 纪馨玉, 2026-04-11T13:23:00",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["2025-06-26 该长大了", "纪馨玉"],
+      "whyIncluded": "created in review range: 2026-04-10; modified in review range: 2026-04-10; 2 outbound links; shared links: 纪馨玉; contains reviewable questions"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-14-偷鸡流告一段落-md",
+      "path": "2026月复盘/4月/2026-04-14 偷鸡流告一段落.md",
+      "title": "2026-04-14 偷鸡流告一段落",
+      "dateSignals": [
+        "created in review range: 2026-04-13",
+        "modified in review range: 2026-04-13"
+      ],
+      "excerpt": "我的这个[[2026-03-04 亏钱自是烦恼|投机流]]暂时告一段落，因为看了一下亚太的公告，发现他虽然依旧是在六点零一分之前价格不会变化，六点一零一分开始价格变化，但是呢，他现在把可以交易的时间改到了开盘后的十五分钟，那么也就意味着说这套策略不再有效。 反正用他这个投机的方式，可能我满打满算也在里面赚了有四千刀左右吧，也就是两万多块钱。 但是，这个策略被 ban之后，心里肯定是有一点空落落的。不过，我应该是不用再去担心我的账户异常，不用担心我这些钱会被收回来了。这样其实自己安心一些吧，因为说实话，本来我自己就是准备在这一个月，让自己休息一下，不再去赚这种钱了。现在既然 ban了也好，自己也不用整天提心吊胆的了。 所以后续呢，不管是在交易还是在其他领域，我肯定是要培养自己[[2026-04-11 有钱之后#^119a18|持续赚钱]]的这种能力，这个肯定才是我最大的底气来源。虽然一开始可能每天赚不了几百块吧，或者说甚至连一百都到不了。这种情况的话呢，最好还是说去慢慢来吧，慢慢培养。赚钱不是短时间就可以做到的事情，它还是说实话还是有很大的难度的。",
+      "links": ["2026-03-04 亏钱自是烦恼", "2026-04-11 有钱之后"],
+      "backlinks": [],
+      "commonLinks": ["2026-03-04 亏钱自是烦恼"],
+      "frontmatterSignals": [
+        "create: 2026-04-14T11:46:00",
+        "cssclasses: p-indent",
+        "weak tags: finance"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-03-04 亏钱自是烦恼",
+        "2026-04-11 有钱之后",
+        "2026-04-14T11:46:00",
+        "p-indent"
+      ],
+      "crossFolderLinks": ["2026月复盘/3月/2026-03-04 亏钱自是烦恼.md"],
+      "weakSignals": ["tag:finance"],
+      "localSignals": [
+        "created in review range: 2026-04-13",
+        "modified in review range: 2026-04-13",
+        "2 outbound links",
+        "shared links: 2026-03-04 亏钱自是烦恼",
+        "entities: 2026-03-04 亏钱自是烦恼, 2026-04-11 有钱之后, 2026-04-14T11:46:00",
+        "cross-folder links: 2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [
+        "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+        "2026月复盘/4月/2026-04-11 有钱之后.md"
+      ],
+      "whyIncluded": "created in review range: 2026-04-13; modified in review range: 2026-04-13; 2 outbound links; shared links: 2026-03-04 亏钱自是烦恼; entities: 2026-03-04 亏钱自是烦恼, 2026-04-11 有钱之后, 2026-04-14T11:46:00"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-22-ai越来越快-md",
+      "path": "2026月复盘/2月/2026-02-22 AI越来越快.md",
+      "title": "2026-02-22 AI越来越快",
+      "dateSignals": [
+        "created in review range: 2026-02-21",
+        "modified in review range: 2026-02-21"
+      ],
+      "excerpt": "> 2026-02-22 23:56 初次使用 Typeless，未来可能是我很喜欢的一种应用类型。所以今天趁着新鲜感还在，我就来 Obsidian 写一下，或者说通过语音的方式记录下这些文字。我发现在说的时候，自己不会分心去做别的事情，反而能更加集中在思考这个环节上。 现在 AI 时代嘛，模型自我进化的速度变得非常快，AI 应用也是一天比一天多。能不能抓住这个风口？我觉得这对我接下来的几年来说，可能是一个比较关键的节点。AI 是一个放大器，我自己能不能抓住这个放大器非常关键。如果一步走得不慎，我就可能被别人甩开；但如果我抓住了这个机会，我自我进化的速度也会很快，虽然肯定还赶不上 AI。赶不上 AI 也不会怎么样，我只要能领先我的同龄人，甚至是越级就可以了。 --- 我总觉得我使用 AI 还是处在一种比较愚蠢的阶段，只是慢慢去发掘，而没有去系统化地学习如何使用。虽然我能看到很多琳琅满目的应用，或者是五花八门的提示词用法，但我始终无法找到最适合自己的那一种。这就会让我在不同的玩法之间不断跳跃，没有一套自己的体系，也就无法获得真正的效率。 我处于一种从量变到质变之前的过程，我现在真的很想先把量堆起来。所以我最近不断地在看各种 AI 的相关信息，但我的渠道不是最新的。接下来的一个目标就是去 X 上寻找或者关注一些博主，来帮助我了解 AI 最新的信息和玩法，或者换句话说是看清楚未来的趋势。比如我前段时间了解到的 Skill，现在这个 Scale 用的就相当频繁，尤其是 OpenClaw，用的相当频繁。 --- 我的确有一点自己的目标，就是想利用好 AI 来规划我的生活。我不是为了用而用...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-02-22 23:18",
+        "cssclasses: p-indent",
+        "weak tags: Future",
+        "weak tags: Important"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "Future",
+        "Important",
+        "Typeless",
+        "Obsidian",
+        "Skill",
+        "Scale",
+        "Token",
+        "Docs"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:Future", "tag:Important"],
+      "localSignals": [
+        "created in review range: 2026-02-21",
+        "modified in review range: 2026-02-21",
+        "entities: Future, Important, Typeless",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-02-21; modified in review range: 2026-02-21; entities: Future, Important, Typeless; frontmatter context present; tags present as weak signals"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-01-linya不去北京了-md",
+      "path": "2026月复盘/3月/2026-03-01 Linya不去北京了.md",
+      "title": "2026-03-01 Linya不去北京了",
+      "dateSignals": [
+        "created in review range: 2026-02-28",
+        "modified in review range: 2026-02-28"
+      ],
+      "excerpt": "今天进入 3 月了，昨天得知了 [[黄琳雅|Linya]] 以后不会去北京，所以感觉我俩之间的事可能也就要告一段落了。至少以后，可能不会有恋人关系这样子吧。 肯定我自己的感受是非常失落的，一时之间不知道说些什么好。 其实从 1 月我考完试开始，我们俩之间的联系就变得比较少了。在 1 月中旬之前，我们一直会进行大量的聊天，或者视频通话，但后来联系慢慢变少，到现在基本上三到五天才会联系一次。这已经是普通朋友的频率了吧，但依旧是我现在最高的联系频率。 我当然是慕强的，所以会为她无法来北京而遗憾，同时也是觉得自己没有把握住机会吧。虽然说这个结果不是我造就的，但我的确没有把握好机会嘛。 --- 与此同时，我萌生出的其她想法是：我肯定不会再像本科那样去发展亲密关系了。我首先要做好的是每天有自己的事情要干。如果依旧是大四、研一上半学期那种状态，肯定还是会产生一些依赖的。 所以首要的任务就是找到自己的事情去干，类似于最充实的那段时间会因为有事要做而早早醒来，保持早睡早起 虽然那种充实的时光偶尔会感觉到比较累，但其实一天结束之后，获得的是一种爽感。那一段日子结束之后，获得的也是踏实、脚踏实地的感觉。 我自己的亲密关系遥遥无期，也不会怎么样子，至少目前来看是这样的。我也不着急，因为我自认为条件还挺好的。而且在此之前，我需要完成自己独立的任务。我还是那句话：在没有变得比较独立之前，是没办法获得亲密关系的。 --- 对于没有经常联系她这件事，我给自己的理由是这种联系并不紧急。 我认为原因主要有两点： 1. 我还不确定自己的心意，可能还没有那么坚定。 2. 她是否会来北京也具有不确定性。 正是因为这些不...",
+      "links": ["黄琳雅"],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-03-01 17:21",
+        "cssclasses: p-indent",
+        "weak tags: 亲密关系/Linya",
+        "weak tags: Future",
+        "emotion: sad"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["黄琳雅", "Linya", "Future", "2026-03-01 17:21", "p-indent", "sad"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:Future", "tag:亲密关系/Linya"],
+      "localSignals": [
+        "created in review range: 2026-02-28",
+        "modified in review range: 2026-02-28",
+        "1 outbound links",
+        "entities: 黄琳雅, Linya, Future",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["黄琳雅"],
+      "whyIncluded": "created in review range: 2026-02-28; modified in review range: 2026-02-28; 1 outbound links; entities: 黄琳雅, Linya, Future; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-08-心情有点不错-收钱有情感-md",
+      "path": "2026月复盘/4月/2026-04-08 心情有点不错，收钱有情感.md",
+      "title": "2026-04-08 心情有点不错，收钱有情感",
+      "dateSignals": [
+        "created in review range: 2026-04-07",
+        "modified in review range: 2026-04-07"
+      ],
+      "excerpt": "这一天的还挺开心挺有意思的。 早上起来“[[2026-03-04 亏钱自是烦恼|偷]]”了1500刀左右的 XAUUSD，但是因为自己失误其实损失了也不少。本身预计今天能有2000刀+的，但是因为没睡醒的操作失误以及一个插针补缺口让自己收入今日只有1100刀附近。加上 A 股放量大涨，基本上一天赚了小2 w（回本路）；同时如果简单计算不出什么幺蛾子的话，目前我所有渠道加起来应该是刚刚回本。 下午就是力学所打球，一路当串子调侃一下苟哥一周和他 crush 的进展。金句频出啊，梗也是频出。什么“我为你燃尽了，你却转头就搭上了妹妹”“今天的草长的真不错”等等。还有经典出现了“微笑唇”，这也是可以让我“PTSD”的词汇。 球打得尚可，有点疲惫。食欲依旧有点差，还是因为大病未愈吧。",
+      "links": ["2026-03-04 亏钱自是烦恼"],
+      "backlinks": [],
+      "commonLinks": ["2026-03-04 亏钱自是烦恼"],
+      "frontmatterSignals": [
+        "create: 2026-04-08T23:44:00",
+        "cssclasses: p-indent",
+        "emotion: excite"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-03-04 亏钱自是烦恼",
+        "2026-04-08T23:44:00",
+        "p-indent",
+        "excite"
+      ],
+      "crossFolderLinks": ["2026月复盘/3月/2026-03-04 亏钱自是烦恼.md"],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-07",
+        "modified in review range: 2026-04-07",
+        "1 outbound links",
+        "shared links: 2026-03-04 亏钱自是烦恼",
+        "entities: 2026-03-04 亏钱自是烦恼, 2026-04-08T23:44:00, p-indent",
+        "cross-folder links: 2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2026月复盘/3月/2026-03-04 亏钱自是烦恼.md"],
+      "whyIncluded": "created in review range: 2026-04-07; modified in review range: 2026-04-07; 1 outbound links; shared links: 2026-03-04 亏钱自是烦恼; entities: 2026-03-04 亏钱自是烦恼, 2026-04-08T23:44:00, p-indent"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-04-亏钱自是烦恼-md",
+      "path": "2026月复盘/3月/2026-03-04 亏钱自是烦恼.md",
+      "title": "2026-03-04 亏钱自是烦恼",
+      "dateSignals": [
+        "created in review range: 2026-03-03",
+        "modified in review range: 2026-03-03"
+      ],
+      "excerpt": "可能我自述过再多次也无济于事，自动扣费就是会让人整个心情变得糟糟的。大 A 全仓跌了7%也算是我的历史新高了，一轮下来直接干掉一整个月的收益。黄金就是直接把我的信心干没了，但是不至于有多烦恼，大 A 是把信心干没加上把钱也干没了。 不过再怎么样应保持一个原则，不能对我的生活造成太大的负面影响。相比11月那会我已经有很大的改善了，那会天天焦虑又没办法做些什么，只能干看着下跌。而现在，其实跌的再多焦虑也就一小会，该干什么干什么，该买什么买什么。正面影响自然是不少的，像现在会因为早上套利黄金而早起，自然也带着早睡；以前是因为大涨而心情很舒服，消费也多起来。 --- 2026-03-05 10:11 偷鸡0.45手取到600刀。 2026-03-06 08:32 群里总是在讨论“偷鸡流”相关的风险，主要是可能会封号，导致本金全部被封住无法提现。 ^daa359 同时，我也在网上查到亚太可能是一个不太正规的平台，搜到的相关资料里，有 2019 年的几条新闻，还有 2023 年在某个网站平台上的两三条记录。而且我个人也认为，亚太做的整个网站看上去不是非常正规。加上群里做单的种种情况，让我决定先休息一段时间。当然，最主要的原因还是“偷鸡流”本身存在一定的风险。我认为只要进行一点初步的数据分析，随随便便就能查到所有人是否进行了这种套利操作。 群里有句话说得挺好的：**这么明显的一个 bug 还能让你知道了？金融套利不是这么好赚钱的。你贪图他的套利利润，他贪图你的本金。羊毛总是出在羊身上的。** 赚到一点就跑不是什么问题，机会总是有的。不仅仅局限在这个时候，钱是赚不完的，不要失去你的本金，要留在...",
+      "links": [],
+      "backlinks": [
+        "2026月复盘/4月/2026-04-08 心情有点不错，收钱有情感.md",
+        "2026月复盘/4月/2026-04-11 有钱之后.md",
+        "2026月复盘/4月/2026-04-14 偷鸡流告一段落.md"
+      ],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-03-04 08:14",
+        "cssclasses: p-indent",
+        "weak tags: finance",
+        "emotion: sad"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-03-04 08:14", "p-indent", "sad"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:finance"],
+      "localSignals": [
+        "created in review range: 2026-03-03",
+        "modified in review range: 2026-03-03",
+        "3 backlinks",
+        "entities: 2026-03-04 08:14, p-indent, sad",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-08 心情有点不错，收钱有情感.md",
+        "2026月复盘/4月/2026-04-11 有钱之后.md",
+        "2026月复盘/4月/2026-04-14 偷鸡流告一段落.md"
+      ],
+      "whyIncluded": "created in review range: 2026-03-03; modified in review range: 2026-03-03; 3 backlinks; entities: 2026-03-04 08:14, p-indent, sad; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-22-精准的表达很有感染力-md",
+      "path": "2026月复盘/4月/2026-04-22 精准的表达很有感染力.md",
+      "title": "2026-04-22 精准的表达很有感染力",
+      "dateSignals": [
+        "created in review range: 2026-04-21",
+        "modified in review range: 2026-04-21"
+      ],
+      "excerpt": "我没有去逐字逐句精读每一篇论文，但是从我比较关注的几篇来看的话，有几篇论文给人的感受很不一样。好像说某篇文章能够把这个问题说得很清楚很明白，切实切中了我模模糊糊中想要找的意思，被他用语言很凝练地表达出来。 可能我在项目当中会说，这个 [[Human and Agent交互过程中保留人的决策与取舍|AI 没有保留过程，过程丢失啊]]。但是人家的文章就会说，研究工作中的关键判断、问题边界、证据解释和被放弃的路线，**会在时间和空间上碎裂**，导致用户难以重访、揭示解释和接管项目 —— Temporo-spatial fragmentation of sensemaking work 又像这个博主所说的。[[知识可以生成，意图只能发现|知识可以被生成，但是意图只能去发现]]。这两篇文章，它大致说了。我们写在文字当中的内容，并不会包含我们当初的取舍和决策。 --- 但是回到自己，就发现很多自己会做的模糊的表达，不管是向他人提问的时候还是去做一些汇报，就发现自己的表达模糊。总是在说，中间的问题过程被丢失，但是没有去切中其中的要害。",
+      "links": [
+        "Human and Agent交互过程中保留人的决策与取舍",
+        "知识可以生成，意图只能发现"
+      ],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-04-22T13:12:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "Human and Agent交互过程中保留人的决策与取舍",
+        "知识可以生成，意图只能发现",
+        "Human",
+        "Agent",
+        "Temporo",
+        "2026-04-22T13:12:00",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-21",
+        "modified in review range: 2026-04-21",
+        "2 outbound links",
+        "entities: Human and Agent交互过程中保留人的决策与取舍, 知识可以生成，意图只能发现, Human",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [
+        "Human and Agent交互过程中保留人的决策与取舍",
+        "知识可以生成，意图只能发现"
+      ],
+      "whyIncluded": "created in review range: 2026-04-21; modified in review range: 2026-04-21; 2 outbound links; entities: Human and Agent交互过程中保留人的决策与取舍, 知识可以生成，意图只能发现, Human; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-30-叉院终是二次选拔了-但我别有一番滋味-md",
+      "path": "2026月复盘/4月/2026-04-30 叉院终是二次选拔了，但我别有一番滋味.md",
+      "title": "2026-04-30 叉院终是二次选拔了，但我别有一番滋味",
+      "dateSignals": [
+        "created in review range: 2026-04-29",
+        "modified in review range: 2026-04-29"
+      ],
+      "excerpt": "这种滋味，源于各种事情吧。 很难想象，在一两个月前，我还兴致冲冲地说，我要转博，我要去叉院，脱离当前这个课题组。但是，摆在面前的其实有很多问题。首先，出于不确定的考虑，就是我即便去[[叉院转博|叉院]]。情况是这样的，我的课题和导师不一定是 match 的。遇见的导师不知道是个什么情况，课题组也不知道是个什么情况。再加上本身我就没有做过任何研究。去那的话可能需要到第三年才正式开始有一些科研。这是基于现实风险的一些考虑。因为实际上去了之后，还是会有当前我遇见的种种限制。什么科研掺水啊，选题限制啊，[[2026-04-30 课题组的局限|导师不 match]] 啊，都有可能。 另外一个就是我自己其他方面上的考量。首先是我本身不是很愿意去做这个偏技术方向上的课题。同时，未来找工作也未必想找这方面的东西。我自己本身想在博士期间培养的是个人的可迁移能力。老实说，如果硕士期间好好培养的话，还是有一定可行性的。毕竟，多数时间也都是自行去探索思考。再就是，我还是认为，像我追前沿的 AI 热点、AI Tool、AI 应用，这些是一定是要去业界才能够有这么一个氛围，才能够更好的激发出我的潜力的。积累的技术是一方面，另一方面就是整体的一个氛围以及自己愿不愿意去探索，以及喜欢这个事儿。 所以，慢慢的也就想的开一些了吧。我可能真的不是很适合去做偏技术方向上的一些科研。而且我也不是那么的爱做，因为我找不到其中的意义，所以不如去业界去真实的场景。 别有一番滋味，主要是源于我这个学历上的 title，以及未来确实可能没有博士的一些技术还有薪资吧。但是去读博同样是有风险的。因为要面临博士五年期间可能科研上的压力...",
+      "links": ["2026-04-30 课题组的局限", "叉院转博"],
+      "backlinks": [],
+      "commonLinks": ["叉院转博"],
+      "frontmatterSignals": ["create: 2026-04-30T10:53:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-30 课题组的局限",
+        "叉院转博",
+        "Tool",
+        "2026-04-30T10:53:00",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-29",
+        "modified in review range: 2026-04-29",
+        "2 outbound links",
+        "shared links: 叉院转博",
+        "entities: 2026-04-30 课题组的局限, 叉院转博, Tool",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2026月复盘/4月/2026-04-30 课题组的局限.md", "叉院转博"],
+      "whyIncluded": "created in review range: 2026-04-29; modified in review range: 2026-04-29; 2 outbound links; shared links: 叉院转博; entities: 2026-04-30 课题组的局限, 叉院转博, Tool"
+    },
+    {
+      "id": "note:projects-research-md",
+      "path": "Projects/Research.md",
+      "title": "Research",
+      "dateSignals": [],
+      "excerpt": "# Research Project This project note summarizes links, folders, frontmatter, and annual planning. It mentions [[Review Fixtures/2026-01-01]] as source evidence.",
+      "links": ["Review Fixtures/2026-01-01"],
+      "backlinks": ["Review Fixtures/2026-01-01.md", "Review Fixtures/2026-01-02.md"],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "weak tags: project",
+        "weak tags: research",
+        "status: active"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-01-01", "Research Project This", "Review Fixtures", "active"],
+      "crossFolderLinks": ["Review Fixtures/2026-01-01.md"],
+      "weakSignals": ["tag:project", "tag:research"],
+      "localSignals": [
+        "2 backlinks",
+        "1 outbound links",
+        "entities: 2026-01-01, Research Project This, Review Fixtures",
+        "cross-folder links: Review Fixtures/2026-01-01.md",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["Review Fixtures/2026-01-01.md", "Review Fixtures/2026-01-02.md"],
+      "whyIncluded": "2 backlinks; 1 outbound links; entities: 2026-01-01, Research Project This, Review Fixtures; cross-folder links: Review Fixtures/2026-01-01.md; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-1月-2026-01-13-诚实说这周放纵-md",
+      "path": "2026月复盘/1月/2026-01-13 诚实说这周放纵.md",
+      "title": "2026-01-13 诚实说这周放纵",
+      "dateSignals": [
+        "created in review range: 2026-01-12",
+        "modified in review range: 2026-01-12"
+      ],
+      "excerpt": "考完试总有一小段放纵的时期，而恰好遇上黄金行情不错，那么就持续在黄金交易中摸爬滚打，尝试做趋势，尝试去挖矿。 而余下时间呢，真的几乎没有在进步等等。我想每日规划还是需要做好，现在我花了相当多的时间在黄金上，但老实说，花了大量时间盯盘，但学习效率却是很低的。我一晚上的成果不如下午去打球时做到的一波趋势吃得多 [[2025-01-09 大非农行情]] [[2026-01-12]]。 --- 依照我的规划，今天考试过后我将开始步态项目的推进。设定时间是一个比较合理的方案，不然就是无休无止的拉锯战。 另一个事情是，我需要 `对于 AI 辅助我创作有一个良好的 Prompt 以及工作流`，当然这分多种应用场景。比如当前我想去无中生有一个 Idea，比如我想对当前的项目做一个时间预估好分配每日任务等，现在单纯靠自己想一方面是耗费时间，另一方面是可能方向不对会让我前功尽弃。",
+      "links": ["2025-01-09 大非农行情", "2026-01-12"],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-01-13 10:31", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2025-01-09 大非农行情",
+        "2026-01-12",
+        "Prompt",
+        "Idea",
+        "2026-01-13 10:31",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-01-12",
+        "modified in review range: 2026-01-12",
+        "2 outbound links",
+        "entities: 2025-01-09 大非农行情, 2026-01-12, Prompt",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2025-01-09 大非农行情", "2026-01-12"],
+      "whyIncluded": "created in review range: 2026-01-12; modified in review range: 2026-01-12; 2 outbound links; entities: 2025-01-09 大非农行情, 2026-01-12, Prompt; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-1月-2026-01-07-近期稳中向好-md",
+      "path": "2026月复盘/1月/2026-01-07 近期稳中向好.md",
+      "title": "2026-01-07 近期稳中向好",
+      "dateSignals": [
+        "created in review range: 2026-01-06",
+        "modified in review range: 2026-01-06"
+      ],
+      "excerpt": "也不是我本人受了什么样的打击，就是认为的确不能再放纵下去了。自26年开年，我觉得又开始新一波的动力满满。不管是对于未来的思考还是具体的行动执行（盯黄金外汇是例外，实在是自己的人性还是没有控制好；在其中还是花费了大量的时间和精力，更甚者是情绪） 我这两天其实还是带有情绪(亏钱的情绪)地去思考了入叉院以及未来职业选择的方向。突然发现，其实叉院也未必是一个非常好的选择。如果说，我入了叉院是和师姐一样一样的情况，那么即便混乱我也是愿意前往的；但如果真的跟另一个导师做计算机方向的内容，我想我还真的未必能扛得住... 当前我只是出于“专业名不符”的主要考虑以及薪资的次要考虑想进叉院，而如果真的全做计算机方向的内容，那怕是得不尝失[[叉院转博]]。",
+      "links": ["叉院转博"],
+      "backlinks": [],
+      "commonLinks": ["叉院转博"],
+      "frontmatterSignals": [
+        "create: 2026-01-07 16:57",
+        "cssclasses: p-indent",
+        "emotion: Calm"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["叉院转博", "Calm", "2026-01-07 16:57", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-01-06",
+        "modified in review range: 2026-01-06",
+        "1 outbound links",
+        "shared links: 叉院转博",
+        "entities: 叉院转博, Calm, 2026-01-07 16:57",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["叉院转博"],
+      "whyIncluded": "created in review range: 2026-01-06; modified in review range: 2026-01-06; 1 outbound links; shared links: 叉院转博; entities: 叉院转博, Calm, 2026-01-07 16:57"
+    },
+    {
+      "id": "note:2026月复盘-1月-2026-01-15-不清楚的需求及标准-md",
+      "path": "2026月复盘/1月/2026-01-15 不清楚的需求及标准.md",
+      "title": "2026-01-15 不清楚的需求及标准",
+      "dateSignals": [
+        "created in review range: 2026-01-14",
+        "modified in review range: 2026-01-14"
+      ],
+      "excerpt": "近期师姐让大家做一个沙盘模型的生成，其实本来就是一个比较简单的需求。但我多次返工依旧不能使用让我对整个办事方式以及流程产生了一些疑问： 1、沙盘程序在哪？模型通过的标准是什么？ 2、为何不能统一一下混元3 D 的生成规格，提示词等？ 3、Mac/Win 系统之间的区别和疑问 我前前后后进行了三次模型的生成和下载，调试代码也调试了有好一会，总计时间大概得有5 H。但是我的心情却非常糟糕。对于这类不清楚、没有标准的需求我再接单一定要考虑清楚，谨慎再谨慎。 当然我自己的问题其实也真的不小，只是一味认为我做得就是对的，标准化程序怎么会出错呢？没有跑少量模型进行测试是我的失误，在第一天生成时犯了一次错（模型棱角分明），第二次写代码犯了一次（运行时间过长），第三次生成模型、压缩模型又犯了一次（没有让师姐先进行检查）。 `对于未来类似情况的出事方法` 在进行高重复、耗时长或是沉没成本高的事情之前，花费少量代价，进行短期可行性测试是非常有必要的。这是为了确保整个工作流的正常进行。 其次，清晰的需求同样重要。不管是对于自己的时间还是对于整体时间都是一种莫大的节约。 `本质上我气恼的原因` 应该还是出在自身上，即花费较大的时间，但却在关键问题上掉链子，没有对我生产的东西进行检查 check（向师姐 check）。黄金也是，盯着瀑布但是却一直不敢上车，我应该对我自己的判断有点把握才是，听牛师傅的已经挂住好几回或者没吃到瀑布半成以上的收益。而我自己选的点基本上能比牛师傅准一些，收益多5刀以上。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-01-15 15:34",
+        "cssclasses: p-indent",
+        "emotion: anger"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [
+        "近期师姐让大家做一个沙盘模型的生成，其实本来就是一个比较简单的需求。但我多次返工依旧不能使用让我对整个办事方式以及流程产生了一些疑问： 1、沙盘程序在哪？模型通过的标准是什么？",
+        "2、为何不能统一一下混元3 D 的生成规格，提示词等？"
+      ],
+      "entities": ["Mac", "Win", "2026-01-15 15:34", "p-indent", "anger"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-01-14",
+        "modified in review range: 2026-01-14",
+        "contains reviewable questions",
+        "entities: Mac, Win, 2026-01-15 15:34",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-01-14; modified in review range: 2026-01-14; contains reviewable questions; entities: Mac, Win, 2026-01-15 15:34; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-07-不正常的焦虑态-md",
+      "path": "2026月复盘/4月/2026-04-07 不正常的焦虑态.md",
+      "title": "2026-04-07 不正常的焦虑态",
+      "dateSignals": [
+        "created in review range: 2026-04-06",
+        "modified in review range: 2026-04-06"
+      ],
+      "excerpt": "最近的焦虑状态其实不是非常的正常，因为我认为当前的这些任务其实来说都不至于让我有一个非常大的情绪波动。我虽然可能也会烦，也会躁，但是不会至于说像这样的焦虑。 我不知道里面的根本原因到底是什么？是因为各种小的网络问题，是我个人生理因素，还是说真的我的抗压能力不如以前了。暂且按下不说吧，也有可能。可能是我这个课题组科研的进度推进得不是非常顺利，那当前确实也没有做出什么东西，而且还是在用 [[2026-04-04 懵逼同时有AI压力感|AI盲目探索]]。 先不管怎么说，最近的话，我觉得除了说我自己要把时间弄得充实一点之外呢，我自己的精神状态还是要保持一下的。就是 **前段时间可能因为身体状态没法去运动，然后得不到太多的放松，就这种焦虑感慢慢的积压到现在吧。** 那如果自己的身体好了一点之后，可以开始恢复去健个身，或者打个球，或者跑跑步、跳个绳都可以。但是真的不能一天长久地坐在宿舍里，你就算是让自己反复地去思考些什么事情，那也是说实话，有点痛苦的。",
+      "links": ["2026-04-04 懵逼同时有AI压力感"],
+      "backlinks": [],
+      "commonLinks": ["2026-04-04 懵逼同时有AI压力感"],
+      "frontmatterSignals": [
+        "create: 2026-04-07T12:24:00",
+        "cssclasses: p-indent",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-04 懵逼同时有AI压力感",
+        "2026-04-07T12:24:00",
+        "p-indent",
+        "anxiety"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-06",
+        "modified in review range: 2026-04-06",
+        "1 outbound links",
+        "shared links: 2026-04-04 懵逼同时有AI压力感",
+        "entities: 2026-04-04 懵逼同时有AI压力感, 2026-04-07T12:24:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2026月复盘/4月/2026-04-04 懵逼同时有AI压力感.md"],
+      "whyIncluded": "created in review range: 2026-04-06; modified in review range: 2026-04-06; 1 outbound links; shared links: 2026-04-04 懵逼同时有AI压力感; entities: 2026-04-04 懵逼同时有AI压力感, 2026-04-07T12:24:00, p-indent"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-24-夜半散步-md",
+      "path": "2026月复盘/4月/2026-04-24 夜半散步.md",
+      "title": "2026-04-24 夜半散步",
+      "dateSignals": [
+        "created in review range: 2026-04-23",
+        "modified in review range: 2026-04-23"
+      ],
+      "excerpt": "我忘了什么时间，25年的几月后？就是我很少在外面和人散步聊天到凌晨了，还是这种可能长期的，从八点一直聊到十二点多才回去。 昨晚接了[[纪馨玉|馨玉]]师姐。从八点多跑去这个烧烤摊吃烧烤，可能聊到了十点多。回去带了件衣服，接着出门，散散步去操场上压一压，看看星星。累了坐一会儿，路上玩闹一下。可能就到了十二点半接近一点的时候才回去。 聊什么？内容其实太多了。我们从小聊到大，聊很多自己的个人成长的轨迹，自己的性格特点。 就像烧烤摊上，我们对于导师对我们发火，或者是跟我们想掰扯什么事情的时候，我们各自的做法是怎么样的？她的做法是，其实是减轻自己认知负担、时间精力的一种做法，就是搪塞一下。就是说老师你骂得很对，我承认错误，然后这事儿就翻篇了。那么这个事儿是我会和爷爷这辈儿的人去讲话的一个方式。但是更多的时候，我如果面对导师，或者说我的父母的话，我会去据理力争，摆事实，讲证据。你错的就是你错了，我错的就是我错了，这个必须要承认。但是，如果你没有讲事实，并且坚持自己观点的话，我肯定会不满，并且会跟你据理力争到底。 她说，我反复在讲本科时候那个女生、高中时候那个女生的事情，其实就是没有走出来，并且会夹杂着一些不一样的气愤情绪。但是我肯定对此有不同的意见。 **我能够讲出来，同时也愿意把照片分享给你们看，因为这部分是我的回忆，也是塑造我现在这么一个人的关键。我会把事情和人分开，美好的回忆现在想起来都还能笑得出来，但是不妨碍我对这个人已经下头了，没有感觉了。** 最深刻的记忆其实是在操场上，她讲出她从少女时代到本科到研究生时候，追人和被追的一种心态，还有一种转变和成长，可以窥见这个成长的轨迹。 她...",
+      "links": ["纪馨玉"],
+      "backlinks": ["2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md"],
+      "commonLinks": ["纪馨玉"],
+      "frontmatterSignals": ["create: 2026-04-24T11:32:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["纪馨玉", "2026-04-24T11:32:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-23",
+        "modified in review range: 2026-04-23",
+        "1 backlinks",
+        "1 outbound links",
+        "shared links: 纪馨玉",
+        "entities: 纪馨玉, 2026-04-24T11:32:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2026月复盘/4月/2026-04-26 缓了一天才能收拾情绪.md", "纪馨玉"],
+      "whyIncluded": "created in review range: 2026-04-23; modified in review range: 2026-04-23; 1 backlinks; 1 outbound links; shared links: 纪馨玉"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-04-all-in-ai-md",
+      "path": "2026月复盘/3月/2026-03-04 ALL-in-AI.md",
+      "title": "2026-03-04 ALL-in-AI",
+      "dateSignals": [
+        "created in review range: 2026-03-03",
+        "modified in review range: 2026-03-03"
+      ],
+      "excerpt": "反正不光是课题组，包括我自己对于生活以及以后的工作，我都准备去 All-in-AI。 目前这些大模型的花费，我认为可以算是一种合理的投资。毕竟它能帮我处理生活中的很多事情，比如最近的：项目的汇报、知识的分享。虽然我还没有用 AI 打通全自动化的流程，但它已经让我的效率提升了非常多。 不过，目前我感觉还没有非常明显地感知到效率的超级大提升。 一方面，我自己其实没有一个非常稳定的时间段来专门使用 AI 处理工作，因为我的时间总是零零散散的，要么是在课上，要么是在路上。 所以我使用 AI 的话，还是需要有一个能独处、能思考的时间。毕竟我目前的角色几乎只有一个，就是写Prompt，而这些提示词的来源依旧取决于我的思考：我提到了哪些方向，它才会根据这些方向去规划。所以它实际上还是一个放大器，是一个杠杆：如果我哪部分考虑得不好，它的输出效果可能也不好。在后续的工作中，我希望可以通过 AI 来辅助我进行这种 brainstorm式的思考和决策。 ---",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-03-04 10:00",
+        "cssclasses: p-indent",
+        "weak tags: AI",
+        "weak tags: Future"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["Future", "All", "Prompt", "2026-03-04 10:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:AI", "tag:Future"],
+      "localSignals": [
+        "created in review range: 2026-03-03",
+        "modified in review range: 2026-03-03",
+        "entities: Future, All, Prompt",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-03; modified in review range: 2026-03-03; entities: Future, All, Prompt; frontmatter context present; tags present as weak signals"
+    },
+    {
+      "id": "note:2026月复盘-5月-2026-05-05-封号被卡脖子了-md",
+      "path": "2026月复盘/5月/2026-05-05 封号被卡脖子了.md",
+      "title": "2026-05-05 封号被卡脖子了",
+      "dateSignals": [
+        "created in review range: 2026-05-04",
+        "modified in review range: 2026-05-04"
+      ],
+      "excerpt": "这种感受是很难受的，你有一个低价的 ChatGPT Pro 的账号，但是它现在被封了。所以，我现在手头上一切需要他执行的工作全部都暂停了。感觉很不好。 好处是什么？我感觉可能我自己有更多的时间去想更高层面上的事情，去想这个架构、约束、评估的事情。这个抽象层级可能需要提的比较高，所以我不会去想具体的一些事情。但是也有坏处，就是即便我有了这些抽象层级，或者说现有的想去用的什么工具，我没有办法去试用。因为我不知道效果如何。 但我还是那句话。[[2026-04-12 探索期有充足额度才有更多可能|拥有足够的 token 额度]]，我才能放开手脚去做。",
+      "links": ["2026-04-12 探索期有充足额度才有更多可能"],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-05-05T15:17:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "2026-04-12 探索期有充足额度才有更多可能",
+        "Pro",
+        "2026-05-05T15:17:00",
+        "p-indent"
+      ],
+      "crossFolderLinks": ["2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md"],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-05-04",
+        "modified in review range: 2026-05-04",
+        "1 outbound links",
+        "entities: 2026-04-12 探索期有充足额度才有更多可能, Pro, 2026-05-05T15:17:00",
+        "cross-folder links: 2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md"],
+      "whyIncluded": "created in review range: 2026-05-04; modified in review range: 2026-05-04; 1 outbound links; entities: 2026-04-12 探索期有充足额度才有更多可能, Pro, 2026-05-05T15:17:00; cross-folder links: 2026月复盘/4月/2026-04-12 探索期有充足额度才有更多可能.md"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-25-ai时代的基建-md",
+      "path": "2026月复盘/2月/2026-02-25 AI时代的基建.md",
+      "title": "2026-02-25 AI时代的基建",
+      "dateSignals": [
+        "created in review range: 2026-02-24",
+        "modified in review range: 2026-02-24"
+      ],
+      "excerpt": "最近我恢复学习状态大概有两三天了。这两三天基本上都在做同样的事情：为了实现某个功能去反复配置，直到调试成功。但实际上，做出来的东西我不一定会经常用到，或者说只是偶尔用它。 但我却花费了大把的时间，五六个小时几乎都投入进去了，最终可能只达到了 80% 的效果。我不知道这是否值得，可能是有意义的，但我不确定未来是否会经常出现这种情况。 毕竟你要实现更多的功能，就意味着它的自由度更高。而自由度高，就可能让你前期的准备工作（也就是基建）变得非常繁琐，而且极有可能配置得还不太好。 --- 所以为了准确地评估这个基建要不要去做，我首先得想好这个需求是不是我真的能够用到，并且以后都能大大节省我的时间，或者说可以让我有**复利效应**。 这种决策依托于两件事情：首先是我真实的需求，其次是习惯的问题。如果我的习惯没培养起来，基建搭完了它依旧是闲置的，没有作用。 [[AI时代需要的是决策、眼界]]",
+      "links": ["AI时代需要的是决策、眼界"],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-02-25 19:44",
+        "cssclasses: p-indent",
+        "weak tags: AI",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["AI时代需要的是决策、眼界", "2026-02-25 19:44", "p-indent", "anxiety"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:AI"],
+      "localSignals": [
+        "created in review range: 2026-02-24",
+        "modified in review range: 2026-02-24",
+        "1 outbound links",
+        "entities: AI时代需要的是决策、眼界, 2026-02-25 19:44, p-indent",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": ["AI时代需要的是决策、眼界"],
+      "whyIncluded": "created in review range: 2026-02-24; modified in review range: 2026-02-24; 1 outbound links; entities: AI时代需要的是决策、眼界, 2026-02-25 19:44, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-1月-2026-01-19-边报告变学习-md",
+      "path": "2026月复盘/1月/2026-01-19 边报告变学习.md",
+      "title": "2026-01-19 边报告变学习",
+      "dateSignals": [
+        "created in review range: 2026-01-18",
+        "modified in review range: 2026-01-18"
+      ],
+      "excerpt": "近期组里让我们两位研一的来 `“给组里的同学和老师培训下 AI 辅助编程以及智能体的使用，帮助大家在科研工作中用起来。”` 我接下了这个任务，其实心里没什么负担，只是觉得有些草率。但这个过程中自己应该能学习到不少东西。 慢慢了解后发现，其实我使用 AI 依旧有些落后了，现在都在讲究 Context Engineering，而我还在 Prompt Engineering。现在常用的工具有很多，尤其是关于 Skill / 多开 Agent 并行开发的工作。但是这其中也很复杂，Skill 泛滥需要找到合适的，多开 Agent 需要去进行任务的分开规划。 `“因为想真的起到效果”`，那么我的抓手就是针对一些实际场景去做演示。按照之前组内师兄师姐找我的需求来看，基本有如下几种：1、演示系统的开发与部署。2、云服务器/线上收被试。 --- ## 黄金交易有点费时间 既然当下有充足的时间，那么该做的事情请不要落下。现在早起能倒逼早睡，并且看起来睡眠质量还很不错，早上的时间真的可以用来做长期的事情，尤其是回到家里的时候。 现在黄金交易体系尚未完全建立，面对这种有些磨的行情还是不看为妙，涨经验太过于漫长了。目前我看了行情好一些在1 h 内就能吃到20刀(0.01手)，差一点得几乎一天才能吃到20刀，而且经常要注意着会不会被挂住。在没有学习之前，这其实是一个效率极其低下的交易方式；其实我现在的盯盘与否没有什么差别，本质上都是到达一个点位之后入场，设止损止盈然后去干别的事情。我一直盯盯是想 scalp，但是屡屡失败，几乎都吃不到3刀就被挂住，下来之后还不是很敢补。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-01-19 21:49", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "Context Engineering",
+        "Prompt Engineering",
+        "Skill",
+        "Agent",
+        "2026-01-19 21:49",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-01-18",
+        "modified in review range: 2026-01-18",
+        "entities: Context Engineering, Prompt Engineering, Skill",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-01-18; modified in review range: 2026-01-18; entities: Context Engineering, Prompt Engineering, Skill; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-16-兴奋但是支棱不起来-md",
+      "path": "2026月复盘/3月/2026-03-16 兴奋但是支棱不起来.md",
+      "title": "2026-03-16 兴奋但是支棱不起来",
+      "dateSignals": [
+        "created in review range: 2026-03-15",
+        "modified in review range: 2026-03-15"
+      ],
+      "excerpt": "对于 AI 我有太多应用想去做了，Slides / Image / Coding... 但是每一个应用或者说一套流程，需要耗费我大量的时间去做而我自己总是死在启动前。 虽然我会去看很多 Github Treding，但是真正上手的并没有几个。我总是在忙... 在忙... 忙到自己一开始所兴奋的正事都做不了。有些苦恼，但得承认自己是有点人性需要克服的。 可能在两年前三年前，我初入心理学的时候，我对于很多新的知识都会迅速应用在自己身上。那是一种非常真实的兴奋，我即便不立马去做也会去注意这件事情，好让自己应用上。那会有用到一个技术——5 min 法则，以及将所有短时间能做完的琐事先做了。但我没有坚持下来，我记得人应用花大量的时间在自己的第二象限事上，即短期看不到收益但长期复利非常强的事情上——比如阅读。说到这，读书这件事我又落下了。 --- 看看我能不能把一些重要的事情挂在心头上吧。我需要适应当前这样的节奏，就是在一些杂活不太熟悉的活中去忙自己真正需要忙的事情，同时也让自己尽情地放松，换言之充实而非瞎忙。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-03-16 23:48", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "Slides",
+        "Image",
+        "Coding",
+        "Github Treding",
+        "2026-03-16 23:48",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-03-15",
+        "modified in review range: 2026-03-15",
+        "entities: Slides, Image, Coding",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-15; modified in review range: 2026-03-15; entities: Slides, Image, Coding; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-5月-2026-05-02-表达不清本质是思考不清-md",
+      "path": "2026月复盘/5月/2026-05-02 表达不清本质是思考不清.md",
+      "title": "2026-05-02 表达不清本质是思考不清",
+      "dateSignals": [
+        "created in review range: 2026-05-01",
+        "modified in review range: 2026-05-01"
+      ],
+      "excerpt": "五月二号的中午可能十点多的时候缠着[[纪馨玉|馨玉]]老师聊天儿。聊了一个半小时。那么聊天的契机就是我找他问，读博中收获了什么？以及一些课题组上的吐槽局限。 一开始聊就是聊聊日常啊，聊聊他去加拿大之后的生活习惯，适应的怎么样啊，这些事情。当然这不是本节的核心内容，核心内容是我发现我在科研领域纯小白，属于找人办事会被人喷的类型。 故事的起源是我跟师姐讲述了我的课题，跟她讲述了我做了哪些准备工作，跟刘老师聊了什么。然后被她喷说准备非常不充分，想的没有很清楚。虽然我极力的解释说，这个事儿我是为了什么，但是确实一定程度上是给自己找理由，也是想掩盖自己思考不清不深入的这个事实。 我一直认为自己思考还算充分，也算深入。但是忽略了一个可能更为本质的问题，就是我的全局观念或者说思考的大局上有所欠缺。因此，不管我怎么在分支上探索，我的主干全都是缺失的。 所以被人喷刚入门，被人喷准备不充分这点我真的认了。 这不一定是脑雾，但是我从小从初中到现在可能时不时就会出现这个问题。就是当我想讲述一个事情的时候，我还没有非常好地想好一条大纲、想好怎么讲，我的嘴就先讲出来了。然后讲到一半我就会卡壳，就开始在分支上探索去找补。所以给他人的观感就是非常的混乱，没有条理。如果这事儿放到讲笑话上，那就是冷场，只能看着别人尴尬的笑。",
+      "links": ["纪馨玉"],
+      "backlinks": [],
+      "commonLinks": ["纪馨玉"],
+      "frontmatterSignals": ["create: 2026-05-02T13:08:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["纪馨玉", "2026-05-02T13:08:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-05-01",
+        "modified in review range: 2026-05-01",
+        "1 outbound links",
+        "shared links: 纪馨玉",
+        "entities: 纪馨玉, 2026-05-02T13:08:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["纪馨玉"],
+      "whyIncluded": "created in review range: 2026-05-01; modified in review range: 2026-05-01; 1 outbound links; shared links: 纪馨玉; entities: 纪馨玉, 2026-05-02T13:08:00, p-indent"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-27-日有所思总是梦魇-md",
+      "path": "2026月复盘/2月/2026-02-27 日有所思总是梦魇.md",
+      "title": "2026-02-27 日有所思总是梦魇",
+      "dateSignals": [
+        "created in review range: 2026-02-26",
+        "modified in review range: 2026-02-26"
+      ],
+      "excerpt": "其实从昨天晚上开始，我就一直想着黄金的套利，就是利用早上 7 点到 7:01 这么一个差价。利用亚太的 bug。所以呢，今天早上临近 7 点的时候，我应该就反复地醒来，在反复想这件事情。卧槽，我赚钱了怎么办？赚了这么多钱，花得完吗？ 随后呢，我的操作就有点变形了，因为我看我下的单子和它的趋势是有点相反的，所以想着减少一点手数。但是没想到手数被我减到了最低，可能是因为我太困了。而且既定的想法也没有去实现，因为我想的是下两个单子，其中一个单子我留作稍微长一点的线，设个止损，然后另一个单子就直接开盘直接卖。 然后呢，想了想，我觉得因为美盘，或者说今天是月线的收线，可能会比较残暴一点，所以我觉得就直接锁盘吧，不管它起还是落。我都不是很 care 了。那么直接进行了一个锁仓操作。如果后续它涨的话，我可以直接全部平掉。后续它跌的话，我可以把空的单子给它平掉。所以说，这就是我今天的策略。后续呢，我就准备每天只做一单，就是早上的那一单，并且那一单我会稍微加大一点手数，放一个一个单子套利，一个单子当做底仓或者顶仓，来实现一个每单都能吃到的盈利吧。 然后比较可怕的就来了，就是在我锁仓之后、睡着之后，就连续不停的做噩梦，就是梦见说下跌了，但是因为跌的太快了，所以它把我的挂单分成了两三个单子。可是不知道为什么，每个单子它又给我设了止损，所以当它反复波动、多空双杀的时候，我的账户也在迅速的缩水。一开始缩到了 600 多，然后突然往下掉，掉到了 4200，我的账户就只剩下一刀了。然后又梦见说，它反复在 2000 到 9000 之间波动，红线是满屏的。这可能是加杠杆玩外汇的人最怕的梦吧。 --- 所以对于这...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-02-27 11:26",
+        "cssclasses: p-indent",
+        "weak tags: finance",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [
+        "其实从昨天晚上开始，我就一直想着黄金的套利，就是利用早上 7 点到 7:01 这么一个差价。利用亚太的 bug。所以呢，今天早上临近 7 点的时候，我应该就反复地醒来，在反复想这件事情。卧槽，我赚钱了怎么办？赚了这么多钱，花得完吗？"
+      ],
+      "entities": ["2026-02-27 11:26", "p-indent", "anxiety"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:finance"],
+      "localSignals": [
+        "created in review range: 2026-02-26",
+        "modified in review range: 2026-02-26",
+        "contains reviewable questions",
+        "entities: 2026-02-27 11:26, p-indent, anxiety",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-02-26; modified in review range: 2026-02-26; contains reviewable questions; entities: 2026-02-27 11:26, p-indent, anxiety; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-30-课题组的局限-md",
+      "path": "2026月复盘/4月/2026-04-30 课题组的局限.md",
+      "title": "2026-04-30 课题组的局限",
+      "dateSignals": [
+        "created in review range: 2026-04-29",
+        "modified in review range: 2026-04-29"
+      ],
+      "excerpt": "这些内容本应该是前些天说的，因为周一的晚上和茎申吐槽到很晚，就是说课题组有几个局限。第一是，其实我们做的是大数据网络心理学，然后组里很多内容是有关于行为建模的，但实际上它的效果都非常的差。论文有灌水的嫌疑。但是同时，组里的大老板又可以拉来很多横向，把组里当前的这些效果不佳的东西给它卖出去，这可能反映了他的一些不知道什么样的能力。 第二呢就是组里虽然追热点和计算机交叉，但是追的都是过往的热点，赶不上热乎的。而且比较烦人的一点是，即便有上述我说的效果不好的这种局限，但是作为老师，依旧是要求我做的课题要结合组里现有的方向，继续做下去。但同时呢，大老板。想法天马行空，想到什么做什么，而且难以说服。 这种情况就是导师课题双重不 match。就会让组里的学生非常的难受，也算是对于潜力的一种限制。 但另外一方面想想，组里其实给了经费，给资源，而且不查考勤，某种意义上讲确实还不错，因为其实能够了解到很多其他组的情况。导师会上非常多的压力，不放实习，这整体来说压力偏大且压榨吧。所以，未来何去何从？也不知道了，自己已有躺平的想法了。",
+      "links": [],
+      "backlinks": ["2026月复盘/4月/2026-04-30 叉院终是二次选拔了，但我别有一番滋味.md"],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-04-30T11:03:00",
+        "cssclasses: p-indent",
+        "weak tags: Future"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["Future", "2026-04-30T11:03:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:Future"],
+      "localSignals": [
+        "created in review range: 2026-04-29",
+        "modified in review range: 2026-04-29",
+        "1 backlinks",
+        "entities: Future, 2026-04-30T11:03:00, p-indent",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [
+        "2026月复盘/4月/2026-04-30 叉院终是二次选拔了，但我别有一番滋味.md"
+      ],
+      "whyIncluded": "created in review range: 2026-04-29; modified in review range: 2026-04-29; 1 backlinks; entities: Future, 2026-04-30T11:03:00, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-09-agent使用方法我还没找到-md",
+      "path": "2026月复盘/3月/2026-03-09 Agent使用方法我还没找到.md",
+      "title": "2026-03-09 Agent使用方法我还没找到",
+      "dateSignals": [
+        "created in review range: 2026-03-08",
+        "modified in review range: 2026-03-08"
+      ],
+      "excerpt": "最近几天，我对于 ChatGPT 5.4 的使用非常频繁。更多的时候，我是在 Codex 里面做一些自己比较感兴趣的东西。 比如，我最近在做一个“黄金策略”程序，功能包括提醒加上回测。但在开发过程中，我发现：每次开启对话都会耗费巨量的 token；实际操作中需要经过很多轮次的修改。 虽然目前已经有了一个雏形，但我依旧觉得好像在某些地方做得不太对、不太好。 而且我发现了一个非常严重的问题：在有了 Agent 之后，我有时会觉得什么东西都能从头开始自己造。但 **“重复造轮子”** 这件事其实非常消耗时间以及精力，尤其是在我不熟悉的领域，这实际上是需要很多经验支撑的。 就像这次的交易回测程序，其实中间有很多坑我都没有注意到。与其从零开始，我其实还不如**去 GitHub 仓库找一个现成的程序**，然后直接让 AI 帮我改一下，整合到我自己的程序当中。**对于我个人来说，能抄的、能复用的，我就不要再自己去做了。** 学习他人的经验和先进经验，是非常优秀的一个天才的想法。 在 Agent 时代，这依旧是节约时间的一种重要方法。除非我的需求已经非常个性化，市场上几乎没有任何人做过类似的东西，那么我觉得从头开始造是可以的。但是像交易回测这种程序已经发展得非常完善了，在如此完整的基础上再自己去造，既浪费时间效果又不好。 这不仅费我的 token 和额度，更耗费我的精力。这一连串的连锁反应，会让我整个人变得越来越烦躁。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-03-09 09:58",
+        "cssclasses: p-indent",
+        "weak tags: AI"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["Codex", "Agent", "2026-03-09 09:58", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:AI"],
+      "localSignals": [
+        "created in review range: 2026-03-08",
+        "modified in review range: 2026-03-08",
+        "entities: Codex, Agent, 2026-03-09 09:58",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-08; modified in review range: 2026-03-08; entities: Codex, Agent, 2026-03-09 09:58; frontmatter context present; tags present as weak signals"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-16-openclaw的两次分享-md",
+      "path": "2026月复盘/3月/2026-03-16 OpenClaw的两次分享.md",
+      "title": "2026-03-16 OpenClaw的两次分享",
+      "dateSignals": [
+        "created in review range: 2026-03-15",
+        "modified in review range: 2026-03-15"
+      ],
+      "excerpt": "我明白这种分享能给我带来什么。本质上我从中获得的是调研过程中看到的各种资料各种观点，同时综合其观点并且形成自己的思考。其实这种收获我本应该可以自己完成的，但因为自己的懒惰，被迫从这种分享中收获了知识。 收获了什么？AI 给我带来了什么变化，真正对我造成了什么影响吗，以后会往哪里发展等等。 包括很多这种技能，做 slides、逐字演讲稿过渡、图片以及观点收集... 几天的高强度搜寻观点也算是让我练到了。所以近期，我一定要做的一件事情就是做一个专属自己的 Slides 模板，找一下网络上相关的技术栈；跑通我自己的作图流程。 --- ❗️这种思考于我个人而言肯定是收益远远大于直接上手去做什么应用，这种思考是一个基座，由此我才能稳稳垒起来我的建筑。否则，不知道哪天轰然崩塌然后从头开始。 我觉得这种思考也需要用在当前的科研当中。因为可以预见，且已经能够看到，这种自动化科研变得越来越可行了。不管是 Auto Research 还是 FARS，这两个已经能看到成品的自动化科研项目已经出现。那么到最后，是不是说更出彩的 idea 才更有价值呢？就算暂时没有 idea，也可以做一些自己的项目，比如通过 Vibe Coding 开发一些符合自己需求的工具，那也是很好的。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-03-16 23:58", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": [
+        "Slides",
+        "Auto Research",
+        "Vibe Coding",
+        "2026-03-16 23:58",
+        "p-indent"
+      ],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-03-15",
+        "modified in review range: 2026-03-15",
+        "entities: Slides, Auto Research, Vibe Coding",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-15; modified in review range: 2026-03-15; entities: Slides, Auto Research, Vibe Coding; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-05-环境促进想法转变-md",
+      "path": "2026月复盘/2月/2026-02-05 环境促进想法转变.md",
+      "title": "2026-02-05 环境促进想法转变",
+      "dateSignals": [
+        "created in review range: 2026-02-04",
+        "modified in review range: 2026-02-04"
+      ],
+      "excerpt": "我不知道来福州能有这么大的魅力。 在刚下动车，上了网约车吹风时，我心里就在盘算着，以后我也要有钱，我要自由我要选择权。就是风也轻盈，我满身轻松。 回到学校后，满满的熟悉感，但又没什么不同，我的身份好像在本科时期与当下产生了一种混乱。宏晖打球，这种既熟悉又陌生的感觉让人有些烦恼，人散去后，一种巨大的孤独感袭来。 --- >[!Quote] `不三不四湖边语音 2026-02-04 23:00` 我又回福大了。下午挺开心的，想了很多东西，但一到深夜，孤独感就猛地袭来，脑子里乱七八糟的，想找人说话。我搞不清楚是因为这里承载了太多回忆，还是物是人非——学校还是那个学校，但我认识的人，很多都不在这儿了。当然，其实我本来也没有多少熟人。 在家里的时候，我反而能待下去；但如果没有和人连接的感觉，就会超级难受，好像整个世界只剩我一个人，特别割裂。我每次回家好像都会有这种感受。 说起来真没想到，有一天我会再来福大夜游。两三年前想的东西，现在确实不太一样了。今天我最强烈的想法就是——**我好想有钱**。 但我又不想完全出卖自己的时间去换钱。所以我的幻想是在交易中暴赚一笔，然后过悠闲的日子。就像今天，来一个曾经熟悉的地方走走，虽然物是人非，几乎不认识什么人，但换个环境才发现，之前自己待的地方确实有点闭塞，会让人停滞不前。 同样的场景，这两三年我看了无数次，想想真好笑。 球队的矛盾、转专业的决定、对未来的规划、休学的决定……还有亲密关系，不只是恋爱，和别人的深度连接也是，好几次了。我在这儿哭过好几次，也躺过好几次。这算是感慨吗？也许吧。 感觉自己好像长大了一点，但又没有完全长大。越说越难过——现在我一...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-02-05 17:05",
+        "cssclasses: p-indent",
+        "emotion: Calm"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["Calm", "Quote", "2026-02-05 17:05", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-02-04",
+        "modified in review range: 2026-02-04",
+        "entities: Calm, Quote, 2026-02-05 17:05",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-02-04; modified in review range: 2026-02-04; entities: Calm, Quote, 2026-02-05 17:05; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-23-亏得有点影响现实-md",
+      "path": "2026月复盘/3月/2026-03-23 亏得有点影响现实.md",
+      "title": "2026-03-23 亏得有点影响现实",
+      "dateSignals": [
+        "created in review range: 2026-03-22",
+        "modified in review range: 2026-03-22"
+      ],
+      "excerpt": "真心的，A 股亏得有点太难受了。现在干活的时候如果看一眼账户便会焦虑得受不了，只能一边借工作麻木自己一遍遍看又心烦。炒股是为了更好的生活，但如果影响了自己... 得不偿失了。 我在上周几乎是最高点的地方买入了0.01的 LLG，本着躺躺就能回来的想法，硬生生420亏得只剩80才锁单。如果不锁那么早就爆了，LLG 一路跌到最低点4100，我不看位置直接入的想法也是过于风险和生猛了。 因为 LLG 是几乎24 h，所有我很难在自己干活的时候保持专注，只能说不得不变得精神涣散。我应该使用最早的策略，止盈止损一设，然后全部忘记就可以了。咱可以不贪心嘛，吃个几刀就跑也是无所谓的。 多得就不再说了... 影响生活这个事我大概是会反复提及的。明日再对其他内容好好复盘。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-03-23 23:47",
+        "cssclasses: p-indent",
+        "weak tags: finance",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-03-23 23:47", "p-indent", "anxiety"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:finance"],
+      "localSignals": [
+        "created in review range: 2026-03-22",
+        "modified in review range: 2026-03-22",
+        "entities: 2026-03-23 23:47, p-indent, anxiety",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-22; modified in review range: 2026-03-22; entities: 2026-03-23 23:47, p-indent, anxiety; frontmatter context present; tags present as weak signals"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-23-组内学生氛围很不错-md",
+      "path": "2026月复盘/3月/2026-03-23 组内学生氛围很不错.md",
+      "title": "2026-03-23 组内学生氛围很不错",
+      "dateSignals": [
+        "created in review range: 2026-03-22",
+        "modified in review range: 2026-03-22"
+      ],
+      "excerpt": "说实话，在周天去所里玩之前，我还是隐隐有些担心的，就是不太清楚怎么去和这些师兄师姐相处，尤其是博士可能比我大七八岁。 但其实从去鸽子张开始，大家就几乎保持着一个比较轻松愉快的氛围。尤其当我看到大家都在调侃馨玉师姐的时候，我就发现组里氛围应该是很好——因为互相开得起玩笑，也会稍微有点嘴毒的调侃意味。而且同时，组内成员之间没有什么利益冲突，基本上是每级一两个人这样子。 那么除了这个，我觉得可能外出走路那段时间稍显无趣之外，大家在所里403聊天、相互之间交流的时候，都很有意思。师兄师姐和我们几乎没有年龄上的差距，师兄有点搞笑，师姐也有点搞笑，大家完全能玩到一块儿，也不会因为新人加入而冷场。组里也有人承担话题发起者的角色。 那么可以说，那一天是我近期以来玩得比较开心的一天。不论是当天吃饭过程中、在403聊天的时候，还是当天晚上在那里吃饭、玩德州扑克，整体来说都是一种轻松愉悦的氛围。到后面，我们自己也慢慢放松下来，放得开了，仿佛大家一下子就熟起来了。 在这个过程中也了解到组里的很多事情，各种各样的吧。 比如说，比较有意思的几个就是朱老师社恐、赵老师拖延、刘老师和大家能打成一片这种事情。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-03-23 23:55",
+        "cssclasses: p-indent",
+        "weak tags: ccpl",
+        "emotion: excite"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-03-23 23:55", "p-indent", "excite"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:ccpl"],
+      "localSignals": [
+        "created in review range: 2026-03-22",
+        "modified in review range: 2026-03-22",
+        "entities: 2026-03-23 23:55, p-indent, excite",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-22; modified in review range: 2026-03-22; entities: 2026-03-23 23:55, p-indent, excite; frontmatter context present; tags present as weak signals"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-15-脱裤子放屁的活-md",
+      "path": "2026月复盘/4月/2026-04-15 脱裤子放屁的活.md",
+      "title": "2026-04-15 脱裤子放屁的活",
+      "dateSignals": [
+        "created in review range: 2026-04-15",
+        "modified in review range: 2026-04-15"
+      ],
+      "excerpt": "量化大讲堂本身可能不错，但是让我们讲的东西就是脱裤子放屁了。又是 spss-mcp 又是 [[QClaw连CC；WorkBuddy|openclaw 连 cc]]，更是连底裤一起扒下来坐到马桶上放屁。 本着负责我还是花了相当多的时间尽量按照朱的要求来做，但是越做越想骂人，本身我有基础的都要配置这么长时间，那他们没有基础的更是完蛋了。 世界的草台确实很多，但是又如何呢？穷则独善其身。目前来看自己能力不是特别足也无法抗衡，也没法说服导师，那就尽可能对自己和他人负责吧，按要求来即可。既然他放权让我来做，那么不管做的是好还是差他都不应有什么太多的怨气。 所以现在我认为我总是配得感很强，别管当前对于什么大公司或者谁有多少的光环，以后我不觉得有什么次于人家的，配得感是第一位的。以前大三的时候我觉得，能来心理所是我的福气，大老板多牛多牛，但进来后也是发现就那样吧，很多还不如我呢。 我希望这不是个回旋镖，因为随着年龄和阅历的增长，很多我当前瞧不起或者不喜欢做的事情可能也能去理解了。但在对待学生为人处事这方面，CCPL 的朱老师做得确实欠佳。",
+      "links": ["QClaw连CC；WorkBuddy"],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-04-16T09:36:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["QClaw连CC；WorkBuddy", "2026-04-16T09:36:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-15",
+        "modified in review range: 2026-04-15",
+        "1 outbound links",
+        "entities: QClaw连CC；WorkBuddy, 2026-04-16T09:36:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": ["QClaw连CC；WorkBuddy"],
+      "whyIncluded": "created in review range: 2026-04-15; modified in review range: 2026-04-15; 1 outbound links; entities: QClaw连CC；WorkBuddy, 2026-04-16T09:36:00, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-07-刷完美女容易空虚-md",
+      "path": "2026月复盘/2月/2026-02-07 刷完美女容易空虚.md",
+      "title": "2026-02-07 刷完美女容易空虚",
+      "dateSignals": [
+        "created in review range: 2026-02-06",
+        "modified in review range: 2026-02-06"
+      ],
+      "excerpt": "我的道德和欲望偶尔会出来打架。 一方面我向往那种一对一纯情的恋爱，而另一方面是幻想，偶尔会去幻想自己处于一种纸醉金迷的生活。美女看多了，短剧刷多了似乎就有这种感受。我喜欢很多短剧中女主的颜值以及性格（其实可能很多是颜值），觉得那是想象中的生活，但我知道，这是幻想... 以及，这真的让我道德和欲望在打架。 --- 在没有很多钱之前，我还不能共情为什么有了很多钱之后依旧会想去赚更多的钱。牛老师和张峻齐的很多话其实我也能说，其实我认为自己和他们的差距在经验和在交易中的阅历。很多鸡汤的话我总觉得太熟悉了，不知道为什么很多事业有成的人都具有这种相似性。 钱来的快，走的也快，自己实属容易有些空虚。 我最近一个月因为黄金赚钱了，很明显发现自己的消费一点也没有节制了，爽是很爽，很自由，不需要再一直研究什么便宜一直刷券了。但我隐隐担心，钱走得太快了，我有点把握不住。但是这样的消费似乎有些收不住了，由奢入俭难... 或许换言之，这能激发我对于生活的动力呢。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-02-07 15:43",
+        "cssclasses: p-indent",
+        "emotion: anxiety"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-02-07 15:43", "p-indent", "anxiety"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-02-06",
+        "modified in review range: 2026-02-06",
+        "entities: 2026-02-07 15:43, p-indent, anxiety",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-02-06; modified in review range: 2026-02-06; entities: 2026-02-07 15:43, p-indent, anxiety; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-2月-2026-02-10-人的行为容易受他人影响-md",
+      "path": "2026月复盘/2月/2026-02-10 人的行为容易受他人影响.md",
+      "title": "2026-02-10 人的行为容易受他人影响",
+      "dateSignals": [
+        "created in review range: 2026-02-09",
+        "modified in review range: 2026-02-09"
+      ],
+      "excerpt": "其实在福州我有些许自己的规划，但很多还是受了 hyh 的影响。尽管我不是特别合群的人，但这种环境下我变得有些“合群”。熬夜、狂睡... 并且也没什么学习。本来我的预估应该是去福道转转，后来也不了了之。 我曾经应该也有说过，我也挺容易受到积极影响。但这种积极影响会随着物理距离的消失而退散，如果是远程，可能只有2-4天的作用。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": [
+        "create: 2026-02-10 20:36",
+        "cssclasses: p-indent",
+        "emotion: Calm"
+      ],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["Calm", "2026-02-10 20:36", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-02-09",
+        "modified in review range: 2026-02-09",
+        "entities: Calm, 2026-02-10 20:36, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-02-09; modified in review range: 2026-02-09; entities: Calm, 2026-02-10 20:36, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-19-科研启动时-md",
+      "path": "2026月复盘/4月/2026-04-19 科研启动时.md",
+      "title": "2026-04-19 科研启动时",
+      "dateSignals": [
+        "created in review range: 2026-04-18",
+        "modified in review range: 2026-04-18"
+      ],
+      "excerpt": "这是对于定自己主线这个事情。不用非常着急说我要读很多论文，然后去决定我要做什么。那么对于我现在来说呢，我已经有了一个初步的 idea，一个想法。那我想着第一步就是看是否能先把它的这个开源项目给它做出来。然后再去搭建能够形成一篇论文的框架，比如说这个具体其中的核心逻辑是什么？最后的评估效果是怎么做的？这些部分我肯定是需要去大量阅读文献去参考人家的一些方法。尤其是这个人机交互领域。然后也需要去看看偏 CS 方向的他们具体是怎么去做这个事情？ 原本我在周六想着说，可能花个三四天的时间就能大概调研出来一个方向，然后去和刘老师谈一下。但是我自己真正的来进行这个 idea 的调研之后，确实发现还是十分有难度的。在前期找 idea 这个过程就能发现非常多的问题，一是这个创新性，二就是前人做过哪些工作，做的是否类似，他们解决了哪些问题，这些都是需要自己去了解一下的，包括他们形成论文之后，实验、评估方法他们是怎么做的？然后内部的那些功能他们是自行添加的还是做过一定的调研的。 ---- 如果我真的需要去做这个项目的话，它其实包含哪些领域呢？首先是这个决策方向，因为我的其中一个核心概念就是人的决策与取舍，然后人在其中的判断演化是怎么样的。第二的话肯定就是人机交互的领域。 那整个项目肯定不能做成，就是不能只停留在做系统与这个 harness 的工程上，需要在更大的层面上去进行一个统筹，否则其实整个项目是非常容易被替代，并且没有什么创新点。就和 github 上非常多的那种涌现出来的 AI 应用一样。随便一个人就可以直接做出来，就像 skill 现在非常混乱一样，类似的东西有大量的人在做。但实际上，做出...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-04-19T20:42:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [
+        "这是对于定自己主线这个事情。不用非常着急说我要读很多论文，然后去决定我要做什么。那么对于我现在来说呢，我已经有了一个初步的 idea，一个想法。那我想着第一步就是看是否能先把它的这个开源项目给它做出来。然后再去搭建能够形成一篇论文的框架，比如说这个具体其中的核心逻辑是什么？最后的评估效果是怎么做的？这些部分我肯定是需要去大量阅读文献去参考人家的一些方法。尤其"
+      ],
+      "entities": ["2026-04-19T20:42:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-18",
+        "modified in review range: 2026-04-18",
+        "contains reviewable questions",
+        "entities: 2026-04-19T20:42:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-04-18; modified in review range: 2026-04-18; contains reviewable questions; entities: 2026-04-19T20:42:00, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-4月-2026-04-26-业界实习-md",
+      "path": "2026月复盘/4月/2026-04-26 业界实习.md",
+      "title": "2026-04-26 业界实习",
+      "dateSignals": [
+        "created in review range: 2026-04-25",
+        "modified in review range: 2026-04-25"
+      ],
+      "excerpt": "听组里师兄讲实习其实是稍微有一点点绝望的。怎么说呢？他们实习的岗位好像都偏向那种什么数据标注、数据清洗、运营投流的岗位。但是确实也是能实打实地学到业界的一些东西的，这个无可置疑。 而且，子力老师，他说，第一份实习的话，别管怎么样，先进去。进去之后了解了一些事儿之后才能再考虑其他的。然后呢，项目肯定是要再丰富一下的，自己找几个 agent 相关的东西去 wipe coding 一下。虽然当前有很多，但是其实都比较屎，没有参与自己的思考，所以最好是能够多做一些思考，再去 coding 出来什么的。 而我去业界实习其实有两个考量，第一个考量是我自己虽然一直在追最新的 AI 热点、AI tools，但是缺少一个能实地贴合业界场景的用途。因为可能我自己的生活科研工作都没有那么多需要用到这些，是很频繁地用到这些 tool。第二个考量就是我认为业界比学界——这里单指心理所的我们课题组这边的学界吧——追热点的速度肯定是更快的，而且也会更敏锐。敏锐这个事儿体现在思考上、行动力上，包括对于一个新的东西的出现，他的洞察，都是大大不同的。我只有去充满这样一个氛围的地方去做事儿之后，我才能得到更多的信息。 对于投递实习这个事情，现在我是有两个切入点。一个就是把我当前有关决策路径的 demo 去竞品分析，然后**做出一个自己的原型**，最好是可以供自己使用、自己可以长期使用的这么一个工具。第二个切入点就是我了解到其实当前有一个需求，就是很多人还不知道**怎么将 agent 融入自己的工作流**，那么我可以做的一件事就是去思考这件事儿。就是思考平常有什么事儿可以放权给 AI，什么事儿是需要人来做更高的决策的...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-04-26T12:17:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [
+        "听组里师兄讲实习其实是稍微有一点点绝望的。怎么说呢？他们实习的岗位好像都偏向那种什么数据标注、数据清洗、运营投流的岗位。但是确实也是能实打实地学到业界的一些东西的，这个无可置疑。 而且，子力老师，他说，第一份实习的话，别管怎么样，先进去。进去之后了解了一些事儿之后才能再考虑其他的。然后呢，项目肯定是要再丰富一下的，自己找几个 agent 相关的东西去 wip"
+      ],
+      "entities": ["2026-04-26T12:17:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-04-25",
+        "modified in review range: 2026-04-25",
+        "contains reviewable questions",
+        "entities: 2026-04-26T12:17:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-04-25; modified in review range: 2026-04-25; contains reviewable questions; entities: 2026-04-26T12:17:00, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-26-或许要步入科研期-md",
+      "path": "2026月复盘/3月/2026-03-26 或许要步入科研期.md",
+      "title": "2026-03-26 或许要步入科研期",
+      "dateSignals": [
+        "created in review range: 2026-03-25",
+        "modified in review range: 2026-03-25"
+      ],
+      "excerpt": "接手了一个项目才发现，其实如果真的要去做科研，会碰到很多事情。拿我们这个大数据领域来说，首先需要处理前期的数据，不说是清洗吧，至少要完成数据匹配，这中间会面临各种各样的问题。再往后一点，你需要选择用什么模型去提取数据，提取完之后，还要考虑以什么样的结构化形式把它保存下来。然后再去思考数据清洗、数据处理以及特征提取的方式。 在这些过程中，其实会碰上非常多的问题。虽然每个环节基本上都能找到前人做过的研究或工具，但如果你想呈现一个比较好的效果，就必须慢慢地去调研、慢慢地去找。 这个过程不是一蹴而就的，你几乎无法使用 AI 一次性去完成整件事。没错，AI 可以帮我做很多，比如帮我组织调研来的资料并进行总结，但具体怎么去用、用哪些东西，最终还是需要我自己来拍板和决策。 至于说效果好不好，这也是个问题。我不能等全流程跑完之后，再去一个个查中间到底是哪个环节效果欠佳，导致最终数据变得不好。所以，在每个流程进行的阶段，我都需要借助各种工具去进行评估。目前看来比较好的方法是：在前期过程中，尽量找到 SOTA 模型；在每个环节都进行及时的工具化评估，确保过程可控。 --- 在正式开始之前，管理这些琐碎的内容已经让我非常头大了。我需要思考如何管理数据、如何管理各种模型工具，以及如何选择合适的模型和框架。目前，我还没有想到一种特别理想的管理方式。 因此，我接下来的任务是在当前项目中，尝试将整个流程以一种更科学的方式记录下来。提取可复用的模块（例如将数据部分放在公共区域）建立子文件夹结构（利用不同的子文件夹来放置不同的评估方法、框架和模型）这个流程的优化，我认为也是科研过程中非常关键的环节。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-03-26 23:17", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-03-26 23:17", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-03-25",
+        "modified in review range: 2026-03-25",
+        "entities: 2026-03-26 23:17, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-25; modified in review range: 2026-03-25; entities: 2026-03-26 23:17, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-3月-2026-03-29-怀柔区比赛-md",
+      "path": "2026月复盘/3月/2026-03-29 怀柔区比赛.md",
+      "title": "2026-03-29 怀柔区比赛",
+      "dateSignals": [
+        "created in review range: 2026-03-28",
+        "modified in review range: 2026-03-28"
+      ],
+      "excerpt": "梗把我淹没了 第一天我有点懵，表现不太好。但我也不是嘴硬，确实这么认为：我在场上非常专注，但失误率迟迟降不下来，显得水平有限。可能二十一分的水平，只发挥出了十一分，没能展现出自己较好的风采。对整个团队的作用，至少不是负面的。同时，我也发现自己对外界的声音可能不是那么清楚，因为对手在喊、队友在喊，而我却懵懵的，不太能明白他们在喊什么。偶尔还会忘记。最后，我在场上保持专注，却得到这样一个结果，非常夸张。 来到了第二天，这发生的故事应该就更多了一点。第二天的故事主要集中在团体赛这边。我们从早上开始说起：发现大唐这个人确实有点问题。因为他会责怪自己的搭档打得不好，甚至揪着人家头发对着骂——可以说，在场的每个人、每个时刻，都能听见他在对队友疯狂输出，甚至进行人身侮辱。我觉得这肯定是极不妥当的行为，尤其还是当着那么多人的面；人家都跑了，他还要追上去继续骂。 那么，来到下午，第一个比较抽象的是双谢组合，输给了北房镇的大爷大妈。这个确实有一大半的锅需要放到小谢身上，因为他确实不停地起球，整体表现比较惨，二比零直接被拿下。那么我也想起来，在第一场，对面两位大爷跑过来，先跟我们说：“你们两个人的年龄加起来比我俩一个人都小。”然后让我们自己看着办。所以我俩开局非常松弛，可能打到8比8平，才一举拿下了对面，这就是打北方镇的故事。 后面到了打经济局，尤其是第一把男双，我觉得非常有意思。上来对面先跟我们套了个近乎：“你是国科大的？学的什么？什么年龄了？”又说：“反正也打不过，旁边同事都看着呢，你们自己看着办吧。”我们虽没信以为真，也没手下留情。结果却非常尴尬——我和苟哥在全场热身，非常专业：一人发接发、打...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-03-29 22:39", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-03-29 22:39", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-03-28",
+        "modified in review range: 2026-03-28",
+        "entities: 2026-03-29 22:39, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-03-28; modified in review range: 2026-03-28; entities: 2026-03-29 22:39, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:2026月复盘-5月-2026-05-03-ai混沌感暴露了什么-md",
+      "path": "2026月复盘/5月/2026-05-03 AI混沌感暴露了什么.md",
+      "title": "2026-05-03 AI混沌感暴露了什么",
+      "dateSignals": [
+        "created in review range: 2026-05-02",
+        "modified in review range: 2026-05-02"
+      ],
+      "excerpt": "当我再一次进行 vibe coding 的时候，或者说 agentic coding 的时候，我再次体会到了这种混乱的无序感。即便我现在已经有一整套还不错的自动化流程了，但是我依旧不知道哪些地方是人应该去介入去决策的东西。 我拿前期调研的情况来说，我有一个痛点，然后我让他去调研类似的东西，然后问他说，我要加哪些功能。这时候他会给我列出一大堆功能，或者说在我设计原型的时候他会给我列出非常非常多的功能，但是这些功能事实上有一些是我并不需要的。但是我会很混乱。因为太多的噪声会把我给淹没。我就不知道如何去决定哪些功能是要去，哪些功能是要留。 我暂时认为这是一个 taste 的问题。当我会做一个产品，或者说对一个产品知道它的好坏优缺点在哪个地方的时候，我才能形成这种 taste。所以在前期，我既不知道它做出来是个什么样子的时候，也没有 test 的时候。我就不确定这个功能我到底是要还是不要，**我会被大量的噪声给淹没了。** 我总觉得我缺少一种全局的视角。我不知道如何从架构上，从人核心的需求上，去做这么一个产品。而是一不小心就可能钻进某个细节中，然后被淹没了。 按说这个事儿应该在 AI 之前就有了。只不过当我构建功能的速度加快了之后，这些东西，这些全局观念，才完完全全被暴露出来。所以为什么说 AI agent 这种工具，它是一种杠杆，用得好与不好都是100x。不过也有好处，因为暴露出来的这些问题，它本身就是一种信号。这种信号就是可以让你成长。",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["create: 2026-05-03T20:06:00", "cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["2026-05-03T20:06:00", "p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-05-02",
+        "modified in review range: 2026-05-02",
+        "entities: 2026-05-03T20:06:00, p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-05-02; modified in review range: 2026-05-02; entities: 2026-05-03T20:06:00, p-indent; frontmatter context present"
+    },
+    {
+      "id": "note:projects-legacy-md",
+      "path": "Projects/Legacy.md",
+      "title": "Legacy",
+      "dateSignals": [
+        "created in review range: 2026-05-08",
+        "modified in review range: 2026-05-08"
+      ],
+      "excerpt": "# Legacy Project This note was created before the selected year and modified during the annual review window. It proves modified-only notes still contribute to monthly activity and representative evidence.",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["weak tags: legacy", "weak tags: research"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["Legacy Project This"],
+      "crossFolderLinks": [],
+      "weakSignals": ["tag:legacy", "tag:research"],
+      "localSignals": [
+        "created in review range: 2026-05-08",
+        "modified in review range: 2026-05-08",
+        "entities: Legacy Project This",
+        "frontmatter context present",
+        "tags present as weak signals"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-05-08; modified in review range: 2026-05-08; entities: Legacy Project This; frontmatter context present; tags present as weak signals"
+    },
+    {
+      "id": "note:2026月复盘-1月-2026-01-05-论个人睡眠与精神状态-md",
+      "path": "2026月复盘/1月/2026-01-05 论个人睡眠与精神状态.md",
+      "title": "2026-01-05 论个人睡眠与精神状态",
+      "dateSignals": [
+        "created in review range: 2026-01-04",
+        "modified in review range: 2026-01-04"
+      ],
+      "excerpt": "我记得在2024/2025最为放纵的时期，基本都是凌晨1点后睡，早上11点起。那时即便我有想读书的心，有想学习的心，精神上也颇为无力。那时我很疑惑，为什么睡眠充足了，起来一两小时依旧难受精神不振... 最近几日我有早睡想法，也基本都在践行。但偶尔因为娱乐晚睡，那么就会出现不规律情况，也让我深深对比了几种不一样的睡眠。 - 早睡23:30 + 早起8:00 = 无敌放松及精神饱满 - 超早睡23:30以前 + 早起 = 失眠，但第二日仍精神饱满 - 晚睡1:00 + 晚起9:30后 = 精神萎靡，午休质量也不高 - 晚睡1:00 + 早起 = 睡眠不足，午休质量尚可，精神还算充分 如果是凌晨两点后睡十二点起，那更是无敌了... 一整天精神不振，做事情提不起兴趣，进而出现手艺活。我需要承认几点让我睡眠质量极高极高的策略，中高强度运动+夜宵，基本上保证第二天睡得很沉，似乎也是质量很高。 不敢想，若是维持这样饱满作息一段时间后，精神会多么美丽。 而午休这一小段是最容易出岔子的。午休前一小会手机，午休后一小会手机，而且时不时地，就是这段时间欲望比较强，容易管不住手。如果说有好方法，那就是依旧建议睡觉不带手机，就像往日作息超级规律那般，睡前半小时读书/复盘，第二天等着铃声响了1 s下床。按说现在我也可以做到，而且这样加上眼睛不会太过于酸涩。 --- ✅补充：一小段合理的作息 围绕午饭点做些文章； 比如，早上工作收尾在11点附近，出门健身/运动，午饭回来正好午休一下。基本上属于一个很良好的习惯，并且很合理顺势。晚上若是球场空着，那么同理在17点附近出门训练也很合理。 --- 2026-01-...",
+      "links": [],
+      "backlinks": [],
+      "commonLinks": [],
+      "frontmatterSignals": ["cssclasses: p-indent"],
+      "repeatedPhrases": [],
+      "questionSentences": [],
+      "entities": ["p-indent"],
+      "crossFolderLinks": [],
+      "weakSignals": [],
+      "localSignals": [
+        "created in review range: 2026-01-04",
+        "modified in review range: 2026-01-04",
+        "entities: p-indent",
+        "frontmatter context present"
+      ],
+      "relatedNotes": [],
+      "whyIncluded": "created in review range: 2026-01-04; modified in review range: 2026-01-04; entities: p-indent; frontmatter context present"
+    }
+  ]
+}
