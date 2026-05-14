@@ -10,11 +10,7 @@ import { renderAiReportEnhancements } from "./core/ai";
 import { buildReviewAggregate, buildYearAggregate } from "./core/aggregate";
 import { COMMAND_IDS, COMMAND_NAMES, COMMAND_SURFACE } from "./core/commands";
 import { resolveAnnualReviewLanguage, UI_TEXT } from "./core/language";
-import {
-  buildAnnualReviewChartAssets,
-  buildAnnualReviewChartPaths,
-  renderAnnualReview,
-} from "./core/render";
+import { buildReviewGenerationPipeline } from "./core/reviewGenerationPipeline";
 import {
   buildAnnualReviewSession,
   buildCustomReviewSession,
@@ -75,7 +71,11 @@ function hasUsableAiReviewSession(session: ReviewSessionState | undefined): bool
   if (!session || session.candidates.length < 5) {
     return false;
   }
-  return session.candidates.every((candidate) => candidate.source === "ai");
+  return session.candidates.every(
+    (candidate) =>
+      candidate.provenance?.generationMode === "ai" ||
+      (!candidate.provenance && candidate.source === "ai"),
+  );
 }
 
 export default class AnnualReviewPlugin extends Plugin {
@@ -362,57 +362,29 @@ export default class AnnualReviewPlugin extends Plugin {
         session,
       );
       progress?.update(text.progressAiSummary);
-      const aggregate = buildReviewAggregate(files, session, settings, {
-        snapshotComparison,
-      });
       const reportLanguage = resolveAnnualReviewLanguage(
         settings.reportLanguage,
         getLanguage(),
       );
-      const aiEnhancements = await renderAiReportEnhancements({
-        aggregate,
+      const generated = await buildReviewGenerationPipeline({
         files,
+        session,
         settings,
-      });
-      const evidencePackage = buildThemeEvidencePackage(aggregate, files, settings);
-      const reviewSession = await this.refreshReviewSession(aggregate, {
-        themeHypotheses: aiEnhancements.themeHypotheses,
-        evidencePackage,
-        language: reportLanguage,
-        aiConfigured: settings.aiProvider !== "none",
-        aiAttempted: settings.aiProvider !== "none",
-        aiFailureMessage:
-          settings.aiProvider !== "none" && aiEnhancements.themeHypotheses.length === 0
-            ? aiEnhancements.periodJudgment
-            : undefined,
-      });
-      const chartPaths = buildAnnualReviewChartPaths(
-        settings.reportFolder,
-        session.label,
-      );
-      progress?.update(text.progressRendering, 78);
-      const chartAssets = buildAnnualReviewChartAssets(aggregate, {
-        language: reportLanguage,
-        chartPaths,
-        reviewSession,
-      });
-      const markdown = renderAnnualReview(aggregate, {
-        language: reportLanguage,
-        chartPaths,
-        aiEnhancements,
-        aiEnabled: settings.aiProvider !== "none",
-        reviewSession,
-        themeEvidencePackage: evidencePackage,
+        snapshotComparison,
+        reportLanguage,
+        refreshReviewSession: (aggregate, sessionOptions) =>
+          this.refreshReviewSession(aggregate, sessionOptions),
+        onBeforeRender: () => progress?.update(text.progressRendering, 78),
       });
       progress?.update(text.progressWriting, 92);
       const report = await writeAnnualReviewOutput(
         this.app,
         settings.reportFolder,
         session.label,
-        markdown,
-        chartAssets,
+        generated.markdown,
+        generated.chartAssets,
       );
-      this.lastAggregate = aggregate;
+      this.lastAggregate = generated.aggregate;
       this.lastReportPath = report.path;
       await this.app.workspace.getLeaf(false).openFile(report);
       progress?.update(text.generated(report.path), 100);
