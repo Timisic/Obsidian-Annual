@@ -20,6 +20,7 @@ import {
 } from "../src/core/extract";
 import { shouldIncludePath } from "../src/core/filters";
 import { buildHighValueNoteInsights } from "../src/core/highValueNotes";
+import { parseThemeHypothesisContract } from "../src/core/themeHypothesisContract";
 import {
   buildAnnualReviewChartAssets,
   buildAnnualReviewChartPaths,
@@ -456,7 +457,7 @@ describe("theme evidence", () => {
             summary: "This should not bind a duplicate title to either note.",
             connectionExplanation:
               "The evidence reference uses a title shared by multiple notes.",
-            evidenceNotes: ["Meeting"],
+            evidenceNoteIds: ["Meeting"],
           },
           {
             title: "Stable id",
@@ -468,7 +469,7 @@ describe("theme evidence", () => {
             title: "Exact path",
             summary: "Exact paths should still bind.",
             connectionExplanation: "The evidence reference uses an exact visible path.",
-            evidenceNotes: ["Areas/Meeting.md"],
+            evidenceNoteIds: ["Areas/Meeting.md"],
           },
         ],
       }),
@@ -479,6 +480,40 @@ describe("theme evidence", () => {
     expect(parsed.map((theme) => theme.title)).toEqual(["Stable id", "Exact path"]);
     expect(parsed[0]?.evidenceNoteIds).toEqual(["note:projects-meeting-md"]);
     expect(parsed[1]?.evidenceNoteIds).toEqual(["note:areas-meeting-md"]);
+  });
+
+  it("reports strict provider contract violations at the theme hypothesis seam", () => {
+    const evidencePackage = {
+      reviewRange: "2026-01-01 to 2026-03-31",
+      evidenceNotes: [evidenceNote("note:daily-2026-01-01-md", "Daily/2026-01-01.md")],
+    };
+
+    const missingRoot = parseThemeHypothesisContract(
+      JSON.stringify({ themes: [] }),
+      evidencePackage,
+    );
+    const legacyField = parseThemeHypothesisContract(
+      JSON.stringify({
+        themeHypotheses: [
+          {
+            title: "Legacy field",
+            summary: "The provider used the older evidenceNotes field.",
+            connectionExplanation: "This should be reported before fallback logic runs.",
+            evidenceNotes: ["note:daily-2026-01-01-md"],
+          },
+        ],
+      }),
+      evidencePackage,
+    );
+
+    expect(missingRoot.hypotheses).toEqual([]);
+    expect(missingRoot.violations).toContain(
+      "Provider response must include themeHypotheses[].",
+    );
+    expect(legacyField.hypotheses).toEqual([]);
+    expect(legacyField.violations).toContain(
+      "themeHypotheses[0].evidenceNoteIds[] is required.",
+    );
   });
 
   it("parses AI theme hypotheses back to evidence note ids and marks weak singles", () => {
@@ -506,7 +541,7 @@ describe("theme evidence", () => {
           {
             title: "Single note clue",
             summary: "One note may become a theme.",
-            evidenceNotes: ["Projects/Legacy.md"],
+            evidenceNoteIds: ["Projects/Legacy.md"],
             connectionExplanation: "The old note resurfaced during the review range.",
             source: "mixed",
           },
@@ -601,7 +636,7 @@ describe("theme evidence", () => {
           {
             title: "Ambiguous title reference",
             summary: "This should not bind either duplicate title.",
-            evidenceNotes: ["Shared Title"],
+            evidenceNoteIds: ["Shared Title"],
             connectionExplanation: "Duplicate titles are ambiguous.",
             source: "ai",
           },

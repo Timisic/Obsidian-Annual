@@ -1,5 +1,12 @@
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
+import {
+  linkTargetMatches,
+  normalizeLinkIdentity,
+  resolveLinkTarget,
+  titleFromPath,
+} from "./noteIdentity";
+import { parseThemeHypothesisContract } from "./themeHypothesisContract";
 import { reviewSessionContainsDate } from "./reviewSession";
 import type {
   AnnualReviewSettings,
@@ -8,13 +15,11 @@ import type {
   ThemeEvidenceNote,
   ThemeEvidencePackage,
   ThemeHypothesis,
-  ThemeHypothesisSource,
   YearAggregate,
 } from "./types";
 
 const MAX_EVIDENCE_NOTES = 80;
 const MAX_EVIDENCE_EXCERPT_CHARS = 700;
-const MAX_THEME_HYPOTHESES = 15;
 const MAX_LOCAL_THEMES = 10;
 const MAX_EVIDENCE_PER_THEME = 5;
 const WEAK_SIGNAL_PREFIX = "tag:";
@@ -185,29 +190,7 @@ export function parseThemeHypotheses(
   content: string,
   evidencePackage: ThemeEvidencePackage,
 ): ThemeHypothesis[] {
-  const parsed = parseJsonValue(content);
-  const rawThemes = Array.isArray(parsed)
-    ? parsed
-    : parsed && typeof parsed === "object"
-      ? arrayValue((parsed as Record<string, unknown>).themeHypotheses).length > 0
-        ? arrayValue((parsed as Record<string, unknown>).themeHypotheses)
-        : arrayValue((parsed as Record<string, unknown>).themes)
-      : [];
-  const ids = new Set(evidencePackage.evidenceNotes.map((note) => note.id));
-  const idByPath = buildEvidenceReferenceIndex(evidencePackage.evidenceNotes);
-
-  return rawThemes
-    .map((value, index) =>
-      toThemeHypothesis(
-        value,
-        index,
-        ids,
-        idByPath,
-        new Map(evidencePackage.evidenceNotes.map((note) => [note.id, note])),
-      ),
-    )
-    .filter((theme): theme is ThemeHypothesis => Boolean(theme))
-    .slice(0, MAX_THEME_HYPOTHESES);
+  return parseThemeHypothesisContract(content, evidencePackage).hypotheses;
 }
 
 export function buildLocalThemeHypotheses(
@@ -620,103 +603,6 @@ function clusterToTheme(
   };
 }
 
-function toThemeHypothesis(
-  value: unknown,
-  index: number,
-  validIds: Set<string>,
-  idByPath: Map<string, string>,
-  noteById: Map<string, ThemeEvidenceNote>,
-): ThemeHypothesis | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-  const record = value as Record<string, unknown>;
-  const title = stringValue(record.title);
-  const summary = stringValue(record.summary) || stringValue(record.synthesis);
-  const reportNarrative =
-    stringValue(record.reportNarrative) ||
-    stringValue(record.narrativeDraft) ||
-    stringValue(record.reportDraft);
-  const connectionExplanation =
-    stringValue(record.connectionExplanation) || stringValue(record.connections);
-  if (!title || !summary || !connectionExplanation) {
-    return null;
-  }
-  const rawIds =
-    arrayValue(record.evidenceNoteIds).length > 0
-      ? arrayValue(record.evidenceNoteIds)
-      : arrayValue(record.evidenceNotes);
-  const evidenceNoteIds = [
-    ...new Set(
-      rawIds
-        .map((item) => normalizeEvidenceId(item, validIds, idByPath))
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ];
-  if (evidenceNoteIds.length === 0) {
-    return null;
-  }
-  const uncertainty = stringValue(record.uncertainty);
-  const localSignals = normalizedSignalList(record.localSignals);
-  return {
-    id: stringValue(record.id) || `theme:ai:${index + 1}`,
-    title,
-    summary,
-    reportNarrative: reportNarrative || undefined,
-    evidenceNoteIds,
-    connectionExplanation,
-    localSignals:
-      localSignals.length > 0
-        ? localSignals
-        : evidenceNoteIds
-            .flatMap((id) => noteById.get(id)?.localSignals ?? [])
-            .filter(
-              (signal, signalIndex, signals) => signals.indexOf(signal) === signalIndex,
-            )
-            .slice(0, 8),
-    uncertainty:
-      evidenceNoteIds.length < 2 && !uncertainty
-        ? "Low confidence: fewer than two evidence notes support this hypothesis."
-        : uncertainty || undefined,
-    source: sourceValue(record.source),
-  };
-}
-
-function buildEvidenceReferenceIndex(notes: ThemeEvidenceNote[]): Map<string, string> {
-  const idsByReference = new Map<string, Set<string>>();
-  const addReference = (reference: string, id: string) => {
-    const normalized = normalizeEvidenceReference(reference);
-    if (!normalized) return;
-    if (!idsByReference.has(normalized)) {
-      idsByReference.set(normalized, new Set());
-    }
-    idsByReference.get(normalized)?.add(id);
-  };
-
-  for (const note of notes) {
-    addReference(note.path, note.id);
-    addReference(note.path.replace(/\.md$/iu, ""), note.id);
-    addReference(note.title, note.id);
-  }
-
-  return new Map(
-    [...idsByReference.entries()]
-      .filter(([, ids]) => ids.size === 1)
-      .map(([reference, ids]) => [reference, [...ids][0] as string]),
-  );
-}
-
-function normalizeEvidenceId(
-  value: unknown,
-  validIds: Set<string>,
-  idByPath: Map<string, string>,
-): string | null {
-  const text = stringValue(value);
-  if (!text) return null;
-  if (validIds.has(text)) return text;
-  return idByPath.get(normalizeEvidenceReference(text)) ?? null;
-}
-
 function evidenceScore(note: ThemeEvidenceNote): number {
   return (
     note.dateSignals.length * 3 +
@@ -825,10 +711,6 @@ function dateKey(timestamp: number): string {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
 
-function titleFromPath(path: string): string {
-  return path.split("/").pop()?.replace(/\.md$/iu, "") ?? path;
-}
-
 function folderParts(path: string): string[] {
   const parts = path.split("/").slice(0, -1);
   return parts.filter(
@@ -911,40 +793,6 @@ function extractPhraseCandidates(content: string): string[] {
   return [...candidates].slice(0, 40);
 }
 
-function resolveLinkTarget(
-  link: string,
-  noteByPath: Map<string, ActiveNoteEntry>,
-): string {
-  const normalized = normalizeLinkIdentity(link);
-  for (const path of noteByPath.keys()) {
-    if (
-      normalizeLinkIdentity(path) === normalized ||
-      normalizeLinkIdentity(path.replace(/\.md$/iu, "")) === normalized ||
-      normalizeLinkIdentity(titleFromPath(path)) === normalized
-    ) {
-      return path;
-    }
-  }
-  return link;
-}
-
-function linkTargetMatches(link: string, path: string): boolean {
-  return (
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(path) ||
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(path.replace(/\.md$/iu, "")) ||
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(titleFromPath(path))
-  );
-}
-
-function normalizeEvidenceReference(value: string): string {
-  const wikilink = value.match(/^\[\[([^\]|#\]]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]$/u)?.[1];
-  return normalizeLinkIdentity(wikilink || value);
-}
-
-function normalizeLinkIdentity(value: string): string {
-  return value.trim().replace(/\.md$/iu, "").replace(/\\/gu, "/").toLocaleLowerCase();
-}
-
 function evidenceNoteId(path: string): string {
   return `note:${slug(path)}`;
 }
@@ -969,32 +817,12 @@ function stableHash(value: string): string {
   return (hash >>> 0).toString(36);
 }
 
-function parseJsonValue(content: string): unknown {
-  const candidates = [
-    content.match(/```(?:json)?\s*([\s\S]*?)```/iu)?.[1],
-    content,
-    content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1),
-  ].filter((candidate): candidate is string => Boolean(candidate?.trim()));
-  for (const candidate of candidates) {
-    try {
-      return JSON.parse(candidate);
-    } catch {
-      // Try the next candidate.
-    }
-  }
-  return null;
-}
-
 function arrayValue(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? sanitizeInlineText(value, 700) : "";
-}
-
-function sourceValue(value: unknown): ThemeHypothesisSource {
-  return value === "local" || value === "ai" || value === "mixed" ? value : "ai";
 }
 
 function sanitizeInlineText(value: string, maxLength: number): string {

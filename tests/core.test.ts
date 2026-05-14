@@ -1742,7 +1742,7 @@ describe("theme evidence", () => {
           {
             title: "Single note clue",
             summary: "One note may become a theme.",
-            evidenceNotes: ["Projects/Legacy.md"],
+            evidenceNoteIds: ["Projects/Legacy.md"],
             connectionExplanation: "The old note resurfaced during the review range.",
             source: "mixed",
           },

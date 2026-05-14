@@ -354,6 +354,42 @@ describe("review state", () => {
     );
   });
 
+  it("uses identity signatures before overlap heuristics when a provider changes wording and evidence volume", () => {
+    const stored = applyReviewAction(
+      sessionWith([
+        {
+          ...candidate("old-ai-theme", [
+            evidenceForPath("old-ai-theme", "Daily/2026-01-01.md"),
+          ]),
+          identitySignature: "review-candidate:stable-evidence-cluster",
+        },
+      ]),
+      {
+        type: "accept",
+        candidateId: "old-ai-theme",
+        at,
+      },
+    );
+    const rescanned = {
+      ...candidate("new-provider-wording", [
+        evidenceForPath("new-provider-wording", "Daily/2026-01-01.md"),
+      ]),
+      identitySignature: "review-candidate:stable-evidence-cluster",
+      title: "Provider found the same cluster",
+      reason: "Provider changed the label and supplied less evidence.",
+    };
+
+    const merged = mergeScannedCandidates(stored, [rescanned], "scan-2", at);
+
+    expect(merged.candidates).toHaveLength(1);
+    expect(merged.candidates[0]).toMatchObject({
+      id: "old-ai-theme",
+      status: "accepted",
+      title: "Provider found the same cluster",
+      reason: "Provider changed the label and supplied less evidence.",
+    });
+  });
+
   it("does not bind a reviewed decision to a reworded theme with only incidental evidence overlap", () => {
     const stored = applyReviewAction(
       sessionWith([
@@ -561,6 +597,11 @@ function candidate(
     connectionExplanation: `${id} connects multiple evidence notes.`,
     localSignals: [`${id} has local evidence`],
     source: "ai",
+    provenance: {
+      generationMode: "ai",
+      source: "ai",
+      seam: "theme-evidence-package",
+    },
     reasons: [reasonFor(id)],
     status: "candidate",
     evidence,

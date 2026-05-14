@@ -4,6 +4,14 @@ import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { extractNoteStats } from "./extract";
 import { shouldIncludePath } from "./filters";
+import {
+  buildEvidenceReferenceIndex,
+  linkTargetMatches,
+  normalizeEvidenceReference,
+  normalizeLinkIdentity,
+  resolveLinkTarget,
+  titleFromPath,
+} from "./noteIdentity";
 import { reviewSessionContainsDate } from "./reviewSession";
 import { DEFAULT_LOCAL_CODEX_COMMAND } from "./settings";
 import { buildThemeEvidencePackage, parseThemeHypotheses } from "./themeEvidence";
@@ -622,39 +630,6 @@ function relatedTheme(
   );
 }
 
-function titleFromPath(path: string): string {
-  return path.split("/").pop()?.replace(/\.md$/iu, "") ?? path;
-}
-
-function linkTargetMatches(link: string, path: string): boolean {
-  return (
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(path) ||
-    normalizeLinkIdentity(link) === normalizeLinkIdentity(path.replace(/\.md$/iu, ""))
-  );
-}
-
-function resolveLinkTarget(
-  link: string,
-  noteByPath: Map<string, { file: SourceFile; note: NoteStats }>,
-): string {
-  const normalized = normalizeLinkIdentity(link);
-  for (const path of noteByPath.keys()) {
-    if (
-      normalizeLinkIdentity(path) === normalized ||
-      normalizeLinkIdentity(path.replace(/\.md$/iu, "")) === normalized ||
-      normalizeLinkIdentity(path.split("/").pop()?.replace(/\.md$/iu, "") ?? path) ===
-        normalized
-    ) {
-      return path;
-    }
-  }
-  return link;
-}
-
-function normalizeLinkIdentity(value: string): string {
-  return value.trim().replace(/\.md$/iu, "").replace(/\\/gu, "/").toLocaleLowerCase();
-}
-
 function obsidianSkillHandoff(): Record<string, unknown> {
   return {
     invokedSkills: ["obsidian-cli", "obsidian-markdown"],
@@ -894,7 +869,7 @@ function themeInsightToHypothesis(
   const evidenceNoteIds = [
     ...new Set(
       insight.evidenceNotes
-        .map((note) => idByReference.get(normalizeLinkIdentity(note)))
+        .map((note) => idByReference.get(normalizeEvidenceReference(note)))
         .filter((id): id is string => Boolean(id)),
     ),
   ];
@@ -960,33 +935,6 @@ function parseJsonObject(content: string): Record<string, unknown> | null {
     }
   }
   return null;
-}
-
-function buildEvidenceReferenceIndex(notes: ThemeEvidenceNote[]): Map<string, string> {
-  const references = new Map<string, string>();
-  const ambiguous = new Set<string>();
-  const add = (reference: string, id: string) => {
-    const normalized = normalizeLinkIdentity(reference);
-    if (!normalized || ambiguous.has(normalized)) {
-      return;
-    }
-    const existing = references.get(normalized);
-    if (existing && existing !== id) {
-      references.delete(normalized);
-      ambiguous.add(normalized);
-      return;
-    }
-    references.set(normalized, id);
-  };
-
-  for (const note of notes) {
-    add(note.id, note.id);
-    add(note.path, note.id);
-    add(note.path.replace(/\.md$/iu, ""), note.id);
-    add(note.title, note.id);
-  }
-
-  return references;
 }
 
 function toThemeInsight(value: unknown): AiThemeInsight | null {

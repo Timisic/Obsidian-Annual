@@ -3,6 +3,7 @@ import {
   mergeScannedCandidates,
   type EvidenceSource,
   type ReviewCandidate,
+  type ReviewCandidateGenerationMode,
   type ReviewSessionState,
 } from "./reviewState";
 import { normalizeReviewCandidateTitle } from "./reviewTitle";
@@ -97,6 +98,12 @@ function buildReviewCandidates(
     ? buildLocalThemeHypotheses(evidencePackage, options.language)
     : [];
   const themes = suppliedThemes.length > 0 ? suppliedThemes : localThemes;
+  const themeGenerationMode: ReviewCandidateGenerationMode =
+    suppliedThemes.length > 0
+      ? "ai"
+      : options.aiConfigured && options.aiAttempted
+        ? "degraded-local"
+        : "local";
   const evidenceById = new Map(
     evidencePackage?.evidenceNotes.map((note) => [note.id, note]) ?? [],
   );
@@ -104,7 +111,14 @@ function buildReviewCandidates(
   if (themes.length > 0) {
     const candidates = themes
       .map((theme, index) =>
-        themeCandidate(aggregate, theme, index, evidenceById, options.language),
+        themeCandidate(
+          aggregate,
+          theme,
+          index,
+          evidenceById,
+          options.language,
+          themeGenerationMode,
+        ),
       )
       .filter((candidate): candidate is ReviewCandidate => Boolean(candidate))
       .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
@@ -117,6 +131,7 @@ function buildReviewCandidates(
             localThemes,
             evidenceById,
             options.language,
+            "degraded-local",
           ),
           themeGeneration: {
             mode: "degraded-local",
@@ -159,8 +174,12 @@ function buildReviewCandidates(
     };
   }
 
+  const topicGenerationMode: ReviewCandidateGenerationMode =
+    options.aiConfigured && options.aiAttempted ? "degraded-local" : "local";
   const candidates = aggregate.topicEvolution.topTopics
-    .flatMap((topic, index) => topicCandidate(aggregate, topic, index, options.language))
+    .flatMap((topic, index) =>
+      topicCandidate(aggregate, topic, index, options.language, topicGenerationMode),
+    )
     .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
   return {
     candidates: options.aiConfigured && options.aiAttempted ? [] : candidates,
@@ -180,10 +199,11 @@ function buildCandidateList(
   themes: ThemeHypothesis[],
   evidenceById: Map<string, ThemeEvidenceNote>,
   language: "en" | "zh" = "en",
+  generationMode: ReviewCandidateGenerationMode = "local",
 ): ReviewCandidate[] {
   return themes
     .map((theme, index) =>
-      themeCandidate(aggregate, theme, index, evidenceById, language),
+      themeCandidate(aggregate, theme, index, evidenceById, language, generationMode),
     )
     .filter((candidate): candidate is ReviewCandidate => Boolean(candidate))
     .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0) || a.id.localeCompare(b.id));
@@ -195,6 +215,7 @@ function themeCandidate(
   index: number,
   evidenceById: Map<string, ThemeEvidenceNote>,
   language: "en" | "zh" = "en",
+  generationMode: ReviewCandidateGenerationMode = "local",
 ): ReviewCandidate | null {
   const sourcePaths = theme.evidenceNoteIds
     .map((id) => evidenceById.get(id)?.path)
@@ -233,6 +254,16 @@ function themeCandidate(
   return {
     id,
     type: "theme-hypothesis",
+    identitySignature: candidateIdentitySignature(
+      aggregate.session.id,
+      "theme-hypothesis",
+      sourcePaths,
+    ),
+    provenance: {
+      generationMode,
+      source: theme.source,
+      seam: "theme-evidence-package",
+    },
     title,
     reason: theme.summary,
     aiSummary: theme.reportNarrative || theme.summary,
@@ -274,6 +305,9 @@ function topicCandidate(
   topic: TopTopic,
   index: number,
   language: "en" | "zh" = "en",
+  generationMode: ReviewCandidateGenerationMode = aggregate.session.aiEnabled
+    ? "degraded-local"
+    : "local",
 ): ReviewCandidate[] {
   const sourcePaths = topic.representativeNotes.slice(0, 5);
   if (sourcePaths.length === 0) {
@@ -293,6 +327,16 @@ function topicCandidate(
     {
       id,
       type: "theme-hypothesis",
+      identitySignature: candidateIdentitySignature(
+        aggregate.session.id,
+        "theme-hypothesis",
+        sourcePaths,
+      ),
+      provenance: {
+        generationMode,
+        source: "legacy-topic",
+        seam: "topic-evolution-fallback",
+      },
       title,
       reason: `${title} added ${topic.addedWords} words across ${topic.newNotes} new notes and ${topic.updatedNotes} updated notes.`,
       aiSummary: `${title} is a legacy activity-derived clue and should be regenerated from the bounded evidence package before final review.`,
@@ -331,6 +375,20 @@ function topicCandidate(
 
 function candidateId(sessionId: string, value: string): string {
   return `review:${slug(sessionId)}:theme-hypothesis:${slug(value)}`;
+}
+
+function candidateIdentitySignature(
+  sessionId: string,
+  type: ReviewCandidate["type"],
+  sourcePaths: string[],
+): string {
+  const normalizedPaths = sourcePaths
+    .map((path) => path.trim().replace(/\\/gu, "/").toLocaleLowerCase())
+    .filter(Boolean)
+    .sort();
+  return `review-candidate:${slug(sessionId)}:${type}:${stableHash(
+    normalizedPaths.join("\n"),
+  )}`;
 }
 
 function slug(value: string): string {
